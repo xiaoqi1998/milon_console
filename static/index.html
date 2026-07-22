@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milon API Console</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="icon-btn sidebar-toggle" id="sidebarToggle" title="切换侧边栏" aria-label="切换侧边栏">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div class="brand">
+                    <span class="brand-logo">∞</span>
+                    <span class="brand-title">Milon API Console</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="network-selector">
+                    <span class="network-label">网络</span>
+                    <select id="networkSelect" class="network-select" title="切换网络"></select>
+                </div>
+                <button class="icon-btn" id="refreshBtn" title="刷新网络列表" aria-label="刷新网络列表">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                </button>
+            </div>
+        </header>
+        <div class="main-layout">
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <span>端点列表</span>
+                    <input type="text" id="endpointSearch" class="endpoint-search" placeholder="搜索端点..." />
+                </div>
+                <nav class="endpoint-tree" id="endpointTree"></nav>
+            </aside>            <main class="editor-pane">
+                <div class="editor-header">
+                    <div class="endpoint-info">
+                        <span class="method-badge" id="currentMethod">—</span>
+                        <span class="endpoint-path" id="currentPath">请选择左侧端点</span>
+                        <span class="endpoint-summary" id="currentSummary"></span>
+                    </div>
+                    <div class="editor-actions">
+                        <button class="btn btn-primary" id="sendBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            <span>发送</span>
+                        </button>
+                        <button class="btn btn-ghost" id="resetBtn" title="重置参数">重置</button>
+                        <button class="btn btn-ghost" id="copyCurlBtn" title="复制 curl 命令">复制 curl</button>
+                    </div>
+                </div>
+                <div class="editor-body" id="editorBody">
+                    <div class="empty-state">
+                        <div class="empty-icon">⌘</div>
+                        <p>从左侧选择一个端点开始调试</p>
+                    </div>
+                </div>
+            </main>            <section class="response-pane">
+                <div class="response-header">
+                    <div class="response-tabs">
+                        <button class="tab active" data-tab="json">JSON</button>
+                        <button class="tab" data-tab="headers">Headers</button>
+                        <button class="tab" data-tab="raw">Raw</button>
+                    </div>
+                    <div class="response-meta" id="responseMeta">
+                        <span class="meta-placeholder">未发送请求</span>
+                    </div>
+                </div>
+                <div class="response-body">
+                    <div class="tab-panel active" id="tab-json">
+                        <div class="response-empty">发送请求后此处展示 JSON 响应</div>
+                    </div>
+                    <div class="tab-panel" id="tab-headers">
+                        <div class="response-empty">发送请求后此处展示响应头</div>
+                    </div>
+                    <div class="tab-panel" id="tab-raw">
+                        <div class="response-empty">发送请求后此处展示原始响应</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <footer class="history-bar" id="historyBar">
+            <button class="history-toggle" id="historyToggle">
+                <span>历史记录</span>
+                <span class="history-count" id="historyCount">0</span>
+                <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+            <div class="history-panel" id="historyPanel"></div>
+        </footer>
+        <div class="toast" id="toast"></div>
+    </div>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
