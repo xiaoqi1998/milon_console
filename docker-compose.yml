@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  milon-api-server:
+    build:
+      context: ../
+      dockerfile: milon-api-server/Dockerfile
+    image: milon-api-server:latest
+    container_name: milon-api-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - DEFAULT_NETWORK=devNet
+      - ALLOWED_ORIGINS=*
+      - ENABLE_UTIL_SIGN=false
+      # - SIGNER_PRIVATE_KEY=your_private_key_here
+      # - MILON_RPC_URL=http://your-node:6280/milon/v1
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - milon-network
+
+networks:
+  milon-network:
+    driver: bridge
