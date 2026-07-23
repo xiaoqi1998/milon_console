@@ -1016,6 +1016,8 @@ function addToHistory(endpoint, req, statusCode, duration, data) {
     duration: duration,
     time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
     timestamp: Date.now(),
+    respData: data,
+    respSize: data ? new Blob([JSON.stringify(data)]).size : 0,
   });
   if (state.history.length > MAX_HISTORY) state.history.length = MAX_HISTORY;
   saveHistory();
@@ -1075,7 +1077,53 @@ function reloadHistory(id) {
   if (!h) return;
   selectEndpoint(h.endpoint.id);
   closeHistoryDrawer();
-  showToast('已加载历史端点', 'success');
+
+  // 恢复路径参数与查询参数
+  if (h.req && h.req.url) {
+    var urlStr = h.req.url;
+    var queryStart = urlStr.indexOf('?');
+    var pathPart = queryStart >= 0 ? urlStr.substring(0, queryStart) : urlStr;
+    var queryPart = queryStart >= 0 ? urlStr.substring(queryStart + 1) : '';
+
+    // 恢复路径参数
+    if (h.endpoint.path) {
+      var pathSegs = h.endpoint.path.split('/');
+      var urlSegs = pathPart.split('/');
+      for (var i = 0; i < pathSegs.length; i++) {
+        if (pathSegs[i].charAt(0) === ':') {
+          var paramName = pathSegs[i].substring(1);
+          var paramVal = urlSegs[i] ? decodeURIComponent(urlSegs[i]) : '';
+          var pathInput = document.querySelector('.param-input[data-pkind="path"][data-pname="' + paramName + '"]');
+          if (pathInput) pathInput.value = paramVal;
+        }
+      }
+    }
+
+    // 恢复查询参数
+    if (queryPart) {
+      queryPart.split('&').forEach(function (pair) {
+        var eqIdx = pair.indexOf('=');
+        var qName = eqIdx >= 0 ? decodeURIComponent(pair.substring(0, eqIdx)) : decodeURIComponent(pair);
+        var qVal = eqIdx >= 0 ? decodeURIComponent(pair.substring(eqIdx + 1)) : '';
+        var queryInput = document.querySelector('.param-input[data-pkind="query"][data-pname="' + qName + '"]');
+        if (queryInput) queryInput.value = qVal;
+      });
+    }
+  }
+
+  // 恢复请求体
+  if (h.req && h.req.body) {
+    var ta = $('bodyEditor');
+    if (ta) ta.value = h.req.body;
+  }
+
+  // 恢复响应展示
+  if (h.respData !== undefined) {
+    var rawText = typeof h.respData === 'string' ? h.respData : JSON.stringify(h.respData, null, 2);
+    displayResponse(h.respData, h.statusCode || 0, h.duration || 0, {}, rawText, h.respSize || rawText.length);
+  }
+
+  showToast('已恢复历史请求', 'success');
 }
 
 function clearHistory() {
