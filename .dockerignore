@@ -18,6 +18,7 @@ Thumbs.db
 .gitignore
 .trae/
 README.md
+API.md
 _*.ps1
 _*.py
 _*.txt

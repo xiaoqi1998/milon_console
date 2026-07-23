@@ -346,6 +346,7 @@ const state = {
   activeRespTab: 'json',
   activeLang: 'go',
   currentSdkExample: null,
+  currentDocId: null,
   history: [],
   loading: false,
   lastResponse: null,
@@ -1188,9 +1189,380 @@ function renderErrorCodes(filter) {
   });
 }
 
+// ===== 接口文档数据（按端点 id 索引的详细说明）=====
+var API_DOCS = {
+  'net-list': {
+    desc: '获取所有可用网络列表，返回每个网络的名称、链 ID、RPC 地址及是否为当前网络。',
+    params: [],
+    response: { success: true, code: 0, message: 'ok', data: [{ name: 'devNet', chainId: 900000001, rpcUrl: 'http://...', inxUrl: '', current: true }] },
+  },
+  'net-current': {
+    desc: '获取当前正在使用的网络配置。',
+    params: [],
+    response: { success: true, code: 0, message: 'ok', data: { name: 'devNet', chainId: 900000001, rpcUrl: 'http://...', inxUrl: '', current: true } },
+  },
+  'net-switch': {
+    desc: '切换当前网络。支持 devNet、localNet。',
+    params: [{ name: 'network', type: 'string', required: true, desc: '目标网络名称（devNet / localNet）' }],
+    response: { success: true, code: 0, message: 'ok', data: { name: 'devNet', chainId: 900000001, current: true } },
+  },
+  'health': {
+    desc: '健康检查，返回当前链的最新区块高度与链 ID，可用于探活。',
+    params: [],
+    response: { success: true, code: 0, message: 'ok', data: { chainId: 900000001, blockHeight: 655 } },
+  },
+  'chain-head': {
+    desc: '获取当前链头信息（最新区块高度等）。',
+    params: [],
+    response: { success: true, code: 0, message: 'ok', data: { chainId: 900000001, blockHeight: 655 } },
+  },
+  'acc-info': {
+    desc: '按地址查询账户信息，包括资源、余额等链上状态。',
+    params: [{ name: 'address', type: 'string', required: true, desc: 'Base58 编码的账户地址', in: 'path' }],
+    response: { success: true, code: 0, message: 'ok', data: { address: '2L26F...', resources: [] } },
+  },
+  'acc-resources': {
+    desc: '查询指定账户的资源列表（按地址过滤，非全局列表）。',
+    params: [{ name: 'address', type: 'string', required: true, desc: 'Base58 编码的账户地址', in: 'path' }],
+    response: { success: true, code: 0, message: 'ok', data: [{ resourceId: '...', typeTag: 1 }] },
+  },
+  'acc-generate': {
+    desc: '生成新的账户密钥对与地址。支持 4 种密钥类型：secp256k1、ed25519、bls12381、fndsa512。',
+    params: [{ name: 'keyType', type: 'string', required: false, desc: '密钥类型，默认 secp256k1。可选：secp256k1 / ed25519 / bls12381 / fndsa512' }],
+    response: { success: true, code: 0, message: 'ok', data: { privateKey: '0x...', publicKey: '0x...', address: '2L26F...', keyType: 'secp256k1' } },
+  },
+  'tx-hash': {
+    desc: '按交易哈希查询交易详情。回执中包含 gasCharged 字段（实际上链 gas 费用）。',
+    params: [{ name: 'hash', type: 'string', required: true, desc: '交易哈希（hex 或 base58）', in: 'path' }],
+    response: { success: true, code: 0, message: 'ok', data: { stamp: 123, payer: 0, receipt: { txHash: '...', state: 1, gasCharged: 0 } } },
+  },
+  'tx-events': {
+    desc: '查询指定交易产生的所有事件，可按 typeTag 过滤。',
+    params: [
+      { name: 'hash', type: 'string', required: true, desc: '交易哈希', in: 'path' },
+      { name: 'typeTag', type: 'uint64', required: false, desc: '事件类型标签过滤', in: 'query' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { events: [{ blockHeight: 655, txHash: '...', eventIndex: 0, data: { typeTag: 1, value: '0x...' } }] } },
+  },
+  'tx-wait': {
+    desc: '等待指定交易被确认。回执中包含 gasCharged 字段。',
+    params: [
+      { name: 'hash', type: 'string', required: true, desc: '交易哈希', in: 'path' },
+      { name: 'timeoutSecs', type: 'uint64', required: false, desc: '超时时间（秒），默认 60', in: 'query' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { stamp: 123, receipt: { state: 1, gasCharged: 0 } } },
+  },
+  'tx-simulate': {
+    desc: '底层模拟接口，直接提交 base64 编码的 postcard 交易进行模拟。返回模拟回执，包含 gasCharged。',
+    params: [{ name: 'transactionPostcard', type: 'string', required: true, desc: 'Base64 编码的 postcard 序列化交易' }],
+    response: { success: true, code: 0, message: 'ok', data: { gasCharged: 0, state: 1 } },
+  },
+  'tx-submit': {
+    desc: '底层提交接口，直接提交 base64 编码的 postcard 交易到链上。',
+    params: [{ name: 'transactionPostcard', type: 'string', required: true, desc: 'Base64 编码的 postcard 序列化交易' }],
+    response: { success: true, code: 0, message: 'ok', data: { txHash: 'abcdef...' } },
+  },
+  'tx-inspect': {
+    desc: '检测原始交易（不提交），解析 base64 编码的 postcard 交易，返回交易哈希、指令哈希、付款人地址与校验结果。用于调试。',
+    params: [{ name: 'transactionPostcard', type: 'string', required: true, desc: 'Base64 编码的 postcard 序列化交易' }],
+    response: { success: true, code: 0, message: 'ok', data: { txHash: '...', ixHashes: ['...'], payer: '2L26F...', valid: true } },
+  },
+  'read': {
+    desc: '读取合约视图函数（单返回值）。通过 appName + methodName 定位 IDL 方法，args 为参数键值对。',
+    params: [
+      { name: 'appName', type: 'string', required: true, desc: '应用名称（如 token）' },
+      { name: 'methodName', type: 'string', required: true, desc: '方法名（如 balance_of）' },
+      { name: 'args', type: 'object', required: false, desc: '方法参数键值对' },
+      { name: 'payerAddress', type: 'string', required: false, desc: '付款人地址（视图查询可省略）' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: ['0x...'] },
+  },
+  'read-multi': {
+    desc: '多指令视图查询，封装 SDK 的 BuildAndViewMultiIx，一次查询返回多个值。',
+    params: [{ name: 'instructions', type: 'array', required: true, desc: '指令数组，每项含 appName/methodName/args' }],
+    response: { success: true, code: 0, message: 'ok', data: [['0x...'], ['0x...']] },
+  },
+  'simulate': {
+    desc: '模拟合约调用，支持 4 种支付模式。返回模拟回执，包含 gasCharged 字段。不实际修改链上状态。',
+    params: [
+      { name: 'appName', type: 'string', required: true, desc: '应用名称' },
+      { name: 'methodName', type: 'string', required: true, desc: '方法名' },
+      { name: 'args', type: 'object', required: false, desc: '方法参数' },
+      { name: 'paymentMode', type: 'string', required: true, desc: '支付模式：unified_payer_all / unified_dual_sign / unified_payer_only_gas / split' },
+      { name: 'payerAddress', type: 'string', required: true, desc: '付款人地址' },
+      { name: 'signatureMode', type: 'object', required: true, desc: '签名模式：{"type":"pubkey","publicKey":"<base58>"}' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { gasCharged: 0, state: 1 } },
+  },
+  'write': {
+    desc: '写入交易（实际上链），支持 4 种支付模式。需要付款人私钥签名。',
+    params: [
+      { name: 'appName', type: 'string', required: true, desc: '应用名称' },
+      { name: 'methodName', type: 'string', required: true, desc: '方法名' },
+      { name: 'args', type: 'object', required: false, desc: '方法参数' },
+      { name: 'paymentMode', type: 'string', required: true, desc: '支付模式' },
+      { name: 'payerPrivateKey', type: 'string', required: true, desc: '付款人私钥（hex 或 base58）' },
+      { name: 'payerAddress', type: 'string', required: true, desc: '付款人地址' },
+      { name: 'signatureMode', type: 'object', required: true, desc: '签名模式' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { txHash: 'abcdef...' } },
+  },
+  'write-multi': {
+    desc: '多方签名写入，专用于 unified_dual_sign 模式。付款人付 gas，ix 签名者签名指令。',
+    params: [
+      { name: 'paymentMode', type: 'string', required: true, desc: '必须为 unified_dual_sign' },
+      { name: 'payerPrivateKey', type: 'string', required: true, desc: '付款人私钥' },
+      { name: 'payerAddress', type: 'string', required: true, desc: '付款人地址' },
+      { name: 'ixPrivateKey', type: 'string', required: true, desc: '指令签名者私钥' },
+      { name: 'ixAddress', type: 'string', required: true, desc: '指令签名者地址' },
+      { name: 'signatureMode', type: 'object', required: true, desc: '付款人签名模式' },
+      { name: 'ixSignatureMode', type: 'object', required: true, desc: '指令签名者签名模式' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { txHash: 'abcdef...' } },
+  },
+  'write-multisig': {
+    desc: '多签写入，专用于 split 模式。owner 自付 gas 并签名指令。',
+    params: [
+      { name: 'paymentMode', type: 'string', required: true, desc: '必须为 split' },
+      { name: 'ownerPrivateKey', type: 'string', required: true, desc: 'owner 私钥' },
+      { name: 'ownerAddress', type: 'string', required: true, desc: 'owner 地址' },
+      { name: 'signatureMode', type: 'object', required: true, desc: '签名模式' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { txHash: 'abcdef...' } },
+  },
+  'block': {
+    desc: '按区块高度获取区块信息。',
+    params: [{ name: 'height', type: 'uint64', required: true, desc: '区块高度', in: 'path' }],
+    response: { success: true, code: 0, message: 'ok', data: { height: 1, hash: '...' } },
+  },
+  'resource': {
+    desc: '按资源哈希获取资源内容。',
+    params: [{ name: 'hash', type: 'string', required: true, desc: '资源哈希（hex 编码，18 字节）', in: 'path' }],
+    response: { success: true, code: 0, message: 'ok', data: { hash: '...', data: '0x...' } },
+  },
+  'access-value': {
+    desc: '批量获取访问值（按 blob 哈希数组查询）。',
+    params: [{ name: 'blobHashes', type: 'array', required: true, desc: 'blob 哈希数组（hex 编码，每项 32 字节）' }],
+    response: { success: true, code: 0, message: 'ok', data: [{ hash: '...', value: '0x...' }] },
+  },
+  'resource-path': {
+    desc: '按哈希查询资源路径。',
+    params: [{ name: 'hash', type: 'string', required: true, desc: '资源路径哈希（hex 编码，18 字节）', in: 'path' }],
+    response: { success: true, code: 0, message: 'ok', data: { hash: '...', path: '...' } },
+  },
+  'faucet-claim': {
+    desc: '从水龙头领取代币。领水交易本身消耗 gas（sponsored 交易，gasCharged=0）。成功后返回 txHash 可用于追踪交易状态。每个地址有 24 小时冷却期。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '领取者私钥（hex 或 base58）' },
+      { name: 'address', type: 'string', required: true, desc: '领取者地址（base58）' },
+      { name: 'signatureMode', type: 'object', required: true, desc: '签名模式：{"type":"pubkey","publicKey":"<base58>"}' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: '2L26F...', claimed: true, txHash: 'abcdef...' } },
+  },
+  'faucet-balance': {
+    desc: '查询指定地址的 MIL 代币余额。',
+    params: [{ name: 'address', type: 'string', required: true, desc: 'Base58 编码的账户地址', in: 'path' }],
+    response: { success: true, code: 0, message: 'ok', data: { address: '2L26F...', balance: 9989324 } },
+  },
+  'derive-addr': {
+    desc: '从公钥派生账户地址。',
+    params: [
+      { name: 'publicKey', type: 'string', required: true, desc: '公钥（hex 或 base58）' },
+      { name: 'keyType', type: 'string', required: false, desc: '密钥类型，默认自动识别' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: '2L26F...', publicKey: '0x...', keyType: 'secp256k1' } },
+  },
+  'derive-pub': {
+    desc: '从私钥派生公钥，支持 4 种密钥类型。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥（hex 或 base58）' },
+      { name: 'keyType', type: 'string', required: true, desc: '密钥类型：secp256k1 / ed25519 / bls12381 / fndsa512' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { publicKey: '0x...', keyType: 'secp256k1', privateKey: '0x...' } },
+  },
+  'sign': {
+    desc: '使用私钥对消息签名。需服务端启用 ENABLE_UTIL_SIGN=true，否则返回 403。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥（hex 或 base58）' },
+      { name: 'message', type: 'string', required: true, desc: '消息（hex 编码）' },
+      { name: 'keyType', type: 'string', required: true, desc: '密钥类型' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { signature: '0x...', publicKey: '0x...' } },
+  },
+  'verify': {
+    desc: '验证签名是否有效。',
+    params: [
+      { name: 'publicKey', type: 'string', required: true, desc: '公钥（hex 或 base58）' },
+      { name: 'message', type: 'string', required: true, desc: '原始消息（hex 编码）' },
+      { name: 'signature', type: 'string', required: true, desc: '签名（hex 编码）' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { valid: true } },
+  },
+  'view-single': {
+    desc: '底层单指令视图查询，使用预构建的 base64 postcard。',
+    params: [{ name: 'transactionPostcard', type: 'string', required: true, desc: 'Base64 编码的 postcard 序列化视图交易' }],
+    response: { success: true, code: 0, message: 'ok', data: ['0x...'] },
+  },
+  'view-multi': {
+    desc: '底层多指令视图查询，使用预构建的 base64 postcard。',
+    params: [{ name: 'transactionPostcard', type: 'string', required: true, desc: 'Base64 编码的 postcard 序列化视图交易' }],
+    response: { success: true, code: 0, message: 'ok', data: [['0x...'], ['0x...']] },
+  },
+};
+
+function renderApiDocsNav(filter) {
+  var nav = $('docsNav');
+  nav.innerHTML = '';
+  var keyword = (filter || '').trim().toLowerCase();
+  var groups = {};
+  ENDPOINTS.forEach(function (ep) {
+    if (keyword) {
+      var hay = (ep.method + ' ' + ep.path + ' ' + ep.summary + ' ' + ep.group).toLowerCase();
+      if (hay.indexOf(keyword) < 0) return;
+    }
+    if (!groups[ep.group]) groups[ep.group] = [];
+    groups[ep.group].push(ep);
+  });
+  var groupOrder = ['网络管理', '系统', '账户', '交易', '合约', 'RPC', '水龙头', '工具'];
+  var keys = groupOrder
+    .filter(function (g) { return groups[g]; })
+    .concat(Object.keys(groups).filter(function (g) { return groupOrder.indexOf(g) < 0; }));
+  if (keys.length === 0) {
+    nav.appendChild(el('div', { class: 'empty-state small', text: '无匹配接口' }));
+    return;
+  }
+  keys.forEach(function (group) {
+    var gw = el('div', { class: 'docs-nav-group' });
+    gw.appendChild(el('div', { class: 'docs-nav-group-title', text: group }));
+    groups[group].forEach(function (ep) {
+      gw.appendChild(
+        el(
+          'div',
+          {
+            class: 'docs-nav-item' + (state.currentDocId === ep.id ? ' active' : ''),
+            'data-id': ep.id,
+            onclick: function () { selectApiDoc(ep.id); },
+          },
+          el('span', { class: 'endpoint-method ' + ep.method, text: ep.method }),
+          el('span', { class: 'docs-nav-item-text', text: ep.summary })
+        )
+      );
+    });
+    nav.appendChild(gw);
+  });
+}
+
+function selectApiDoc(id) {
+  state.currentDocId = id;
+  var ep = ENDPOINTS.find(function (e) { return e.id === id; });
+  if (!ep) return;
+  renderApiDocsNav($('docsSearch').value);
+  renderApiDocDetail(ep);
+}
+
+function renderApiDocDetail(ep) {
+  var doc = API_DOCS[ep.id] || { desc: ep.summary, params: [], response: {} };
+  $('docsTitle').textContent = ep.summary;
+  $('docsSummary').textContent = ep.method + ' ' + ep.path;
+
+  var body = $('docsBody');
+  body.innerHTML = '';
+
+  // 路径与方法
+  body.appendChild(
+    el('div', { class: 'docs-path-display' },
+      el('span', { class: 'docs-method-badge ' + ep.method, text: ep.method }),
+      el('span', { class: 'docs-path-text', text: ep.path })
+    )
+  );
+
+  // 描述
+  body.appendChild(el('p', { class: 'docs-desc', text: doc.desc }));
+
+  // 请求参数
+  var paramsSection = el('div', { class: 'docs-section' });
+  paramsSection.appendChild(el('div', { class: 'docs-section-title', text: '请求参数' }));
+  if (doc.params && doc.params.length > 0) {
+    var table = el('table', { class: 'docs-table' });
+    table.appendChild(
+      el('tr', {},
+        el('th', { text: '参数名' }),
+        el('th', { text: '位置' }),
+        el('th', { text: '类型' }),
+        el('th', { text: '必填' }),
+        el('th', { text: '说明' })
+      )
+    );
+    doc.params.forEach(function (p) {
+      table.appendChild(
+        el('tr', {},
+          el('td', { text: p.name }),
+          el('td', { text: p.in || 'body' }),
+          el('td', { text: p.type }),
+          el('td', { class: p.required ? 'required' : 'optional', text: p.required ? '是' : '否' }),
+          el('td', { text: p.desc })
+        )
+      );
+    });
+    paramsSection.appendChild(table);
+  } else {
+    paramsSection.appendChild(el('div', { class: 'docs-empty', text: '该接口无需请求参数' }));
+  }
+  body.appendChild(paramsSection);
+
+  // 请求示例
+  if (ep.bodyTemplate) {
+    var reqSection = el('div', { class: 'docs-section' });
+    reqSection.appendChild(el('div', { class: 'docs-section-title', text: '请求体示例' }));
+    reqSection.appendChild(
+      el('div', { class: 'docs-code-block' },
+        el('pre', { text: ep.bodyTemplate })
+      )
+    );
+    body.appendChild(reqSection);
+  }
+
+  // curl 示例
+  var curlSection = el('div', { class: 'docs-section' });
+  curlSection.appendChild(el('div', { class: 'docs-section-title', text: 'cURL 示例' }));
+  var curlCmd = buildDocCurl(ep);
+  curlSection.appendChild(
+    el('div', { class: 'docs-code-block' },
+      el('pre', { text: curlCmd })
+    )
+  );
+  body.appendChild(curlSection);
+
+  // 响应示例
+  var respSection = el('div', { class: 'docs-section' });
+  respSection.appendChild(el('div', { class: 'docs-section-title', text: '响应示例' }));
+  respSection.appendChild(
+    el('div', { class: 'docs-code-block' },
+      el('pre', { text: JSON.stringify(doc.response, null, 2) })
+    )
+  );
+  body.appendChild(respSection);
+}
+
+function buildDocCurl(ep) {
+  var base = 'http://localhost:8080';
+  var url = base + ep.path;
+  if (ep.method === 'GET') {
+    var queryParts = (ep.queryParams || []).map(function (q) {
+      return q.name + '=' + (q.ph || 'value');
+    });
+    if (queryParts.length > 0) url += '?' + queryParts.join('&');
+    return 'curl ' + url;
+  }
+  var body = ep.bodyTemplate ? ep.bodyTemplate : '{}';
+  return 'curl -X POST ' + url + ' \\\n  -H "Content-Type: application/json" \\\n  -d \'' + body.replace(/\n/g, '\n  ') + '\'';
+}
+
 function initApp() {
   $('endpointCount').textContent = String(ENDPOINTS.length);
+  $('docsCount').textContent = String(ENDPOINTS.length);
   renderEndpoints();
+  renderApiDocsNav();
   document.querySelectorAll('.nav-tab').forEach(function (tab) {
     tab.addEventListener('click', function () {
       switchView(tab.getAttribute('data-view'));
@@ -1198,6 +1570,9 @@ function initApp() {
   });
   $('endpointSearch').addEventListener('input', function (e) {
     renderEndpoints(e.target.value);
+  });
+  $('docsSearch').addEventListener('input', function (e) {
+    renderApiDocsNav(e.target.value);
   });
   $('sdkSearch').addEventListener('input', function (e) {
     renderSdkList(e.target.value);
@@ -1256,6 +1631,7 @@ function initApp() {
   }
   if (ENDPOINTS.length > 0) {
     selectEndpoint(ENDPOINTS[0].id);
+    selectApiDoc(ENDPOINTS[0].id);
   }
   setInterval(checkHealth, 30000);
 }

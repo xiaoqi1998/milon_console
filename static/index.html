@@ -35,6 +35,10 @@
         <span class="nav-icon">⚡</span>
         <span class="nav-label">控制台</span>
       </button>
+      <button class="nav-tab" data-view="docs">
+        <span class="nav-icon">📖</span>
+        <span class="nav-label">接口文档</span>
+      </button>
       <button class="nav-tab" data-view="sdk">
         <span class="nav-icon">📚</span>
         <span class="nav-label">SDK 示例</span>
@@ -164,6 +168,43 @@
             <button class="btn btn-ghost" id="downloadRespBtn">
               <span>⬇</span><span>下载</span>
             </button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="view-docs">
+      <div class="docs-layout">
+        <aside class="docs-sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-title">
+              <span class="title-icon">📖</span>
+              <span>接口文档</span>
+              <span class="endpoint-count" id="docsCount">0</span>
+            </div>
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="docsSearch" placeholder="搜索接口..." />
+            </div>
+          </div>
+          <div class="docs-nav" id="docsNav"></div>
+        </aside>
+        <section class="docs-content">
+          <div class="panel-header">
+            <div class="docs-header-info">
+              <h2 id="docsTitle">接口文档</h2>
+              <p id="docsSummary">从左侧选择接口查看详细文档</p>
+            </div>
+          </div>
+          <div class="panel-body docs-body" id="docsBody">
+            <div class="empty-state">
+              <div class="empty-icon-wrapper">
+                <div class="empty-glow"></div>
+                <span class="empty-icon">📖</span>
+              </div>
+              <h3>选择接口查看文档</h3>
+              <p>从左侧列表选择一个接口<br/>查看详细的请求参数与响应示例</p>
+            </div>
           </div>
         </section>
       </div>
