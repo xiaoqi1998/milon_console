@@ -1,0 +1,604 @@
+{
+  "metadata": {
+    "app_id": 255,
+    "name": "demo",
+    "description": "Milon demo app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "operator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 57564,
+      "handler": "open_order",
+      "kind": "entry",
+      "name": "OpenOrder"
+    },
+    {
+      "args": [
+        {
+          "name": "payer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 58464,
+      "handler": "pay_order",
+      "kind": "entry",
+      "name": "PayOrder"
+    },
+    {
+      "args": [
+        {
+          "name": "operator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 1751,
+      "handler": "settle_order",
+      "kind": "entry",
+      "name": "SettleOrder"
+    },
+    {
+      "args": [
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 24910,
+      "handler": "order_balance",
+      "kind": "view",
+      "name": "OrderBalance",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 6639,
+      "handler": "open_gas_sponsor_pool",
+      "kind": "entry",
+      "name": "OpenGasSponsorPool",
+      "returns": {
+        "type": "u16"
+      },
+      "signer_lookups": {
+        "admin": {
+          "path": {
+            "arg": "pool",
+            "type": "Address"
+          },
+          "res": 237
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "claimer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 11876,
+      "handler": "claim_sponsored_score",
+      "kind": "entry",
+      "name": "ClaimSponsoredScore",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "sponsor_seed",
+          "role": "input",
+          "type": "u16"
+        }
+      ],
+      "discriminator": 35462,
+      "handler": "sponsor_pool_of",
+      "kind": "view",
+      "name": "SponsorPoolOf",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 29380,
+      "handler": "sponsor_without_register",
+      "kind": "entry",
+      "name": "SponsorWithoutRegister",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "pool",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "label",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 27056,
+      "handler": "init_pool",
+      "kind": "entry",
+      "name": "InitPool"
+    },
+    {
+      "args": [
+        {
+          "name": "dex",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "label",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 44919,
+      "handler": "init_dex",
+      "kind": "entry",
+      "name": "InitDex"
+    },
+    {
+      "args": [
+        {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "label",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 58132,
+      "handler": "set_label",
+      "kind": "entry",
+      "name": "SetLabel",
+      "signer_lookups": {
+        "admin": {
+          "path": {
+            "arg": "pool",
+            "type": "Address"
+          },
+          "res": 237
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "recipients",
+          "role": "input",
+          "type": "vec<Address>"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 8311,
+      "handler": "batch_credit",
+      "kind": "entry",
+      "name": "BatchCredit",
+      "signer_lookups": {
+        "admin": {
+          "path": {
+            "arg": "pool",
+            "type": "Address"
+          },
+          "res": 237
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 10409,
+      "handler": "label_of",
+      "kind": "view",
+      "name": "LabelOf",
+      "returns": {
+        "type": "Label"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "account",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 54597,
+      "handler": "score_of",
+      "kind": "view",
+      "name": "ScoreOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "tier",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "cap",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 58369,
+      "handler": "set_tier_cap",
+      "kind": "entry",
+      "name": "SetTierCap",
+      "signer_lookups": {
+        "admin": {
+          "path": {
+            "arg": "pool",
+            "type": "Address"
+          },
+          "res": 237
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "tier",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 48456,
+      "handler": "tier_cap_of",
+      "kind": "view",
+      "name": "TierCapOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "mode",
+          "role": "input",
+          "type": "DemoMode"
+        }
+      ],
+      "discriminator": 47924,
+      "handler": "echo_mode",
+      "kind": "view",
+      "name": "EchoMode",
+      "returns": {
+        "type": "DemoMode"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "labels",
+          "role": "input",
+          "type": "map<String,u32>"
+        }
+      ],
+      "discriminator": 4770,
+      "handler": "label_total",
+      "kind": "view",
+      "name": "LabelTotal",
+      "returns": {
+        "type": "u32"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "mode",
+          "role": "input",
+          "type": "DemoMode"
+        },
+        {
+          "name": "maybe_note",
+          "role": "input",
+          "type": "option<String>"
+        },
+        {
+          "name": "tags",
+          "role": "input",
+          "type": "vec<String>"
+        },
+        {
+          "name": "labels",
+          "role": "input",
+          "type": "map<String,u32>"
+        },
+        {
+          "name": "pair",
+          "role": "input",
+          "type": "tuple<u8,i16>"
+        }
+      ],
+      "discriminator": 43240,
+      "handler": "special_types",
+      "kind": "view",
+      "name": "SpecialTypes",
+      "returns": {
+        "type": "u32"
+      }
+    }
+  ],
+  "types": [
+    {
+      "fields": [
+        {
+          "name": "text",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "Label",
+      "typeTag": 4454442085531989710
+    },
+    {
+      "kind": "enum",
+      "name": "DemoMode",
+      "typeTag": 17947950995871299984,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "One"
+        },
+        {
+          "fields": [
+            {
+              "name": "val",
+              "type": "u32"
+            }
+          ],
+          "kind": "struct",
+          "name": "Two"
+        },
+        {
+          "fields": [
+            {
+              "name": "0",
+              "type": "u8"
+            },
+            {
+              "name": "1",
+              "type": "i16"
+            }
+          ],
+          "kind": "tuple",
+          "name": "Three"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "seed",
+          "type": "u16"
+        },
+        {
+          "name": "operator",
+          "type": "Address"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrderState",
+      "typeTag": 12174282691231125773
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
+      "name": "i16",
+      "typeTag": 3092775683940386555
+    },
+    {
+      "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "u8",
+      "typeTag": 631772817358541784
+    }
+  ],
+  "events": [
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "pool",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "recipient",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "EventCreditApplied",
+      "typeTag": 7407037194950745602
+    }
+  ],
+  "errors": [
+    {
+      "code": 1,
+      "message": "Demo pool {0:?} not found",
+      "name": "PoolNotFound"
+    },
+    {
+      "code": 2,
+      "message": "Demo pool {0:?} already exists",
+      "name": "PoolAlreadyExists"
+    },
+    {
+      "code": 3,
+      "message": "Demo pool {0:?} recipient {1:?} not found",
+      "name": "RecipientNotFound"
+    },
+    {
+      "code": 4,
+      "message": "Invalid parameters: {0}",
+      "name": "InvalidParameters"
+    },
+    {
+      "code": 5,
+      "message": "Demo order not found: {0}",
+      "name": "OrderNotFound"
+    },
+    {
+      "code": 6,
+      "message": "Demo order already exists: {0}",
+      "name": "OrderAlreadyExists"
+    },
+    {
+      "code": 7,
+      "message": "Demo order operator mismatch: {0}",
+      "name": "OrderOperatorMismatch"
+    },
+    {
+      "code": 8,
+      "message": "Demo gas sponsor pool not found: seed {0}",
+      "name": "SponsorPoolNotFound"
+    },
+    {
+      "code": 9,
+      "message": "地址未参与当前交易签名: {0:?}",
+      "name": "AddressNotSignatured"
+    }
+  ]
+}

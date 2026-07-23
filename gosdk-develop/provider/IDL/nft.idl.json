@@ -1,0 +1,657 @@
+{
+  "metadata": {
+    "app_id": 5,
+    "name": "nft",
+    "description": "Milon nft app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "metadata",
+          "role": "input",
+          "type": "CollectionMetadata"
+        }
+      ],
+      "discriminator": 20543,
+      "handler": "create_collection",
+      "kind": "entry",
+      "name": "CreateCollection"
+    },
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "metadata",
+          "role": "input",
+          "type": "CollectionMetadata"
+        }
+      ],
+      "discriminator": 58161,
+      "handler": "set_collection_metadata",
+      "kind": "entry",
+      "name": "SetCollectionMetadata",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "collection",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "metadata",
+          "role": "input",
+          "type": "Metadata"
+        }
+      ],
+      "discriminator": 61094,
+      "handler": "set_metadata",
+      "kind": "entry",
+      "name": "SetMetadata",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "collection",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "mint",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "metadata",
+          "role": "input",
+          "type": "Metadata"
+        },
+        {
+          "name": "royalty",
+          "role": "input",
+          "type": "Royalty"
+        }
+      ],
+      "discriminator": 33212,
+      "handler": "create_unique",
+      "kind": "entry",
+      "name": "CreateUnique",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "collection",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "mint",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "vec<Address>"
+        },
+        {
+          "name": "amounts",
+          "role": "input",
+          "type": "vec<u64>"
+        },
+        {
+          "name": "max_supply",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "metadata",
+          "role": "input",
+          "type": "Metadata"
+        },
+        {
+          "name": "royalty",
+          "role": "input",
+          "type": "Royalty"
+        }
+      ],
+      "discriminator": 43953,
+      "handler": "create_batch",
+      "kind": "entry",
+      "name": "CreateBatch",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "collection",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "vec<Address>"
+        },
+        {
+          "name": "amounts",
+          "role": "input",
+          "type": "vec<u64>"
+        }
+      ],
+      "discriminator": 51281,
+      "handler": "mint_batch",
+      "kind": "entry",
+      "name": "MintBatch",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "collection",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "from",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "option<u64>"
+        }
+      ],
+      "discriminator": 48437,
+      "handler": "transfer",
+      "kind": "entry",
+      "name": "Transfer"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "option<u64>"
+        }
+      ],
+      "discriminator": 7015,
+      "handler": "burn",
+      "kind": "entry",
+      "name": "Burn"
+    },
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "royalty",
+          "role": "input",
+          "type": "Royalty"
+        }
+      ],
+      "discriminator": 53745,
+      "handler": "set_royalty",
+      "kind": "entry",
+      "name": "SetRoyalty",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "collection",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "recipient",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "new_recipient",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 56414,
+      "handler": "transfer_royalty_recipient",
+      "kind": "entry",
+      "name": "TransferRoyaltyRecipient"
+    },
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 10326,
+      "handler": "collection_metadata",
+      "kind": "view",
+      "name": "CollectionMetadata",
+      "returns": {
+        "type": "CollectionMetadata"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 26166,
+      "handler": "metadata_uri",
+      "kind": "view",
+      "name": "MetadataUri",
+      "returns": {
+        "type": "String"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 6407,
+      "handler": "mint_config_view",
+      "kind": "view",
+      "name": "MintConfigView",
+      "returns": {
+        "type": "MintConfig"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 35462,
+      "handler": "total_supply",
+      "kind": "view",
+      "name": "TotalSupply",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 63018,
+      "handler": "balance_of",
+      "kind": "view",
+      "name": "BalanceOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 30311,
+      "handler": "royalty_info",
+      "kind": "view",
+      "name": "RoyaltyInfo",
+      "returns": {
+        "type": "Royalty"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "MintMode",
+      "typeTag": 14850109008862302523,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Unique"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Batch"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "collection",
+          "type": "Address"
+        },
+        {
+          "name": "mode",
+          "type": "MintMode"
+        },
+        {
+          "name": "max_supply",
+          "type": "u64"
+        },
+        {
+          "name": "metadata",
+          "type": "Metadata"
+        },
+        {
+          "name": "royalty",
+          "type": "Royalty"
+        }
+      ],
+      "kind": "struct",
+      "name": "MintConfig",
+      "typeTag": 16229100535211548774
+    },
+    {
+      "fields": [
+        {
+          "name": "name",
+          "type": "String"
+        },
+        {
+          "name": "symbol",
+          "type": "String"
+        },
+        {
+          "name": "base_uri",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "CollectionMetadata",
+      "typeTag": 16686088029351751808
+    },
+    {
+      "fields": [
+        {
+          "name": "name",
+          "type": "String"
+        },
+        {
+          "name": "symbol",
+          "type": "String"
+        },
+        {
+          "name": "uri",
+          "type": "String"
+        },
+        {
+          "name": "external_url",
+          "type": "String"
+        },
+        {
+          "name": "attributes",
+          "type": "vec<MetadataAttribute>"
+        },
+        {
+          "name": "properties",
+          "type": "vec<MetadataProperty>"
+        }
+      ],
+      "kind": "struct",
+      "name": "Metadata",
+      "typeTag": 5542048412392312772
+    },
+    {
+      "fields": [
+        {
+          "name": "trait_type",
+          "type": "String"
+        },
+        {
+          "name": "value",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "MetadataAttribute",
+      "typeTag": 12221651793325518820
+    },
+    {
+      "fields": [
+        {
+          "name": "key",
+          "type": "String"
+        },
+        {
+          "name": "value",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "MetadataProperty",
+      "typeTag": 14128975994911920085
+    },
+    {
+      "fields": [
+        {
+          "name": "recipient",
+          "type": "Address"
+        },
+        {
+          "name": "bps",
+          "type": "u16"
+        }
+      ],
+      "kind": "struct",
+      "name": "Royalty",
+      "typeTag": 1991734660859546696
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "errors": [
+    {
+      "code": 1,
+      "message": "Collection not found: {0:?}",
+      "name": "CollectionNotFound"
+    },
+    {
+      "code": 2,
+      "message": "Collection already exists: {0:?}",
+      "name": "CollectionAlreadyExists"
+    },
+    {
+      "code": 3,
+      "message": "Mint not found: {0:?}",
+      "name": "MintNotFound"
+    },
+    {
+      "code": 4,
+      "message": "Mint already configured: {0:?}",
+      "name": "MintAlreadyConfigured"
+    },
+    {
+      "code": 5,
+      "message": "Mint mode mismatch: {0:?}",
+      "name": "MintModeMismatch"
+    },
+    {
+      "code": 6,
+      "message": "Mint collection mismatch (mint: {0:?}, expected: {1:?}, actual: {2:?})",
+      "name": "MintCollectionMismatch"
+    },
+    {
+      "code": 7,
+      "message": "Royalty recipient mismatch (mint: {0:?}, expected: {1:?}, actual: {2:?})",
+      "name": "RoyaltyRecipientMismatch"
+    },
+    {
+      "code": 8,
+      "message": "Insufficient balance (mint: {0:?}, owner: {1:?}, available: {2}, required: {3})",
+      "name": "InsufficientBalance"
+    },
+    {
+      "code": 9,
+      "message": "Supply cap exceeded (mint: {0:?}, current: {1}, mint_amount: {2}, cap: {3})",
+      "name": "SupplyCapExceeded"
+    },
+    {
+      "code": 10,
+      "message": "Overflow in: {0} + {1} > {2}",
+      "name": "Overflow"
+    },
+    {
+      "code": 11,
+      "message": "Underflow in: {0} - {1} < {2}",
+      "name": "Underflow"
+    },
+    {
+      "code": 12,
+      "message": "Address not signed in current transaction: {0:?}",
+      "name": "AddressNotSignatured"
+    },
+    {
+      "code": 13,
+      "message": "Invalid parameters: {0}",
+      "name": "InvalidParameters"
+    }
+  ]
+}

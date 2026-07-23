@@ -1,0 +1,1420 @@
+{
+  "metadata": {
+    "app_id": 4,
+    "name": "identity",
+    "description": "Milon identity app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "issuer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "credential_hash",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "valid_until_ms",
+          "role": "input",
+          "type": "option<u64>"
+        }
+      ],
+      "discriminator": 60272,
+      "handler": "issue_vc",
+      "kind": "entry",
+      "name": "IssueVc"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 52627,
+      "handler": "accept_vc",
+      "kind": "entry",
+      "name": "AcceptVc"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 8447,
+      "handler": "remove_vc_acceptance",
+      "kind": "entry",
+      "name": "RemoveVcAcceptance"
+    },
+    {
+      "args": [
+        {
+          "name": "issuer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 29957,
+      "handler": "revoke_vc",
+      "kind": "entry",
+      "name": "RevokeVc"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "doc",
+          "role": "input",
+          "type": "DidDocumentInput"
+        }
+      ],
+      "discriminator": 28587,
+      "handler": "create",
+      "kind": "entry",
+      "name": "Create"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "doc",
+          "role": "input",
+          "type": "DidDocumentInput"
+        },
+        {
+          "name": "nickname",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "suffix",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 10570,
+      "handler": "create_with_name",
+      "kind": "entry",
+      "name": "CreateWithName"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "patch",
+          "role": "input",
+          "type": "DidDocumentPatch"
+        }
+      ],
+      "discriminator": 1914,
+      "handler": "update",
+      "kind": "entry",
+      "name": "Update"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "service",
+          "role": "input",
+          "type": "DidService"
+        }
+      ],
+      "discriminator": 45574,
+      "handler": "add_service",
+      "kind": "entry",
+      "name": "AddService"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "service_id",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 38683,
+      "handler": "remove_service",
+      "kind": "entry",
+      "name": "RemoveService"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 6825,
+      "handler": "deactivate",
+      "kind": "entry",
+      "name": "Deactivate"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "nickname",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "suffix",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 43162,
+      "handler": "bind_name",
+      "kind": "entry",
+      "name": "BindName"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "did",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "display_name",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "service_endpoint",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "roles",
+          "role": "input",
+          "type": "vec<EntityRole>"
+        },
+        {
+          "name": "credential_schemas",
+          "role": "input",
+          "type": "vec<String>"
+        }
+      ],
+      "discriminator": 36868,
+      "handler": "register_organization",
+      "kind": "entry",
+      "name": "RegisterOrganization"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "display_name",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "service_endpoint",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 19542,
+      "handler": "update_organization_profile",
+      "kind": "entry",
+      "name": "UpdateOrganizationProfile"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "roles",
+          "role": "input",
+          "type": "vec<EntityRole>"
+        },
+        {
+          "name": "credential_schemas",
+          "role": "input",
+          "type": "vec<String>"
+        }
+      ],
+      "discriminator": 13927,
+      "handler": "update_organization_capabilities",
+      "kind": "entry",
+      "name": "UpdateOrganizationCapabilities"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 48597,
+      "handler": "deactivate_organization",
+      "kind": "entry",
+      "name": "DeactivateOrganization"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 45995,
+      "handler": "reactivate_organization",
+      "kind": "entry",
+      "name": "ReactivateOrganization"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 26429,
+      "handler": "vc_attestation",
+      "kind": "view",
+      "name": "VcAttestation",
+      "returns": {
+        "type": "VcAttestation"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 6419,
+      "handler": "accepted_vc_issuers",
+      "kind": "view",
+      "name": "AcceptedVcIssuers",
+      "returns": {
+        "type": "AcceptedVcIssuerList"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "now_ms",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 18655,
+      "handler": "has_valid_vc_from_issuer",
+      "kind": "view",
+      "name": "HasValidVcFromIssuer",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "did_url",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 52949,
+      "handler": "resolve",
+      "kind": "view",
+      "name": "Resolve",
+      "returns": {
+        "type": "DidResolutionResult"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 21854,
+      "handler": "document",
+      "kind": "view",
+      "name": "Document",
+      "returns": {
+        "type": "DidDocumentOutput"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "name",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 58781,
+      "handler": "resolve_name",
+      "kind": "view",
+      "name": "ResolveName",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 55364,
+      "handler": "registry_view",
+      "kind": "view",
+      "name": "RegistryView",
+      "returns": {
+        "type": "RegistryView"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "role",
+          "role": "input",
+          "type": "EntityRole"
+        }
+      ],
+      "discriminator": 38441,
+      "handler": "has_declared_role",
+      "kind": "view",
+      "name": "HasDeclaredRole",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 5286,
+      "handler": "has_declared_credential_schema",
+      "kind": "view",
+      "name": "HasDeclaredCredentialSchema",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 41992,
+      "handler": "did_of",
+      "kind": "view",
+      "name": "DidOf",
+      "returns": {
+        "type": "String"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "ms",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 63690,
+      "handler": "updated_at_rfc3339",
+      "kind": "view",
+      "name": "UpdatedAtRfc3339",
+      "returns": {
+        "type": "String"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "VcStatus",
+      "typeTag": 18204943549511253276,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Active"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Revoked"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "subject_hash",
+          "type": "u64"
+        },
+        {
+          "name": "did",
+          "type": "String"
+        },
+        {
+          "name": "issuer",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "type": "String"
+        },
+        {
+          "name": "status",
+          "type": "VcStatus"
+        },
+        {
+          "name": "credential_hash",
+          "type": "B256"
+        },
+        {
+          "name": "valid_until_ms",
+          "type": "option<u64>"
+        },
+        {
+          "name": "updated_at_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "VcAttestation",
+      "typeTag": 7614182299836356936
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "subject_hash",
+          "type": "u64"
+        },
+        {
+          "name": "credential_schema",
+          "type": "String"
+        },
+        {
+          "name": "issuers",
+          "type": "vec<Address>"
+        }
+      ],
+      "kind": "struct",
+      "name": "AcceptedVcIssuerList",
+      "typeTag": 14898900191608906932
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "subject_hash",
+          "type": "u64"
+        },
+        {
+          "name": "did",
+          "type": "String"
+        },
+        {
+          "name": "issuer",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "type": "String"
+        },
+        {
+          "name": "credential_hash",
+          "type": "B256"
+        },
+        {
+          "name": "valid_until_ms",
+          "type": "option<u64>"
+        }
+      ],
+      "kind": "struct",
+      "name": "VcAttestationCore",
+      "typeTag": 5275629503764841895
+    },
+    {
+      "fields": [
+        {
+          "name": "status",
+          "type": "VcStatus"
+        },
+        {
+          "name": "updated_at_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "VcAttestationLifecycle",
+      "typeTag": 11310965231460569252
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "subject_hash",
+          "type": "u64"
+        },
+        {
+          "name": "credential_schema",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "AcceptedVcIssuerIndexMeta",
+      "typeTag": 6467721556228447133
+    },
+    {
+      "fields": [
+        {
+          "name": "issuer",
+          "type": "Address"
+        },
+        {
+          "name": "credential_hash",
+          "type": "B256"
+        }
+      ],
+      "kind": "struct",
+      "name": "AcceptedVcIssuer",
+      "typeTag": 16581567360265979532
+    },
+    {
+      "fields": [
+        {
+          "name": "accepted",
+          "type": "vec<AcceptedVcIssuer>"
+        }
+      ],
+      "kind": "struct",
+      "name": "AcceptedVcIssuers",
+      "typeTag": 16267595199992849229
+    },
+    {
+      "kind": "enum",
+      "name": "DidSubject",
+      "typeTag": 14012622825467845240,
+      "variants": [
+        {
+          "fields": [
+            {
+              "name": "0",
+              "type": "Address"
+            }
+          ],
+          "kind": "tuple",
+          "name": "Address"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "subject_hash",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidSubjectRef",
+      "typeTag": 11995876125768903493
+    },
+    {
+      "kind": "enum",
+      "name": "DidEntityType",
+      "typeTag": 14538469810015205811,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Person"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Organization"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "type": "String"
+        },
+        {
+          "name": "public_key",
+          "type": "PublicKey"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidKey",
+      "typeTag": 6808078180298008975
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "type": "String"
+        },
+        {
+          "name": "service_type",
+          "type": "String"
+        },
+        {
+          "name": "service_endpoint",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidService",
+      "typeTag": 9558035208667919587
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "entity_type",
+          "type": "DidEntityType"
+        },
+        {
+          "name": "controller",
+          "type": "Address"
+        },
+        {
+          "name": "keys",
+          "type": "vec<DidKey>"
+        },
+        {
+          "name": "authentication",
+          "type": "vec<String>"
+        },
+        {
+          "name": "assertion_method",
+          "type": "vec<String>"
+        },
+        {
+          "name": "services",
+          "type": "vec<DidService>"
+        },
+        {
+          "name": "also_known_as",
+          "type": "vec<String>"
+        },
+        {
+          "name": "updated_at_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidDocumentState",
+      "typeTag": 11269429974754267674
+    },
+    {
+      "fields": [
+        {
+          "name": "entity_type",
+          "type": "DidEntityType"
+        },
+        {
+          "name": "keys",
+          "type": "vec<DidKey>"
+        },
+        {
+          "name": "authentication",
+          "type": "vec<String>"
+        },
+        {
+          "name": "assertion_method",
+          "type": "vec<String>"
+        },
+        {
+          "name": "services",
+          "type": "vec<DidService>"
+        },
+        {
+          "name": "also_known_as",
+          "type": "vec<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidDocumentInput",
+      "typeTag": 16587227066181147487
+    },
+    {
+      "fields": [
+        {
+          "name": "entity_type",
+          "type": "option<DidEntityType>"
+        },
+        {
+          "name": "keys",
+          "type": "option<vec<DidKey>>"
+        },
+        {
+          "name": "authentication",
+          "type": "option<vec<String>>"
+        },
+        {
+          "name": "assertion_method",
+          "type": "option<vec<String>>"
+        },
+        {
+          "name": "services",
+          "type": "option<vec<DidService>>"
+        },
+        {
+          "name": "also_known_as",
+          "type": "option<vec<String>>"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidDocumentPatch",
+      "typeTag": 16243905946241484445
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "type": "String"
+        },
+        {
+          "name": "key_type",
+          "type": "String"
+        },
+        {
+          "name": "controller",
+          "type": "String"
+        },
+        {
+          "name": "public_key_multibase",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "VerificationMethodOutput",
+      "typeTag": 12574254436836281108
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "type": "String"
+        },
+        {
+          "name": "service_type",
+          "type": "String"
+        },
+        {
+          "name": "service_endpoint",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "ServiceOutput",
+      "typeTag": 6086038226596175391
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "type": "String"
+        },
+        {
+          "name": "entity_type",
+          "type": "DidEntityType"
+        },
+        {
+          "name": "controller",
+          "type": "String"
+        },
+        {
+          "name": "verification_method",
+          "type": "vec<VerificationMethodOutput>"
+        },
+        {
+          "name": "authentication",
+          "type": "vec<String>"
+        },
+        {
+          "name": "assertion_method",
+          "type": "vec<String>"
+        },
+        {
+          "name": "service",
+          "type": "vec<ServiceOutput>"
+        },
+        {
+          "name": "also_known_as",
+          "type": "vec<String>"
+        },
+        {
+          "name": "deactivated",
+          "type": "bool"
+        },
+        {
+          "name": "updated",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidDocumentOutput",
+      "typeTag": 4597230656279219216
+    },
+    {
+      "fields": [
+        {
+          "name": "content_type",
+          "type": "String"
+        },
+        {
+          "name": "error",
+          "type": "option<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidResolutionMetadata",
+      "typeTag": 12583303835393214887
+    },
+    {
+      "fields": [
+        {
+          "name": "updated",
+          "type": "option<String>"
+        },
+        {
+          "name": "deactivated",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidDocumentMetadata",
+      "typeTag": 7415686276581378908
+    },
+    {
+      "fields": [
+        {
+          "name": "did_resolution_metadata",
+          "type": "DidResolutionMetadata"
+        },
+        {
+          "name": "did_document",
+          "type": "option<DidDocumentOutput>"
+        },
+        {
+          "name": "did_document_metadata",
+          "type": "DidDocumentMetadata"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidResolutionResult",
+      "typeTag": 10041590111237436747
+    },
+    {
+      "fields": [
+        {
+          "name": "name",
+          "type": "String"
+        },
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "subject_hash",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidNameBinding",
+      "typeTag": 11976108436880291804
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "entity_type",
+          "type": "DidEntityType"
+        },
+        {
+          "name": "controller",
+          "type": "Address"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidCoreState",
+      "typeTag": 9239335515597431984
+    },
+    {
+      "fields": [
+        {
+          "name": "initialized",
+          "type": "bool"
+        },
+        {
+          "name": "keys",
+          "type": "vec<DidKey>"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidKeysState",
+      "typeTag": 15607199585784268809
+    },
+    {
+      "fields": [
+        {
+          "name": "initialized",
+          "type": "bool"
+        },
+        {
+          "name": "authentication",
+          "type": "vec<String>"
+        },
+        {
+          "name": "assertion_method",
+          "type": "vec<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidRelationshipsState",
+      "typeTag": 5211215590952158616
+    },
+    {
+      "fields": [
+        {
+          "name": "initialized",
+          "type": "bool"
+        },
+        {
+          "name": "services",
+          "type": "vec<DidService>"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidServicesState",
+      "typeTag": 5404865062972365125
+    },
+    {
+      "fields": [
+        {
+          "name": "initialized",
+          "type": "bool"
+        },
+        {
+          "name": "also_known_as",
+          "type": "vec<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidAliasesState",
+      "typeTag": 6430591797497416957
+    },
+    {
+      "kind": "enum",
+      "name": "EntityRole",
+      "typeTag": 10882321849738616826,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "VcIssuer"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "KycProvider"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "NodeOperator"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Auditor"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "OrganizationStatus",
+      "typeTag": 6886365030236042100,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Active"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Deactivated"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "subject_hash",
+          "type": "u64"
+        },
+        {
+          "name": "did",
+          "type": "String"
+        },
+        {
+          "name": "display_name",
+          "type": "String"
+        },
+        {
+          "name": "service_endpoint",
+          "type": "String"
+        },
+        {
+          "name": "roles",
+          "type": "vec<EntityRole>"
+        },
+        {
+          "name": "credential_schemas",
+          "type": "vec<String>"
+        },
+        {
+          "name": "status",
+          "type": "OrganizationStatus"
+        },
+        {
+          "name": "updated_at_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrganizationProfile",
+      "typeTag": 16928786641846329895
+    },
+    {
+      "fields": [
+        {
+          "name": "profile",
+          "type": "OrganizationProfile"
+        }
+      ],
+      "kind": "struct",
+      "name": "RegistryView",
+      "typeTag": 621093086229082607
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "DidSubject"
+        },
+        {
+          "name": "subject_hash",
+          "type": "u64"
+        },
+        {
+          "name": "did",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrganizationIdentity",
+      "typeTag": 8755067671624806720
+    },
+    {
+      "fields": [
+        {
+          "name": "display_name",
+          "type": "String"
+        },
+        {
+          "name": "service_endpoint",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrganizationPresentation",
+      "typeTag": 12363334678738574542
+    },
+    {
+      "fields": [
+        {
+          "name": "roles",
+          "type": "vec<EntityRole>"
+        },
+        {
+          "name": "credential_schemas",
+          "type": "vec<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrganizationCapabilities",
+      "typeTag": 16180937054376829620
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "PublicKey",
+      "typeTag": 12784977254987571496
+    },
+    {
+      "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "errors": [
+    {
+      "code": 1,
+      "message": "DID already exists for subject: {0:?}",
+      "name": "DidAlreadyExists"
+    },
+    {
+      "code": 2,
+      "message": "DID not found for subject: {0:?}",
+      "name": "DidNotFound"
+    },
+    {
+      "code": 3,
+      "message": "DID is deactivated: {0:?}",
+      "name": "DidDeactivated"
+    },
+    {
+      "code": 4,
+      "message": "Invalid DID: {0}",
+      "name": "InvalidDid"
+    },
+    {
+      "code": 5,
+      "message": "DID name already bound: {0}",
+      "name": "NameAlreadyBound"
+    },
+    {
+      "code": 6,
+      "message": "DID name binding not found: {0}",
+      "name": "NameNotFound"
+    },
+    {
+      "code": 7,
+      "message": "Invalid parameters: {0}",
+      "name": "InvalidParameters"
+    },
+    {
+      "code": 8,
+      "message": "Address not signed in current transaction: {0:?}",
+      "name": "AddressNotSignatured"
+    },
+    {
+      "code": 9,
+      "message": "Organization profile not found: {0:?}",
+      "name": "OrganizationNotFound"
+    },
+    {
+      "code": 10,
+      "message": "Organization already registered: {0:?}",
+      "name": "OrganizationAlreadyExists"
+    },
+    {
+      "code": 11,
+      "message": "VC attestation not found: subject={0:?}, issuer={1:?}",
+      "name": "VcAttestationNotFound"
+    },
+    {
+      "code": 12,
+      "message": "VC issuer DID does not exist or is deactivated: {0:?}",
+      "name": "IssuerDidNotActive"
+    },
+    {
+      "code": 13,
+      "message": "VC attestation is not controlled by issuer: {0:?}",
+      "name": "UnauthorizedIssuer"
+    }
+  ]
+}

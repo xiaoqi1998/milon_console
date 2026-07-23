@@ -1,0 +1,604 @@
+{
+  "metadata": {
+    "app_id": 1,
+    "name": "account",
+    "description": "Milon account app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "owner_pk",
+          "role": "input",
+          "type": "PublicKey"
+        }
+      ],
+      "discriminator": 2182,
+      "handler": "create",
+      "kind": "entry",
+      "name": "Create"
+    },
+    {
+      "args": [
+        {
+          "name": "owner_pk",
+          "role": "input",
+          "type": "PublicKey"
+        }
+      ],
+      "discriminator": 38184,
+      "handler": "ensure_account",
+      "kind": "entry",
+      "name": "EnsureAccount"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "signers",
+          "role": "input",
+          "type": "vec<PublicKey>"
+        },
+        {
+          "name": "weights",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "threshold",
+          "role": "input",
+          "type": "u8"
+        }
+      ],
+      "discriminator": 20289,
+      "handler": "create_multisig",
+      "kind": "entry",
+      "name": "CreateMultisig"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "signer_pk",
+          "role": "input",
+          "type": "PublicKey"
+        },
+        {
+          "name": "weight",
+          "role": "input",
+          "type": "u8"
+        }
+      ],
+      "discriminator": 41092,
+      "handler": "add_signer",
+      "kind": "entry",
+      "name": "AddSigner"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "signers",
+          "role": "input",
+          "type": "vec<PublicKey>"
+        },
+        {
+          "name": "weights",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "threshold",
+          "role": "input",
+          "type": "u8"
+        }
+      ],
+      "discriminator": 25813,
+      "handler": "add_signers",
+      "kind": "entry",
+      "name": "AddSigners"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "index",
+          "role": "input",
+          "type": "u8"
+        },
+        {
+          "name": "threshold",
+          "role": "input",
+          "type": "u8"
+        }
+      ],
+      "discriminator": 61953,
+      "handler": "remove_signer",
+      "kind": "entry",
+      "name": "RemoveSigner"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "threshold",
+          "role": "input",
+          "type": "u8"
+        }
+      ],
+      "discriminator": 2386,
+      "handler": "set_threshold",
+      "kind": "entry",
+      "name": "SetThreshold"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "index",
+          "role": "input",
+          "type": "u8"
+        },
+        {
+          "name": "weight",
+          "role": "input",
+          "type": "u8"
+        }
+      ],
+      "discriminator": 43270,
+      "handler": "set_signer_weight",
+      "kind": "entry",
+      "name": "SetSignerWeight"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "any_signer",
+          "type": "AnySigner"
+        },
+        {
+          "name": "intent_hash",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "proposal",
+          "role": "input",
+          "type": "VoteProposal"
+        }
+      ],
+      "discriminator": 52917,
+      "handler": "vote_init",
+      "kind": "entry",
+      "name": "VoteInit"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "any_signer",
+          "type": "AnySigner"
+        },
+        {
+          "name": "intent_hash",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 24406,
+      "handler": "vote",
+      "kind": "entry",
+      "name": "Vote"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 11094,
+      "handler": "get_account",
+      "kind": "view",
+      "name": "GetAccount",
+      "returns": {
+        "type": "Account"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 24766,
+      "handler": "list_signers",
+      "kind": "view",
+      "name": "ListSigners",
+      "returns": {
+        "type": "tuple<Account,vec<tuple<PublicKey,u8,u8>>>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "sig_bit",
+          "role": "input",
+          "type": "Bitmap64"
+        },
+        {
+          "name": "policy",
+          "role": "input",
+          "type": "ResolvePolicy"
+        }
+      ],
+      "discriminator": 27426,
+      "handler": "resolve_signers",
+      "kind": "view",
+      "name": "ResolveSigners",
+      "returns": {
+        "type": "vec<PublicKey>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "intent_hash",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 52139,
+      "handler": "get_vote",
+      "kind": "view",
+      "name": "GetVote",
+      "returns": {
+        "type": "tuple<VoteMeta,Bitmap64,bool>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 46107,
+      "handler": "list_active_votes",
+      "kind": "view",
+      "name": "ListActiveVotes",
+      "returns": {
+        "type": "vec<tuple<VoteMeta,Bitmap64,bool>>"
+      }
+    }
+  ],
+  "types": [
+    {
+      "fields": [
+        {
+          "name": "bitmap",
+          "type": "Bitmap64"
+        },
+        {
+          "name": "weight",
+          "type": "u8"
+        },
+        {
+          "name": "threshold",
+          "type": "u8"
+        }
+      ],
+      "kind": "struct",
+      "name": "Account",
+      "typeTag": 17390915333023917609
+    },
+    {
+      "fields": [
+        {
+          "name": "pubkey",
+          "type": "PublicKey"
+        },
+        {
+          "name": "weight",
+          "type": "u8"
+        }
+      ],
+      "kind": "struct",
+      "name": "AccountSigner",
+      "typeTag": 3011419475387808271
+    },
+    {
+      "fields": [
+        {
+          "name": "min_signers",
+          "type": "option<u32>"
+        }
+      ],
+      "kind": "struct",
+      "name": "ResolvePolicy",
+      "typeTag": 11593087574756389960
+    },
+    {
+      "fields": [
+        {
+          "name": "instructions",
+          "type": "vec<bytes>"
+        },
+        {
+          "name": "auth_bit",
+          "type": "Bitmap64"
+        }
+      ],
+      "kind": "struct",
+      "name": "VoteProposal",
+      "typeTag": 18092943681097927401
+    },
+    {
+      "fields": [
+        {
+          "name": "intent_hash",
+          "type": "B256"
+        },
+        {
+          "name": "expires_at_ms",
+          "type": "u64"
+        },
+        {
+          "name": "source_tx_hash",
+          "type": "B256"
+        }
+      ],
+      "kind": "struct",
+      "name": "VoteMeta",
+      "typeTag": 2370275984328722986
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "Bitmap64",
+      "typeTag": 6259351211094536142
+    },
+    {
+      "kind": "builtin",
+      "name": "PublicKey",
+      "typeTag": 12784977254987571496
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "bytes",
+      "typeTag": 10405529814227927951
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "u8",
+      "typeTag": 631772817358541784
+    }
+  ],
+  "constants": [
+    {
+      "name": "MAX_SIGNER_INDEX",
+      "type": "u8",
+      "value": 64
+    },
+    {
+      "name": "MAX_TOTAL_WEIGHT",
+      "type": "u8",
+      "value": 255
+    },
+    {
+      "name": "MAX_ACTIVE_VOTES",
+      "type": "usize",
+      "value": 64
+    },
+    {
+      "name": "MAX_VOTE_TTL_MS",
+      "type": "u64",
+      "value": "24 * 3_600_000"
+    },
+    {
+      "name": "MAX_VOTE_PROPOSAL_BYTES",
+      "type": "usize",
+      "value": 1024
+    }
+  ],
+  "errors": [
+    {
+      "code": 1,
+      "message": "Account: {0:?} not found",
+      "name": "AccountNotFound"
+    },
+    {
+      "code": 2,
+      "message": "Account: {0:?} already exists",
+      "name": "AccountAlreadyExists"
+    },
+    {
+      "code": 3,
+      "message": "Signer index already occupied",
+      "name": "SignerAlreadyExists"
+    },
+    {
+      "code": 4,
+      "message": "Signer at index {0} not found",
+      "name": "SignerNotFound"
+    },
+    {
+      "code": 5,
+      "message": "Signer count out of range: {0}",
+      "name": "SignerNumberOutOfRange"
+    },
+    {
+      "code": 6,
+      "message": "Signer index out of range: {0}",
+      "name": "SignerIndexOutOfRange"
+    },
+    {
+      "code": 7,
+      "message": "Signer weight {0} is invalid",
+      "name": "SignerWeightInvalid"
+    },
+    {
+      "code": 8,
+      "message": "Total signer weight {0} exceeds 1...255",
+      "name": "WeightSumExceeded"
+    },
+    {
+      "code": 9,
+      "message": "signers and weights length mismatch",
+      "name": "WeightsLengthMismatch"
+    },
+    {
+      "code": 10,
+      "message": "Threshold {0} is incorrect",
+      "name": "ThresholdIncorrect"
+    },
+    {
+      "code": 11,
+      "message": "sig_bit is empty",
+      "name": "SigBitEmpty"
+    },
+    {
+      "code": 12,
+      "message": "Signature bit out of range: index {0}",
+      "name": "SignatureBitOutOfRange"
+    },
+    {
+      "code": 13,
+      "message": "Insufficient signer weight: got {0}, need {1}",
+      "name": "InsufficientSignerWeight"
+    },
+    {
+      "code": 14,
+      "message": "Too few signers in sig_bit: got {0}, need {1}",
+      "name": "SigBitTooFew"
+    },
+    {
+      "code": 15,
+      "message": "Signature count mismatch: expected {0}, got {1}",
+      "name": "SignatureCountMismatch"
+    },
+    {
+      "code": 16,
+      "message": "Invalid signature",
+      "name": "SignatureInvalid"
+    },
+    {
+      "code": 17,
+      "message": "Invalid public key",
+      "name": "InvalidPublicKey"
+    },
+    {
+      "code": 18,
+      "message": "Address not signed in current transaction: {0:?}",
+      "name": "AddressNotSignatured"
+    },
+    {
+      "code": 19,
+      "message": "Account is not a multisig account",
+      "name": "AccountNotMultisig"
+    },
+    {
+      "code": 20,
+      "message": "expires_at_ms must be greater than tx stamp",
+      "name": "ExpiresAtInvalid"
+    },
+    {
+      "code": 21,
+      "message": "Vote intent expired",
+      "name": "VoteExpired"
+    },
+    {
+      "code": 22,
+      "message": "Vote not ready for replay",
+      "name": "VoteNotReady"
+    },
+    {
+      "code": 23,
+      "message": "Vote expires_at_ms does not match registered intent",
+      "name": "VoteExpiresMismatch"
+    },
+    {
+      "code": 24,
+      "message": "Vote active intent index full (max 8)",
+      "name": "VoteIndexFull"
+    },
+    {
+      "code": 25,
+      "message": "Vote TTL exceeds 24 hours",
+      "name": "VoteTtlExceeded"
+    },
+    {
+      "code": 26,
+      "message": "Vote proposal does not match intent_hash",
+      "name": "VoteProposalMismatch"
+    },
+    {
+      "code": 27,
+      "message": "Vote proposal wire exceeds size limit",
+      "name": "VoteProposalTooLarge"
+    },
+    {
+      "code": 28,
+      "message": "Vote proposal wire is invalid",
+      "name": "VoteProposalInvalid"
+    }
+  ]
+}

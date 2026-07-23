@@ -1,0 +1,1471 @@
+{
+  "metadata": {
+    "app_id": 3,
+    "name": "staking",
+    "description": "Milon staking app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "operator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_account",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "consensus_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "network_address",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "commission_rate_bps",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 16533,
+      "handler": "create_validator",
+      "kind": "entry",
+      "name": "CreateValidator"
+    },
+    {
+      "args": [
+        {
+          "name": "operator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 36277,
+      "handler": "join_candidate_pool",
+      "kind": "entry",
+      "name": "JoinCandidatePool"
+    },
+    {
+      "args": [
+        {
+          "name": "operator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 62212,
+      "handler": "leave_candidate_pool",
+      "kind": "entry",
+      "name": "LeaveCandidatePool"
+    },
+    {
+      "args": [
+        {
+          "name": "funder",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "Amount"
+        }
+      ],
+      "discriminator": 26413,
+      "handler": "fund_reward_treasury",
+      "kind": "entry",
+      "name": "FundRewardTreasury"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "Amount"
+        }
+      ],
+      "discriminator": 7586,
+      "handler": "stake",
+      "kind": "entry",
+      "name": "Stake"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "Amount"
+        }
+      ],
+      "discriminator": 26203,
+      "handler": "cancel_pending_stake",
+      "kind": "entry",
+      "name": "CancelPendingStake"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 49863,
+      "handler": "claim_rewards",
+      "kind": "entry",
+      "name": "ClaimRewards",
+      "returns": {
+        "type": "Amount"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "operator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 13178,
+      "handler": "claim_operator_rewards",
+      "kind": "entry",
+      "name": "ClaimOperatorRewards",
+      "returns": {
+        "type": "OperatorRewardReceipt"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "shares",
+          "role": "input",
+          "type": "Amount"
+        }
+      ],
+      "discriminator": 34861,
+      "handler": "request_unstake",
+      "kind": "entry",
+      "name": "RequestUnstake"
+    },
+    {
+      "args": [
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 43284,
+      "handler": "validator_profile",
+      "kind": "view",
+      "name": "ValidatorProfile",
+      "returns": {
+        "type": "ValidatorProfile"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 51337,
+      "handler": "validator_pool",
+      "kind": "view",
+      "name": "ValidatorPool",
+      "returns": {
+        "type": "ValidatorPoolView"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 24660,
+      "handler": "stake_position",
+      "kind": "view",
+      "name": "StakePosition",
+      "returns": {
+        "type": "StakePosition"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 24212,
+      "handler": "position_summary",
+      "kind": "view",
+      "name": "PositionSummary",
+      "returns": {
+        "type": "PositionSummary"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 57732,
+      "handler": "candidate_pool",
+      "kind": "view",
+      "name": "CandidatePool",
+      "returns": {
+        "type": "CandidatePool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "Epoch"
+        }
+      ],
+      "discriminator": 54522,
+      "handler": "active_set_snapshot",
+      "kind": "view",
+      "name": "ActiveSetSnapshot",
+      "returns": {
+        "type": "ActiveSetSnapshot"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "Epoch"
+        }
+      ],
+      "discriminator": 41226,
+      "handler": "active_set_hash",
+      "kind": "view",
+      "name": "ActiveSetHash",
+      "returns": {
+        "type": "B256"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 44040,
+      "handler": "current_active_set_snapshot",
+      "kind": "view",
+      "name": "CurrentActiveSetSnapshot",
+      "returns": {
+        "type": "ActiveSetSnapshot"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 58924,
+      "handler": "current_active_set_hash",
+      "kind": "view",
+      "name": "CurrentActiveSetHash",
+      "returns": {
+        "type": "B256"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "Epoch"
+        }
+      ],
+      "discriminator": 24093,
+      "handler": "epoch_transition",
+      "kind": "view",
+      "name": "EpochTransition",
+      "returns": {
+        "type": "EpochTransition"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 41632,
+      "handler": "epoch_config",
+      "kind": "view",
+      "name": "EpochConfig",
+      "returns": {
+        "type": "EpochConfig"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 29979,
+      "handler": "epoch_state",
+      "kind": "view",
+      "name": "EpochState",
+      "returns": {
+        "type": "EpochState"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 46445,
+      "handler": "reward_treasury",
+      "kind": "view",
+      "name": "RewardTreasury",
+      "returns": {
+        "type": "RewardTreasury"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 45674,
+      "handler": "held_principal",
+      "kind": "view",
+      "name": "HeldPrincipal",
+      "returns": {
+        "type": "Amount"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "Epoch"
+        }
+      ],
+      "discriminator": 13587,
+      "handler": "epoch_transition_attempt",
+      "kind": "view",
+      "name": "EpochTransitionAttempt",
+      "returns": {
+        "type": "EpochTransitionAttempt"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "Epoch"
+        }
+      ],
+      "discriminator": 54057,
+      "handler": "consensus_active_set",
+      "kind": "view",
+      "name": "ConsensusActiveSet",
+      "returns": {
+        "type": "ConsensusActiveSet"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 45423,
+      "handler": "current_consensus_active_set",
+      "kind": "view",
+      "name": "CurrentConsensusActiveSet",
+      "returns": {
+        "type": "ConsensusActiveSet"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "Epoch"
+        },
+        {
+          "name": "index",
+          "role": "input",
+          "type": "ValidatorIndex"
+        }
+      ],
+      "discriminator": 41871,
+      "handler": "consensus_active_validator",
+      "kind": "view",
+      "name": "ConsensusActiveValidator",
+      "returns": {
+        "type": "option<ConsensusActiveValidator>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "Epoch"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 1580,
+      "handler": "consensus_active_validator_index",
+      "kind": "view",
+      "name": "ConsensusActiveValidatorIndex",
+      "returns": {
+        "type": "option<ValidatorIndex>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "Epoch"
+        },
+        {
+          "name": "consensus_pubkey",
+          "role": "input",
+          "type": "bytes"
+        }
+      ],
+      "discriminator": 45763,
+      "handler": "consensus_active_validator_index_by_pubkey",
+      "kind": "view",
+      "name": "ConsensusActiveValidatorIndexByPubkey",
+      "returns": {
+        "type": "option<ValidatorIndex>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "Epoch"
+        },
+        {
+          "name": "bitmap",
+          "role": "input",
+          "type": "Bitmap64"
+        }
+      ],
+      "discriminator": 60094,
+      "handler": "consensus_active_validators_by_bitmap",
+      "kind": "view",
+      "name": "ConsensusActiveValidatorsByBitmap",
+      "returns": {
+        "type": "vec<ConsensusActiveValidator>"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "ValidatorStatus",
+      "typeTag": 13509400494765011086,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Inactive"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Candidate"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Active"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Leaving"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "operator",
+          "type": "Address"
+        },
+        {
+          "name": "status",
+          "type": "ValidatorStatus"
+        },
+        {
+          "name": "consensus_account",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "network_address",
+          "type": "bytes"
+        },
+        {
+          "name": "commission_rate_bps",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "ValidatorProfile",
+      "typeTag": 16695034029787395057
+    },
+    {
+      "fields": [
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "operator",
+          "type": "Address"
+        },
+        {
+          "name": "operator_stake",
+          "type": "Amount"
+        },
+        {
+          "name": "delegated_stake",
+          "type": "Amount"
+        },
+        {
+          "name": "total_stake",
+          "type": "Amount"
+        },
+        {
+          "name": "total_shares",
+          "type": "Amount"
+        },
+        {
+          "name": "reward_index",
+          "type": "u128"
+        },
+        {
+          "name": "scaled_reward_remainder",
+          "type": "u128"
+        },
+        {
+          "name": "claimable_operator_commission",
+          "type": "Amount"
+        },
+        {
+          "name": "commission_rate_bps",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "ValidatorPoolView",
+      "typeTag": 7437681117283915955
+    },
+    {
+      "fields": [
+        {
+          "name": "share_rewards_paid",
+          "type": "Amount"
+        },
+        {
+          "name": "commission_paid",
+          "type": "Amount"
+        },
+        {
+          "name": "total_paid",
+          "type": "Amount"
+        }
+      ],
+      "kind": "struct",
+      "name": "OperatorRewardReceipt",
+      "typeTag": 1325950726438733487
+    },
+    {
+      "fields": [
+        {
+          "name": "validators",
+          "type": "vec<Address>"
+        }
+      ],
+      "kind": "struct",
+      "name": "CandidatePool",
+      "typeTag": 1908106665584351733
+    },
+    {
+      "kind": "enum",
+      "name": "CandidateAction",
+      "typeTag": 4277444653471940101,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Join"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Leave"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "target_epoch",
+          "type": "Epoch"
+        },
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "type": "Amount"
+        }
+      ],
+      "kind": "struct",
+      "name": "StakeIntent",
+      "typeTag": 10739020572355126226
+    },
+    {
+      "fields": [
+        {
+          "name": "target_epoch",
+          "type": "Epoch"
+        },
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "shares",
+          "type": "Amount"
+        }
+      ],
+      "kind": "struct",
+      "name": "UnstakeIntent",
+      "typeTag": 3909489337029280671
+    },
+    {
+      "fields": [
+        {
+          "name": "target_epoch",
+          "type": "Epoch"
+        },
+        {
+          "name": "operator",
+          "type": "Address"
+        },
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "action",
+          "type": "CandidateAction"
+        }
+      ],
+      "kind": "struct",
+      "name": "CandidateIntent",
+      "typeTag": 442123803344805093
+    },
+    {
+      "fields": [
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "shares",
+          "type": "Amount"
+        },
+        {
+          "name": "reward_debt",
+          "type": "u128"
+        },
+        {
+          "name": "claimable_rewards",
+          "type": "Amount"
+        }
+      ],
+      "kind": "struct",
+      "name": "StakePosition",
+      "typeTag": 17519088700529435799
+    },
+    {
+      "fields": [
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "pending_stake",
+          "type": "Amount"
+        },
+        {
+          "name": "settled_shares",
+          "type": "Amount"
+        },
+        {
+          "name": "pending_unstake_shares",
+          "type": "Amount"
+        },
+        {
+          "name": "unstakeable_shares",
+          "type": "Amount"
+        },
+        {
+          "name": "claimable_rewards",
+          "type": "Amount"
+        },
+        {
+          "name": "next_settlement_epoch",
+          "type": "option<Epoch>"
+        }
+      ],
+      "kind": "struct",
+      "name": "PositionSummary",
+      "typeTag": 10483531860509511527
+    },
+    {
+      "kind": "enum",
+      "name": "CandidateRejectionReason",
+      "typeTag": 13094854944792351326,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "PoolStakeTooLow"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "action",
+          "type": "CandidateAction"
+        },
+        {
+          "name": "reason",
+          "type": "CandidateRejectionReason"
+        }
+      ],
+      "kind": "struct",
+      "name": "CandidateRejection",
+      "typeTag": 16749092228488017642
+    },
+    {
+      "fields": [
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_account",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "network_address",
+          "type": "bytes"
+        }
+      ],
+      "kind": "struct",
+      "name": "ActiveValidator",
+      "typeTag": 1878336348468831574
+    },
+    {
+      "fields": [
+        {
+          "name": "epoch",
+          "type": "Epoch"
+        },
+        {
+          "name": "validators",
+          "type": "vec<ActiveValidator>"
+        },
+        {
+          "name": "active_set_hash",
+          "type": "B256"
+        }
+      ],
+      "kind": "struct",
+      "name": "ActiveSetSnapshot",
+      "typeTag": 16680710260753693740
+    },
+    {
+      "fields": [
+        {
+          "name": "index",
+          "type": "ValidatorIndex"
+        },
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_account",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "network_address",
+          "type": "bytes"
+        }
+      ],
+      "kind": "struct",
+      "name": "ConsensusActiveValidator",
+      "typeTag": 13639300653826832831
+    },
+    {
+      "fields": [
+        {
+          "name": "epoch",
+          "type": "Epoch"
+        },
+        {
+          "name": "active_set_hash",
+          "type": "B256"
+        },
+        {
+          "name": "validator_count",
+          "type": "u16"
+        },
+        {
+          "name": "membership_bitmap",
+          "type": "Bitmap64"
+        },
+        {
+          "name": "validators",
+          "type": "vec<ConsensusActiveValidator>"
+        }
+      ],
+      "kind": "struct",
+      "name": "ConsensusActiveSet",
+      "typeTag": 2524037227760361881
+    },
+    {
+      "fields": [
+        {
+          "name": "epoch",
+          "type": "Epoch"
+        },
+        {
+          "name": "seed",
+          "type": "B256"
+        },
+        {
+          "name": "active_set_hash",
+          "type": "B256"
+        },
+        {
+          "name": "requested_active_validator_count",
+          "type": "u64"
+        },
+        {
+          "name": "selected_validators",
+          "type": "vec<Address>"
+        },
+        {
+          "name": "reward_per_active_validator",
+          "type": "Amount"
+        },
+        {
+          "name": "distributed_rewards",
+          "type": "Amount"
+        },
+        {
+          "name": "rewarded_epoch",
+          "type": "Epoch"
+        },
+        {
+          "name": "rewarded_validator_count",
+          "type": "u64"
+        },
+        {
+          "name": "settled_stake_intent_count",
+          "type": "u64"
+        },
+        {
+          "name": "settled_unstake_intent_count",
+          "type": "u64"
+        },
+        {
+          "name": "applied_candidate_intent_count",
+          "type": "u64"
+        },
+        {
+          "name": "candidate_rejections",
+          "type": "vec<CandidateRejection>"
+        }
+      ],
+      "kind": "struct",
+      "name": "EpochTransition",
+      "typeTag": 15918548627764098664
+    },
+    {
+      "fields": [
+        {
+          "name": "max_active_validators",
+          "type": "u64"
+        },
+        {
+          "name": "reward_per_active_validator",
+          "type": "Amount"
+        }
+      ],
+      "kind": "struct",
+      "name": "EpochConfig",
+      "typeTag": 16686700291657106181
+    },
+    {
+      "fields": [
+        {
+          "name": "current_epoch",
+          "type": "Epoch"
+        },
+        {
+          "name": "last_transition_epoch",
+          "type": "option<Epoch>"
+        },
+        {
+          "name": "last_transition_seed",
+          "type": "option<B256>"
+        }
+      ],
+      "kind": "struct",
+      "name": "EpochState",
+      "typeTag": 10464001984863153512
+    },
+    {
+      "fields": [
+        {
+          "name": "target_epoch",
+          "type": "Epoch"
+        },
+        {
+          "name": "selection_seed",
+          "type": "B256"
+        },
+        {
+          "name": "source_block_id",
+          "type": "u64"
+        },
+        {
+          "name": "source_chain_head_hash",
+          "type": "B256"
+        }
+      ],
+      "kind": "struct",
+      "name": "EpochTransitionAttempt",
+      "typeTag": 13704740057455383377
+    },
+    {
+      "fields": [
+        {
+          "name": "address",
+          "type": "Address"
+        },
+        {
+          "name": "balance",
+          "type": "Amount"
+        },
+        {
+          "name": "available_rewards",
+          "type": "Amount"
+        },
+        {
+          "name": "reserved_rewards",
+          "type": "Amount"
+        }
+      ],
+      "kind": "struct",
+      "name": "RewardTreasury",
+      "typeTag": 303897710074356804
+    },
+    {
+      "fields": [
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "operator",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_account",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "network_address",
+          "type": "bytes"
+        },
+        {
+          "name": "commission_rate_bps",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "ValidatorMetadata",
+      "typeTag": 5113745851405436789
+    },
+    {
+      "fields": [
+        {
+          "name": "operator_stake",
+          "type": "Amount"
+        },
+        {
+          "name": "delegated_stake",
+          "type": "Amount"
+        },
+        {
+          "name": "total_shares",
+          "type": "Amount"
+        },
+        {
+          "name": "reward_index",
+          "type": "u128"
+        },
+        {
+          "name": "scaled_reward_remainder",
+          "type": "u128"
+        },
+        {
+          "name": "claimable_operator_commission",
+          "type": "Amount"
+        }
+      ],
+      "kind": "struct",
+      "name": "PoolAccounting",
+      "typeTag": 8885911992509280689
+    },
+    {
+      "fields": [
+        {
+          "name": "available",
+          "type": "Amount"
+        },
+        {
+          "name": "reserved",
+          "type": "Amount"
+        }
+      ],
+      "kind": "struct",
+      "name": "RewardAccounting",
+      "typeTag": 17782288577908561212
+    },
+    {
+      "fields": [
+        {
+          "name": "validators",
+          "type": "vec<Address>"
+        }
+      ],
+      "kind": "struct",
+      "name": "IntentValidatorList",
+      "typeTag": 11852014671960702106
+    },
+    {
+      "fields": [
+        {
+          "name": "owners",
+          "type": "vec<Address>"
+        }
+      ],
+      "kind": "struct",
+      "name": "IntentPositionList",
+      "typeTag": 6096666708170842091
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "Amount",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "Bitmap64",
+      "typeTag": 6259351211094536142
+    },
+    {
+      "kind": "builtin",
+      "name": "Epoch",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "ValidatorIndex",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
+      "name": "bytes",
+      "typeTag": 10405529814227927951
+    },
+    {
+      "kind": "builtin",
+      "name": "u128",
+      "typeTag": 10698497612269247729
+    },
+    {
+      "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "constants": [
+    {
+      "name": "REWARD_INDEX_SCALE",
+      "type": "u128",
+      "value": 1000000000000
+    },
+    {
+      "name": "MAX_COMMISSION_RATE_BPS",
+      "type": "u64",
+      "value": 10000
+    },
+    {
+      "name": "MAX_CONSENSUS_ACTIVE_VALIDATORS",
+      "type": "u64",
+      "value": 48
+    },
+    {
+      "name": "MIN_CANDIDATE_POOL_STAKE",
+      "type": "Amount",
+      "value": 1
+    },
+    {
+      "name": "MIN_STAKE_AMOUNT",
+      "type": "Amount",
+      "value": 1
+    }
+  ],
+  "errors": [
+    {
+      "code": 1,
+      "message": "Validator already exists: {0:?}",
+      "name": "ValidatorAlreadyExists"
+    },
+    {
+      "code": 2,
+      "message": "Validator not found: {0:?}",
+      "name": "ValidatorNotFound"
+    },
+    {
+      "code": 3,
+      "message": "Validator and operator address must differ: {0:?}",
+      "name": "ValidatorAndOperatorMustDiffer"
+    },
+    {
+      "code": 4,
+      "message": "Validator, operator, and consensus account must be distinct: {0}",
+      "name": "IdentityAddressConflict"
+    },
+    {
+      "code": 5,
+      "message": "Validator operator already used by: {0:?}",
+      "name": "OperatorAlreadyAssigned"
+    },
+    {
+      "code": 6,
+      "message": "Validator consensus account already used by: {0:?}",
+      "name": "ConsensusAccountAlreadyAssigned"
+    },
+    {
+      "code": 7,
+      "message": "Validator consensus account address mismatch: {0:?}",
+      "name": "ConsensusAccountMismatch"
+    },
+    {
+      "code": 8,
+      "message": "Validator consensus public key already used by: {0:?}",
+      "name": "ConsensusKeyAlreadyAssigned"
+    },
+    {
+      "code": 9,
+      "message": "Validator BLS public key already used by: {0:?}",
+      "name": "BlsKeyAlreadyAssigned"
+    },
+    {
+      "code": 10,
+      "message": "Validator already in candidate pool: {0:?}",
+      "name": "ValidatorAlreadyInCandidatePool"
+    },
+    {
+      "code": 11,
+      "message": "Epoch already transitioned: {0}",
+      "name": "EpochAlreadyTransitioned"
+    },
+    {
+      "code": 12,
+      "message": "Epoch control already configured",
+      "name": "EpochConfigAlreadySet"
+    },
+    {
+      "code": 13,
+      "message": "Epoch control not configured",
+      "name": "EpochConfigNotSet"
+    },
+    {
+      "code": 14,
+      "message": "Invalid epoch config: {0}",
+      "name": "InvalidEpochConfig"
+    },
+    {
+      "code": 15,
+      "message": "Active set not found for epoch: {0}",
+      "name": "ActiveSetNotFound"
+    },
+    {
+      "code": 16,
+      "message": "Invalid validator status for {0:?}: {1}",
+      "name": "InvalidValidatorStatus"
+    },
+    {
+      "code": 17,
+      "message": "Staking position not found: owner {0:?}, validator {1:?}",
+      "name": "PositionNotFound"
+    },
+    {
+      "code": 18,
+      "message": "Operator mismatch: signer {0:?}, expected {1:?}",
+      "name": "OperatorMismatch"
+    },
+    {
+      "code": 19,
+      "message": "Candidate pool stake too low: validator {0:?}, pool stake {1}, required {2}",
+      "name": "CandidatePoolStakeTooLow"
+    },
+    {
+      "code": 20,
+      "message": "Pending candidate intent already exists for validator: {0:?}",
+      "name": "CandidateIntentAlreadyExists"
+    },
+    {
+      "code": 21,
+      "message": "Pending stake intent not found: owner {0:?}, validator {1:?}",
+      "name": "StakeIntentNotFound"
+    },
+    {
+      "code": 22,
+      "message": "Insufficient pending stake: owner {0:?}, validator {1:?}, available {2}, required {3}",
+      "name": "InsufficientPendingStake"
+    },
+    {
+      "code": 23,
+      "message": "Pending stake remaining below minimum: owner {0:?}, validator {1:?}, remaining {2}, minimum {3}",
+      "name": "PendingStakeRemainingBelowMinimum"
+    },
+    {
+      "code": 24,
+      "message": "Insufficient shares: owner {0:?}, validator {1:?}, available {2}, required {3}",
+      "name": "InsufficientShares"
+    },
+    {
+      "code": 25,
+      "message": "Unstake remaining below minimum: owner {0:?}, validator {1:?}, remaining {2}, minimum {3}",
+      "name": "UnstakeRemainingBelowMinimum"
+    },
+    {
+      "code": 26,
+      "message": "Insufficient reward treasury available balance: available {0}, required {1}",
+      "name": "InsufficientRewardTreasuryAvailable"
+    },
+    {
+      "code": 27,
+      "message": "Insufficient reward treasury reserved balance: reserved {0}, required {1}",
+      "name": "InsufficientRewardTreasuryReserved"
+    },
+    {
+      "code": 28,
+      "message": "Reward treasury backing mismatch: liability {0}, backing {1}",
+      "name": "RewardTreasuryBackingMismatch"
+    },
+    {
+      "code": 29,
+      "message": "Invalid parameters: {0}",
+      "name": "InvalidParameters"
+    },
+    {
+      "code": 30,
+      "message": "Transparent TokenError",
+      "name": "TokenError",
+      "transparent": true
+    },
+    {
+      "code": 31,
+      "message": "Transparent ContextError",
+      "name": "ContextError",
+      "transparent": true
+    },
+    {
+      "code": 32,
+      "message": "Epoch transition not found for epoch: {0}",
+      "name": "EpochTransitionNotFound"
+    },
+    {
+      "code": 33,
+      "message": "Epoch attempt not found: {0}",
+      "name": "EpochTransitionAttemptNotFound"
+    },
+    {
+      "code": 34,
+      "message": "Epoch transition inputs are frozen for epoch: {0}",
+      "name": "EpochTransitionInProgress"
+    },
+    {
+      "code": 35,
+      "message": "Invalid epoch transition target: expected {0}, received {1}",
+      "name": "InvalidEpochTransitionTarget"
+    },
+    {
+      "code": 36,
+      "message": "Staking invariant violation: {0}",
+      "name": "InvariantViolation"
+    }
+  ]
+}

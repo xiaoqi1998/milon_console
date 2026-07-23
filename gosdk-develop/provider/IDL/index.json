@@ -1,0 +1,34 @@
+{
+  "apps": [
+    {
+      "app_id": 1,
+      "idl": "./account.idl.json",
+      "name": "account"
+    },
+    {
+      "app_id": 2,
+      "idl": "./token.idl.json",
+      "name": "token"
+    },
+    {
+      "app_id": 3,
+      "idl": "./staking.idl.json",
+      "name": "staking"
+    },
+    {
+      "app_id": 4,
+      "idl": "./identity.idl.json",
+      "name": "identity"
+    },
+    {
+      "app_id": 5,
+      "idl": "./nft.idl.json",
+      "name": "nft"
+    },
+    {
+      "app_id": 255,
+      "idl": "./demo.idl.json",
+      "name": "demo"
+    }
+  ]
+}

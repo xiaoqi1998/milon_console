@@ -1,0 +1,964 @@
+{
+  "metadata": {
+    "app_id": 2,
+    "name": "token",
+    "description": "Milon token app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "metadata",
+          "role": "input",
+          "type": "Metadata"
+        }
+      ],
+      "discriminator": 2581,
+      "handler": "create",
+      "kind": "entry",
+      "name": "Create"
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 64710,
+      "handler": "abandon_owner",
+      "kind": "entry",
+      "name": "AbandonOwner",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 18518,
+      "handler": "transfer_owner",
+      "kind": "entry",
+      "name": "TransferOwner",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 1778,
+      "handler": "abandon_freezer",
+      "kind": "entry",
+      "name": "AbandonFreezer",
+      "signer_lookups": {
+        "freezer": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 149
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 27042,
+      "handler": "transfer_freezer",
+      "kind": "entry",
+      "name": "TransferFreezer",
+      "signer_lookups": {
+        "freezer": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 149
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 20481,
+      "handler": "mint",
+      "kind": "entry",
+      "name": "Mint",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "vec<Address>"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "vec<u64>"
+        }
+      ],
+      "discriminator": 7494,
+      "handler": "mint_batch",
+      "kind": "entry",
+      "name": "MintBatch",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "holder",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 38784,
+      "handler": "burn",
+      "kind": "entry",
+      "name": "Burn"
+    },
+    {
+      "args": [
+        {
+          "name": "from",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 19694,
+      "handler": "transfer",
+      "kind": "entry",
+      "name": "Transfer"
+    },
+    {
+      "args": [
+        {
+          "name": "from",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "_tag",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 25012,
+      "handler": "transfer_with_tag",
+      "kind": "entry",
+      "name": "TransferWithTag"
+    },
+    {
+      "args": [
+        {
+          "name": "from",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "vec<Address>"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "vec<u64>"
+        }
+      ],
+      "discriminator": 28053,
+      "handler": "transfer_batch",
+      "kind": "entry",
+      "name": "TransferBatch"
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "holder",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 31050,
+      "handler": "freeze",
+      "kind": "entry",
+      "name": "Freeze",
+      "signer_lookups": {
+        "freezer": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 149
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "holder",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 17977,
+      "handler": "unfreeze",
+      "kind": "entry",
+      "name": "Unfreeze",
+      "signer_lookups": {
+        "freezer": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 149
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "spender",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 9714,
+      "handler": "approve",
+      "kind": "entry",
+      "name": "Approve"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "spender",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 8619,
+      "handler": "revoke",
+      "kind": "entry",
+      "name": "Revoke"
+    },
+    {
+      "args": [
+        {
+          "name": "spender",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "from",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 18655,
+      "handler": "transfer_from",
+      "kind": "entry",
+      "name": "TransferFrom"
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "icon_url",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 40941,
+      "handler": "set_icon",
+      "kind": "entry",
+      "name": "SetIcon",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "account",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 59285,
+      "handler": "balance_of",
+      "kind": "view",
+      "name": "BalanceOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "account",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 64893,
+      "handler": "frozen_of",
+      "kind": "view",
+      "name": "FrozenOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "spender",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 43638,
+      "handler": "approval_of",
+      "kind": "view",
+      "name": "ApprovalOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 35429,
+      "handler": "total_supply",
+      "kind": "view",
+      "name": "TotalSupply",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 7880,
+      "handler": "metadata",
+      "kind": "view",
+      "name": "Metadata",
+      "returns": {
+        "type": "Metadata"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "metadata",
+          "role": "input",
+          "type": "Metadata"
+        },
+        {
+          "name": "required_credential_issuer",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "required_credential_schema",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 62196,
+      "handler": "create_with_compliance",
+      "kind": "entry",
+      "name": "CreateWithCompliance"
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "mode",
+          "role": "input",
+          "type": "ComplianceMode"
+        }
+      ],
+      "discriminator": 33931,
+      "handler": "set_compliance_mode",
+      "kind": "entry",
+      "name": "SetComplianceMode",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 59302,
+      "handler": "add_compliance_requirement",
+      "kind": "entry",
+      "name": "AddComplianceRequirement",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 14909,
+      "handler": "remove_compliance_requirement",
+      "kind": "entry",
+      "name": "RemoveComplianceRequirement",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 50437,
+      "handler": "clear_compliance_requirements",
+      "kind": "entry",
+      "name": "ClearComplianceRequirements",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "claimer",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 63796,
+      "handler": "claim_faucet",
+      "kind": "entry",
+      "name": "ClaimFaucet",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 30837,
+      "handler": "compliance_config",
+      "kind": "view",
+      "name": "ComplianceConfig",
+      "returns": {
+        "type": "ComplianceConfig"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "account",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 29892,
+      "handler": "faucet_cooldown_remaining",
+      "kind": "view",
+      "name": "FaucetCooldownRemaining",
+      "returns": {
+        "type": "u64"
+      }
+    }
+  ],
+  "types": [
+    {
+      "fields": [
+        {
+          "name": "name",
+          "type": "String"
+        },
+        {
+          "name": "symbol",
+          "type": "String"
+        },
+        {
+          "name": "decimals",
+          "type": "u8"
+        },
+        {
+          "name": "icon",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "Metadata",
+      "typeTag": 13005725662941815531
+    },
+    {
+      "kind": "enum",
+      "name": "ComplianceMode",
+      "typeTag": 3455626085043900630,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "All"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Any"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "issuer",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "CredentialRequirement",
+      "typeTag": 5517265418036635102
+    },
+    {
+      "fields": [
+        {
+          "name": "mode",
+          "type": "ComplianceMode"
+        },
+        {
+          "name": "requirements",
+          "type": "vec<CredentialRequirement>"
+        }
+      ],
+      "kind": "struct",
+      "name": "ComplianceConfig",
+      "typeTag": 8975390230487047531
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "u8",
+      "typeTag": 631772817358541784
+    }
+  ],
+  "constants": [
+    {
+      "name": "MIL_TOKEN",
+      "type": "Address",
+      "value": "Address { digest : [0x18 , 0xC0 , 0x6A , 0x68 , 0x95 , 0x94 , 0x2A , 0x9A , 0xF0 , 0x19 , 0x1B , 0x02 , 0x32 , 0x46 , 0x2D , 0x6F , 0x7C , 0x40 , 0x00 , 0x00 ,] , }"
+    },
+    {
+      "name": "MIL_TOKEN_ADDRESS",
+      "type": "str",
+      "value": "M11on1111111111111111111111"
+    },
+    {
+      "name": "GAS_SPONSOR_SEED",
+      "type": "u16",
+      "value": 1
+    },
+    {
+      "name": "FAUCET_AMOUNT",
+      "type": "u64",
+      "value": "10 * 1_000_000"
+    },
+    {
+      "name": "FAUCET_COOLDOWN_MS",
+      "type": "u64",
+      "value": 86400000
+    },
+    {
+      "name": "GAS_SPONSOR_MINT",
+      "type": "u64",
+      "value": "1_000_000 * 1_000_000"
+    }
+  ],
+  "errors": [
+    {
+      "code": 1,
+      "message": "账户不存在 (token: {0:?}, account: {1:?})",
+      "name": "AccountNotFound"
+    },
+    {
+      "code": 2,
+      "message": "余额不足 (token: {0:?}, account: {1:?}, 可用: {2}, 需操作: {3})",
+      "name": "InsufficientBalance"
+    },
+    {
+      "code": 3,
+      "message": "授权金额不足 (token: {0:?}, owner: {1:?}, spender: {2:?}, 可用: {3}, 需操作: {4})",
+      "name": "InsufficientApproval"
+    },
+    {
+      "code": 4,
+      "message": "代币不存在 (token: {0:?})",
+      "name": "TokenNotFound"
+    },
+    {
+      "code": 5,
+      "message": "代币已存在 (token: {0:?})",
+      "name": "TokenAlreadyExists"
+    },
+    {
+      "code": 6,
+      "message": "Overflow in: {0} + {1} > {2}",
+      "name": "Overflow"
+    },
+    {
+      "code": 7,
+      "message": "Underflow in: {0} - {1} < {2}",
+      "name": "Underflow"
+    },
+    {
+      "code": 8,
+      "message": "地址未参与当前交易签名: {0:?}",
+      "name": "AddressNotSignatured"
+    },
+    {
+      "code": 9,
+      "message": "Invalid parameters: {0}",
+      "name": "InvalidParameters"
+    },
+    {
+      "code": 10,
+      "message": "VC `{3}` from issuer {2:?} required for token recipient (token: {0:?}, recipient: {1:?})",
+      "name": "VcRequired"
+    },
+    {
+      "code": 11,
+      "message": "VC policy required for token recipient (token: {0:?}, recipient: {1:?})",
+      "name": "VcPolicyRequired"
+    },
+    {
+      "code": 12,
+      "message": "faucet is disabled on this chain",
+      "name": "FaucetDisabled"
+    },
+    {
+      "code": 13,
+      "message": "faucet cooldown active ({0} ms remaining)",
+      "name": "FaucetCooldownActive"
+    }
+  ]
+}
