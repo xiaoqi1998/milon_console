@@ -33,15 +33,9 @@
 #### 步骤
 
 ```bash
-# 1. 克隆项目
+# 1. 克隆项目（SDK 已内置在 gosdk-develop/ 目录，无需额外下载）
 git clone https://github.com/xiaoqi1998/milon_console.git
 cd milon_console
-
-# 注意：SDK 需要在同级目录 ../gosdk-develop
-# 目录结构：
-#   parent/
-#     milon_console/      (本项目)
-#     gosdk-develop/      (Milon Go SDK)
 
 # 2. 启用 CGO
 go env -w CGO_ENABLED=1
@@ -68,23 +62,14 @@ go build -o milon-api-server .
 #### 步骤
 
 ```bash
-# 1. 确保 SDK 在同级目录
-# 目录结构：
-#   parent/
-#     milon_console/     (本项目)
-#     gosdk-develop/    (Milon Go SDK)
-
-# 2. 构建镜像
-cd milon_console
+# 构建并启动（build context 为项目根目录，SDK 已内置）
 docker compose build
-
-# 3. 启动服务
 docker compose up -d
 
-# 4. 查看日志
+# 查看日志
 docker compose logs -f
 
-# 5. 停止服务
+# 停止服务
 docker compose down
 ```
 访问 http://localhost:8080。
@@ -108,15 +93,15 @@ sudo usermod -aG docker $USER
 # 重新登录后生效
 ```
 3. **上传项目文件**：
-   - 将 milon_console 和 gosdk-develop 两个目录上传到服务器同一父目录下
+   - 将 milon_console 目录上传到服务器（SDK 已内置在 `gosdk-develop/` 子目录，无需单独上传）
    - 推荐使用 scp 或 rsync
 
 ### 目录结构
 
 ```
 /opt/milon/
-├── gosdk-develop/          # Milon Go SDK 源码
-└── milon_console/          # 本项目
+└── milon_console/          # 本项目（SDK 内置在 gosdk-develop/ 子目录）
+    ├── gosdk-develop/      # Milon Go SDK 源码（内置）
     ├── Dockerfile
     ├── docker-compose.yml
     ├── .dockerignore

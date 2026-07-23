@@ -7,12 +7,14 @@ ENV CGO_ENABLED=1 \
 
 WORKDIR /build
 
-COPY milon-api-server/go.mod milon-api-server/go.sum ./
-COPY gosdk-develop ../gosdk-develop
+# 先复制 go.mod/go.sum 和 SDK 源码（利用层缓存）
+COPY go.mod go.sum ./
+COPY gosdk-develop ./gosdk-develop
 
 RUN go mod download
 
-COPY milon-api-server/ .
+# 复制项目源码
+COPY . .
 
 RUN go build -ldflags="-s -w" -o milon-api-server .
 

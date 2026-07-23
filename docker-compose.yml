@@ -3,8 +3,8 @@ version: "3.8"
 services:
   milon-api-server:
     build:
-      context: ../
-      dockerfile: milon-api-server/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     image: milon-api-server:latest
     container_name: milon-api-server
     restart: unless-stopped

@@ -16,4 +16,11 @@ Thumbs.db
 .env.local
 .git/
 .gitignore
+.trae/
 README.md
+_*.ps1
+_*.py
+_*.txt
+docker-compose.yml
+Dockerfile
+.dockerignore
