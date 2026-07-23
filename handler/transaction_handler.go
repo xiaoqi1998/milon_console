@@ -173,10 +173,18 @@ func toEventsByTxHashResponse(eb *api.EventsByTxHash) eventsByTxHashResponse {
 	return eventsByTxHashResponse{Events: events}
 }
 
+// paramError is a minimal error type used for parameter-validation failures
+// that have no underlying error value (e.g. empty path/query params), so they
+// can be reported through logParamError without adding new imports.
+type paramError string
+
+func (e paramError) Error() string { return string(e) }
+
 // GetTransactionByHash handles GET /api/transactions/:hash
 func (h *TransactionHandler) GetTransactionByHash(c *gin.Context) {
 	hash := c.Param("hash")
 	if hash == "" {
+		logParamError(c, "GetTransactionByHash", paramError("hash is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "hash is required", nil))
 		return
 	}
@@ -186,6 +194,7 @@ func (h *TransactionHandler) GetTransactionByHash(c *gin.Context) {
 
 	result, err := mc.GetTxByHash(hash, requestId)
 	if err != nil {
+		logSDKError(c, "GetTransactionByHash", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get transaction: "+err.Error(), nil))
 		return
 	}
@@ -198,6 +207,7 @@ func (h *TransactionHandler) GetTransactionByHash(c *gin.Context) {
 func (h *TransactionHandler) GetTransactionEvents(c *gin.Context) {
 	hash := c.Param("hash")
 	if hash == "" {
+		logParamError(c, "GetTransactionEvents", paramError("hash is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "hash is required", nil))
 		return
 	}
@@ -206,6 +216,7 @@ func (h *TransactionHandler) GetTransactionEvents(c *gin.Context) {
 	if typeTagStr := c.Query("typeTag"); typeTagStr != "" {
 		filter, err := strconv.ParseUint(typeTagStr, 10, 64)
 		if err != nil {
+			logParamError(c, "GetTransactionEvents", err)
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid typeTag parameter", err.Error()))
 			return
 		}
@@ -217,6 +228,7 @@ func (h *TransactionHandler) GetTransactionEvents(c *gin.Context) {
 
 	result, err := mc.EventsByTxHash(hash, typeTagFilter, requestId)
 	if err != nil {
+		logSDKError(c, "GetTransactionEvents", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get transaction events: "+err.Error(), nil))
 		return
 	}
@@ -229,6 +241,7 @@ func (h *TransactionHandler) GetTransactionEvents(c *gin.Context) {
 func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 	hash := c.Param("hash")
 	if hash == "" {
+		logParamError(c, "WaitForTransaction", paramError("hash is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "hash is required", nil))
 		return
 	}
@@ -237,6 +250,7 @@ func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 	if timeoutStr := c.Query("timeoutSecs"); timeoutStr != "" {
 		secs, err := strconv.ParseUint(timeoutStr, 10, 64)
 		if err != nil {
+			logParamError(c, "WaitForTransaction", err)
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid timeoutSecs parameter", err.Error()))
 			return
 		}
@@ -248,6 +262,7 @@ func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 
 	result, err := mc.WaitForTransaction(hash, requestId, options...)
 	if err != nil {
+		logSDKError(c, "WaitForTransaction", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to wait for transaction: "+err.Error(), nil))
 		return
 	}
@@ -267,6 +282,7 @@ func (h *TransactionHandler) SimulateTransaction(c *gin.Context) {
 	var req rawTransactionRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "SimulateTransaction", err)
 
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 
@@ -277,6 +293,7 @@ func (h *TransactionHandler) SimulateTransaction(c *gin.Context) {
 	postcardBytes, err := base64.StdEncoding.DecodeString(req.TransactionPostcard)
 
 	if err != nil {
+		logParamError(c, "SimulateTransaction", err)
 
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid base64-encoded transactionPostcard", err.Error()))
 
@@ -291,6 +308,7 @@ func (h *TransactionHandler) SimulateTransaction(c *gin.Context) {
 	result, err := mc.SimulateTx(postcardBytes, requestId)
 
 	if err != nil {
+		logSDKError(c, "SimulateTransaction", err)
 
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to simulate transaction: "+err.Error(), nil))
 
@@ -307,6 +325,7 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 	var req rawTransactionRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "SubmitTransaction", err)
 
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 
@@ -317,6 +336,7 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 	postcardBytes, err := base64.StdEncoding.DecodeString(req.TransactionPostcard)
 
 	if err != nil {
+		logParamError(c, "SubmitTransaction", err)
 
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid base64-encoded transactionPostcard", err.Error()))
 
@@ -331,6 +351,7 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 	result, err := mc.SubmitTx(postcardBytes, requestId)
 
 	if err != nil {
+		logSDKError(c, "SubmitTransaction", err)
 
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to submit transaction: "+err.Error(), nil))
 
@@ -338,6 +359,7 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 
 	}
 
+	logBusinessInfo(c, "SubmitTransaction", "txHash", result.BodyTxHash)
 	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": result.BodyTxHash}, "ok"))
 }
 
@@ -348,6 +370,7 @@ func (h *TransactionHandler) InspectTransaction(c *gin.Context) {
 	var req rawTransactionRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "InspectTransaction", err)
 
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 
@@ -358,6 +381,7 @@ func (h *TransactionHandler) InspectTransaction(c *gin.Context) {
 	postcardBytes, err := base64.StdEncoding.DecodeString(req.TransactionPostcard)
 
 	if err != nil {
+		logParamError(c, "InspectTransaction", err)
 
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid base64-encoded transactionPostcard", err.Error()))
 
@@ -368,6 +392,7 @@ func (h *TransactionHandler) InspectTransaction(c *gin.Context) {
 	tx, err := milon.NewTransactionFromBytes(postcardBytes)
 
 	if err != nil {
+		logParamError(c, "InspectTransaction", err)
 
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "failed to parse transaction", err.Error()))
 

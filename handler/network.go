@@ -42,14 +42,17 @@ func (h *NetworkHandler) GetCurrentNetwork(c *gin.Context) {
 func (h *NetworkHandler) SwitchNetwork(c *gin.Context) {
 	var req types.NetworkSwitchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "SwitchNetwork", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
 
 	if err := h.nm.Switch(req.Network); err != nil {
+		logSDKError(c, "SwitchNetwork", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_NETWORK_ERROR, err.Error(), nil))
 		return
 	}
 
+	logBusinessInfo(c, "SwitchNetwork", "network", req.Network)
 	c.JSON(http.StatusOK, types.SuccessResponse(nil, "switched to "+req.Network))
 }

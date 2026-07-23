@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -32,6 +33,7 @@ type generateAccountResponse struct {
 func (h *AccountHandler) GetAccount(c *gin.Context) {
 	address := c.Param("address")
 	if address == "" {
+		logParamError(c, "GetAccount", fmt.Errorf("address is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "address is required", nil))
 		return
 	}
@@ -41,6 +43,7 @@ func (h *AccountHandler) GetAccount(c *gin.Context) {
 
 	result, err := mc.GetAccount(address, requestId)
 	if err != nil {
+		logSDKError(c, "GetAccount", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get account: "+err.Error(), nil))
 		return
 	}
@@ -52,6 +55,7 @@ func (h *AccountHandler) GetAccount(c *gin.Context) {
 func (h *AccountHandler) GetAccountResources(c *gin.Context) {
 	address := c.Param("address")
 	if address == "" {
+		logParamError(c, "GetAccountResources", fmt.Errorf("address is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "address is required", nil))
 		return
 	}
@@ -61,6 +65,7 @@ func (h *AccountHandler) GetAccountResources(c *gin.Context) {
 
 	result, err := mc.GetAccount(address, requestId)
 	if err != nil {
+		logSDKError(c, "GetAccountResources", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get account: "+err.Error(), nil))
 		return
 	}
@@ -78,6 +83,7 @@ func (h *AccountHandler) GenerateAccount(c *gin.Context) {
 	var req generateAccountRequest
 	if c.Request.ContentLength > 0 {
 		if err := c.ShouldBindJSON(&req); err != nil {
+			logParamError(c, "GenerateAccount", err)
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 			return
 		}
@@ -153,5 +159,6 @@ func (h *AccountHandler) GenerateAccount(c *gin.Context) {
 		Address:    addr.ToBase58(),
 	}
 
+	logBusinessInfo(c, "GenerateAccount", "keyType", keyType, "address", resp.Address)
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
 }

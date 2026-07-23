@@ -36,6 +36,7 @@ func (h *SystemHandler) Health(c *gin.Context) {
 
 	result, err := mc.GetChainHead(requestId)
 	if err != nil {
+		logSDKError(c, "Health", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get chain head: "+err.Error(), nil))
 		return
 	}
@@ -57,6 +58,7 @@ func (h *SystemHandler) GetChainHead(c *gin.Context) {
 
 	result, err := mc.GetChainHead(requestId)
 	if err != nil {
+		logSDKError(c, "GetChainHead", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get chain head: "+err.Error(), nil))
 		return
 	}

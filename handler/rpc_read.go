@@ -58,6 +58,7 @@ func (h *RpcHandler) GetBlock(c *gin.Context) {
 	heightStr := c.Param("height")
 	height, err := strconv.ParseUint(heightStr, 10, 64)
 	if err != nil {
+		logParamError(c, "GetBlock", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid block height", err.Error()))
 		return
 	}
@@ -67,6 +68,7 @@ func (h *RpcHandler) GetBlock(c *gin.Context) {
 
 	result, err := mc.GetBlock(height, requestId)
 	if err != nil {
+		logSDKError(c, "GetBlock", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get block: "+err.Error(), nil))
 		return
 	}
@@ -95,6 +97,7 @@ func (h *RpcHandler) GetResource(c *gin.Context) {
 	hashStr := c.Param("hash")
 	hashBytes, err := hex.DecodeString(hashStr)
 	if err != nil {
+		logParamError(c, "GetResource", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid resource hash hex", err.Error()))
 		return
 	}
@@ -112,6 +115,7 @@ func (h *RpcHandler) GetResource(c *gin.Context) {
 
 	result, err := mc.GetResource(rsHash, requestId)
 	if err != nil {
+		logSDKError(c, "GetResource", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get resource: "+err.Error(), nil))
 		return
 	}
@@ -129,6 +133,7 @@ func (h *RpcHandler) GetResource(c *gin.Context) {
 func (h *RpcHandler) GetAccessValue(c *gin.Context) {
 	var req getAccessValueRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "GetAccessValue", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
@@ -137,6 +142,7 @@ func (h *RpcHandler) GetAccessValue(c *gin.Context) {
 	for _, hashStr := range req.BlobHashes {
 		hashBytes, err := hex.DecodeString(hashStr)
 		if err != nil {
+			logParamError(c, "GetAccessValue", err)
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid blob hash hex: "+hashStr, err.Error()))
 			return
 		}
@@ -154,6 +160,7 @@ func (h *RpcHandler) GetAccessValue(c *gin.Context) {
 
 	result, err := mc.GetAccessValue(blobHashList, requestId)
 	if err != nil {
+		logSDKError(c, "GetAccessValue", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get access value: "+err.Error(), nil))
 		return
 	}

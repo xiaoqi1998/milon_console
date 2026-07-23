@@ -31,12 +31,14 @@ type rawViewRequest struct {
 func (h *ViewSingleHandler) ViewSingle(c *gin.Context) {
 	var req rawViewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "ViewSingle", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
 
 	postcardBytes, err := base64.StdEncoding.DecodeString(req.TransactionPostcard)
 	if err != nil {
+		logParamError(c, "ViewSingle", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid base64-encoded transactionPostcard: "+err.Error(), nil))
 		return
 	}
@@ -46,6 +48,7 @@ func (h *ViewSingleHandler) ViewSingle(c *gin.Context) {
 
 	result, err := mc.ViewSingle(postcardBytes, requestId)
 	if err != nil {
+		logSDKError(c, "ViewSingle", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to view single: "+err.Error(), nil))
 		return
 	}
@@ -58,12 +61,14 @@ func (h *ViewSingleHandler) ViewSingle(c *gin.Context) {
 func (h *ViewSingleHandler) ViewMulti(c *gin.Context) {
 	var req rawViewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "ViewMulti", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
 
 	postcardBytes, err := base64.StdEncoding.DecodeString(req.TransactionPostcard)
 	if err != nil {
+		logParamError(c, "ViewMulti", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid base64-encoded transactionPostcard: "+err.Error(), nil))
 		return
 	}
@@ -73,6 +78,7 @@ func (h *ViewSingleHandler) ViewMulti(c *gin.Context) {
 
 	result, err := mc.ViewMulti(postcardBytes, requestId)
 	if err != nil {
+		logSDKError(c, "ViewMulti", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to view multi: "+err.Error(), nil))
 		return
 	}

@@ -46,6 +46,7 @@ type readContractRequest struct {
 func (h *ContractHandler) ReadContract(c *gin.Context) {
 	var req readContractRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "ReadContract", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
@@ -59,6 +60,7 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 
 	result, err := mc.BuildAndViewSingleIx(req.AppName, req.MethodName, req.Args, requestId)
 	if err != nil {
+		logSDKError(c, "ReadContract", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to read contract: "+err.Error(), nil))
 		return
 	}
@@ -82,11 +84,14 @@ type readContractMultiItem struct {
 func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 	var req readContractMultiRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "ReadContractMulti", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
 
 	if len(req.Instructions) == 0 {
+		err := fmt.Errorf("instructions cannot be empty")
+		logParamError(c, "ReadContractMulti", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "instructions cannot be empty", nil))
 		return
 	}
@@ -102,11 +107,13 @@ func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 		}
 		pd, err := mc.GetPdByIDLAppName(ix.AppName)
 		if err != nil {
+			logParamError(c, "ReadContractMulti", err)
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q (instruction %d): %s", ix.AppName, i, err.Error()), nil))
 			return
 		}
 		wire, err := pd.Encode(ix.MethodName, ix.Args)
 		if err != nil {
+			logParamError(c, "ReadContractMulti", err)
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to encode instruction %d (%s.%s): %s", i, ix.AppName, ix.MethodName, err.Error()), nil))
 			return
 		}
@@ -115,6 +122,7 @@ func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 
 	result, err := mc.BuildAndViewMultiIx(wires, requestId)
 	if err != nil {
+		logSDKError(c, "ReadContractMulti", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to read multi: "+err.Error(), nil))
 		return
 	}
@@ -142,6 +150,7 @@ type simulateContractRequest struct {
 func (h *ContractHandler) SimulateContract(c *gin.Context) {
 	var req simulateContractRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "SimulateContract", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
@@ -155,6 +164,7 @@ func (h *ContractHandler) SimulateContract(c *gin.Context) {
 
 	result, err := h.dispatchSimulate(mc, &req, requestId)
 	if err != nil {
+		logSDKError(c, "SimulateContract", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to simulate contract: "+err.Error(), nil))
 		return
 	}
@@ -245,6 +255,7 @@ type writeContractRequest struct {
 func (h *ContractHandler) WriteContract(c *gin.Context) {
 	var req writeContractRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "WriteContract", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
@@ -258,10 +269,12 @@ func (h *ContractHandler) WriteContract(c *gin.Context) {
 
 	result, err := h.dispatchSubmit(mc, &req, requestId)
 	if err != nil {
+		logSDKError(c, "WriteContract", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write contract: "+err.Error(), nil))
 		return
 	}
 
+	logBusinessInfo(c, "WriteContract", "txHash", result.BodyTxHash, "appName", req.AppName, "methodName", req.MethodName)
 	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": result.BodyTxHash}, "ok"))
 }
 
@@ -270,11 +283,14 @@ func (h *ContractHandler) WriteContract(c *gin.Context) {
 func (h *ContractHandler) WriteContractMultiAgent(c *gin.Context) {
 	var req writeContractRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "WriteContractMultiAgent", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
 
 	if req.PaymentMode != PaymentModeUnifiedDualSign {
+		err := fmt.Errorf("multi-agent endpoint requires paymentMode=unified_dual_sign")
+		logParamError(c, "WriteContractMultiAgent", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "multi-agent endpoint requires paymentMode=unified_dual_sign", nil))
 		return
 	}
@@ -288,10 +304,12 @@ func (h *ContractHandler) WriteContractMultiAgent(c *gin.Context) {
 
 	result, err := h.dispatchSubmit(mc, &req, requestId)
 	if err != nil {
+		logSDKError(c, "WriteContractMultiAgent", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write contract: "+err.Error(), nil))
 		return
 	}
 
+	logBusinessInfo(c, "WriteContractMultiAgent", "txHash", result.BodyTxHash, "appName", req.AppName, "methodName", req.MethodName)
 	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": result.BodyTxHash}, "ok"))
 }
 
@@ -300,11 +318,14 @@ func (h *ContractHandler) WriteContractMultiAgent(c *gin.Context) {
 func (h *ContractHandler) WriteContractMultisig(c *gin.Context) {
 	var req writeContractRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "WriteContractMultisig", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
 
 	if req.PaymentMode != PaymentModeSplit {
+		err := fmt.Errorf("multisig endpoint requires paymentMode=split")
+		logParamError(c, "WriteContractMultisig", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "multisig endpoint requires paymentMode=split", nil))
 		return
 	}
@@ -318,10 +339,12 @@ func (h *ContractHandler) WriteContractMultisig(c *gin.Context) {
 
 	result, err := h.dispatchSubmit(mc, &req, requestId)
 	if err != nil {
+		logSDKError(c, "WriteContractMultisig", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write contract: "+err.Error(), nil))
 		return
 	}
 
+	logBusinessInfo(c, "WriteContractMultisig", "txHash", result.BodyTxHash, "appName", req.AppName, "methodName", req.MethodName)
 	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": result.BodyTxHash}, "ok"))
 }
 

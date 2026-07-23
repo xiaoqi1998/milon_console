@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -34,6 +35,11 @@ type getResourcePathResponse struct {
 // Fetches a single resource path by its 18-byte RsHash.
 func (h *ResourcePathHandler) GetResourcePathByHash(c *gin.Context) {
 	hashStr := c.Param("hash")
+	if hashStr == "" {
+		logParamError(c, "GetResourcePathByHash", errors.New("hash is required"))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "hash is required", nil))
+		return
+	}
 	hashBytes, err := hex.DecodeString(hashStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid resource hash hex: "+err.Error(), nil))
@@ -53,6 +59,7 @@ func (h *ResourcePathHandler) GetResourcePathByHash(c *gin.Context) {
 
 	result, err := mc.GetResourcePathByHash(rsHash, requestId)
 	if err != nil {
+		logSDKError(c, "GetResourcePathByHash", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get resource path by hash: "+err.Error(), nil))
 		return
 	}

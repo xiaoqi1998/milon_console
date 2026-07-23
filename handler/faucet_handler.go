@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -34,24 +35,28 @@ type claimFaucetRequest struct {
 func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 	var req claimFaucetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
 
 	sk, err := types.ParseSecretKey(req.PrivateKey)
 	if err != nil {
+		logParamError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid privateKey: "+err.Error(), nil))
 		return
 	}
 
 	addr, err := types.ParseAddress(req.Address)
 	if err != nil {
+		logParamError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid address: "+err.Error(), nil))
 		return
 	}
 
 	mode, err := types.ParseSignatureModeFromJSON(req.SignatureMode)
 	if err != nil {
+		logParamError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid signatureMode: "+err.Error(), nil))
 		return
 	}
@@ -69,6 +74,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 		requestId,
 	)
 	if err != nil {
+		logSDKError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to claim faucet: "+err.Error(), nil))
 		return
 	}
@@ -77,6 +83,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 	// Wait for the transaction to be confirmed (like the SDK's ClaimFaucet does internally)
 	_, err = mc.WaitForTransaction(txHash, 1)
 	if err != nil {
+		logSDKError(c, "ClaimFaucet", err)
 		// Still return the txHash so the caller can track it, but note the wait error
 		c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
 			"address": req.Address,
@@ -87,6 +94,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 		return
 	}
 
+	logBusinessInfo(c, "ClaimFaucet", "address", req.Address, "txHash", txHash)
 	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
 		"address": req.Address,
 		"claimed": true,
@@ -99,12 +107,14 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 func (h *FaucetHandler) GetBalance(c *gin.Context) {
 	addrStr := c.Param("address")
 	if addrStr == "" {
+		logParamError(c, "GetBalance", fmt.Errorf("address is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "address is required", nil))
 		return
 	}
 
 	addr, err := types.ParseAddress(addrStr)
 	if err != nil {
+		logParamError(c, "GetBalance", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid address: "+err.Error(), nil))
 		return
 	}
@@ -113,6 +123,7 @@ func (h *FaucetHandler) GetBalance(c *gin.Context) {
 
 	balance, err := mc.AddressBalance(addr)
 	if err != nil {
+		logSDKError(c, "GetBalance", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get balance: "+err.Error(), nil))
 		return
 	}

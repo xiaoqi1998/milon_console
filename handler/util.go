@@ -38,23 +38,27 @@ type deriveAddressResponse struct {
 func (h *UtilHandler) DeriveAddress(c *gin.Context) {
 	var req deriveAddressRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "DeriveAddress", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
 
 	if req.PublicKey == "" {
+		logParamError(c, "DeriveAddress", fmt.Errorf("publicKey is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "publicKey is required", nil))
 		return
 	}
 
 	pk, err := crypto.NewPublicKeyFromStringRelaxed(req.PublicKey)
 	if err != nil {
+		logSDKError(c, "DeriveAddress", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid publicKey: "+err.Error(), nil))
 		return
 	}
 
 	addr, err := crypto.NewAddressFromPublicKey(pk)
 	if err != nil {
+		logSDKError(c, "DeriveAddress", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to derive address: "+err.Error(), nil))
 		return
 	}
@@ -90,28 +94,33 @@ type derivePublicKeyResponse struct {
 func (h *UtilHandler) DerivePublicKey(c *gin.Context) {
 	var req derivePublicKeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "DerivePublicKey", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
 
 	if req.PrivateKey == "" {
+		logParamError(c, "DerivePublicKey", fmt.Errorf("privateKey is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "privateKey is required", nil))
 		return
 	}
 
 	if req.KeyType == "" {
+		logParamError(c, "DerivePublicKey", fmt.Errorf("keyType is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "keyType is required", nil))
 		return
 	}
 
 	sk, err := crypto.SecretKeyerFromStringRelaxed(req.PrivateKey)
 	if err != nil {
+		logSDKError(c, "DerivePublicKey", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid privateKey: "+err.Error(), nil))
 		return
 	}
 
 	pk, err := derivePublicKeyByType(sk, req.KeyType)
 	if err != nil {
+		logParamError(c, "DerivePublicKey", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 		return
 	}
@@ -147,45 +156,53 @@ func (h *UtilHandler) SignMessage(c *gin.Context) {
 
 	var req signMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "SignMessage", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
 
 	if req.PrivateKey == "" {
+		logParamError(c, "SignMessage", fmt.Errorf("privateKey is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "privateKey is required", nil))
 		return
 	}
 
 	if req.Message == "" {
+		logParamError(c, "SignMessage", fmt.Errorf("message is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "message is required", nil))
 		return
 	}
 
 	if req.KeyType == "" {
+		logParamError(c, "SignMessage", fmt.Errorf("keyType is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "keyType is required", nil))
 		return
 	}
 
 	msg, err := hex.DecodeString(req.Message)
 	if err != nil {
+		logParamError(c, "SignMessage", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid hex message: "+err.Error(), nil))
 		return
 	}
 
 	sk, err := crypto.SecretKeyerFromStringRelaxed(req.PrivateKey)
 	if err != nil {
+		logSDKError(c, "SignMessage", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid privateKey: "+err.Error(), nil))
 		return
 	}
 
 	pk, err := derivePublicKeyByType(sk, req.KeyType)
 	if err != nil {
+		logParamError(c, "SignMessage", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 		return
 	}
 
 	sig, err := sk.SignFor(*pk, msg)
 	if err != nil {
+		logSDKError(c, "SignMessage", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to sign: "+err.Error(), nil))
 		return
 	}
@@ -214,45 +231,53 @@ type verifySignatureResponse struct {
 func (h *UtilHandler) VerifySignature(c *gin.Context) {
 	var req verifySignatureRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "VerifySignature", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
 
 	if req.PublicKey == "" {
+		logParamError(c, "VerifySignature", fmt.Errorf("publicKey is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "publicKey is required", nil))
 		return
 	}
 
 	if req.Message == "" {
+		logParamError(c, "VerifySignature", fmt.Errorf("message is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "message is required", nil))
 		return
 	}
 
 	if req.Signature == "" {
+		logParamError(c, "VerifySignature", fmt.Errorf("signature is required"))
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "signature is required", nil))
 		return
 	}
 
 	pk, err := crypto.NewPublicKeyFromStringRelaxed(req.PublicKey)
 	if err != nil {
+		logSDKError(c, "VerifySignature", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid publicKey: "+err.Error(), nil))
 		return
 	}
 
 	msg, err := hex.DecodeString(req.Message)
 	if err != nil {
+		logParamError(c, "VerifySignature", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid hex message: "+err.Error(), nil))
 		return
 	}
 
 	sigBytes, err := hex.DecodeString(req.Signature)
 	if err != nil {
+		logParamError(c, "VerifySignature", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid hex signature: "+err.Error(), nil))
 		return
 	}
 
 	sig, err := crypto.NewSignatureFromBytes(sigBytes)
 	if err != nil {
+		logSDKError(c, "VerifySignature", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid signature: "+err.Error(), nil))
 		return
 	}
