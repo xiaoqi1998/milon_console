@@ -34,3 +34,13 @@ Thumbs.db
 
 # Dependencies are not committed
 vendor/
+
+# Milon Go SDK source (placed locally, referenced via go.mod replace)
+gosdk-develop/
+
+# Trae IDE working directory
+.trae/
+
+# Temporary scripts
+_write_js.py
+_verify_e2e.ps1

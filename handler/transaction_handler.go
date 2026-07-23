@@ -47,12 +47,13 @@ type accessRecordResponse struct {
 }
 
 type txReceiptResponse struct {
-	TxID   string                    `json:"txId"`
-	TxHash string                    `json:"txHash"`
-	State  uint8                     `json:"state"`
-	Access []accessRecordResponse    `json:"access"`
-	Events []typeTagWithDataResponse `json:"events"`
-	Error  *uint16                   `json:"error"`
+	TxID       string                    `json:"txId"`
+	TxHash     string                    `json:"txHash"`
+	State      uint8                     `json:"state"`
+	Access     []accessRecordResponse    `json:"access"`
+	Events     []typeTagWithDataResponse `json:"events"`
+	Error      *uint16                   `json:"error"`
+	GasCharged uint64                    `json:"gasCharged"`
 }
 
 type txHistoryResponse struct {
@@ -120,12 +121,13 @@ func toTxHistoryResponse(th *api.TxHistory) txHistoryResponse {
 		Signatures:   sigs,
 		Instructions: instrs,
 		Receipt: txReceiptResponse{
-			TxID:   hex.EncodeToString(th.Receipt.TxID[:]),
-			TxHash: hex.EncodeToString(th.Receipt.TxHash[:]),
-			State:  th.Receipt.State,
-			Access: access,
-			Events: events,
-			Error:  th.Receipt.Error,
+			TxID:       hex.EncodeToString(th.Receipt.TxID[:]),
+			TxHash:     hex.EncodeToString(th.Receipt.TxHash[:]),
+			State:      th.Receipt.State,
+			Access:     access,
+			Events:     events,
+			Error:      th.Receipt.Error,
+			GasCharged: th.Receipt.GasCharged,
 		},
 	}
 }
@@ -337,4 +339,70 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": result.BodyTxHash}, "ok"))
+}
+
+// InspectTransaction handles POST /api/transactions/inspect
+// Parses a base64-encoded postcard transaction and returns its details without submitting.
+func (h *TransactionHandler) InspectTransaction(c *gin.Context) {
+
+	var req rawTransactionRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
+
+		return
+
+	}
+
+	postcardBytes, err := base64.StdEncoding.DecodeString(req.TransactionPostcard)
+
+	if err != nil {
+
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid base64-encoded transactionPostcard", err.Error()))
+
+		return
+
+	}
+
+	tx, err := milon.NewTransactionFromBytes(postcardBytes)
+
+	if err != nil {
+
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "failed to parse transaction", err.Error()))
+
+		return
+
+	}
+
+	txHash := tx.TxHash()
+
+	ixHashes := tx.IxHashes()
+
+	ixHashHex := make([]string, 0, len(ixHashes))
+
+	for _, h := range ixHashes {
+
+		ixHashHex = append(ixHashHex, hex.EncodeToString(h[:]))
+
+	}
+
+	payerAddr, payerErr := tx.ResolvePayer()
+
+	payer := ""
+
+	if payerErr == nil {
+
+		payer = payerAddr.ToBase58()
+
+	}
+
+	valid := tx.ValidateWire() == nil
+
+	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
+		"txHash":   hex.EncodeToString(txHash[:]),
+		"ixHashes": ixHashHex,
+		"payer":    payer,
+		"valid":    valid,
+	}, "ok"))
 }

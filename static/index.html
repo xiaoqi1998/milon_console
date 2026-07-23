@@ -1,96 +1,253 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milon API Console</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0a0e1a" />
+<title>Milon Chain API 调试控制台 | 区块链接口测试与文档</title>
+<meta name="description" content="Milon Chain 区块链 API 调试控制台，提供合约读写、账户查询、交易查询、事件监听等 RESTful 接口的在线测试与 SDK 调用。" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%237c5cff'/><stop offset='100%25' stop-color='%2322d3ee'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23g)'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>∞</text></svg>" type="image/svg+xml" />
+<link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
-    <div id="app">
-        <header class="topbar">
-            <div class="topbar-left">
-                <button class="icon-btn sidebar-toggle" id="sidebarToggle" title="切换侧边栏" aria-label="切换侧边栏">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                </button>
-                <div class="brand">
-                    <span class="brand-logo">∞</span>
-                    <span class="brand-title">Milon API Console</span>
-                </div>
-            </div>
-            <div class="topbar-right">
-                <div class="network-selector">
-                    <span class="network-label">网络</span>
-                    <select id="networkSelect" class="network-select" title="切换网络"></select>
-                </div>
-                <button class="icon-btn" id="refreshBtn" title="刷新网络列表" aria-label="刷新网络列表">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                </button>
-            </div>
-        </header>
-        <div class="main-layout">
-            <aside class="sidebar" id="sidebar">
-                <div class="sidebar-header">
-                    <span>端点列表</span>
-                    <input type="text" id="endpointSearch" class="endpoint-search" placeholder="搜索端点..." />
-                </div>
-                <nav class="endpoint-tree" id="endpointTree"></nav>
-            </aside>            <main class="editor-pane">
-                <div class="editor-header">
-                    <div class="endpoint-info">
-                        <span class="method-badge" id="currentMethod">—</span>
-                        <span class="endpoint-path" id="currentPath">请选择左侧端点</span>
-                        <span class="endpoint-summary" id="currentSummary"></span>
-                    </div>
-                    <div class="editor-actions">
-                        <button class="btn btn-primary" id="sendBtn">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                            <span>发送</span>
-                        </button>
-                        <button class="btn btn-ghost" id="resetBtn" title="重置参数">重置</button>
-                        <button class="btn btn-ghost" id="copyCurlBtn" title="复制 curl 命令">复制 curl</button>
-                    </div>
-                </div>
-                <div class="editor-body" id="editorBody">
-                    <div class="empty-state">
-                        <div class="empty-icon">⌘</div>
-                        <p>从左侧选择一个端点开始调试</p>
-                    </div>
-                </div>
-            </main>            <section class="response-pane">
-                <div class="response-header">
-                    <div class="response-tabs">
-                        <button class="tab active" data-tab="json">JSON</button>
-                        <button class="tab" data-tab="headers">Headers</button>
-                        <button class="tab" data-tab="raw">Raw</button>
-                    </div>
-                    <div class="response-meta" id="responseMeta">
-                        <span class="meta-placeholder">未发送请求</span>
-                    </div>
-                </div>
-                <div class="response-body">
-                    <div class="tab-panel active" id="tab-json">
-                        <div class="response-empty">发送请求后此处展示 JSON 响应</div>
-                    </div>
-                    <div class="tab-panel" id="tab-headers">
-                        <div class="response-empty">发送请求后此处展示响应头</div>
-                    </div>
-                    <div class="tab-panel" id="tab-raw">
-                        <div class="response-empty">发送请求后此处展示原始响应</div>
-                    </div>
-                </div>
-            </section>
-        </div>
-        <footer class="history-bar" id="historyBar">
-            <button class="history-toggle" id="historyToggle">
-                <span>历史记录</span>
-                <span class="history-count" id="historyCount">0</span>
-                <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-            </button>
-            <div class="history-panel" id="historyPanel"></div>
-        </footer>
-        <div class="toast" id="toast"></div>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 32 32" width="28" height="28">
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#7c5cff"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+          <rect width="32" height="32" rx="8" fill="url(#logoGrad)"/>
+          <text x="16" y="22" font-size="18" font-weight="700" text-anchor="middle" fill="white">∞</text>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>Milon API Console</h1>
+        <span>Chain Dev Toolkit</span>
+      </div>
     </div>
-    <script src="/static/js/app.js"></script>
+    <nav class="topbar-tabs">
+      <button class="nav-tab active" data-view="console">
+        <span class="nav-icon">⚡</span>
+        <span class="nav-label">控制台</span>
+      </button>
+      <button class="nav-tab" data-view="sdk">
+        <span class="nav-icon">📚</span>
+        <span class="nav-label">SDK 示例</span>
+      </button>
+      <button class="nav-tab" data-view="errors">
+        <span class="nav-icon">⚠️</span>
+        <span class="nav-label">错误码</span>
+      </button>
+    </nav>
+    <div class="topbar-right">
+      <div class="network-selector">
+        <label class="network-label">网络</label>
+        <select id="networkSelect" class="network-select">
+          <option value="">加载中...</option>
+        </select>
+        <button class="refresh-btn" id="refreshBtn" title="刷新网络列表">↻</button>
+      </div>
+      <div class="health-indicator" id="healthIndicator">
+        <div class="health-dot" id="healthDot"></div>
+        <span class="health-text" id="healthText">检查中</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="view active" id="view-console">
+      <div class="console-grid">
+        <aside class="endpoint-sidebar" id="endpointSidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-title">
+              <span class="title-icon">🔗</span>
+              <span>API 端点</span>
+              <span class="endpoint-count" id="endpointCount">32</span>
+            </div>
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="endpointSearch" placeholder="搜索端点..." />
+            </div>
+          </div>
+          <div class="endpoint-tree" id="endpointTree"></div>
+        </aside>
+
+        <section class="params-panel">
+          <div class="panel-header">
+            <div class="endpoint-header-info">
+              <div class="endpoint-title-row">
+                <span class="method-badge" id="currentMethod">—</span>
+                <h2 class="endpoint-title" id="currentSummary">请选择端点</h2>
+              </div>
+              <div class="endpoint-path-display">
+                <span class="path-prefix">{{baseUrl}}</span>
+                <span class="path-value" id="currentPath">/api/...</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel-body" id="editorBody">
+            <div class="empty-state">
+              <div class="empty-icon-wrapper">
+                <div class="empty-glow"></div>
+                <span class="empty-icon">🚀</span>
+              </div>
+              <h3>选择端点开始调试</h3>
+              <p>从左侧列表选择一个 API 端点<br/>填写参数后点击「发送」按钮</p>
+              <div class="empty-hint">
+                <span>快捷键</span>
+                <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+                <span>发送请求</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel-footer">
+            <button class="btn btn-primary" id="sendBtn">
+              <span class="btn-icon">▶</span>
+              <span>发送请求</span>
+            </button>
+            <button class="btn btn-secondary" id="resetBtn">
+              <span class="btn-icon">↺</span>
+              <span>重置</span>
+            </button>
+            <button class="btn btn-secondary" id="copyCurlBtn">
+              <span class="btn-icon">⟨⟩</span>
+              <span>复制 cURL</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="response-panel">
+          <div class="panel-header">
+            <div class="response-header-left">
+              <span class="status-badge idle" id="statusBadge">待发送</span>
+              <div class="response-meta" id="responseMeta">
+                <span class="meta-item">⏱ <span id="respTime">--</span> ms</span>
+                <span class="meta-item">📦 <span id="respSize">--</span> B</span>
+              </div>
+            </div>
+            <div class="response-tabs">
+              <button class="resp-tab active" data-tab="json">JSON</button>
+              <button class="resp-tab" data-tab="headers">Headers</button>
+              <button class="resp-tab" data-tab="curl">cURL</button>
+            </div>
+          </div>
+          <div class="panel-body response-body">
+            <div class="tab-pane active" id="tab-json">
+              <div class="empty-state small">
+                <div class="empty-icon-wrapper small">
+                  <span class="empty-icon">📡</span>
+                </div>
+                <h4>等待请求</h4>
+                <p>发送请求后响应结果将在此展示</p>
+              </div>
+            </div>
+            <div class="tab-pane" id="tab-headers">
+              <div class="empty-state small">
+                <p>暂无响应头数据</p>
+              </div>
+            </div>
+            <div class="tab-pane" id="tab-curl">
+              <div class="empty-state small">
+                <p>发送请求后可查看 cURL 命令</p>
+              </div>
+            </div>
+          </div>
+          <div class="panel-footer response-footer">
+            <button class="btn btn-ghost" id="copyRespBtn">
+              <span>📋</span><span>复制响应</span>
+            </button>
+            <button class="btn btn-ghost" id="downloadRespBtn">
+              <span>⬇</span><span>下载</span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="view-sdk">
+      <div class="sdk-layout">
+        <aside class="sdk-sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-title">
+              <span class="title-icon">📚</span>
+              <span>SDK 示例</span>
+            </div>
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="sdkSearch" placeholder="搜索示例..." />
+            </div>
+          </div>
+          <div class="sdk-list" id="sdkList"></div>
+        </aside>
+        <section class="sdk-content">
+          <div class="panel-header">
+            <div class="sdk-header-info">
+              <h2 id="sdkTitle">SDK 调用示例</h2>
+              <p id="sdkSummary">选择左侧示例查看完整的 Go SDK 调用代码</p>
+            </div>
+            <div class="sdk-lang-tabs">
+              <button class="lang-tab active" data-lang="go">Go</button>
+              <button class="lang-tab" data-lang="python">Python</button>
+              <button class="lang-tab" data-lang="js">JavaScript</button>
+            </div>
+          </div>
+          <div class="panel-body sdk-body">
+            <div class="code-container" id="sdkCodeContainer">
+              <pre class="code-block"><code id="sdkCode">// 选择左侧示例查看代码</code></pre>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="view-errors">
+      <div class="errors-layout">
+        <div class="errors-header">
+          <div class="errors-title-block">
+            <h2>错误码字典</h2>
+            <p>常见错误码、原因分析与处理建议</p>
+          </div>
+          <div class="search-box wide">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="errorSearch" placeholder="搜索错误码、名称或描述..." />
+          </div>
+        </div>
+        <div class="errors-grid" id="errorsGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <button class="history-fab" id="historyToggle">
+    <span class="fab-icon">🕐</span>
+    <span class="fab-badge" id="historyCount">0</span>
+  </button>
+
+  <div class="history-drawer" id="historyDrawer">
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+    <div class="drawer-panel">
+      <div class="drawer-header">
+        <h3>历史记录</h3>
+        <button class="btn btn-ghost btn-sm" id="clearHistoryBtn">清空全部</button>
+      </div>
+      <div class="drawer-body" id="historyList">
+        <div class="empty-state small">
+          <div class="empty-icon-wrapper small">
+            <span class="empty-icon">📜</span>
+          </div>
+          <h4>暂无历史</h4>
+          <p>发送请求后，历史记录将保存在这里</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+</div>
+<script src="/static/js/app.js"></script>
 </body>
 </html>

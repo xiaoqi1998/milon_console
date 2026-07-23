@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	milon "github.com/milon-labs/milon-go-sdk"
+	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/provider"
 )
@@ -63,6 +64,62 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, types.SuccessResponse(result.BodyValues, "ok"))
+}
+
+// readContractMultiRequest is the request body for POST /api/read/multi.
+type readContractMultiRequest struct {
+	Instructions []readContractMultiItem `json:"instructions" binding:"required"`
+}
+
+type readContractMultiItem struct {
+	AppName    string        `json:"appName" binding:"required"`
+	MethodName string        `json:"methodName" binding:"required"`
+	Args       provider.Args `json:"args"`
+}
+
+// ReadContractMulti handles POST /api/read/multi
+// Executes multiple view queries in a single request using BuildAndViewMultiIx.
+func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
+	var req readContractMultiRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
+		return
+	}
+
+	if len(req.Instructions) == 0 {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "instructions cannot be empty", nil))
+		return
+	}
+
+	mc, _ := h.nm.GetCurrent()
+	requestId := uint64(time.Now().UnixMilli())
+
+	// Build wires for each instruction
+	wires := make([]api.PackedInstruction, 0, len(req.Instructions))
+	for i, ix := range req.Instructions {
+		if ix.Args == nil {
+			ix.Args = provider.Args{}
+		}
+		pd, err := mc.GetPdByIDLAppName(ix.AppName)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q (instruction %d): %s", ix.AppName, i, err.Error()), nil))
+			return
+		}
+		wire, err := pd.Encode(ix.MethodName, ix.Args)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to encode instruction %d (%s.%s): %s", i, ix.AppName, ix.MethodName, err.Error()), nil))
+			return
+		}
+		wires = append(wires, wire)
+	}
+
+	result, err := mc.BuildAndViewMultiIx(wires, requestId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to read multi: "+err.Error(), nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, types.SuccessResponse(result.HttpRspBody, "ok"))
 }
 
 // simulateContractRequest is the request body for POST /api/simulate.

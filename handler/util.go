@@ -110,13 +110,7 @@ func (h *UtilHandler) DerivePublicKey(c *gin.Context) {
 		return
 	}
 
-	classicalSk := crypto.AsClassicalSecretKey(sk)
-	if classicalSk == nil {
-		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "only classical secret keys support public key derivation", nil))
-		return
-	}
-
-	pk, err := derivePublicKeyByType(classicalSk, req.KeyType)
+	pk, err := derivePublicKeyByType(sk, req.KeyType)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 		return
@@ -184,13 +178,7 @@ func (h *UtilHandler) SignMessage(c *gin.Context) {
 		return
 	}
 
-	classicalSk := crypto.AsClassicalSecretKey(sk)
-	if classicalSk == nil {
-		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "only classical secret keys support signing", nil))
-		return
-	}
-
-	pk, err := derivePublicKeyByType(classicalSk, req.KeyType)
+	pk, err := derivePublicKeyByType(sk, req.KeyType)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 		return
@@ -275,17 +263,35 @@ func (h *UtilHandler) VerifySignature(c *gin.Context) {
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
 }
 
-// derivePublicKeyByType derives the public key from a classical secret key based on keyType.
-func derivePublicKeyByType(sk *crypto.ClassicalSecretKey, keyType string) (*crypto.PublicKey, error) {
+// derivePublicKeyByType derives the public key from a secret key based on keyType.
+func derivePublicKeyByType(sk crypto.SecretKeyer, keyType string) (*crypto.PublicKey, error) {
 	switch keyType {
 	case "secp256k1":
-		return sk.Secp256k1Public()
+		classicalSk := crypto.AsClassicalSecretKey(sk)
+		if classicalSk == nil {
+			return nil, fmt.Errorf("keyType secp256k1 requires a classical secret key")
+		}
+		return classicalSk.Secp256k1Public()
 	case "ed25519":
-		return sk.Ed25519Public(), nil
+		classicalSk := crypto.AsClassicalSecretKey(sk)
+		if classicalSk == nil {
+			return nil, fmt.Errorf("keyType ed25519 requires a classical secret key")
+		}
+		return classicalSk.Ed25519Public(), nil
 	case "bls12381":
-		return sk.BLS12381Public(), nil
+		classicalSk := crypto.AsClassicalSecretKey(sk)
+		if classicalSk == nil {
+			return nil, fmt.Errorf("keyType bls12381 requires a classical secret key")
+		}
+		return classicalSk.BLS12381Public(), nil
+	case "fndsa512":
+		fndsaSk := crypto.AsFnDsa512SecretKey(sk)
+		if fndsaSk == nil {
+			return nil, fmt.Errorf("keyType fndsa512 requires an fndsa512 secret key")
+		}
+		return fndsaSk.FnDsa512Public()
 	default:
-		return nil, fmt.Errorf("unsupported keyType: %s (supported: secp256k1, ed25519, bls12381)", keyType)
+		return nil, fmt.Errorf("unsupported keyType: %s (supported: secp256k1, ed25519, bls12381, fndsa512)", keyType)
 	}
 }
 

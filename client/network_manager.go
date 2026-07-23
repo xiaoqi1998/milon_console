@@ -113,19 +113,9 @@ func (nm *NetworkManager) createClient(networkName string) (*milon.MolinClient, 
 		return nil, fmt.Errorf("network %s not found", networkName)
 	}
 
-	var client *milon.MolinClient
-	var err error
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("failed to create MilonClient for network %s: %v", networkName, r)
-			}
-		}()
-		client = milon.NewMilonClient(cfg)
-	}()
-
+	client, err := milon.NewMolinClientWithErr(cfg)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create MilonClient for network %s: %w", networkName, err)
 	}
 
 	nm.clients[networkName] = client

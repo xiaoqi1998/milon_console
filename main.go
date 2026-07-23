@@ -36,6 +36,9 @@ func main() {
 	rpcHandler := handler.NewRpcHandler(nm)
 	contractHandler := handler.NewContractHandler(nm)
 	utilHandler := handler.NewUtilHandler(cfg.EnableUtilSign)
+	faucetHandler := handler.NewFaucetHandler(nm)
+	viewHandler := handler.NewViewSingleHandler(nm)
+	resourcePathHandler := handler.NewResourcePathHandler(nm)
 
 	api := r.Group("/api")
 	{
@@ -68,6 +71,7 @@ func main() {
 
 		// Contract (read-only view)
 		api.POST("/read", contractHandler.ReadContract)
+		api.POST("/read/multi", contractHandler.ReadContractMulti)
 
 		// Contract (simulate and write)
 		api.POST("/simulate", contractHandler.SimulateContract)
@@ -75,15 +79,27 @@ func main() {
 		api.POST("/write/multi-agent", contractHandler.WriteContractMultiAgent)
 		api.POST("/write/multisig", contractHandler.WriteContractMultisig)
 
-		// Transaction (simulate and submit)
+		// Transaction (simulate, submit, inspect)
 		api.POST("/transactions/simulate", transactionHandler.SimulateTransaction)
 		api.POST("/transactions/submit", transactionHandler.SubmitTransaction)
+		api.POST("/transactions/inspect", transactionHandler.InspectTransaction)
 
 		// Utility
 		api.POST("/util/address/derive", utilHandler.DeriveAddress)
 		api.POST("/util/key/derive-public", utilHandler.DerivePublicKey)
 		api.POST("/util/sign", utilHandler.SignMessage)
 		api.POST("/util/verify", utilHandler.VerifySignature)
+
+		// Faucet (gas claim and balance)
+		api.POST("/faucet/claim", faucetHandler.ClaimFaucet)
+		api.GET("/faucet/balance/:address", faucetHandler.GetBalance)
+
+		// Low-level view (pre-built postcard)
+		api.POST("/view/single", viewHandler.ViewSingle)
+		api.POST("/view/multi", viewHandler.ViewMulti)
+
+		// Resource path by hash
+		api.GET("/rpc/resource-paths/:hash", resourcePathHandler.GetResourcePathByHash)
 	}
 
 	// Print startup banner
@@ -109,16 +125,23 @@ func main() {
 	fmt.Println("    GET  /api/rpc/resources/:hash     - Get resource by hash")
 	fmt.Println("    POST /api/rpc/access-value        - Get access value")
 	fmt.Println("    POST /api/read                    - Read contract (view)")
+	fmt.Println("    POST /api/read/multi              - Read contract (multi-view)")
 	fmt.Println("    POST /api/simulate                - Simulate contract")
 	fmt.Println("    POST /api/write                   - Write contract")
 	fmt.Println("    POST /api/write/multi-agent       - Write contract (dual sign)")
 	fmt.Println("    POST /api/write/multisig          - Write contract (split)")
 	fmt.Println("    POST /api/transactions/simulate   - Simulate raw transaction")
 	fmt.Println("    POST /api/transactions/submit     - Submit raw transaction")
+	fmt.Println("    POST /api/transactions/inspect    - Inspect raw transaction")
 	fmt.Println("    POST /api/util/address/derive     - Derive address from public key")
 	fmt.Println("    POST /api/util/key/derive-public  - Derive public key from private key")
 	fmt.Println("    POST /api/util/sign               - Sign message (requires ENABLE_UTIL_SIGN)")
 	fmt.Println("    POST /api/util/verify             - Verify signature")
+	fmt.Println("    POST /api/faucet/claim            - Claim faucet tokens")
+	fmt.Println("    GET  /api/faucet/balance/:address - Get MIL balance")
+	fmt.Println("    POST /api/view/single             - Low-level single view")
+	fmt.Println("    POST /api/view/multi              - Low-level multi view")
+	fmt.Println("    GET  /api/rpc/resource-paths/:hash- Get resource path by hash")
 	fmt.Println("    GET  /                            - Web console")
 	fmt.Println("    GET  /static/*                    - Static files")
 	fmt.Println("========================================")
