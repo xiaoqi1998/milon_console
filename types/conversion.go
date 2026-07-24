@@ -80,3 +80,56 @@ func ParseAddress(addrStr string) (crypto.Address, error) {
 	}
 	return *addr, nil
 }
+
+// ParseSignerList parses a list of SignerEntry into parallel slices of addresses, secret keys, and signature modes.
+// Validates that addresses are non-empty and unique. privateKey is parsed only if non-empty (required for write, optional for simulate).
+func ParseSignerList(signers []SignerEntry, requirePrivateKey bool) ([]crypto.Address, []crypto.SecretKeyer, []milon.AccountSignatureMode, error) {
+	if len(signers) == 0 {
+		return nil, nil, nil, fmt.Errorf("signers cannot be empty")
+	}
+
+	addresses := make([]crypto.Address, 0, len(signers))
+	sks := make([]crypto.SecretKeyer, 0, len(signers))
+	modes := make([]milon.AccountSignatureMode, 0, len(signers))
+
+	seen := make(map[string]bool)
+	for i, s := range signers {
+		addr, err := ParseAddress(s.Address)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("signer[%d] invalid address: %w", i, err)
+		}
+
+		addrKey := string(addr.Bytes[:])
+		if seen[addrKey] {
+			return nil, nil, nil, fmt.Errorf("duplicate signer address: %s", s.Address)
+		}
+		seen[addrKey] = true
+
+		mode, err := ParseSignatureModeFromJSON(s.SignatureMode)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("signer[%d] invalid signatureMode: %w", i, err)
+		}
+
+		var sk crypto.SecretKeyer
+		if requirePrivateKey {
+			if s.PrivateKey == "" {
+				return nil, nil, nil, fmt.Errorf("signer[%d] privateKey is required for write mode", i)
+			}
+			sk, err = ParseSecretKey(s.PrivateKey)
+			if err != nil {
+				return nil, nil, nil, fmt.Errorf("signer[%d] invalid privateKey: %w", i, err)
+			}
+		} else if s.PrivateKey != "" {
+			sk, err = ParseSecretKey(s.PrivateKey)
+			if err != nil {
+				return nil, nil, nil, fmt.Errorf("signer[%d] invalid privateKey: %w", i, err)
+			}
+		}
+
+		addresses = append(addresses, addr)
+		sks = append(sks, sk)
+		modes = append(modes, mode)
+	}
+
+	return addresses, sks, modes, nil
+}
