@@ -358,6 +358,7 @@ const state = {
   idlExecMode: 'simulate', // entry 方法：simulate | submit
   idlActiveRespTab: 'idl-json',
   idlLastResponse: null,
+  idlCollapsedApps: {}, // appName -> true 表示折叠；默认全部折叠
 };
 
 const MAX_HISTORY = 50;
@@ -1659,6 +1660,9 @@ async function loadIDLMetadata() {
     var apps = data && data.data ? data.data : [];
     state.idlMetadata = apps;
     state.idlLoaded = true;
+    // 默认全部折叠
+    state.idlCollapsedApps = {};
+    apps.forEach(function (a) { state.idlCollapsedApps[a.name] = true; });
     renderIDLAppList();
   } catch (err) {
     tree.innerHTML = '';
@@ -1683,20 +1687,30 @@ function renderIDLAppList(filter) {
     hasAny = true;
     totalCount += matched.length;
 
+    // 搜索时自动展开；否则按折叠状态
+    var collapsed = !keyword && state.idlCollapsedApps[app.name];
+
     // 按 kind 分组：entry 在前，view 在后
     var entries = matched.filter(function (ix) { return ix.kind === 'entry'; });
     var views = matched.filter(function (ix) { return ix.kind === 'view'; });
 
-    var gw = el('div', { class: 'endpoint-group idl-app-group' });
-    gw.appendChild(el('div', { class: 'group-title', text: app.name + ' (app_id=' + app.appId + ')' }));
+    var gw = el('div', { class: 'endpoint-group idl-app-group' + (collapsed ? ' collapsed' : '') });
+    var title = el('div', {
+      class: 'group-title idl-app-title' + (collapsed ? '' : ' expanded'),
+      text: app.name + ' (app_id=' + app.appId + ' · ' + matched.length + ')',
+      onclick: function () { toggleIDLApp(app.name); },
+    });
+    gw.appendChild(title);
 
-    if (entries.length) {
-      gw.appendChild(el('div', { class: 'idl-kind-label', text: 'entry (' + entries.length + ')' }));
-      entries.forEach(function (ix) { gw.appendChild(buildIDLMethodItem(app, ix)); });
-    }
-    if (views.length) {
-      gw.appendChild(el('div', { class: 'idl-kind-label', text: 'view (' + views.length + ')' }));
-      views.forEach(function (ix) { gw.appendChild(buildIDLMethodItem(app, ix)); });
+    if (!collapsed) {
+      if (entries.length) {
+        gw.appendChild(el('div', { class: 'idl-kind-label', text: 'entry (' + entries.length + ')' }));
+        entries.forEach(function (ix) { gw.appendChild(buildIDLMethodItem(app, ix)); });
+      }
+      if (views.length) {
+        gw.appendChild(el('div', { class: 'idl-kind-label', text: 'view (' + views.length + ')' }));
+        views.forEach(function (ix) { gw.appendChild(buildIDLMethodItem(app, ix)); });
+      }
     }
     tree.appendChild(gw);
   });
@@ -1705,6 +1719,11 @@ function renderIDLAppList(filter) {
     tree.appendChild(el('div', { class: 'empty-state small', text: '无匹配方法' }));
   }
   $('idlMethodCount').textContent = String(totalCount);
+}
+
+function toggleIDLApp(appName) {
+  state.idlCollapsedApps[appName] = !state.idlCollapsedApps[appName];
+  renderIDLAppList();
 }
 
 function buildIDLMethodItem(app, ix) {
@@ -1734,6 +1753,8 @@ function selectIDLMethod(appName, methodName) {
   if (!ix) return;
   state.currentIdlApp = appName;
   state.currentIdlMethod = ix;
+  // 选中方法时自动展开对应 app
+  state.idlCollapsedApps[appName] = false;
   renderIDLAppList();
   renderIDLHeader(app, ix);
   renderIDLForm(ix);

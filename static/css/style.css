@@ -1926,6 +1926,30 @@ body::before {
 
 /* ==================== IDL 方法 Tab ==================== */
 
+/* app 分组标题：可点击折叠/展开 */
+.idl-app-title {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.idl-app-title:hover {
+  background: var(--bg-tertiary);
+}
+.idl-app-title::before {
+  content: '▼';
+  width: auto;
+  height: auto;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  font-size: 9px;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+.idl-app-title:not(.expanded)::before {
+  transform: rotate(-90deg);
+}
+
 /* 方法类型徽章：entry 紫色 / view 青色 */
 .idl-kind-badge {
   display: inline-flex;
