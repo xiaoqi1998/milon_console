@@ -43,7 +43,7 @@
       "signer_lookups": {
         "owner": {
           "path": {
-            "arg": "token",98cc6ad43f2a7b942be746b18564c2eb1c153a74a7ef1539a3ae335205be2af9
+            "arg": "token",
             "type": "Address"
           },
           "res": 241

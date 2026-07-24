@@ -350,6 +350,14 @@ const state = {
   history: [],
   loading: false,
   lastResponse: null,
+  // IDL 方法 Tab 专用状态
+  idlMetadata: [],
+  idlLoaded: false,
+  currentIdlApp: null,
+  currentIdlMethod: null,
+  idlExecMode: 'simulate', // entry 方法：simulate | submit
+  idlActiveRespTab: 'idl-json',
+  idlLastResponse: null,
 };
 
 const MAX_HISTORY = 50;
@@ -411,6 +419,10 @@ function switchView(viewName) {
   document.querySelectorAll('.view').forEach(function (view) {
     view.classList.toggle('active', view.id === 'view-' + viewName);
   });
+  // 切到 IDL Tab 时懒加载元数据
+  if (viewName === 'idl' && !state.idlLoaded) {
+    loadIDLMetadata();
+  }
 }
 
 function renderEndpoints(filter) {
@@ -1075,8 +1087,15 @@ function reloadHistory(id) {
     return x.id === id;
   });
   if (!h) return;
-  selectEndpoint(h.endpoint.id);
   closeHistoryDrawer();
+
+  // IDL 方法的历史记录单独处理
+  if (h.endpoint.id && h.endpoint.id.indexOf('idl:') === 0) {
+    reloadIDLHistory(h);
+    return;
+  }
+
+  selectEndpoint(h.endpoint.id);
 
   // 恢复路径参数与查询参数
   if (h.req && h.req.url) {
@@ -1606,6 +1625,670 @@ function buildDocCurl(ep) {
   return 'curl -X POST ' + url + ' \\\n  -H "Content-Type: application/json" \\\n  -d \'' + body.replace(/\n/g, '\n  ') + '\'';
 }
 
+// ==================== IDL 方法 Tab ====================
+
+// 标量类型集合：渲染为单行输入框；其余类型（含 vec/option/map/tuple/自定义结构）渲染为 JSON 文本域
+var IDL_SCALAR_TYPES = {
+  'u8': '0', 'u16': '0', 'u32': '0', 'u64': '0', 'u128': '0',
+  'i8': '0', 'i16': '0', 'i32': '0', 'i64': '0',
+  'bool': 'false', 'boolean': 'false',
+  'String': '', 'string': '',
+  'Address': '', 'PublicKey': '', 'Signer': '', 'AnySigner': '',
+  'B96': '', 'B144': '', 'B160': '', 'B256': '', 'Bitmap64': '', 'bytes': ''
+};
+
+// 支付模式定义：每种模式对应的额外字段（submit 模式才需要 privateKey）
+var IDL_PAYMENT_MODES = [
+  { value: 'unified_payer_all', label: '统一付款（payer 签全部）', needIx: false },
+  { value: 'unified_payer_only_gas', label: '统一付款（仅付 gas）', needIx: false },
+  { value: 'unified_dual_sign', label: '双重签名（payer + ix）', needIx: true },
+  { value: 'split', label: '拆分签名（owner 自付）', needIx: false },
+];
+
+function idlIsScalarType(typeStr) {
+  return Object.prototype.hasOwnProperty.call(IDL_SCALAR_TYPES, typeStr);
+}
+
+async function loadIDLMetadata() {
+  var tree = $('idlTree');
+  tree.innerHTML = '';
+  tree.appendChild(el('div', { class: 'empty-state small', text: '加载 IDL 元数据中...' }));
+  try {
+    var resp = await fetch('/api/idl/metadata');
+    var data = await resp.json();
+    var apps = data && data.data ? data.data : [];
+    state.idlMetadata = apps;
+    state.idlLoaded = true;
+    renderIDLAppList();
+  } catch (err) {
+    tree.innerHTML = '';
+    tree.appendChild(el('div', { class: 'empty-state small', text: '加载失败: ' + (err.message || String(err)) }));
+  }
+}
+
+function renderIDLAppList(filter) {
+  var tree = $('idlTree');
+  tree.innerHTML = '';
+  var keyword = (filter || $('idlSearch').value || '').trim().toLowerCase();
+  var totalCount = 0;
+  var hasAny = false;
+
+  state.idlMetadata.forEach(function (app) {
+    var matched = app.instructions.filter(function (ix) {
+      if (!keyword) return true;
+      var hay = (app.name + ' ' + ix.name + ' ' + ix.handler + ' ' + ix.kind).toLowerCase();
+      return hay.indexOf(keyword) >= 0;
+    });
+    if (matched.length === 0) return;
+    hasAny = true;
+    totalCount += matched.length;
+
+    // 按 kind 分组：entry 在前，view 在后
+    var entries = matched.filter(function (ix) { return ix.kind === 'entry'; });
+    var views = matched.filter(function (ix) { return ix.kind === 'view'; });
+
+    var gw = el('div', { class: 'endpoint-group idl-app-group' });
+    gw.appendChild(el('div', { class: 'group-title', text: app.name + ' (app_id=' + app.appId + ')' }));
+
+    if (entries.length) {
+      gw.appendChild(el('div', { class: 'idl-kind-label', text: 'entry (' + entries.length + ')' }));
+      entries.forEach(function (ix) { gw.appendChild(buildIDLMethodItem(app, ix)); });
+    }
+    if (views.length) {
+      gw.appendChild(el('div', { class: 'idl-kind-label', text: 'view (' + views.length + ')' }));
+      views.forEach(function (ix) { gw.appendChild(buildIDLMethodItem(app, ix)); });
+    }
+    tree.appendChild(gw);
+  });
+
+  if (!hasAny) {
+    tree.appendChild(el('div', { class: 'empty-state small', text: '无匹配方法' }));
+  }
+  $('idlMethodCount').textContent = String(totalCount);
+}
+
+function buildIDLMethodItem(app, ix) {
+  var isActive = state.currentIdlMethod &&
+    state.currentIdlApp === app.name &&
+    state.currentIdlMethod.name === ix.name;
+  return el(
+    'div',
+    {
+      class: 'endpoint-item idl-method-item' + (isActive ? ' active' : ''),
+      onclick: function () { selectIDLMethod(app.name, ix.name); },
+    },
+    el('span', { class: 'idl-kind-badge ' + ix.kind, text: ix.kind }),
+    el(
+      'div',
+      { class: 'endpoint-text' },
+      el('span', { class: 'endpoint-name', text: ix.name }),
+      el('span', { class: 'endpoint-desc', text: ix.handler + (ix.sponsor ? ' · sponsored' : '') })
+    )
+  );
+}
+
+function selectIDLMethod(appName, methodName) {
+  var app = state.idlMetadata.find(function (a) { return a.name === appName; });
+  if (!app) return;
+  var ix = app.instructions.find(function (i) { return i.name === methodName; });
+  if (!ix) return;
+  state.currentIdlApp = appName;
+  state.currentIdlMethod = ix;
+  renderIDLAppList();
+  renderIDLHeader(app, ix);
+  renderIDLForm(ix);
+  if (window.innerWidth <= 768) $('idlSidebar').classList.remove('open');
+}
+
+function renderIDLHeader(app, ix) {
+  var badge = $('idlKindBadge');
+  badge.textContent = ix.kind;
+  badge.className = 'method-badge idl-kind-badge ' + ix.kind;
+  $('idlMethodTitle').textContent = ix.name;
+  $('idlAppLabel').textContent = app.name;
+  $('idlMethodPath').textContent = '::' + ix.name + (ix.returns ? ' → ' + ix.returns.type : '');
+}
+
+function renderIDLForm(ix) {
+  var body = $('idlEditorBody');
+  body.innerHTML = '';
+
+  // 方法说明区
+  var infoSec = el('div', { class: 'param-section' });
+  infoSec.appendChild(el('div', { class: 'param-section-title', text: '方法信息' }));
+  var infoRows = [
+    ['app', state.currentIdlApp],
+    ['handler', ix.handler],
+    ['kind', ix.kind],
+    ['discriminator', String(ix.discriminator)],
+  ];
+  if (ix.returns) infoRows.push(['returns', ix.returns.type]);
+  if (ix.sponsor) infoRows.push(['sponsor', 'true（gas 由赞助者代付）']);
+  infoRows.forEach(function (r) {
+    infoSec.appendChild(el('div', { class: 'idl-info-row' },
+      el('span', { class: 'idl-info-key', text: r[0] }),
+      el('span', { class: 'idl-info-val', text: r[1] })
+    ));
+  });
+  body.appendChild(infoSec);
+
+  // input 参数
+  var inputArgs = ix.args.filter(function (a) { return a.role === 'input'; });
+  var signerArgs = ix.args.filter(function (a) { return a.role === 'signer' || a.role === 'any_signer'; });
+
+  if (inputArgs.length) {
+    var argSec = el('div', { class: 'param-section' });
+    argSec.appendChild(el('div', { class: 'param-section-title', text: '参数 (args)' }));
+    inputArgs.forEach(function (a) { argSec.appendChild(buildIDLArgInput(a)); });
+    body.appendChild(argSec);
+  } else {
+    body.appendChild(el('div', { class: 'param-section' },
+      el('div', { class: 'param-section-title', text: '参数 (args)' }),
+      el('div', { class: 'empty-state small', text: '该方法无 input 参数' })
+    ));
+  }
+
+  // signer 参数提示
+  if (signerArgs.length) {
+    var hintSec = el('div', { class: 'param-section' });
+    hintSec.appendChild(el('div', { class: 'param-section-title', text: '签名者参数（由支付模式提供）' }));
+    signerArgs.forEach(function (a) {
+      hintSec.appendChild(el('div', { class: 'idl-signer-hint' },
+        el('span', { class: 'idl-arg-name', text: a.name }),
+        el('span', { class: 'idl-arg-type', text: a.type }),
+        el('span', { class: 'idl-signer-note', text: 'role=' + a.role + '，由下方支付模式字段提供' })
+      ));
+    });
+    body.appendChild(hintSec);
+  }
+
+  // entry 方法：支付模式 + 执行模式
+  if (ix.kind === 'entry') {
+    body.appendChild(buildIDLPaymentSection());
+  }
+
+  // 默认执行模式
+  state.idlExecMode = 'simulate';
+}
+
+function buildIDLArgInput(arg) {
+  var isScalar = idlIsScalarType(arg.type);
+  var row = el('div', { class: 'param-row idl-arg-row' },
+    el('label', { class: 'param-label' },
+      el('span', { class: 'idl-arg-name', text: arg.name }),
+      el('span', { class: 'idl-arg-type', text: arg.type })
+    )
+  );
+  if (isScalar) {
+    var inp = el('input', {
+      class: 'param-input',
+      'data-argname': arg.name,
+      placeholder: IDL_SCALAR_TYPES[arg.type] !== '' ? '如 ' + IDL_SCALAR_TYPES[arg.type] : arg.type,
+      type: 'text',
+    });
+    inp.value = IDL_SCALAR_TYPES[arg.type];
+    row.appendChild(inp);
+  } else {
+    var ta = el('textarea', {
+      class: 'body-editor idl-arg-editor',
+      'data-argname': arg.name,
+      spellcheck: 'false',
+      placeholder: 'JSON，如 ' + idlDefaultComplexValue(arg.type),
+    });
+    ta.value = idlDefaultComplexValue(arg.type);
+    row.appendChild(ta);
+  }
+  return row;
+}
+
+function idlDefaultComplexValue(typeStr) {
+  if (typeStr.indexOf('vec<') === 0) return '[]';
+  if (typeStr.indexOf('option<') === 0) return 'null';
+  if (typeStr.indexOf('map<') === 0) return '{}';
+  if (typeStr.indexOf('tuple<') === 0) return '[]';
+  // 自定义 struct/enum：返回空对象
+  return '{}';
+}
+
+function buildIDLPaymentSection() {
+  var sec = el('div', { class: 'param-section' });
+  sec.appendChild(el('div', { class: 'param-section-title', text: '执行配置' }));
+
+  // 执行模式切换
+  var modeRow = el('div', { class: 'param-row idl-exec-mode-row' },
+    el('label', { class: 'param-label', text: '执行模式' })
+  );
+  var simulateRadio = el('label', { class: 'idl-radio-label' },
+    el('input', { type: 'radio', name: 'idlExecMode', value: 'simulate', checked: 'checked', onchange: function () { onIDLExecModeChange('simulate'); } }),
+    el('span', { text: ' 模拟（不上链）' })
+  );
+  var submitRadio = el('label', { class: 'idl-radio-label' },
+    el('input', { type: 'radio', name: 'idlExecMode', value: 'submit', onchange: function () { onIDLExecModeChange('submit'); } }),
+    el('span', { text: ' 上链提交' })
+  );
+  modeRow.appendChild(simulateRadio);
+  modeRow.appendChild(submitRadio);
+  sec.appendChild(modeRow);
+
+  // 支付模式选择
+  var pmRow = el('div', { class: 'param-row' },
+    el('label', { class: 'param-label', text: 'paymentMode' })
+  );
+  var pmSelect = el('select', { class: 'param-input', id: 'idlPaymentMode', onchange: renderIDLPaymentFields });
+  IDL_PAYMENT_MODES.forEach(function (m) {
+    pmSelect.appendChild(el('option', { value: m.value, text: m.label }));
+  });
+  pmRow.appendChild(pmSelect);
+  sec.appendChild(pmRow);
+
+  // 动态字段容器
+  sec.appendChild(el('div', { id: 'idlPaymentFields' }));
+  // 初始渲染
+  setTimeout(renderIDLPaymentFields, 0);
+  return sec;
+}
+
+function onIDLExecModeChange(mode) {
+  state.idlExecMode = mode;
+  renderIDLPaymentFields();
+}
+
+function renderIDLPaymentFields() {
+  var container = $('idlPaymentFields');
+  if (!container) return;
+  container.innerHTML = '';
+  var pm = $('idlPaymentMode') ? $('idlPaymentMode').value : 'unified_payer_all';
+  var isSubmit = state.idlExecMode === 'submit';
+  var modeDef = IDL_PAYMENT_MODES.find(function (m) { return m.value === pm; }) || IDL_PAYMENT_MODES[0];
+
+  // 通用：payer/owner 地址
+  container.appendChild(buildIDLFieldRow('payerAddress', '付款/所有者地址 (base58)', '', 'text', 'data-field', 'payerAddress'));
+
+  if (pm === 'split') {
+    // split 模式用 owner 概念，复用 payerAddress 作为 owner 地址
+    if (isSubmit) {
+      container.appendChild(buildIDLFieldRow('ownerPrivateKey', 'owner 私钥 (hex/base58)', '', 'password', 'data-field', 'ownerPrivateKey'));
+    }
+  } else {
+    if (isSubmit) {
+      container.appendChild(buildIDLFieldRow('payerPrivateKey', 'payer 私钥 (hex/base58)', '', 'password', 'data-field', 'payerPrivateKey'));
+    }
+  }
+
+  // dual_sign 需要 ix 字段
+  if (modeDef && modeDef.needIx) {
+    container.appendChild(buildIDLFieldRow('ixAddress', 'ix 签名者地址 (base58)', '', 'text', 'data-field', 'ixAddress'));
+    if (isSubmit) {
+      container.appendChild(buildIDLFieldRow('ixPrivateKey', 'ix 私钥 (hex/base58)', '', 'password', 'data-field', 'ixPrivateKey'));
+    }
+  }
+
+  // signatureMode（JSON）
+  container.appendChild(buildIDLFieldRow('signatureMode', 'signatureMode (JSON)', '{\n  "type": "pubkey",\n  "publicKey": "base58公钥"\n}', 'textarea', 'data-field', 'signatureMode'));
+  if (modeDef && modeDef.needIx) {
+    container.appendChild(buildIDLFieldRow('ixSignatureMode', 'ixSignatureMode (JSON)', '{\n  "type": "pubkey",\n  "publicKey": "base58公钥"\n}', 'textarea', 'data-field', 'ixSignatureMode'));
+  }
+}
+
+function buildIDLFieldRow(name, label, value, inputType, attrKey, attrVal) {
+  var row = el('div', { class: 'param-row' },
+    el('label', { class: 'param-label', text: label })
+  );
+  if (inputType === 'textarea') {
+    var ta = el('textarea', { class: 'body-editor idl-field-editor', spellcheck: 'false' });
+    ta.setAttribute(attrKey, attrVal);
+    ta.value = value;
+    row.appendChild(ta);
+  } else {
+    var inp = el('input', { class: 'param-input', type: inputType || 'text' });
+    inp.setAttribute(attrKey, attrVal);
+    inp.value = value;
+    row.appendChild(inp);
+  }
+  return row;
+}
+
+function buildIDLRequest() {
+  var ix = state.currentIdlMethod;
+  if (!ix) return null;
+  var appName = state.currentIdlApp;
+
+  // 收集 input 参数
+  var args = {};
+  var argInputs = document.querySelectorAll('#idlEditorBody [data-argname]');
+  argInputs.forEach(function (inp) {
+    var name = inp.getAttribute('data-argname');
+    var raw = inp.value.trim();
+    if (raw === '') return;
+    // 标量尝试原值，复合类型解析 JSON
+    var typeStr = '';
+    if (ix.args) {
+      var def = ix.args.find(function (a) { return a.name === name; });
+      if (def) typeStr = def.type;
+    }
+    if (idlIsScalarType(typeStr)) {
+      // 数值与布尔尝试转换
+      if (typeStr === 'bool' || typeStr === 'boolean') {
+        args[name] = raw === 'true' || raw === '1';
+      } else if (typeStr.indexOf('u') === 0 || typeStr.indexOf('i') === 0 || typeStr === 'Bitmap64' || typeStr === 'bytes') {
+        args[name] = raw;
+      } else {
+        args[name] = raw;
+      }
+    } else {
+      try { args[name] = JSON.parse(raw); }
+      catch (e) { args[name] = raw; }
+    }
+  });
+
+  if (ix.kind === 'view') {
+    // view: POST /api/read
+    return {
+      method: 'POST',
+      url: '/api/read',
+      body: JSON.stringify({ appName: appName, methodName: ix.name, args: args }, null, 2),
+    };
+  }
+
+  // entry: simulate 或 submit
+  var pm = $('idlPaymentMode') ? $('idlPaymentMode').value : 'unified_payer_all';
+  var isSubmit = state.idlExecMode === 'submit';
+  var payload = { appName: appName, methodName: ix.name, args: args, paymentMode: pm };
+
+  function readField(field) {
+    var node = document.querySelector('#idlPaymentFields [' + 'data-field' + '="' + field + '"]');
+    return node ? node.value.trim() : '';
+  }
+
+  payload.payerAddress = readField('payerAddress');
+
+  if (pm === 'split') {
+    if (isSubmit) {
+      var ownerSk = readField('ownerPrivateKey');
+      if (ownerSk) payload.ownerPrivateKey = ownerSk;
+    }
+  } else {
+    if (isSubmit) {
+      var payerSk = readField('payerPrivateKey');
+      if (payerSk) payload.payerPrivateKey = payerSk;
+    }
+  }
+
+  var modeDef = IDL_PAYMENT_MODES.find(function (m) { return m.value === pm; });
+  if (modeDef && modeDef.needIx) {
+    payload.ixAddress = readField('ixAddress');
+    if (isSubmit) {
+      var ixSk = readField('ixPrivateKey');
+      if (ixSk) payload.ixPrivateKey = ixSk;
+    }
+    var ixSig = readField('ixSignatureMode');
+    if (ixSig) { try { payload.ixSignatureMode = JSON.parse(ixSig); } catch (e) {} }
+  }
+
+  var sigMode = readField('signatureMode');
+  if (sigMode) { try { payload.signatureMode = JSON.parse(sigMode); } catch (e) {} }
+
+  var url = isSubmit ? '/api/write' : '/api/simulate';
+  return { method: 'POST', url: url, body: JSON.stringify(payload, null, 2) };
+}
+
+async function sendIDLRequest() {
+  if (!state.currentIdlMethod) {
+    showToast('请先选择 IDL 方法', 'error');
+    return;
+  }
+  var req = buildIDLRequest();
+  if (!req) return;
+  state.loading = true;
+  setIDLSendLoading(true);
+  showIDLResponseLoading();
+  var start = performance.now();
+  try {
+    var opt = { method: req.method, headers: { 'Content-Type': 'application/json' }, body: req.body };
+    var resp = await fetch(req.url, opt);
+    var duration = Math.round(performance.now() - start);
+    var text = await resp.text();
+    var size = new Blob([text]).size;
+    var data;
+    try { data = JSON.parse(text); } catch (e) { data = text; }
+    displayIDLResponse(data, resp.status, duration, resp.headers, text, size);
+    addIDLToHistory(req, resp.status, duration, data);
+  } catch (err) {
+    var d2 = Math.round(performance.now() - start);
+    displayIDLError(err, d2);
+    addIDLToHistory(req, 0, d2, { error: String(err) });
+  } finally {
+    state.loading = false;
+    setIDLSendLoading(false);
+  }
+}
+
+function setIDLSendLoading(loading) {
+  var btn = $('idlSendBtn');
+  btn.disabled = loading;
+  btn.querySelector('span:last-child').textContent = loading ? '发送中...' : '发送请求';
+}
+
+function showIDLResponseLoading() {
+  var sc = $('idlStatusBadge');
+  sc.className = 'status-badge loading';
+  sc.textContent = '请求中';
+  $('idlRespTime').textContent = '--';
+  $('idlRespSize').textContent = '--';
+  var jp = $('tab-idl-json');
+  jp.innerHTML = '';
+  var overlay = el('div', { class: 'loading-overlay' });
+  overlay.appendChild(el('div', { class: 'spinner' }));
+  jp.appendChild(overlay);
+  $('tab-idl-headers').innerHTML = '<div class="empty-state small"><p>请求中...</p></div>';
+  $('tab-idl-curl').innerHTML = '<div class="empty-state small"><p>请求中...</p></div>';
+}
+
+function displayIDLResponse(data, statusCode, duration, headers, rawText, size) {
+  var sc = $('idlStatusBadge');
+  var statusClass = statusCode >= 200 && statusCode < 300 ? 'success' : statusCode >= 400 ? 'error' : 'warning';
+  sc.className = 'status-badge ' + statusClass;
+  sc.textContent = String(statusCode);
+  $('idlRespTime').textContent = String(duration);
+  $('idlRespSize').textContent = formatSize(size || rawText.length);
+
+  var jp = $('tab-idl-json');
+  jp.innerHTML = '';
+  // Gas 信息横幅
+  var gasValue = extractGasInfo(data);
+  if (gasValue !== null) {
+    jp.appendChild(el('div', {
+      class: 'gas-info-banner',
+      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:12px;border-radius:8px;background:linear-gradient(135deg,rgba(124,92,255,0.18),rgba(34,211,238,0.18));border:1px solid rgba(124,92,255,0.45);color:#22d3ee;font-weight:600;font-size:14px;'
+    },
+      el('span', { text: '⛽' }),
+      el('span', { text: 'Gas 费用: ' }),
+      el('span', { style: 'color:#fff;font-weight:700;', text: String(gasValue) })
+    ));
+  }
+  if (typeof data === 'string') {
+    jp.appendChild(el('pre', { class: 'raw-viewer', text: data || '(空响应)' }));
+  } else {
+    var pre = el('pre', { class: 'json-viewer' });
+    pre.innerHTML = formatJSON(data);
+    jp.appendChild(pre);
+  }
+
+  // Headers
+  var hp = $('tab-idl-headers');
+  hp.innerHTML = '';
+  if (headers) {
+    var tbl = el('table', { class: 'headers-table' },
+      el('thead', {}, el('tr', {}, el('th', { text: 'Header' }), el('th', { text: 'Value' })))
+    );
+    var tb = el('tbody', {});
+    var seen = {};
+    headers.forEach(function (val, key) {
+      var lk = key.toLowerCase();
+      if (seen[lk]) return;
+      seen[lk] = true;
+      tb.appendChild(el('tr', {}, el('td', { text: key }), el('td', { text: val })));
+    });
+    tbl.appendChild(tb);
+    hp.appendChild(tbl);
+  } else {
+    hp.appendChild(el('div', { class: 'empty-state small', text: '无响应头' }));
+  }
+
+  // cURL
+  var cp = $('tab-idl-curl');
+  cp.innerHTML = '';
+  var req = buildIDLRequest();
+  if (req) {
+    cp.appendChild(el('pre', { class: 'raw-viewer', text: buildCurl(req) }));
+  }
+
+  state.idlLastResponse = { data: data, rawText: rawText, statusCode: statusCode };
+}
+
+function displayIDLError(err, duration) {
+  var sc = $('idlStatusBadge');
+  sc.className = 'status-badge error';
+  sc.textContent = 'ERR';
+  $('idlRespTime').textContent = String(duration);
+  $('idlRespSize').textContent = '--';
+  var msg = err && err.message ? err.message : String(err);
+  $('tab-idl-json').innerHTML = '';
+  $('tab-idl-json').appendChild(
+    el('div', { class: 'error-box', text: '请求失败: ' + msg + '\n\n请检查:\n- 后端服务是否启动\n- 网络是否可达\n- 参数是否正确' })
+  );
+  $('tab-idl-headers').innerHTML = '<div class="empty-state small"><p>无响应头</p></div>';
+  $('tab-idl-curl').innerHTML = '<div class="empty-state small"><p>无 cURL</p></div>';
+}
+
+function switchIDLRespTab(name) {
+  state.idlActiveRespTab = name;
+  // 仅在 IDL 视图内切换
+  var idlView = $('view-idl');
+  idlView.querySelectorAll('.resp-tab').forEach(function (t) {
+    t.classList.toggle('active', t.getAttribute('data-tab') === name);
+  });
+  idlView.querySelectorAll('.tab-pane').forEach(function (p) {
+    p.classList.toggle('active', p.id === 'tab-' + name);
+  });
+}
+
+function copyIDLCurl() {
+  if (!state.currentIdlMethod) { showToast('请先选择方法', 'error'); return; }
+  var req = buildIDLRequest();
+  if (!req) return;
+  copyToClipboard(buildCurl(req), function () { showToast('cURL 命令已复制', 'success'); }, function () { showToast('复制失败', 'error'); });
+}
+
+function copyIDLResponse() {
+  if (!state.idlLastResponse) { showToast('暂无响应数据', 'error'); return; }
+  var text = typeof state.idlLastResponse.data === 'string'
+    ? state.idlLastResponse.data
+    : JSON.stringify(state.idlLastResponse.data, null, 2);
+  copyToClipboard(text, function () { showToast('响应已复制', 'success'); }, function () { showToast('复制失败', 'error'); });
+}
+
+function downloadIDLResponse() {
+  if (!state.idlLastResponse) { showToast('暂无响应数据', 'error'); return; }
+  var text = state.idlLastResponse.rawText || '';
+  var blob = new Blob([text], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'idl-response.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('响应已下载', 'success');
+}
+
+function resetIDLForm() {
+  if (state.currentIdlMethod) {
+    renderIDLForm(state.currentIdlMethod);
+    showToast('参数已重置', 'success');
+  }
+}
+
+// IDL 历史记录：用合成 endpoint 对象，id 以 "idl:" 前缀标识
+function addIDLToHistory(req, statusCode, duration, data) {
+  var ix = state.currentIdlMethod;
+  var appName = state.currentIdlApp;
+  var epId = 'idl:' + appName + ':' + ix.name;
+  state.history.unshift({
+    id: Date.now(),
+    endpoint: { id: epId, method: req.method, path: req.url, summary: appName + '::' + ix.name },
+    req: req,
+    statusCode: statusCode,
+    duration: duration,
+    time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+    timestamp: Date.now(),
+    respData: data,
+    respSize: data ? new Blob([JSON.stringify(data)]).size : 0,
+  });
+  if (state.history.length > MAX_HISTORY) state.history.length = MAX_HISTORY;
+  saveHistory();
+  renderHistory();
+}
+
+// 从历史记录恢复 IDL 方法调用
+function reloadIDLHistory(h) {
+  var parts = h.endpoint.id.split(':');
+  if (parts.length < 3) return;
+  var appName = parts[1];
+  var methodName = parts[2];
+  switchView('idl');
+  // 等待元数据加载后选中方法并恢复表单
+  function restore() {
+    if (!state.idlLoaded || !state.idlMetadata.length) {
+      setTimeout(restore, 100);
+      return;
+    }
+    selectIDLMethod(appName, methodName);
+    // 恢复请求体到表单
+    if (h.req && h.req.body) {
+      try {
+        var payload = JSON.parse(h.req.body);
+        // 恢复 args
+        if (payload.args) {
+          Object.keys(payload.args).forEach(function (k) {
+            var inp = document.querySelector('#idlEditorBody [data-argname="' + k + '"]');
+            if (inp) {
+              inp.value = typeof payload.args[k] === 'string' ? payload.args[k] : JSON.stringify(payload.args[k], null, 2);
+            }
+          });
+        }
+        // 恢复支付字段
+        if (payload.paymentMode && $('idlPaymentMode')) {
+          $('idlPaymentMode').value = payload.paymentMode;
+          renderIDLPaymentFields();
+          // 延迟填充动态生成的字段
+          setTimeout(function () {
+            ['payerAddress', 'payerPrivateKey', 'ownerPrivateKey', 'ixAddress', 'ixPrivateKey', 'signatureMode', 'ixSignatureMode'].forEach(function (f) {
+              if (payload[f] !== undefined) {
+                var node = document.querySelector('#idlPaymentFields [data-field="' + f + '"]');
+                if (node) node.value = typeof payload[f] === 'string' ? payload[f] : JSON.stringify(payload[f], null, 2);
+              }
+            });
+            // 恢复执行模式
+            if (h.req.url === '/api/write') {
+              var submitRadio = document.querySelector('input[name="idlExecMode"][value="submit"]');
+              if (submitRadio) { submitRadio.checked = true; onIDLExecModeChange('submit'); }
+            }
+          }, 50);
+        }
+      } catch (e) {}
+    }
+    // 恢复响应展示
+    if (h.respData !== undefined) {
+      var rawText = typeof h.respData === 'string' ? h.respData : JSON.stringify(h.respData, null, 2);
+      displayIDLResponse(h.respData, h.statusCode || 0, h.duration || 0, {}, rawText, h.respSize || rawText.length);
+    }
+    showToast('已恢复历史请求', 'success');
+  }
+  restore();
+}
+
 function initApp() {
   $('endpointCount').textContent = String(ENDPOINTS.length);
   $('docsCount').textContent = String(ENDPOINTS.length);
@@ -1640,7 +2323,12 @@ function initApp() {
   $('downloadRespBtn').addEventListener('click', downloadResponse);
   document.querySelectorAll('.resp-tab').forEach(function (t) {
     t.addEventListener('click', function () {
-      switchRespTab(t.getAttribute('data-tab'));
+      // IDL 视图内的 resp-tab 单独处理
+      if (t.closest('#view-idl')) {
+        switchIDLRespTab(t.getAttribute('data-tab'));
+      } else {
+        switchRespTab(t.getAttribute('data-tab'));
+      }
     });
   });
   $('refreshBtn').addEventListener('click', function () {
@@ -1658,10 +2346,23 @@ function initApp() {
       switchLang(t.getAttribute('data-lang'));
     });
   });
+  // IDL Tab 事件绑定
+  $('idlSearch').addEventListener('input', function (e) {
+    renderIDLAppList(e.target.value);
+  });
+  $('idlSendBtn').addEventListener('click', sendIDLRequest);
+  $('idlResetBtn').addEventListener('click', resetIDLForm);
+  $('idlCopyCurlBtn').addEventListener('click', copyIDLCurl);
+  $('idlCopyRespBtn').addEventListener('click', copyIDLResponse);
+  $('idlDownloadRespBtn').addEventListener('click', downloadIDLResponse);
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
-      sendRequest();
+      if (state.currentView === 'idl') {
+        sendIDLRequest();
+      } else {
+        sendRequest();
+      }
     }
     if (e.key === 'Escape') {
       if ($('historyDrawer').classList.contains('open')) {

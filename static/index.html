@@ -31,9 +31,13 @@
       </div>
     </div>
     <nav class="topbar-tabs">
-      <button class="nav-tab active" data-view="console">
+      <button class="nav-tab" data-view="console">
         <span class="nav-icon">⚡</span>
         <span class="nav-label">控制台</span>
+      </button>
+      <button class="nav-tab" data-view="idl">
+        <span class="nav-icon">🧩</span>
+        <span class="nav-label">IDL 方法</span>
       </button>
       <button class="nav-tab" data-view="docs">
         <span class="nav-icon">📖</span>
@@ -259,6 +263,110 @@
           </div>
         </div>
         <div class="errors-grid" id="errorsGrid"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-idl">
+      <div class="console-grid">
+        <aside class="endpoint-sidebar" id="idlSidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-title">
+              <span class="title-icon">🧩</span>
+              <span>IDL 方法</span>
+              <span class="endpoint-count" id="idlMethodCount">0</span>
+            </div>
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="idlSearch" placeholder="搜索 app 或方法..." />
+            </div>
+          </div>
+          <div class="endpoint-tree" id="idlTree"></div>
+        </aside>
+
+        <section class="params-panel">
+          <div class="panel-header">
+            <div class="endpoint-header-info">
+              <div class="endpoint-title-row">
+                <span class="method-badge" id="idlKindBadge">—</span>
+                <h2 class="endpoint-title" id="idlMethodTitle">请选择 IDL 方法</h2>
+              </div>
+              <div class="endpoint-path-display">
+                <span class="path-prefix" id="idlAppLabel">app</span>
+                <span class="path-value" id="idlMethodPath">::method</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel-body" id="idlEditorBody">
+            <div class="empty-state">
+              <div class="empty-icon-wrapper">
+                <div class="empty-glow"></div>
+                <span class="empty-icon">🧩</span>
+              </div>
+              <h3>选择 IDL 方法开始调用</h3>
+              <p>从左侧按 app 分组列表选择一个方法<br/>填写参数后点击「发送」按钮</p>
+            </div>
+          </div>
+          <div class="panel-footer">
+            <button class="btn btn-primary" id="idlSendBtn">
+              <span class="btn-icon">▶</span>
+              <span>发送请求</span>
+            </button>
+            <button class="btn btn-secondary" id="idlResetBtn">
+              <span class="btn-icon">↺</span>
+              <span>重置</span>
+            </button>
+            <button class="btn btn-secondary" id="idlCopyCurlBtn">
+              <span class="btn-icon">⟨⟩</span>
+              <span>复制 cURL</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="response-panel">
+          <div class="panel-header">
+            <div class="response-header-left">
+              <span class="status-badge idle" id="idlStatusBadge">待发送</span>
+              <div class="response-meta" id="idlResponseMeta">
+                <span class="meta-item">⏱ <span id="idlRespTime">--</span> ms</span>
+                <span class="meta-item">📦 <span id="idlRespSize">--</span> B</span>
+              </div>
+            </div>
+            <div class="response-tabs">
+              <button class="resp-tab active" data-tab="idl-json">JSON</button>
+              <button class="resp-tab" data-tab="idl-headers">Headers</button>
+              <button class="resp-tab" data-tab="idl-curl">cURL</button>
+            </div>
+          </div>
+          <div class="panel-body response-body">
+            <div class="tab-pane active" id="tab-idl-json">
+              <div class="empty-state small">
+                <div class="empty-icon-wrapper small">
+                  <span class="empty-icon">📡</span>
+                </div>
+                <h4>等待请求</h4>
+                <p>发送请求后响应结果将在此展示</p>
+              </div>
+            </div>
+            <div class="tab-pane" id="tab-idl-headers">
+              <div class="empty-state small">
+                <p>暂无响应头数据</p>
+              </div>
+            </div>
+            <div class="tab-pane" id="tab-idl-curl">
+              <div class="empty-state small">
+                <p>发送请求后可查看 cURL 命令</p>
+              </div>
+            </div>
+          </div>
+          <div class="panel-footer response-footer">
+            <button class="btn btn-ghost" id="idlCopyRespBtn">
+              <span>📋</span><span>复制响应</span>
+            </button>
+            <button class="btn btn-ghost" id="idlDownloadRespBtn">
+              <span>⬇</span><span>下载</span>
+            </button>
+          </div>
+        </section>
       </div>
     </section>
   </main>

@@ -39,6 +39,7 @@ func main() {
 	faucetHandler := handler.NewFaucetHandler(nm)
 	viewHandler := handler.NewViewSingleHandler(nm)
 	resourcePathHandler := handler.NewResourcePathHandler(nm)
+	idlHandler := handler.NewIDLHandler(nm)
 
 	api := r.Group("/api")
 	{
@@ -100,6 +101,9 @@ func main() {
 
 		// Resource path by hash
 		api.GET("/rpc/resource-paths/:hash", resourcePathHandler.GetResourcePathByHash)
+
+		// IDL metadata (discovery for all IDL apps & methods)
+		api.GET("/idl/metadata", idlHandler.GetIDLMetadata)
 	}
 
 	// Print startup banner
@@ -142,6 +146,7 @@ func main() {
 	fmt.Println("    POST /api/view/single             - Low-level single view")
 	fmt.Println("    POST /api/view/multi              - Low-level multi view")
 	fmt.Println("    GET  /api/rpc/resource-paths/:hash- Get resource path by hash")
+	fmt.Println("    GET  /api/idl/metadata            - IDL 方法元数据（app/方法/参数 schema）")
 	fmt.Println("    GET  /                            - Web console")
 	fmt.Println("    GET  /static/*                    - Static files")
 	fmt.Println("========================================")

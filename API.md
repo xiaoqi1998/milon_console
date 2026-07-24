@@ -2,7 +2,7 @@
 
 ## 概述
 
-Milon API Server 将 Milon Go SDK 封装为一组 RESTful HTTP 接口，提供网络管理、账户管理、交易查询与提交、合约读写、RPC 访问、水龙头领水以及密钥工具等能力，共计 **32** 个端点。
+Milon API Server 将 Milon Go SDK 封装为一组 RESTful HTTP 接口，提供网络管理、账户管理、交易查询与提交、合约读写、RPC 访问、水龙头领水、密钥工具以及 IDL 元数据发现等能力，共计 **33** 个端点。
 
 - **Base URL**: `http://localhost:8080`
 - **默认端口**: `8080`（可通过环境变量 `SERVER_PORT` 修改）
@@ -1510,6 +1510,112 @@ curl -X POST http://localhost:8080/api/util/verify \
 
 ---
 
+### 九、IDL 元数据
+
+#### 33. 获取 IDL 元数据
+
+- **方法**: `GET`
+- **路径**: `/api/idl/metadata`
+- **说明**: 返回当前网络下所有已加载 IDL app 的元数据，包括 app 列表、每个 app 的方法（指令）清单、参数 schema、返回值类型等。前端 IDL Tab 据此动态渲染方法树与参数表单，新增 IDL 方法无需修改前后端代码。
+
+**请求参数**
+
+无
+
+**请求示例**
+
+```bash
+curl http://localhost:8080/api/idl/metadata
+```
+
+**响应结构**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `data` | array | app 元数据列表，按 `appId` 升序排列 |
+| `data[].appId` | number | app 的数字 ID（u8） |
+| `data[].name` | string | app 名称（如 `token`、`nft`、`staking`） |
+| `data[].description` | string | app 描述 |
+| `data[].instructions` | array | 方法（指令）列表 |
+| `data[].instructions[].name` | string | 方法名（PascalCase，如 `Transfer`） |
+| `data[].instructions[].kind` | string | 方法类型：`entry`（写入）或 `view`（只读） |
+| `data[].instructions[].handler` | string | 方法处理器名（snake_case，如 `transfer`、`balance_of`） |
+| `data[].instructions[].discriminator` | number | 方法判别符（u16） |
+| `data[].instructions[].args` | array | 参数列表 |
+| `data[].instructions[].args[].name` | string | 参数名 |
+| `data[].instructions[].args[].type` | string | 参数类型（原始 IDL 类型字符串，如 `Address`、`u64`、`vec<PublicKey>`） |
+| `data[].instructions[].args[].role` | string | 参数角色：`input`（普通输入）、`signer`（必需签名者）、`any_signer`（任意签名者） |
+| `data[].instructions[].returns` | object | 返回值类型（仅 `view` 方法存在） |
+| `data[].instructions[].returns.type` | string | 返回值类型字符串 |
+| `data[].instructions[].sponsor` | bool | 是否为赞助交易（仅 `entry` 方法可能存在） |
+
+**响应示例**
+
+```json
+{
+  "success": true,
+  "code": 0,
+  "message": "ok",
+  "data": [
+    {
+      "appId": 1,
+      "name": "account",
+      "description": "Milon account app IDL",
+      "instructions": [
+        {
+          "name": "Create",
+          "kind": "entry",
+          "handler": "create",
+          "discriminator": 1234,
+          "args": [
+            {"name": "owner", "type": "Address", "role": "input"}
+          ],
+          "sponsor": true
+        }
+      ]
+    },
+    {
+      "appId": 2,
+      "name": "token",
+      "description": "Milon token app IDL",
+      "instructions": [
+        {
+          "name": "Transfer",
+          "kind": "entry",
+          "handler": "transfer",
+          "discriminator": 18518,
+          "args": [
+            {"name": "token", "type": "Address", "role": "input"},
+            {"name": "to", "type": "Address", "role": "input"},
+            {"name": "amount", "type": "u64", "role": "input"}
+          ]
+        },
+        {
+          "name": "BalanceOf",
+          "kind": "view",
+          "handler": "balance_of",
+          "discriminator": 25810,
+          "args": [
+            {"name": "owner", "type": "Address", "role": "input"}
+          ],
+          "returns": {"type": "u64"}
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-07-23T10:00:00+08:00"
+}
+```
+
+**使用说明**
+
+- 前端 IDL Tab 加载此端点后，按 `name` 分组展示方法列表，选中方法时根据 `args` 动态渲染参数表单。
+- `kind=view` 的方法通过 `/api/read`（单指令）或 `/api/read/multi`（多指令）调用，`methodName` 使用 `handler` 字段。
+- `kind=entry` 的方法通过 `/api/simulate`（模拟）或 `/api/write`（落链）调用，需额外提供付款方与签名信息。
+- `role=signer` 的参数需在 `signatureMode` 中提供对应签名模式；`role=any_signer` 表示可由任一签名者代签。
+
+---
+
 ## 错误码
 
 | 错误码 | 常量名 | HTTP 状态码 | 说明 |
@@ -1563,5 +1669,6 @@ curl -X POST http://localhost:8080/api/util/verify \
 | 30 | POST | `/api/util/key/derive-public` | 从私钥派生公钥 |
 | 31 | POST | `/api/util/sign` | 签名消息 |
 | 32 | POST | `/api/util/verify` | 验签 |
+| 33 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
 
-**统计**：共 32 个端点，分布于 8 个功能组（网络管理 3、系统 2、账户 3、交易 6、合约 7、RPC 4、水龙头 2、工具 4）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 33 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 6、合约 7、RPC 4、水龙头 2、工具 4、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
