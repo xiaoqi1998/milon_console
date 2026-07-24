@@ -1286,184 +1286,184 @@
   ],
   "errors": [
     {
-      "code": 1,
+      "code": 768,
       "message": "Validator already exists: {0:?}",
       "name": "ValidatorAlreadyExists"
     },
     {
-      "code": 2,
+      "code": 769,
       "message": "Validator not found: {0:?}",
       "name": "ValidatorNotFound"
     },
     {
-      "code": 3,
+      "code": 770,
       "message": "Validator and operator address must differ: {0:?}",
       "name": "ValidatorAndOperatorMustDiffer"
     },
     {
-      "code": 4,
+      "code": 771,
       "message": "Validator, operator, and consensus account must be distinct: {0}",
       "name": "IdentityAddressConflict"
     },
     {
-      "code": 5,
+      "code": 772,
       "message": "Validator operator already used by: {0:?}",
       "name": "OperatorAlreadyAssigned"
     },
     {
-      "code": 6,
+      "code": 773,
       "message": "Validator consensus account already used by: {0:?}",
       "name": "ConsensusAccountAlreadyAssigned"
     },
     {
-      "code": 7,
+      "code": 774,
       "message": "Validator consensus account address mismatch: {0:?}",
       "name": "ConsensusAccountMismatch"
     },
     {
-      "code": 8,
+      "code": 775,
       "message": "Validator consensus public key already used by: {0:?}",
       "name": "ConsensusKeyAlreadyAssigned"
     },
     {
-      "code": 9,
+      "code": 776,
       "message": "Validator BLS public key already used by: {0:?}",
       "name": "BlsKeyAlreadyAssigned"
     },
     {
-      "code": 10,
+      "code": 777,
       "message": "Validator already in candidate pool: {0:?}",
       "name": "ValidatorAlreadyInCandidatePool"
     },
     {
-      "code": 11,
+      "code": 778,
       "message": "Epoch already transitioned: {0}",
       "name": "EpochAlreadyTransitioned"
     },
     {
-      "code": 12,
+      "code": 779,
       "message": "Epoch control already configured",
       "name": "EpochConfigAlreadySet"
     },
     {
-      "code": 13,
+      "code": 780,
       "message": "Epoch control not configured",
       "name": "EpochConfigNotSet"
     },
     {
-      "code": 14,
+      "code": 781,
       "message": "Invalid epoch config: {0}",
       "name": "InvalidEpochConfig"
     },
     {
-      "code": 15,
+      "code": 782,
       "message": "Active set not found for epoch: {0}",
       "name": "ActiveSetNotFound"
     },
     {
-      "code": 16,
+      "code": 783,
       "message": "Invalid validator status for {0:?}: {1}",
       "name": "InvalidValidatorStatus"
     },
     {
-      "code": 17,
+      "code": 784,
       "message": "Staking position not found: owner {0:?}, validator {1:?}",
       "name": "PositionNotFound"
     },
     {
-      "code": 18,
+      "code": 785,
       "message": "Operator mismatch: signer {0:?}, expected {1:?}",
       "name": "OperatorMismatch"
     },
     {
-      "code": 19,
+      "code": 786,
       "message": "Candidate pool stake too low: validator {0:?}, pool stake {1}, required {2}",
       "name": "CandidatePoolStakeTooLow"
     },
     {
-      "code": 20,
+      "code": 787,
       "message": "Pending candidate intent already exists for validator: {0:?}",
       "name": "CandidateIntentAlreadyExists"
     },
     {
-      "code": 21,
+      "code": 788,
       "message": "Pending stake intent not found: owner {0:?}, validator {1:?}",
       "name": "StakeIntentNotFound"
     },
     {
-      "code": 22,
+      "code": 789,
       "message": "Insufficient pending stake: owner {0:?}, validator {1:?}, available {2}, required {3}",
       "name": "InsufficientPendingStake"
     },
     {
-      "code": 23,
+      "code": 790,
       "message": "Pending stake remaining below minimum: owner {0:?}, validator {1:?}, remaining {2}, minimum {3}",
       "name": "PendingStakeRemainingBelowMinimum"
     },
     {
-      "code": 24,
+      "code": 791,
       "message": "Insufficient shares: owner {0:?}, validator {1:?}, available {2}, required {3}",
       "name": "InsufficientShares"
     },
     {
-      "code": 25,
+      "code": 792,
       "message": "Unstake remaining below minimum: owner {0:?}, validator {1:?}, remaining {2}, minimum {3}",
       "name": "UnstakeRemainingBelowMinimum"
     },
     {
-      "code": 26,
+      "code": 793,
       "message": "Insufficient reward treasury available balance: available {0}, required {1}",
       "name": "InsufficientRewardTreasuryAvailable"
     },
     {
-      "code": 27,
+      "code": 794,
       "message": "Insufficient reward treasury reserved balance: reserved {0}, required {1}",
       "name": "InsufficientRewardTreasuryReserved"
     },
     {
-      "code": 28,
+      "code": 795,
       "message": "Reward treasury backing mismatch: liability {0}, backing {1}",
       "name": "RewardTreasuryBackingMismatch"
     },
     {
-      "code": 29,
+      "code": 796,
       "message": "Invalid parameters: {0}",
       "name": "InvalidParameters"
     },
     {
-      "code": 30,
+      "code": 797,
       "message": "Transparent TokenError",
       "name": "TokenError",
       "transparent": true
     },
     {
-      "code": 31,
+      "code": 798,
       "message": "Transparent ContextError",
       "name": "ContextError",
       "transparent": true
     },
     {
-      "code": 32,
+      "code": 799,
       "message": "Epoch transition not found for epoch: {0}",
       "name": "EpochTransitionNotFound"
     },
     {
-      "code": 33,
+      "code": 800,
       "message": "Epoch attempt not found: {0}",
       "name": "EpochTransitionAttemptNotFound"
     },
     {
-      "code": 34,
+      "code": 801,
       "message": "Epoch transition inputs are frozen for epoch: {0}",
       "name": "EpochTransitionInProgress"
     },
     {
-      "code": 35,
+      "code": 802,
       "message": "Invalid epoch transition target: expected {0}, received {1}",
       "name": "InvalidEpochTransitionTarget"
     },
     {
-      "code": 36,
+      "code": 803,
       "message": "Staking invariant violation: {0}",
       "name": "InvariantViolation"
     }

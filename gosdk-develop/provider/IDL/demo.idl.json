@@ -556,47 +556,47 @@
   ],
   "errors": [
     {
-      "code": 1,
+      "code": 65280,
       "message": "Demo pool {0:?} not found",
       "name": "PoolNotFound"
     },
     {
-      "code": 2,
+      "code": 65281,
       "message": "Demo pool {0:?} already exists",
       "name": "PoolAlreadyExists"
     },
     {
-      "code": 3,
+      "code": 65282,
       "message": "Demo pool {0:?} recipient {1:?} not found",
       "name": "RecipientNotFound"
     },
     {
-      "code": 4,
+      "code": 65283,
       "message": "Invalid parameters: {0}",
       "name": "InvalidParameters"
     },
     {
-      "code": 5,
+      "code": 65284,
       "message": "Demo order not found: {0}",
       "name": "OrderNotFound"
     },
     {
-      "code": 6,
+      "code": 65285,
       "message": "Demo order already exists: {0}",
       "name": "OrderAlreadyExists"
     },
     {
-      "code": 7,
+      "code": 65286,
       "message": "Demo order operator mismatch: {0}",
       "name": "OrderOperatorMismatch"
     },
     {
-      "code": 8,
+      "code": 65287,
       "message": "Demo gas sponsor pool not found: seed {0}",
       "name": "SponsorPoolNotFound"
     },
     {
-      "code": 9,
+      "code": 65288,
       "message": "地址未参与当前交易签名: {0:?}",
       "name": "AddressNotSignatured"
     }

@@ -461,142 +461,142 @@
   ],
   "errors": [
     {
-      "code": 1,
+      "code": 256,
       "message": "Account: {0:?} not found",
       "name": "AccountNotFound"
     },
     {
-      "code": 2,
+      "code": 257,
       "message": "Account: {0:?} already exists",
       "name": "AccountAlreadyExists"
     },
     {
-      "code": 3,
+      "code": 258,
       "message": "Signer index already occupied",
       "name": "SignerAlreadyExists"
     },
     {
-      "code": 4,
+      "code": 259,
       "message": "Signer at index {0} not found",
       "name": "SignerNotFound"
     },
     {
-      "code": 5,
+      "code": 260,
       "message": "Signer count out of range: {0}",
       "name": "SignerNumberOutOfRange"
     },
     {
-      "code": 6,
+      "code": 261,
       "message": "Signer index out of range: {0}",
       "name": "SignerIndexOutOfRange"
     },
     {
-      "code": 7,
+      "code": 262,
       "message": "Signer weight {0} is invalid",
       "name": "SignerWeightInvalid"
     },
     {
-      "code": 8,
+      "code": 263,
       "message": "Total signer weight {0} exceeds 1...255",
       "name": "WeightSumExceeded"
     },
     {
-      "code": 9,
+      "code": 264,
       "message": "signers and weights length mismatch",
       "name": "WeightsLengthMismatch"
     },
     {
-      "code": 10,
+      "code": 265,
       "message": "Threshold {0} is incorrect",
       "name": "ThresholdIncorrect"
     },
     {
-      "code": 11,
+      "code": 266,
       "message": "sig_bit is empty",
       "name": "SigBitEmpty"
     },
     {
-      "code": 12,
+      "code": 267,
       "message": "Signature bit out of range: index {0}",
       "name": "SignatureBitOutOfRange"
     },
     {
-      "code": 13,
+      "code": 268,
       "message": "Insufficient signer weight: got {0}, need {1}",
       "name": "InsufficientSignerWeight"
     },
     {
-      "code": 14,
+      "code": 269,
       "message": "Too few signers in sig_bit: got {0}, need {1}",
       "name": "SigBitTooFew"
     },
     {
-      "code": 15,
+      "code": 270,
       "message": "Signature count mismatch: expected {0}, got {1}",
       "name": "SignatureCountMismatch"
     },
     {
-      "code": 16,
+      "code": 271,
       "message": "Invalid signature",
       "name": "SignatureInvalid"
     },
     {
-      "code": 17,
+      "code": 272,
       "message": "Invalid public key",
       "name": "InvalidPublicKey"
     },
     {
-      "code": 18,
+      "code": 273,
       "message": "Address not signed in current transaction: {0:?}",
       "name": "AddressNotSignatured"
     },
     {
-      "code": 19,
+      "code": 274,
       "message": "Account is not a multisig account",
       "name": "AccountNotMultisig"
     },
     {
-      "code": 20,
+      "code": 275,
       "message": "expires_at_ms must be greater than tx stamp",
       "name": "ExpiresAtInvalid"
     },
     {
-      "code": 21,
+      "code": 276,
       "message": "Vote intent expired",
       "name": "VoteExpired"
     },
     {
-      "code": 22,
+      "code": 277,
       "message": "Vote not ready for replay",
       "name": "VoteNotReady"
     },
     {
-      "code": 23,
+      "code": 278,
       "message": "Vote expires_at_ms does not match registered intent",
       "name": "VoteExpiresMismatch"
     },
     {
-      "code": 24,
+      "code": 279,
       "message": "Vote active intent index full (max 8)",
       "name": "VoteIndexFull"
     },
     {
-      "code": 25,
+      "code": 280,
       "message": "Vote TTL exceeds 24 hours",
       "name": "VoteTtlExceeded"
     },
     {
-      "code": 26,
+      "code": 281,
       "message": "Vote proposal does not match intent_hash",
       "name": "VoteProposalMismatch"
     },
     {
-      "code": 27,
+      "code": 282,
       "message": "Vote proposal wire exceeds size limit",
       "name": "VoteProposalTooLarge"
     },
     {
-      "code": 28,
+      "code": 283,
       "message": "Vote proposal wire is invalid",
       "name": "VoteProposalInvalid"
     }

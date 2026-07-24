@@ -43,7 +43,7 @@
       "signer_lookups": {
         "owner": {
           "path": {
-            "arg": "token",
+            "arg": "token",98cc6ad43f2a7b942be746b18564c2eb1c153a74a7ef1539a3ae335205be2af9
             "type": "Address"
           },
           "res": 241
@@ -896,67 +896,67 @@
   ],
   "errors": [
     {
-      "code": 1,
+      "code": 512,
       "message": "账户不存在 (token: {0:?}, account: {1:?})",
       "name": "AccountNotFound"
     },
     {
-      "code": 2,
+      "code": 513,
       "message": "余额不足 (token: {0:?}, account: {1:?}, 可用: {2}, 需操作: {3})",
       "name": "InsufficientBalance"
     },
     {
-      "code": 3,
+      "code": 514,
       "message": "授权金额不足 (token: {0:?}, owner: {1:?}, spender: {2:?}, 可用: {3}, 需操作: {4})",
       "name": "InsufficientApproval"
     },
     {
-      "code": 4,
+      "code": 515,
       "message": "代币不存在 (token: {0:?})",
       "name": "TokenNotFound"
     },
     {
-      "code": 5,
+      "code": 516,
       "message": "代币已存在 (token: {0:?})",
       "name": "TokenAlreadyExists"
     },
     {
-      "code": 6,
+      "code": 517,
       "message": "Overflow in: {0} + {1} > {2}",
       "name": "Overflow"
     },
     {
-      "code": 7,
+      "code": 518,
       "message": "Underflow in: {0} - {1} < {2}",
       "name": "Underflow"
     },
     {
-      "code": 8,
+      "code": 519,
       "message": "地址未参与当前交易签名: {0:?}",
       "name": "AddressNotSignatured"
     },
     {
-      "code": 9,
+      "code": 520,
       "message": "Invalid parameters: {0}",
       "name": "InvalidParameters"
     },
     {
-      "code": 10,
+      "code": 521,
       "message": "VC `{3}` from issuer {2:?} required for token recipient (token: {0:?}, recipient: {1:?})",
       "name": "VcRequired"
     },
     {
-      "code": 11,
+      "code": 522,
       "message": "VC policy required for token recipient (token: {0:?}, recipient: {1:?})",
       "name": "VcPolicyRequired"
     },
     {
-      "code": 12,
+      "code": 523,
       "message": "faucet is disabled on this chain",
       "name": "FaucetDisabled"
     },
     {
-      "code": 13,
+      "code": 524,
       "message": "faucet cooldown active ({0} ms remaining)",
       "name": "FaucetCooldownActive"
     }

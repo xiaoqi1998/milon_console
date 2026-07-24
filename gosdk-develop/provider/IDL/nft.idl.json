@@ -589,67 +589,67 @@
   ],
   "errors": [
     {
-      "code": 1,
+      "code": 1280,
       "message": "Collection not found: {0:?}",
       "name": "CollectionNotFound"
     },
     {
-      "code": 2,
+      "code": 1281,
       "message": "Collection already exists: {0:?}",
       "name": "CollectionAlreadyExists"
     },
     {
-      "code": 3,
+      "code": 1282,
       "message": "Mint not found: {0:?}",
       "name": "MintNotFound"
     },
     {
-      "code": 4,
+      "code": 1283,
       "message": "Mint already configured: {0:?}",
       "name": "MintAlreadyConfigured"
     },
     {
-      "code": 5,
+      "code": 1284,
       "message": "Mint mode mismatch: {0:?}",
       "name": "MintModeMismatch"
     },
     {
-      "code": 6,
+      "code": 1285,
       "message": "Mint collection mismatch (mint: {0:?}, expected: {1:?}, actual: {2:?})",
       "name": "MintCollectionMismatch"
     },
     {
-      "code": 7,
+      "code": 1286,
       "message": "Royalty recipient mismatch (mint: {0:?}, expected: {1:?}, actual: {2:?})",
       "name": "RoyaltyRecipientMismatch"
     },
     {
-      "code": 8,
+      "code": 1287,
       "message": "Insufficient balance (mint: {0:?}, owner: {1:?}, available: {2}, required: {3})",
       "name": "InsufficientBalance"
     },
     {
-      "code": 9,
+      "code": 1288,
       "message": "Supply cap exceeded (mint: {0:?}, current: {1}, mint_amount: {2}, cap: {3})",
       "name": "SupplyCapExceeded"
     },
     {
-      "code": 10,
+      "code": 1289,
       "message": "Overflow in: {0} + {1} > {2}",
       "name": "Overflow"
     },
     {
-      "code": 11,
+      "code": 1290,
       "message": "Underflow in: {0} - {1} < {2}",
       "name": "Underflow"
     },
     {
-      "code": 12,
+      "code": 1291,
       "message": "Address not signed in current transaction: {0:?}",
       "name": "AddressNotSignatured"
     },
     {
-      "code": 13,
+      "code": 1292,
       "message": "Invalid parameters: {0}",
       "name": "InvalidParameters"
     }
