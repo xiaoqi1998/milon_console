@@ -181,7 +181,7 @@ func (r *IDLTypeResolver) deserializeField(d *postcard.Deserializer, typeName st
 // isBuiltinType 判断是否为内置类型
 func (r *IDLTypeResolver) isBuiltinType(typeName string) bool {
 	switch typeName {
-	case "Address", "Signer", "String", "string", "PublicKey",
+	case "Address", "Signer", "AnySigner", "String", "string", "PublicKey",
 		"bool", "boolean",
 		"u8", "u16", "u32", "u64", "Bitmap64",
 		"i8", "i16", "i32", "i64",
@@ -194,7 +194,7 @@ func (r *IDLTypeResolver) isBuiltinType(typeName string) bool {
 
 func (r *IDLTypeResolver) deserializeBuiltin(d *postcard.Deserializer, typeName string) error {
 	switch typeName {
-	case "Address", "Signer":
+	case "Address", "Signer", "AnySigner":
 		_, err := d.DeserializeFixedBytes(20)
 		return err
 

@@ -291,7 +291,9 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 	}
 
 	switch argName {
-	case "Address", "Signer":
+	case "Address", "Signer", "AnySigner":
+		// AnySigner 与 Signer 在链上编码一致（20 字节地址），
+		// 仅 role=any_signer 在合约层影响签名校验，不影响序列化
 		return serializeAddress(serializer, value)
 	case "PublicKey":
 		return serializePublicKey(serializer, value)
@@ -364,65 +366,108 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 		}
 		return serializer.SerializeI64(number)
 	case "bytes":
-		buf, ok := value.([]byte)
-		if !ok {
-			return fmt.Errorf("bytes expects a []byte slice")
+		buf, err := asBytes(value)
+		if err != nil {
+			return err
 		}
 		return serializer.SerializeBytes(buf)
 	case "B96":
-		switch v := value.(type) {
-		case [12]byte:
-			serializer.SerializeFixedBytes(v[:])
-		case []byte:
-			if len(v) != 12 {
-				return fmt.Errorf("B96 expects exactly 12 bytes, got %d", len(v))
-			}
-			serializer.SerializeFixedBytes(v)
-		default:
-			return fmt.Errorf("B96 expects [12]byte or []byte")
+		buf, err := asFixedBytes(value, 12, "B96")
+		if err != nil {
+			return err
 		}
+		serializer.SerializeFixedBytes(buf)
 		return nil
 	case "B144":
-		switch v := value.(type) {
-		case [18]byte:
-			serializer.SerializeFixedBytes(v[:])
-		case []byte:
-			if len(v) != 18 {
-				return fmt.Errorf("B144 expects exactly 18 bytes, got %d", len(v))
-			}
-			serializer.SerializeFixedBytes(v)
-		default:
-			return fmt.Errorf("B144 expects [18]byte or []byte")
+		buf, err := asFixedBytes(value, 18, "B144")
+		if err != nil {
+			return err
 		}
+		serializer.SerializeFixedBytes(buf)
 		return nil
 	case "B160":
-		switch v := value.(type) {
-		case [20]byte:
-			serializer.SerializeFixedBytes(v[:])
-		case []byte:
-			if len(v) != 20 {
-				return fmt.Errorf("B160 expects exactly 20 bytes, got %d", len(v))
-			}
-			serializer.SerializeFixedBytes(v)
-		default:
-			return fmt.Errorf("B160 expects [20]byte or []byte")
+		buf, err := asFixedBytes(value, 20, "B160")
+		if err != nil {
+			return err
 		}
+		serializer.SerializeFixedBytes(buf)
 		return nil
 	case "B256":
-		switch v := value.(type) {
-		case [32]byte:
-			serializer.SerializeFixedBytes(v[:])
-		case []byte:
-			if len(v) != 32 {
-				return fmt.Errorf("B256 expects exactly 32 bytes, got %d", len(v))
-			}
-			serializer.SerializeFixedBytes(v)
-		default:
-			return fmt.Errorf("B256 expects [32]byte or []byte")
+		buf, err := asFixedBytes(value, 32, "B256")
+		if err != nil {
+			return err
 		}
+		serializer.SerializeFixedBytes(buf)
 		return nil
 	default:
 		return fmt.Errorf("unsupported IDL type: %s", argName)
+	}
+}
+
+// asBytes 将多种常见输入形式转换为 []byte：
+//   - []byte：直接返回
+//   - [N]byte：转换为切片
+//   - string：按 hex 字符串解码（可选 0x 前缀）
+//   - []interface{} / 数值切片：按字节值列表解码（如 JSON 数组 [255, 0]）
+func asBytes(value any) ([]byte, error) {
+	switch v := value.(type) {
+	case []byte:
+		return v, nil
+	case string:
+		return decodeHex(v)
+	default:
+		rv := reflect.ValueOf(value)
+		if !rv.IsValid() {
+			return nil, fmt.Errorf("bytes expects []byte, hex string, or number array")
+		}
+		if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
+			return nil, fmt.Errorf("bytes expects []byte, hex string, or number array")
+		}
+		out := make([]byte, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			n, err := asUint64(rv.Index(i).Interface(), math.MaxUint8, "bytes element")
+			if err != nil {
+				return nil, err
+			}
+			out[i] = byte(n)
+		}
+		return out, nil
+	}
+}
+
+// asFixedBytes 将多种输入形式转换为指定长度的 []byte（用于 B96/B144/B160/B256）。
+// 接受 []byte、[N]byte、hex 字符串、JSON 数值数组。
+func asFixedBytes(value any, expectedLen int, name string) ([]byte, error) {
+	switch v := value.(type) {
+	case [12]byte:
+		if expectedLen != 12 {
+			return nil, fmt.Errorf("%s expects %d bytes", name, expectedLen)
+		}
+		return v[:], nil
+	case [18]byte:
+		if expectedLen != 18 {
+			return nil, fmt.Errorf("%s expects %d bytes", name, expectedLen)
+		}
+		return v[:], nil
+	case [20]byte:
+		if expectedLen != 20 {
+			return nil, fmt.Errorf("%s expects %d bytes", name, expectedLen)
+		}
+		return v[:], nil
+	case [32]byte:
+		if expectedLen != 32 {
+			return nil, fmt.Errorf("%s expects %d bytes", name, expectedLen)
+		}
+		return v[:], nil
+	default:
+		buf, err := asBytes(value)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", name, err)
+		}
+		if len(buf) != expectedLen {
+			return nil, fmt.Errorf("%s expects exactly %d bytes, got %d", name, expectedLen, len(buf))
+		}
+		return buf, nil
 	}
 }
 
@@ -656,7 +701,7 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 
 	// Handle built-in basic types
 	switch idlTypeName {
-	case "Address", "Signer":
+	case "Address", "Signer", "AnySigner":
 		// Address: fixed 20 bytes
 		if *offset+20 > len(body) {
 			return nil, fmt.Errorf("insufficient data for Address")
