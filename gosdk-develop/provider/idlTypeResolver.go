@@ -9,7 +9,8 @@ import (
 
 // IDLTypeResolver 基于 IDL 的 type_tag 解析器
 type IDLTypeResolver struct {
-	Providers map[string]*Provider
+	Providers       map[string]*Provider
+	currentProvider *Provider // 递归上下文：当前正在解码的 Provider
 }
 
 func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueBytes []byte, remaining []byte, err error) {
@@ -29,6 +30,11 @@ func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueByt
 		// 未找到 type_tag 定义，报错提示用户检查 IDL
 		return nil, bytes, fmt.Errorf("unknown resource type_tag %d (not found in any loaded IDL)", typeTag)
 	}
+
+	// 设置当前 Provider 上下文（递归解码时使用）
+	savedProvider := r.currentProvider
+	r.currentProvider = targetProvider
+	defer func() { r.currentProvider = savedProvider }()
 
 	// 找到了 IDLType，创建临时 Deserializer 并捕获消耗的字节
 	d := postcard.NewDeserializer(bytes)
@@ -63,15 +69,22 @@ func (r *IDLTypeResolver) DecodeEvent(typeTag uint64, bytes []byte) (eventBytes 
 
 	// 尝试从 EventByTypeTag 查找事件定义
 	var targetEvent *Event
+	var targetProvider *Provider
 
 	for _, pd := range r.Providers {
 		if event, ok := pd.GetEventByTypeTag(typeTag); ok {
 			targetEvent = event
+			targetProvider = pd
 			break
 		}
 	}
 
 	if targetEvent != nil {
+		// 设置当前 Provider 上下文（递归解码时使用）
+		savedProvider := r.currentProvider
+		r.currentProvider = targetProvider
+		defer func() { r.currentProvider = savedProvider }()
+
 		// 找到了事件定义，按字段顺序精确解析
 		captured, err := d.CaptureBytes(func() error {
 			for _, field := range targetEvent.Fields {
@@ -167,6 +180,15 @@ func (r *IDLTypeResolver) deserializeField(d *postcard.Deserializer, typeName st
 	}
 
 	// 如果不是 builtin，查找 IDL 定义（可能是 struct/enum）
+	// 优先使用当前 Provider 上下文，避免跨 IDL 同名类型冲突
+	if r.currentProvider != nil {
+		if idlType, ok := r.currentProvider.GetIDLTypeByName(typeName); ok {
+			_, err := r.deserializeStructEnum(d, idlType)
+			return err
+		}
+	}
+
+	// 如果当前 Provider 中找不到，再全局查找（兜底）
 	for _, pd := range r.Providers {
 		if idlType, ok := pd.GetIDLTypeByName(typeName); ok {
 			_, err := r.deserializeStructEnum(d, idlType)
