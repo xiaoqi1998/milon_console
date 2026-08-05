@@ -590,12 +590,7 @@
           "type": "Metadata"
         },
         {
-          "name": "required_credential_issuer",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "required_credential_schema",
+          "name": "credential_id",
           "role": "input",
           "type": "String"
         }
@@ -640,12 +635,7 @@
           "type": "Address"
         },
         {
-          "name": "issuer",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "credential_schema",
+          "name": "credential_id",
           "role": "input",
           "type": "String"
         }
@@ -672,12 +662,7 @@
           "type": "Address"
         },
         {
-          "name": "issuer",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "credential_schema",
+          "name": "credential_id",
           "role": "input",
           "type": "String"
         }
@@ -740,12 +725,12 @@
           "type": "Address"
         }
       ],
-      "discriminator": 30837,
-      "handler": "compliance_config",
+      "discriminator": 43186,
+      "handler": "compliance",
       "kind": "view",
-      "name": "ComplianceConfig",
+      "name": "Compliance",
       "returns": {
-        "type": "ComplianceConfig"
+        "type": "Compliance"
       }
     },
     {
@@ -809,32 +794,17 @@
     {
       "fields": [
         {
-          "name": "issuer",
-          "type": "Address"
-        },
-        {
-          "name": "credential_schema",
-          "type": "String"
-        }
-      ],
-      "kind": "struct",
-      "name": "CredentialRequirement",
-      "typeTag": 5517265418036635102
-    },
-    {
-      "fields": [
-        {
           "name": "mode",
           "type": "ComplianceMode"
         },
         {
           "name": "requirements",
-          "type": "vec<CredentialRequirement>"
+          "type": "vec<String>"
         }
       ],
       "kind": "struct",
-      "name": "ComplianceConfig",
-      "typeTag": 8975390230487047531
+      "name": "Compliance",
+      "typeTag": 1113559040641697305
     },
     {
       "kind": "builtin",
@@ -881,7 +851,7 @@
     {
       "name": "FAUCET_AMOUNT",
       "type": "u64",
-      "value": "10 * 1_000_000"
+      "value": "10000 * 1_000_000"
     },
     {
       "name": "FAUCET_COOLDOWN_MS",

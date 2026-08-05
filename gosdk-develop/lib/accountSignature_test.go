@@ -1,4 +1,4 @@
-package milon
+package lib
 
 import (
 	"bytes"

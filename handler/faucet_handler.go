@@ -10,6 +10,8 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	"github.com/milon-labs/milon-go-sdk/api"
+	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/provider"
 )
 
@@ -63,25 +65,48 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 
 	mc, _ := h.nm.GetCurrent()
 
-	requestId := uint64(time.Now().UnixMilli())
-	result, err := mc.BuildAndSubmitSingleIxSplit(
-		"token",
-		"ClaimFaucet",
-		provider.Args{"claimer": addr},
-		sk,
-		addr,
-		mode,
-		requestId,
-	)
+	// Build a split-mode ClaimFaucet transaction manually (SDK's BuildAndSubmitSingleIxSplit was removed).
+	pd, err := mc.GetPdByIDLAppName("token")
 	if err != nil {
+		logSDKError(c, "ClaimFaucet", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to load token IDL: "+err.Error(), nil))
+		return
+	}
+	wire, err := pd.Encode("ClaimFaucet", provider.Args{"claimer": addr})
+	if err != nil {
+		logSDKError(c, "ClaimFaucet", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to encode ClaimFaucet: "+err.Error(), nil))
+		return
+	}
+
+	requestId := lib.RequestID(time.Now().UnixMilli())
+	tx, err := lib.NewTransactionWithParam([]api.PackedInstruction{wire}, nil)
+	if err != nil {
+		logSDKError(c, "ClaimFaucet", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to create tx: "+err.Error(), nil))
+		return
+	}
+	sig, err := tx.SignIxGas(addr, sk, 0, mode)
+	if err != nil {
+		logSDKError(c, "ClaimFaucet", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to sign tx: "+err.Error(), nil))
+		return
+	}
+	tx.AddSignature(addr, *sig)
+	if err := tx.ValidateWire(); err != nil {
+		logSDKError(c, "ClaimFaucet", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "transaction validation failed: "+err.Error(), nil))
+		return
+	}
+	if err := mc.SubmitTx(tx, requestId); err != nil {
 		logSDKError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to claim faucet: "+err.Error(), nil))
 		return
 	}
-	txHash := result.BodyTxHash
+	txHash := txHashHex(tx)
 
 	// Wait for the transaction to be confirmed (like the SDK's ClaimFaucet does internally)
-	_, err = mc.WaitForTransaction(txHash, 1)
+	_, err = mc.WaitForTransaction(txHash, lib.RequestID(1))
 	if err != nil {
 		logSDKError(c, "ClaimFaucet", err)
 		// Still return the txHash so the caller can track it, but note the wait error
@@ -121,7 +146,7 @@ func (h *FaucetHandler) GetBalance(c *gin.Context) {
 
 	mc, _ := h.nm.GetCurrent()
 
-	balance, err := mc.AddressBalance(addr)
+	balance, err := mc.BalanceOf(addr)
 	if err != nil {
 		logSDKError(c, "GetBalance", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get balance: "+err.Error(), nil))

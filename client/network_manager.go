@@ -19,24 +19,24 @@ type NetworkInfo struct {
 // NetworkManager manages multiple Milon network configurations and their clients.
 type NetworkManager struct {
 	mu             sync.RWMutex
-	networks       map[string]milon.NetworkConfig
+	networks       map[string]milon.Network
 	currentNetwork string
-	clients        map[string]*milon.MolinClient
+	clients        map[string]*milon.Client
 }
 
 // NewNetworkManager creates a NetworkManager with localNet and devNet pre-configured,
 // then creates a client for the default network.
 func NewNetworkManager(defaultNetwork string) *NetworkManager {
 	nm := &NetworkManager{
-		networks: make(map[string]milon.NetworkConfig),
-		clients:  make(map[string]*milon.MolinClient),
+		networks: make(map[string]milon.Network),
+		clients:  make(map[string]*milon.Client),
 	}
 
-	nm.networks[milon.LocalNetConfig.Name] = milon.LocalNetConfig
-	nm.networks[milon.DevNetConfig.Name] = milon.DevNetConfig
+	nm.networks[milon.LocalNet.Name] = milon.LocalNet
+	nm.networks[milon.DevNet.Name] = milon.DevNet
 
 	if _, ok := nm.networks[defaultNetwork]; !ok {
-		defaultNetwork = milon.DevNetConfig.Name
+		defaultNetwork = milon.DevNet.Name
 	}
 	nm.currentNetwork = defaultNetwork
 
@@ -66,7 +66,7 @@ func (nm *NetworkManager) ListNetworks() []NetworkInfo {
 }
 
 // GetCurrent returns the client and config of the current network.
-func (nm *NetworkManager) GetCurrent() (*milon.MolinClient, milon.NetworkConfig) {
+func (nm *NetworkManager) GetCurrent() (*milon.Client, milon.Network) {
 	nm.mu.RLock()
 	defer nm.mu.RUnlock()
 
@@ -95,7 +95,7 @@ func (nm *NetworkManager) Switch(networkName string) error {
 }
 
 // getOrCreateClient returns a cached client or creates one on demand.
-func (nm *NetworkManager) getOrCreateClient(networkName string) (*milon.MolinClient, error) {
+func (nm *NetworkManager) getOrCreateClient(networkName string) (*milon.Client, error) {
 	nm.mu.Lock()
 	defer nm.mu.Unlock()
 
@@ -107,16 +107,22 @@ func (nm *NetworkManager) getOrCreateClient(networkName string) (*milon.MolinCli
 }
 
 // createClient builds a MilonClient for the given network. Caller must hold the lock.
-func (nm *NetworkManager) createClient(networkName string) (*milon.MolinClient, error) {
+// Note: NewClient does not return an error (IDL load failure panics), so we recover
+// any panic and convert it into a readable error to keep the existing error flow.
+func (nm *NetworkManager) createClient(networkName string) (client *milon.Client, err error) {
 	cfg, ok := nm.networks[networkName]
 	if !ok {
 		return nil, fmt.Errorf("network %s not found", networkName)
 	}
 
-	client, err := milon.NewMolinClientWithErr(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create MilonClient for network %s: %w", networkName, err)
-	}
+	defer func() {
+		if r := recover(); r != nil {
+			client = nil
+			err = fmt.Errorf("failed to create MilonClient for network %s: %v", networkName, r)
+		}
+	}()
+
+	client = milon.NewClient(cfg)
 
 	nm.clients[networkName] = client
 	return client, nil

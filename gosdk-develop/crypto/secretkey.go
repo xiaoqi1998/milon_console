@@ -56,8 +56,7 @@ func NewClassicalSecretKey() SecretKeyer {
 	for {
 		var ret [ClassicalKeySize]byte
 		if _, err := rand.Read(ret[:]); err != nil {
-			// 系统级 RNG 故障属致命错误，无法恢复
-			panic(fmt.Sprintf("crypto/rand failed: %v", err))
+			panic(err)
 		}
 
 		// 检查是否为有效的 secp256k1 私钥
@@ -72,8 +71,7 @@ func NewClassicalSecretKey() SecretKeyer {
 func NewPureClassicalSecretKey() SecretKeyer {
 	var ret [ClassicalKeySize]byte
 	if _, err := rand.Read(ret[:]); err != nil {
-		// 系统级 RNG 故障属致命错误，无法恢复
-		panic(fmt.Sprintf("crypto/rand failed: %v", err))
+		panic(err)
 	}
 	sk := &ClassicalSecretKey{Bytes: ret}
 	return sk
@@ -416,8 +414,7 @@ func (sk *FnDsa512SecretKey) Type() SecretKeyType {
 }
 
 func (sk *FnDsa512SecretKey) AsBytes() []byte {
-	// 返回副本，避免外部修改污染私钥底层数组，确保 Zeroize 能完全清零。
-	return append([]byte(nil), sk.bytes[:]...)
+	return sk.bytes[:]
 }
 
 func (sk *FnDsa512SecretKey) ToHex() string {

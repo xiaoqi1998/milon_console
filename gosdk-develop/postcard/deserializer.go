@@ -7,16 +7,9 @@ import (
 	"unicode/utf8"
 )
 
-const (
-	MaxBytesLen = 1 << 24 // 16MB
-	MaxSeqLen   = 1 << 20 // ~100万
-	MaxDepth    = 100
-)
-
 type Deserializer struct {
 	buffer []byte
 	offset int
-	depth  int
 }
 
 func NewDeserializer(data []byte) *Deserializer {
@@ -42,9 +35,6 @@ func (d *Deserializer) DeserializeBytes() ([]byte, error) {
 	length, err := d.DeserializeU32()
 	if err != nil {
 		return nil, err
-	}
-	if length > MaxBytesLen {
-		return nil, fmt.Errorf("bytes length %d exceeds max %d", length, MaxBytesLen)
 	}
 	return d.DeserializeFixedBytes(int(length))
 }

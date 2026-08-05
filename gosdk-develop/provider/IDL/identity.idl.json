@@ -125,14 +125,9 @@
           "type": "DidDocumentInput"
         },
         {
-          "name": "alias",
+          "name": "name",
           "role": "input",
-          "type": "String"
-        },
-        {
-          "name": "suffix",
-          "role": "input",
-          "type": "String"
+          "type": "DidName"
         }
       ],
       "discriminator": 48723,
@@ -303,14 +298,9 @@
           "type": "Signer"
         },
         {
-          "name": "alias",
+          "name": "name",
           "role": "input",
-          "type": "String"
-        },
-        {
-          "name": "suffix",
-          "role": "input",
-          "type": "String"
+          "type": "DidName"
         }
       ],
       "discriminator": 44782,
@@ -526,6 +516,22 @@
           "type": "Address"
         }
       ],
+      "discriminator": 21854,
+      "handler": "document",
+      "kind": "view",
+      "name": "Document",
+      "returns": {
+        "type": "DidDocumentState"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
       "discriminator": 17805,
       "handler": "key_index",
       "kind": "view",
@@ -693,7 +699,7 @@
         {
           "name": "name",
           "role": "input",
-          "type": "String"
+          "type": "DidName"
         }
       ],
       "discriminator": 60506,
@@ -702,6 +708,22 @@
       "name": "NameBinding",
       "returns": {
         "type": "DidNameBinding"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "credential_id",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 42682,
+      "handler": "credential_definition",
+      "kind": "view",
+      "name": "CredentialDefinition",
+      "returns": {
+        "type": "CredentialDefinition"
       }
     },
     {
@@ -828,7 +850,7 @@
         {
           "fields": [],
           "kind": "unit",
-          "name": "Address"
+          "name": "Personal"
         },
         {
           "fields": [],
@@ -940,7 +962,7 @@
         },
         {
           "name": "alias",
-          "type": "option<String>"
+          "type": "option<DidName>"
         },
         {
           "name": "avatar_uri",
@@ -949,6 +971,10 @@
         {
           "name": "updated_at_ms",
           "type": "u64"
+        },
+        {
+          "name": "deactivated",
+          "type": "bool"
         }
       ],
       "kind": "struct",
@@ -981,8 +1007,23 @@
     {
       "fields": [
         {
-          "name": "name",
+          "name": "alias",
           "type": "String"
+        },
+        {
+          "name": "suffix",
+          "type": "u32"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidName",
+      "typeTag": 1816879182884645427
+    },
+    {
+      "fields": [
+        {
+          "name": "name",
+          "type": "DidName"
         },
         {
           "name": "subject",
@@ -1046,7 +1087,7 @@
         },
         {
           "name": "alias",
-          "type": "option<String>"
+          "type": "option<DidName>"
         }
       ],
       "kind": "struct",
@@ -1082,16 +1123,6 @@
           "fields": [],
           "kind": "unit",
           "name": "KycProvider"
-        },
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "NodeOperator"
-        },
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "Auditor"
         }
       ]
     },
@@ -1128,6 +1159,21 @@
       "typeTag": 16180937054376829620
     },
     {
+      "fields": [
+        {
+          "name": "issuer",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "CredentialDefinition",
+      "typeTag": 2804905021398639289
+    },
+    {
       "kind": "builtin",
       "name": "Address",
       "typeTag": 17438174819379414968
@@ -1156,6 +1202,11 @@
       "kind": "builtin",
       "name": "bytes",
       "typeTag": 10405529814227927951
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
     },
     {
       "kind": "builtin",
@@ -1356,38 +1407,63 @@
     },
     {
       "code": 1061,
+      "message": "Credential ID hash collision",
+      "name": "CredentialIdCollision"
+    },
+    {
+      "code": 1062,
+      "message": "Credential ID is invalid",
+      "name": "InvalidCredentialId"
+    },
+    {
+      "code": 1063,
+      "message": "Credential definition not found: {0}",
+      "name": "CredentialDefinitionNotFound"
+    },
+    {
+      "code": 1064,
       "message": "Credential schema index does not match the requested schema",
       "name": "CredentialSchemaMismatch"
     },
     {
-      "code": 1062,
+      "code": 1065,
       "message": "Accepted VC issuer count exceeds the limit",
       "name": "TooManyAcceptedVcIssuers"
     },
     {
-      "code": 1063,
+      "code": 1066,
       "message": "Only a currently valid VC attestation can be accepted",
       "name": "VcAttestationNotCurrentlyValid"
     },
     {
-      "code": 1064,
+      "code": 1067,
       "message": "VC acceptance index does not exist for subject",
       "name": "VcAcceptanceIndexNotFound"
     },
     {
-      "code": 1065,
+      "code": 1068,
       "message": "VC issuer is not in the subject acceptance index",
       "name": "VcIssuerNotAccepted"
     },
     {
-      "code": 1066,
+      "code": 1069,
       "message": "VC attestation issuer signature is invalid",
       "name": "InvalidVcIssuerSignature"
     },
     {
-      "code": 1067,
+      "code": 1070,
       "message": "VC issuer DID key was not found: issuer={0:?}, key_id={1}",
       "name": "VcIssuerKeyNotFound"
+    },
+    {
+      "code": 1071,
+      "message": "VC attestation already exists with different immutable content",
+      "name": "VcAttestationAlreadyExists"
+    },
+    {
+      "code": 1072,
+      "message": "VC attestation has been permanently revoked",
+      "name": "VcAttestationRevoked"
     }
   ]
 }

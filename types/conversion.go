@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/crypto"
+	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
 // ParseSignatureMode parses a signature mode JSON object.
 // Supported formats:
 //   - {"type":"pubkey","publicKey":"base58_pk"}
 //   - {"type":"multisig","index":2,"publicKey":"base58_pk"}
-func ParseSignatureMode(modeMap map[string]interface{}) (milon.AccountSignatureMode, error) {
+func ParseSignatureMode(modeMap map[string]interface{}) (lib.AccountSignatureMode, error) {
 	typeVal, ok := modeMap["type"]
 	if !ok {
 		return nil, fmt.Errorf("signatureMode missing 'type' field")
@@ -35,7 +35,7 @@ func ParseSignatureMode(modeMap map[string]interface{}) (milon.AccountSignatureM
 
 	switch typeStr {
 	case "pubkey":
-		return milon.PubKeySignatureMode{PublicKey: *pk}, nil
+		return lib.PubKeySignatureMode{PublicKey: *pk}, nil
 	case "multisig":
 		indexVal, ok := modeMap["index"]
 		if !ok {
@@ -47,14 +47,14 @@ func ParseSignatureMode(modeMap map[string]interface{}) (milon.AccountSignatureM
 			return nil, fmt.Errorf("multisig signatureMode 'index' must be a number")
 		}
 		index := uint8(indexFloat)
-		return milon.MultisigKeySignatureMode{Index: index, PublicKey: *pk}, nil
+		return lib.MultisigKeySignatureMode{Index: index, PublicKey: *pk}, nil
 	default:
 		return nil, fmt.Errorf("unsupported signatureMode type: %s", typeStr)
 	}
 }
 
 // ParseSignatureModeFromJSON parses a signature mode from raw JSON bytes.
-func ParseSignatureModeFromJSON(raw json.RawMessage) (milon.AccountSignatureMode, error) {
+func ParseSignatureModeFromJSON(raw json.RawMessage) (lib.AccountSignatureMode, error) {
 	var modeMap map[string]interface{}
 	if err := json.Unmarshal(raw, &modeMap); err != nil {
 		return nil, fmt.Errorf("invalid signatureMode JSON: %w", err)
@@ -83,14 +83,14 @@ func ParseAddress(addrStr string) (crypto.Address, error) {
 
 // ParseSignerList parses a list of SignerEntry into parallel slices of addresses, secret keys, and signature modes.
 // Validates that addresses are non-empty and unique. privateKey is parsed only if non-empty (required for write, optional for simulate).
-func ParseSignerList(signers []SignerEntry, requirePrivateKey bool) ([]crypto.Address, []crypto.SecretKeyer, []milon.AccountSignatureMode, error) {
+func ParseSignerList(signers []SignerEntry, requirePrivateKey bool) ([]crypto.Address, []crypto.SecretKeyer, []lib.AccountSignatureMode, error) {
 	if len(signers) == 0 {
 		return nil, nil, nil, fmt.Errorf("signers cannot be empty")
 	}
 
 	addresses := make([]crypto.Address, 0, len(signers))
 	sks := make([]crypto.SecretKeyer, 0, len(signers))
-	modes := make([]milon.AccountSignatureMode, 0, len(signers))
+	modes := make([]lib.AccountSignatureMode, 0, len(signers))
 
 	seen := make(map[string]bool)
 	for i, s := range signers {

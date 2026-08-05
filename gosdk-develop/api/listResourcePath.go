@@ -31,11 +31,9 @@ func UnmarshalListResourcePathListFromRawList(rawList [][]any) ([]*ListResourceP
 				return nil, fmt.Errorf("invalid ListResourcePathInfo response")
 			}
 			// JSON number is decoded as float64, convert to byte
-			val, ok := b.(float64)
-			if !ok {
-				return nil, fmt.Errorf("invalid ListResourcePathInfo response: RsHash byte at index %d is not a number", i)
+			if val, ok := b.(float64); ok {
+				rsHash[i] = byte(val)
 			}
-			rsHash[i] = byte(val)
 		}
 
 		pathStr, ok := item[1].(string)

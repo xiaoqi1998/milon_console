@@ -1,4 +1,4 @@
-package milon
+package lib
 
 import (
 	"bytes"
@@ -17,6 +17,7 @@ var (
 )
 
 type TransactionStamp uint64
+type RequestID uint64
 
 func SetChainId(id uint64) {
 	ChainIdMutex.Lock()
@@ -82,7 +83,7 @@ type TransactionSignatures struct {
 
 // TxHash = Blake3(MILON_ROOT || TX_HASH_DOMAIN || chain_id || Stamp || [Payer] || ix_hashes...)
 func (tx *Transaction) TxHash() api.TxHash {
-	hasher := crypto.Hash32Hasher([]byte(crypto.MilonTxHashDomainContext))
+	hasher := crypto.Hasher([]byte(crypto.MilonTxHashDomainContext))
 
 	chainIDBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(chainIDBytes, GetChainId()) //big-endian
@@ -280,7 +281,7 @@ func (tx *Transaction) IxHashes() []api.TxHash {
 
 // ixHashFromWire compute ix hash from PackedInstruction: IxHash = Blake3(MILON_ROOT || IX_HASH_DOMAIN || chain_id || wire)
 func (tx *Transaction) ixHashFromWire(wire api.PackedInstruction) api.TxHash {
-	hasher := crypto.Hash32Hasher([]byte(crypto.MilonIxHashDomainContext))
+	hasher := crypto.Hasher([]byte(crypto.MilonIxHashDomainContext))
 
 	chainIDBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(chainIDBytes, GetChainId()) // big-endian
@@ -390,7 +391,7 @@ func (tx *Transaction) ValidateWire() error {
 // Scenario 3: unified-payer mode (sponsorIx has no effect)
 //
 //	tx := NewTransactionWithParam(instructions, payer)
-//	payerSig := tx.SignPayerAndAddSignature(payer, sk, mode)
+//	payerSig := tx.SignPayer(payer, sk, mode)
 //	tx.AddSignature(*payer, *payerSig)
 //	err := tx.ValidateWireWith([]uint8{0}) // sponsorIx ignored
 func (tx *Transaction) ValidateWireWith(sponsorIx []uint8) error {
@@ -577,107 +578,3 @@ func (tx *Transaction) UnmarshalPostcard(deserializer *postcard.Deserializer) er
 
 	return nil
 }
-
-// **************************************** Build simulated transaction ****************************************//
-
-// BuildSingleIxUnifiedSimulateSign Single-payer mode: build transaction structure with simulate signature (payer signs bit0 and bit63)
-func BuildSingleIxUnifiedSimulateSign(payer crypto.Address, acSigMod AccountSignatureMode, wire api.PackedInstruction, options ...any) (*Transaction, error) {
-	tx, err := NewTransactionWithParam([]api.PackedInstruction{wire}, &payer, options...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build Transaction: %w", err)
-	}
-
-	sig, err := tx.SimulateSignIxGas(payer, 0, acSigMod)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign ix gas: %w", err)
-	}
-
-	tx.AddSignature(payer, *sig)
-	return tx, nil
-}
-
-// BuildSingleIxUnifiedSimulateSignOnlyGas single-payer mode: build transaction structure with simulate signature (payer only signs bit63)
-func BuildSingleIxUnifiedSimulateSignOnlyGas(payer crypto.Address, acSigMod AccountSignatureMode, wire api.PackedInstruction, options ...any) (*Transaction, error) {
-	tx, err := NewTransactionWithParam([]api.PackedInstruction{wire}, &payer, options...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build Transaction: %w", err)
-	}
-
-	sig, err := tx.SimulateSignPayer(payer, acSigMod)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign ix and payer: %w", err)
-	}
-
-	tx.AddSignature(payer, *sig)
-	return tx, nil
-}
-
-// BuildSingleIxSplitSimulateSign Split-payer mode: build transaction structure with simulate signature (tx.Payer=nil)
-func BuildSingleIxSplitSimulateSign(owner crypto.Address, acSigMod AccountSignatureMode, wire api.PackedInstruction, options ...any) (*Transaction, error) {
-	tx, err := NewTransactionWithParam([]api.PackedInstruction{wire}, nil, options...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build Transaction: %w", err)
-	}
-
-	sig, err := tx.SimulateSignIxGas(owner, 0, acSigMod)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign ix gas: %w", err)
-	}
-
-	tx.AddSignature(owner, *sig)
-	return tx, nil
-}
-
-// **************************************** Build simulated transaction ****************************************//
-
-// **************************************** Build signature transaction ****************************************//
-
-// BuildSingleIxUnifiedPayerSignAll Single-payer mode: payer signs both bit63(gas) and bit0(execution), set tx.Payer
-func BuildSingleIxUnifiedPayerSignAll(payerSk crypto.SecretKeyer, payer crypto.Address, acSigMod AccountSignatureMode, wire api.PackedInstruction, options ...any) (*Transaction, error) {
-	tx, err := NewTransactionWithParam([]api.PackedInstruction{wire}, &payer, options...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build Transaction: %w", err)
-	}
-
-	sig, err := tx.SignIxAndPayer(payer, payerSk, 0, acSigMod)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign ix and payer: %w", err)
-	}
-
-	tx.AddSignature(payer, *sig)
-	return tx, nil
-}
-
-// BuildSingleIxUnifiedPayerSignOnlyGas Single-payer mode: payer only signs bit63(gas), no authorization for instruction execution
-func BuildSingleIxUnifiedPayerSignOnlyGas(payerSk crypto.SecretKeyer, payer crypto.Address, acSigMod AccountSignatureMode, wire api.PackedInstruction, options ...any) (*Transaction, error) {
-	tx, err := NewTransactionWithParam([]api.PackedInstruction{wire}, &payer, options...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build Transaction: %w", err)
-	}
-
-	sig, err := tx.SignPayer(payer, payerSk, acSigMod)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign ix and payer: %w", err)
-	}
-
-	tx.AddSignature(payer, *sig)
-	return tx, nil
-}
-
-// BuildSingleIxSplitSign Split-payer mode: owner bears both gas and execution (tx.Payer=nil, sign bit63+bit0)
-func BuildSingleIxSplitSign(ownerSk crypto.SecretKeyer, owner crypto.Address, acSigMod AccountSignatureMode, wire api.PackedInstruction, options ...any) (*Transaction, error) {
-	tx, err := NewTransactionWithParam([]api.PackedInstruction{wire}, nil, options...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build Transaction: %w", err)
-	}
-
-	sig, err := tx.SignIxGas(owner, ownerSk, 0, acSigMod)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign ix gas: %w", err)
-	}
-
-	tx.AddSignature(owner, *sig)
-	return tx, nil
-}
-
-// **************************************** Build signature transaction ****************************************//

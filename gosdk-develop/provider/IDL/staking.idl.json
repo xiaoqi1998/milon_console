@@ -94,7 +94,7 @@
         {
           "name": "amount",
           "role": "input",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "discriminator": 26413,
@@ -117,7 +117,7 @@
         {
           "name": "amount",
           "role": "input",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "discriminator": 7586,
@@ -140,7 +140,7 @@
         {
           "name": "amount",
           "role": "input",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "discriminator": 26203,
@@ -166,7 +166,7 @@
       "kind": "entry",
       "name": "ClaimRewards",
       "returns": {
-        "type": "Amount"
+        "type": "u64"
       }
     },
     {
@@ -205,7 +205,7 @@
         {
           "name": "shares",
           "role": "input",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "discriminator": 34861,
@@ -302,7 +302,7 @@
         {
           "name": "epoch",
           "role": "input",
-          "type": "Epoch"
+          "type": "u64"
         }
       ],
       "discriminator": 54522,
@@ -318,7 +318,7 @@
         {
           "name": "epoch",
           "role": "input",
-          "type": "Epoch"
+          "type": "u64"
         }
       ],
       "discriminator": 41226,
@@ -354,7 +354,7 @@
         {
           "name": "epoch",
           "role": "input",
-          "type": "Epoch"
+          "type": "u64"
         }
       ],
       "discriminator": 24093,
@@ -408,7 +408,7 @@
       "kind": "view",
       "name": "HeldPrincipal",
       "returns": {
-        "type": "Amount"
+        "type": "u64"
       }
     },
     {
@@ -416,7 +416,7 @@
         {
           "name": "epoch",
           "role": "input",
-          "type": "Epoch"
+          "type": "u64"
         }
       ],
       "discriminator": 13587,
@@ -432,7 +432,7 @@
         {
           "name": "epoch",
           "role": "input",
-          "type": "Epoch"
+          "type": "u64"
         }
       ],
       "discriminator": 54057,
@@ -458,12 +458,12 @@
         {
           "name": "epoch",
           "role": "input",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "index",
           "role": "input",
-          "type": "ValidatorIndex"
+          "type": "u16"
         }
       ],
       "discriminator": 41871,
@@ -479,7 +479,7 @@
         {
           "name": "epoch",
           "role": "input",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "validator",
@@ -492,7 +492,7 @@
       "kind": "view",
       "name": "ConsensusActiveValidatorIndex",
       "returns": {
-        "type": "option<ValidatorIndex>"
+        "type": "option<u16>"
       }
     },
     {
@@ -500,7 +500,7 @@
         {
           "name": "epoch",
           "role": "input",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "consensus_pubkey",
@@ -513,7 +513,7 @@
       "kind": "view",
       "name": "ConsensusActiveValidatorIndexByPubkey",
       "returns": {
-        "type": "option<ValidatorIndex>"
+        "type": "option<u16>"
       }
     },
     {
@@ -521,7 +521,7 @@
         {
           "name": "epoch",
           "role": "input",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "bitmap",
@@ -617,19 +617,19 @@
         },
         {
           "name": "operator_stake",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "delegated_stake",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "total_stake",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "total_shares",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "reward_index",
@@ -641,7 +641,7 @@
         },
         {
           "name": "claimable_operator_commission",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "commission_rate_bps",
@@ -656,15 +656,15 @@
       "fields": [
         {
           "name": "share_rewards_paid",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "commission_paid",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "total_paid",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "kind": "struct",
@@ -703,7 +703,7 @@
       "fields": [
         {
           "name": "target_epoch",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "owner",
@@ -715,7 +715,7 @@
         },
         {
           "name": "amount",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "kind": "struct",
@@ -726,7 +726,7 @@
       "fields": [
         {
           "name": "target_epoch",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "owner",
@@ -738,7 +738,7 @@
         },
         {
           "name": "shares",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "kind": "struct",
@@ -749,7 +749,7 @@
       "fields": [
         {
           "name": "target_epoch",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "operator",
@@ -780,7 +780,7 @@
         },
         {
           "name": "shares",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "reward_debt",
@@ -788,7 +788,7 @@
         },
         {
           "name": "claimable_rewards",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "kind": "struct",
@@ -807,27 +807,27 @@
         },
         {
           "name": "pending_stake",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "settled_shares",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "pending_unstake_shares",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "unstakeable_shares",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "claimable_rewards",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "next_settlement_epoch",
-          "type": "option<Epoch>"
+          "type": "option<u64>"
         }
       ],
       "kind": "struct",
@@ -896,7 +896,7 @@
       "fields": [
         {
           "name": "epoch",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "validators",
@@ -915,7 +915,7 @@
       "fields": [
         {
           "name": "index",
-          "type": "ValidatorIndex"
+          "type": "u16"
         },
         {
           "name": "validator",
@@ -946,7 +946,7 @@
       "fields": [
         {
           "name": "epoch",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "active_set_hash",
@@ -973,7 +973,7 @@
       "fields": [
         {
           "name": "epoch",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "seed",
@@ -993,15 +993,15 @@
         },
         {
           "name": "reward_per_active_validator",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "distributed_rewards",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "rewarded_epoch",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "rewarded_validator_count",
@@ -1036,7 +1036,7 @@
         },
         {
           "name": "reward_per_active_validator",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "kind": "struct",
@@ -1047,11 +1047,11 @@
       "fields": [
         {
           "name": "current_epoch",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "last_transition_epoch",
-          "type": "option<Epoch>"
+          "type": "option<u64>"
         },
         {
           "name": "last_transition_seed",
@@ -1066,7 +1066,7 @@
       "fields": [
         {
           "name": "target_epoch",
-          "type": "Epoch"
+          "type": "u64"
         },
         {
           "name": "selection_seed",
@@ -1093,15 +1093,15 @@
         },
         {
           "name": "balance",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "available_rewards",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "reserved_rewards",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "kind": "struct",
@@ -1147,15 +1147,15 @@
       "fields": [
         {
           "name": "operator_stake",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "delegated_stake",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "total_shares",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "reward_index",
@@ -1167,7 +1167,7 @@
         },
         {
           "name": "claimable_operator_commission",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "kind": "struct",
@@ -1178,11 +1178,11 @@
       "fields": [
         {
           "name": "available",
-          "type": "Amount"
+          "type": "u64"
         },
         {
           "name": "reserved",
-          "type": "Amount"
+          "type": "u64"
         }
       ],
       "kind": "struct",
@@ -1218,23 +1218,8 @@
     },
     {
       "kind": "builtin",
-      "name": "Amount",
-      "typeTag": 5563585020063213298
-    },
-    {
-      "kind": "builtin",
       "name": "Bitmap64",
       "typeTag": 6259351211094536142
-    },
-    {
-      "kind": "builtin",
-      "name": "Epoch",
-      "typeTag": 5563585020063213298
-    },
-    {
-      "kind": "builtin",
-      "name": "ValidatorIndex",
-      "typeTag": 5558799945458185151
     },
     {
       "kind": "builtin",
@@ -1275,12 +1260,12 @@
     },
     {
       "name": "MIN_CANDIDATE_POOL_STAKE",
-      "type": "Amount",
+      "type": "u64",
       "value": 1
     },
     {
       "name": "MIN_STAKE_AMOUNT",
-      "type": "Amount",
+      "type": "u64",
       "value": 1
     }
   ],

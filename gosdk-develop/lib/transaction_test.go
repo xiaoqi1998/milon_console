@@ -1,4 +1,4 @@
-package milon
+package lib
 
 import (
 	"fmt"
@@ -898,7 +898,11 @@ func TestBuildSignedSingleIxUnified(t *testing.T) {
 	wire := api.PackedInstruction{1, 2, 3, 4}
 
 	// Unified-payer mode: set payer
-	tx, err := BuildSingleIxUnifiedPayerSignAll(sk, *payer, PubKeySignatureMode{PublicKey: *pubKey}, wire, stamp)
+	tx, err := NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(payer).
+		WithStamp(stamp).
+		AddIxAndPayerSig(*payer, sk, 0, PubKeySignatureMode{PublicKey: *pubKey}).
+		Build()
 	assert.NoError(t, err)
 
 	// Verify transaction structure
@@ -931,7 +935,10 @@ func TestBuildSingleIxUnifiedPayerSignOnlyGas(t *testing.T) {
 	assert.NoError(t, err)
 
 	wire := api.PackedInstruction{1, 2, 3}
-	tx, err := BuildSingleIxUnifiedPayerSignOnlyGas(payerSk, *payer, PubKeySignatureMode{PublicKey: *payerPubKey}, wire)
+	tx, err := NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(payer).
+		AddPayerSig(*payer, payerSk, PubKeySignatureMode{PublicKey: *payerPubKey}).
+		Build()
 	assert.NoError(t, err)
 
 	// Verify instruction
@@ -966,7 +973,10 @@ func TestBuildSignedSingleIxSplit(t *testing.T) {
 	wire := api.PackedInstruction{5, 6, 7, 8}
 
 	// Split-payer mode: no payer set
-	tx, err := BuildSingleIxSplitSign(sk, *owner, PubKeySignatureMode{PublicKey: *pubKey}, wire, stamp)
+	tx, err := NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithStamp(stamp).
+		AddIxAndPayerSig(*owner, sk, 0, PubKeySignatureMode{PublicKey: *pubKey}).
+		Build()
 	assert.NoError(t, err)
 
 	// Verify transaction structure

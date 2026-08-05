@@ -12,8 +12,8 @@ const MilonTxBatchHashDomainContext = "milon.tx-batch.v1"
 
 const PkAddressDomainContext = "milon.address.pk.v1"
 
-// Hash32Hasher 创建已写入 MILON_ROOT_DOMAIN 与 domain 的 Blake3 hasher，供增量 update 使用
-func Hash32Hasher(domain []byte) *blake3.Hasher {
+// Hasher 创建已写入 MILON_ROOT_DOMAIN 与 domain 的 Blake3 hasher，供增量 update 使用
+func Hasher(domain []byte) *blake3.Hasher {
 	hasher := blake3.New(32, nil)
 	hasher.Write([]byte(MilonRootDomainContext))
 	hasher.Write(domain)
@@ -22,7 +22,7 @@ func Hash32Hasher(domain []byte) *blake3.Hasher {
 
 // Hash32 计算 Blake3(MILON_ROOT_DOMAIN || domain || parts...)，输出 32 字节
 func Hash32(domain []byte, parts ...[]byte) [32]byte {
-	hasher := Hash32Hasher(domain)
+	hasher := Hasher(domain)
 	for _, part := range parts {
 		hasher.Write(part)
 	}
@@ -33,7 +33,7 @@ func Hash32(domain []byte, parts ...[]byte) [32]byte {
 }
 
 func Hash64(domain []byte, parts ...[]byte) [64]byte {
-	hasher := Hash32Hasher(domain)
+	hasher := Hasher(domain)
 	for _, part := range parts {
 		hasher.Write(part)
 	}

@@ -138,14 +138,14 @@ func (m *IDLManager) DecodeInstruction(instruction []byte) (map[string]any, erro
 func (m *IDLManager) DecodeEventDataByTag(typeTag uint64, data []byte) (map[string]any, error) {
 	// Iterate through all providers to find matching typeTag
 	var matchedProvider *Provider
-	var matchedTypeName string
+	var matchedEventName string
 	var matchedEventFields []EventField
 
 	for _, provider := range m.providerByAppID {
 		for _, event := range provider.IDL.Events {
 			if event.TypeTag == typeTag {
 				matchedProvider = provider
-				matchedTypeName = event.Name
+				matchedEventName = event.Name
 				matchedEventFields = event.Fields
 				break
 			}
@@ -190,10 +190,10 @@ func (m *IDLManager) DecodeEventDataByTag(typeTag uint64, data []byte) (map[stri
 	}
 
 	return map[string]any{
-		"type_name": matchedTypeName,
-		"app_name":  matchedProvider.IDL.Metadata.Name,
-		"type_tag":  typeTag,
-		"data":      record,
+		"app_id":     matchedProvider.IDL.Metadata.AppID,
+		"app_name":   matchedProvider.IDL.Metadata.Name,
+		"event_name": matchedEventName,
+		"data":       record,
 	}, nil
 }
 
@@ -401,6 +401,16 @@ func (m *IDLManager) formatValue(value any) string {
 		return fmt.Sprintf("I64(%d)", v)
 	case bool:
 		return fmt.Sprintf("Bool(%v)", v)
+	case []byte:
+		return fmt.Sprintf("Bytes(%x)", v)
+	case [12]byte:
+		return fmt.Sprintf("B96(%x)", v[:])
+	case [18]byte:
+		return fmt.Sprintf("B144(%x)", v[:])
+	case [20]byte:
+		return fmt.Sprintf("B160(%x)", v[:])
+	case [32]byte:
+		return fmt.Sprintf("B256(%x)", v[:])
 	case []any:
 		items := make([]string, len(v))
 		for i, item := range v {

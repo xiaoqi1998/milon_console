@@ -291,9 +291,7 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 	}
 
 	switch argName {
-	case "Address", "Signer", "AnySigner":
-		// AnySigner 与 Signer 在链上编码一致（20 字节地址），
-		// 仅 role=any_signer 在合约层影响签名校验，不影响序列化
+	case "Address", "Signer":
 		return serializeAddress(serializer, value)
 	case "PublicKey":
 		return serializePublicKey(serializer, value)
@@ -323,13 +321,7 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 			return err
 		}
 		return serializer.SerializeU32(uint32(number))
-	case "u64":
-		number, err := asUint64(value, math.MaxUint64, "u64")
-		if err != nil {
-			return err
-		}
-		return serializer.SerializeU64(number)
-	case "Bitmap64":
+	case "u64", "Bitmap64", "Amount", "Epoch":
 		number, err := asUint64(value, math.MaxUint64, "u64")
 		if err != nil {
 			return err
@@ -366,108 +358,65 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 		}
 		return serializer.SerializeI64(number)
 	case "bytes":
-		buf, err := asBytes(value)
-		if err != nil {
-			return err
+		buf, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("bytes expects a []byte slice")
 		}
 		return serializer.SerializeBytes(buf)
 	case "B96":
-		buf, err := asFixedBytes(value, 12, "B96")
-		if err != nil {
-			return err
+		switch v := value.(type) {
+		case [12]byte:
+			serializer.SerializeFixedBytes(v[:])
+		case []byte:
+			if len(v) != 12 {
+				return fmt.Errorf("B96 expects exactly 12 bytes, got %d", len(v))
+			}
+			serializer.SerializeFixedBytes(v)
+		default:
+			return fmt.Errorf("B96 expects [12]byte or []byte")
 		}
-		serializer.SerializeFixedBytes(buf)
 		return nil
 	case "B144":
-		buf, err := asFixedBytes(value, 18, "B144")
-		if err != nil {
-			return err
+		switch v := value.(type) {
+		case [18]byte:
+			serializer.SerializeFixedBytes(v[:])
+		case []byte:
+			if len(v) != 18 {
+				return fmt.Errorf("B144 expects exactly 18 bytes, got %d", len(v))
+			}
+			serializer.SerializeFixedBytes(v)
+		default:
+			return fmt.Errorf("B144 expects [18]byte or []byte")
 		}
-		serializer.SerializeFixedBytes(buf)
 		return nil
 	case "B160":
-		buf, err := asFixedBytes(value, 20, "B160")
-		if err != nil {
-			return err
+		switch v := value.(type) {
+		case [20]byte:
+			serializer.SerializeFixedBytes(v[:])
+		case []byte:
+			if len(v) != 20 {
+				return fmt.Errorf("B160 expects exactly 20 bytes, got %d", len(v))
+			}
+			serializer.SerializeFixedBytes(v)
+		default:
+			return fmt.Errorf("B160 expects [20]byte or []byte")
 		}
-		serializer.SerializeFixedBytes(buf)
 		return nil
 	case "B256":
-		buf, err := asFixedBytes(value, 32, "B256")
-		if err != nil {
-			return err
+		switch v := value.(type) {
+		case [32]byte:
+			serializer.SerializeFixedBytes(v[:])
+		case []byte:
+			if len(v) != 32 {
+				return fmt.Errorf("B256 expects exactly 32 bytes, got %d", len(v))
+			}
+			serializer.SerializeFixedBytes(v)
+		default:
+			return fmt.Errorf("B256 expects [32]byte or []byte")
 		}
-		serializer.SerializeFixedBytes(buf)
 		return nil
 	default:
 		return fmt.Errorf("unsupported IDL type: %s", argName)
-	}
-}
-
-// asBytes 将多种常见输入形式转换为 []byte：
-//   - []byte：直接返回
-//   - [N]byte：转换为切片
-//   - string：按 hex 字符串解码（可选 0x 前缀）
-//   - []interface{} / 数值切片：按字节值列表解码（如 JSON 数组 [255, 0]）
-func asBytes(value any) ([]byte, error) {
-	switch v := value.(type) {
-	case []byte:
-		return v, nil
-	case string:
-		return decodeHex(v)
-	default:
-		rv := reflect.ValueOf(value)
-		if !rv.IsValid() {
-			return nil, fmt.Errorf("bytes expects []byte, hex string, or number array")
-		}
-		if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
-			return nil, fmt.Errorf("bytes expects []byte, hex string, or number array")
-		}
-		out := make([]byte, rv.Len())
-		for i := 0; i < rv.Len(); i++ {
-			n, err := asUint64(rv.Index(i).Interface(), math.MaxUint8, "bytes element")
-			if err != nil {
-				return nil, err
-			}
-			out[i] = byte(n)
-		}
-		return out, nil
-	}
-}
-
-// asFixedBytes 将多种输入形式转换为指定长度的 []byte（用于 B96/B144/B160/B256）。
-// 接受 []byte、[N]byte、hex 字符串、JSON 数值数组。
-func asFixedBytes(value any, expectedLen int, name string) ([]byte, error) {
-	switch v := value.(type) {
-	case [12]byte:
-		if expectedLen != 12 {
-			return nil, fmt.Errorf("%s expects %d bytes", name, expectedLen)
-		}
-		return v[:], nil
-	case [18]byte:
-		if expectedLen != 18 {
-			return nil, fmt.Errorf("%s expects %d bytes", name, expectedLen)
-		}
-		return v[:], nil
-	case [20]byte:
-		if expectedLen != 20 {
-			return nil, fmt.Errorf("%s expects %d bytes", name, expectedLen)
-		}
-		return v[:], nil
-	case [32]byte:
-		if expectedLen != 32 {
-			return nil, fmt.Errorf("%s expects %d bytes", name, expectedLen)
-		}
-		return v[:], nil
-	default:
-		buf, err := asBytes(value)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", name, err)
-		}
-		if len(buf) != expectedLen {
-			return nil, fmt.Errorf("%s expects exactly %d bytes, got %d", name, expectedLen, len(buf))
-		}
-		return buf, nil
 	}
 }
 
@@ -529,12 +478,6 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		length, err := DecodeViewVarUint(body, offset)
 		if err != nil {
 			return nil, err
-		}
-
-		// 防止恶意输入导致 OOM（也覆盖 32 位平台 int 溢出）
-		const maxVecLen = 1 << 20 // ~100万
-		if length > maxVecLen {
-			return nil, fmt.Errorf("vec length %d exceeds max %d", length, maxVecLen)
 		}
 
 		items := make([]any, length)
@@ -701,7 +644,7 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 
 	// Handle built-in basic types
 	switch idlTypeName {
-	case "Address", "Signer", "AnySigner":
+	case "Address", "Signer":
 		// Address: fixed 20 bytes
 		if *offset+20 > len(body) {
 			return nil, fmt.Errorf("insufficient data for Address")
@@ -759,9 +702,6 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		if err != nil {
 			return nil, err
 		}
-		if length > math.MaxInt32 {
-			return nil, fmt.Errorf("string length %d exceeds MaxInt32", length)
-		}
 
 		if *offset+int(length) > len(body) {
 			return nil, fmt.Errorf("insufficient data for String")
@@ -779,60 +719,24 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		return val, nil
 	case "u8":
 		val, err := DecodeViewVarUint(body, offset)
-		if err != nil {
-			return nil, err
-		}
-		if val > math.MaxUint8 {
-			return nil, fmt.Errorf("u8 value overflow: %d", val)
-		}
-		return uint8(val), nil
+		return uint8(val), err
 	case "u16":
 		val, err := DecodeViewVarUint(body, offset)
-		if err != nil {
-			return nil, err
-		}
-		if val > math.MaxUint16 {
-			return nil, fmt.Errorf("u16 value overflow: %d", val)
-		}
-		return uint16(val), nil
+		return uint16(val), err
 	case "u32":
 		val, err := DecodeViewVarUint(body, offset)
-		if err != nil {
-			return nil, err
-		}
-		if val > math.MaxUint32 {
-			return nil, fmt.Errorf("u32 value overflow: %d", val)
-		}
-		return uint32(val), nil
-	case "u64", "Bitmap64":
+		return uint32(val), err
+	case "u64", "Bitmap64", "Amount", "Epoch":
 		return DecodeViewVarUint(body, offset)
 	case "i8":
 		val, err := DecodeViewVarUint(body, offset)
-		if err != nil {
-			return nil, err
-		}
-		if val > math.MaxInt8 {
-			return nil, fmt.Errorf("i8 value overflow: %d", val)
-		}
-		return int8(val), nil
+		return int8(val), err
 	case "i16":
 		val, err := DecodeViewVarUint(body, offset)
-		if err != nil {
-			return nil, err
-		}
-		if val > math.MaxInt16 {
-			return nil, fmt.Errorf("i16 value overflow: %d", val)
-		}
-		return int16(val), nil
+		return int16(val), err
 	case "i32":
 		val, err := DecodeViewVarUint(body, offset)
-		if err != nil {
-			return nil, err
-		}
-		if val > math.MaxInt32 {
-			return nil, fmt.Errorf("i32 value overflow: %d", val)
-		}
-		return int32(val), nil
+		return int32(val), err
 	case "i64":
 		return DecodeViewVarUint(body, offset)
 	case "bytes":
@@ -840,9 +744,6 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		length, err := DecodeViewVarUint(body, offset)
 		if err != nil {
 			return nil, err
-		}
-		if length > math.MaxInt32 {
-			return nil, fmt.Errorf("bytes length %d exceeds MaxInt32", length)
 		}
 
 		if *offset+int(length) > len(body) {
@@ -919,9 +820,6 @@ func (p *Provider) DecodeViewDatas(instructionName string, body []byte) ([]Decod
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode result count: %w", err)
 	}
-	if resultCount > math.MaxInt32 {
-		return nil, fmt.Errorf("result count %d exceeds MaxInt32", resultCount)
-	}
 
 	results := make([]DecodedTaggedValue, resultCount)
 
@@ -940,9 +838,6 @@ func (p *Provider) DecodeViewDatas(instructionName string, body []byte) ([]Decod
 			okDataLen, err := DecodeViewVarUint(body, &offset)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode result[%d] Ok data length: %w", i, err)
-			}
-			if okDataLen > math.MaxInt32 {
-				return nil, fmt.Errorf("ok data length %d exceeds MaxInt32", okDataLen)
 			}
 
 			// Read Ok internal byte data
@@ -987,18 +882,12 @@ func (p *Provider) decodeTxFailurePayload(body []byte, offset *int) (*api.TxFail
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode failure code: %w", err)
 	}
-	if codeRaw > math.MaxUint16 {
-		return nil, fmt.Errorf("failure code overflow: %d", codeRaw)
-	}
 	code := uint16(codeRaw)
 
 	// Decode message (String)
 	messageLen, err := DecodeViewVarUint(body, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode message length: %w", err)
-	}
-	if messageLen > math.MaxInt32 {
-		return nil, fmt.Errorf("message length %d exceeds MaxInt32", messageLen)
 	}
 	if *offset+int(messageLen) > len(body) {
 		return nil, fmt.Errorf("insufficient data for failure message")
@@ -1010,9 +899,6 @@ func (p *Provider) decodeTxFailurePayload(body []byte, offset *int) (*api.TxFail
 	dataLen, err := DecodeViewVarUint(body, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode data length: %w", err)
-	}
-	if dataLen > math.MaxInt32 {
-		return nil, fmt.Errorf("data length %d exceeds MaxInt32", dataLen)
 	}
 	if *offset+int(dataLen) > len(body) {
 		return nil, fmt.Errorf("insufficient data for failure data")
@@ -1583,5 +1469,3 @@ func decodeHex(value string) ([]byte, error) {
 	}
 	return buf, nil
 }
-
-//************************ todo---临时调试代码

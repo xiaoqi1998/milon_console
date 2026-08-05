@@ -1,7 +1,5 @@
 package postcard
 
-import "fmt"
-
 type Marshaler interface {
 	MarshalPostcard(*Serializer) error
 }
@@ -79,18 +77,9 @@ func DeserializeValue[T any](deserializer *Deserializer, fn DeserializerFunc[T])
 }
 
 func DeserializeSeq[T any](deserializer *Deserializer, fn DeserializerFunc[T]) ([]T, error) {
-	deserializer.depth++
-	defer func() { deserializer.depth-- }()
-	if deserializer.depth > MaxDepth {
-		return nil, fmt.Errorf("exceeded max deserialization depth %d", MaxDepth)
-	}
-
 	length, err := deserializer.DeserializeU32()
 	if err != nil {
 		return nil, err
-	}
-	if length > MaxSeqLen {
-		return nil, fmt.Errorf("sequence length %d exceeds max %d", length, MaxSeqLen)
 	}
 	values := make([]T, 0, length)
 	for i := uint32(0); i < length; i++ {
@@ -104,12 +93,6 @@ func DeserializeSeq[T any](deserializer *Deserializer, fn DeserializerFunc[T]) (
 }
 
 func DeserializeOption[T any](deserializer *Deserializer, fn DeserializerFunc[T]) (*T, error) {
-	deserializer.depth++
-	defer func() { deserializer.depth-- }()
-	if deserializer.depth > MaxDepth {
-		return nil, fmt.Errorf("exceeded max deserialization depth %d", MaxDepth)
-	}
-
 	hasValue, err := deserializer.DeserializeBool()
 	if err != nil {
 		return nil, err

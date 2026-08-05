@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/milon-labs/milon-go-sdk/postcard"
-	"sync"
 )
 
 type PackedInstruction []byte
@@ -24,26 +23,45 @@ type BlobHash [BlobHashLen]byte
 
 const MIL = "M11on1111111111111111111111"
 
-func NewTxHashFromStringRelaxed(txHashHex string) (TxHash, error) {
+// String implements the Stringer interface, returning Base58 format
+func (txHash TxHash) String() string {
+	return base58.Encode(txHash[:])
+}
+
+//func (rsHash RsHash) String() string {
+//	return base58.Encode(rsHash[:])
+//}
+//func (blobHash BlobHash) String() string {
+//	return base58.Encode(blobHash[:])
+//}
+
+func NewTxHashFromRelaxed(input any) (TxHash, error) {
 	var hash TxHash
 
-	// try hex decode first
-	buf, err := hex.DecodeString(txHashHex)
-	if err == nil {
+	switch v := input.(type) {
+	case TxHash:
+		return v, nil
+	case string:
+		// try hex decode first
+		buf, err := hex.DecodeString(v)
+		if err == nil {
+			if len(buf) != TxHashLen {
+				return hash, fmt.Errorf("invalid hex decoded length: expected %d, got %d", TxHashLen, len(buf))
+			}
+			copy(hash[:], buf)
+			return hash, nil
+		}
+
+		// try base58 decode if hex fails
+		buf = base58.Decode(v)
 		if len(buf) != TxHashLen {
-			return hash, fmt.Errorf("invalid hex decoded length: expected %d, got %d", TxHashLen, len(buf))
+			return hash, fmt.Errorf("invalid base58 decoded length: expected %d, got %d", TxHashLen, len(buf))
 		}
 		copy(hash[:], buf)
 		return hash, nil
+	default:
+		return hash, fmt.Errorf("unsupported type for TxHash: %T (expected string or api.TxHash)", input)
 	}
-
-	// try base58 decode if hex fails
-	buf = base58.Decode(txHashHex)
-	if len(buf) != TxHashLen {
-		return hash, fmt.Errorf("invalid base58 decoded length: expected %d, got %d", TxHashLen, len(buf))
-	}
-	copy(hash[:], buf)
-	return hash, nil
 }
 
 type AccessRecord struct {
@@ -73,28 +91,17 @@ type TypeTagWithDataResolver interface {
 	DecodeEvent(typeTag uint64, bytes []byte) (eventBytes []byte, remaining []byte, err error)
 }
 
-var (
-	globalTypeResolver     TypeTagWithDataResolver
-	globalTypeResolverLock sync.RWMutex
-)
+var GlobalTypeResolver TypeTagWithDataResolver
 
 func SetGlobalTypeResolver(resolver TypeTagWithDataResolver) {
-	globalTypeResolverLock.Lock()
-	defer globalTypeResolverLock.Unlock()
-	globalTypeResolver = resolver
-}
-
-func GetGlobalTypeResolver() TypeTagWithDataResolver {
-	globalTypeResolverLock.RLock()
-	defer globalTypeResolverLock.RUnlock()
-	return globalTypeResolver
+	GlobalTypeResolver = resolver
 }
 
 // ReadAnySerializeValueWithTypeTag reads value bytes by type_tag
 func ReadAnySerializeValueWithTypeTag(d *postcard.Deserializer, typeTag uint64) ([]byte, error) {
-	if resolver := GetGlobalTypeResolver(); resolver != nil {
+	if GlobalTypeResolver != nil {
 		remaining := d.Buffer()[d.Offset():]
-		valueBytes, rest, err := resolver.DecodeResource(typeTag, remaining)
+		valueBytes, rest, err := GlobalTypeResolver.DecodeResource(typeTag, remaining)
 		if err != nil {
 			return nil, fmt.Errorf("TypeTagWithDataResolver.DecodeResource failed (type_tag=%d): %w", typeTag, err)
 		}
@@ -204,9 +211,9 @@ func DeserializeEventEntry(d *postcard.Deserializer) (TypeTagWithData, error) {
 	}, nil
 }
 func readEventValue(d *postcard.Deserializer, typeTag uint64) ([]byte, error) {
-	if resolver := GetGlobalTypeResolver(); resolver != nil {
+	if GlobalTypeResolver != nil {
 		remaining := d.Buffer()[d.Offset():]
-		eventBytes, rest, err := resolver.DecodeEvent(typeTag, remaining)
+		eventBytes, rest, err := GlobalTypeResolver.DecodeEvent(typeTag, remaining)
 		if err != nil {
 			return nil, fmt.Errorf("GlobalTypeResolver.DecodeEvent failed (type_tag=%d): %w", typeTag, err)
 		}

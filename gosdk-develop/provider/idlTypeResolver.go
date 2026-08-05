@@ -9,8 +9,7 @@ import (
 
 // IDLTypeResolver 基于 IDL 的 type_tag 解析器
 type IDLTypeResolver struct {
-	Providers       map[string]*Provider
-	currentProvider *Provider // 递归上下文：当前正在解码的 Provider
+	Providers map[string]*Provider
 }
 
 func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueBytes []byte, remaining []byte, err error) {
@@ -30,11 +29,6 @@ func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueByt
 		// 未找到 type_tag 定义，报错提示用户检查 IDL
 		return nil, bytes, fmt.Errorf("unknown resource type_tag %d (not found in any loaded IDL)", typeTag)
 	}
-
-	// 设置当前 Provider 上下文（递归解码时使用）
-	savedProvider := r.currentProvider
-	r.currentProvider = targetProvider
-	defer func() { r.currentProvider = savedProvider }()
 
 	// 找到了 IDLType，创建临时 Deserializer 并捕获消耗的字节
 	d := postcard.NewDeserializer(bytes)
@@ -69,22 +63,15 @@ func (r *IDLTypeResolver) DecodeEvent(typeTag uint64, bytes []byte) (eventBytes 
 
 	// 尝试从 EventByTypeTag 查找事件定义
 	var targetEvent *Event
-	var targetProvider *Provider
 
 	for _, pd := range r.Providers {
 		if event, ok := pd.GetEventByTypeTag(typeTag); ok {
 			targetEvent = event
-			targetProvider = pd
 			break
 		}
 	}
 
 	if targetEvent != nil {
-		// 设置当前 Provider 上下文（递归解码时使用）
-		savedProvider := r.currentProvider
-		r.currentProvider = targetProvider
-		defer func() { r.currentProvider = savedProvider }()
-
 		// 找到了事件定义，按字段顺序精确解析
 		captured, err := d.CaptureBytes(func() error {
 			for _, field := range targetEvent.Fields {
@@ -126,14 +113,13 @@ func (r *IDLTypeResolver) deserializeStructEnum(d *postcard.Deserializer, idlTyp
 				return fmt.Errorf("deserialize enum variant failed: %w", err)
 			}
 
-			// 校验 variant index 范围，越界时返回错误（避免 32 位平台 int 溢出导致静默返回 nil）
-			if uint64(variantIndex) >= uint64(len(idlType.Variants)) {
-				return fmt.Errorf("enum variant index %d out of range (max %d)", variantIndex, len(idlType.Variants)-1)
-			}
-			variant := idlType.Variants[variantIndex]
-			for _, field := range variant.Fields {
-				if err := r.deserializeField(d, field.Type); err != nil {
-					return fmt.Errorf("deserialize enum variant %s field %s failed: %w", variant.Name, field.Name, err)
+			// 如果 variant 有字段，还需要继续解析
+			if int(variantIndex) < len(idlType.Variants) {
+				variant := idlType.Variants[variantIndex]
+				for _, field := range variant.Fields {
+					if err := r.deserializeField(d, field.Type); err != nil {
+						return fmt.Errorf("deserialize enum variant %s field %s failed: %w", variant.Name, field.Name, err)
+					}
 				}
 			}
 			return nil
@@ -180,15 +166,6 @@ func (r *IDLTypeResolver) deserializeField(d *postcard.Deserializer, typeName st
 	}
 
 	// 如果不是 builtin，查找 IDL 定义（可能是 struct/enum）
-	// 优先使用当前 Provider 上下文，避免跨 IDL 同名类型冲突
-	if r.currentProvider != nil {
-		if idlType, ok := r.currentProvider.GetIDLTypeByName(typeName); ok {
-			_, err := r.deserializeStructEnum(d, idlType)
-			return err
-		}
-	}
-
-	// 如果当前 Provider 中找不到，再全局查找（兜底）
 	for _, pd := range r.Providers {
 		if idlType, ok := pd.GetIDLTypeByName(typeName); ok {
 			_, err := r.deserializeStructEnum(d, idlType)
@@ -203,7 +180,7 @@ func (r *IDLTypeResolver) deserializeField(d *postcard.Deserializer, typeName st
 // isBuiltinType 判断是否为内置类型
 func (r *IDLTypeResolver) isBuiltinType(typeName string) bool {
 	switch typeName {
-	case "Address", "Signer", "AnySigner", "String", "string", "PublicKey",
+	case "Address", "Signer", "String", "string", "PublicKey",
 		"bool", "boolean",
 		"u8", "u16", "u32", "u64", "Bitmap64",
 		"i8", "i16", "i32", "i64",
@@ -216,7 +193,7 @@ func (r *IDLTypeResolver) isBuiltinType(typeName string) bool {
 
 func (r *IDLTypeResolver) deserializeBuiltin(d *postcard.Deserializer, typeName string) error {
 	switch typeName {
-	case "Address", "Signer", "AnySigner":
+	case "Address", "Signer":
 		_, err := d.DeserializeFixedBytes(20)
 		return err
 

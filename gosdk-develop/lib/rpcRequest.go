@@ -1,4 +1,4 @@
-package milon
+package lib
 
 import (
 	"fmt"
@@ -36,13 +36,10 @@ const (
 	MethodTypeListResourcePath      MethodType = 10
 	MethodTypeGetResourcePathByHash MethodType = 11
 	MethodTypeGetAccessValue        MethodType = 12
-
-	// Deprecated: Use MethodTypeGetAccessValue instead. Kept for backward compatibility.
-	MethodGetAccessValue = MethodTypeGetAccessValue
 )
 
-func NewSubmitTransaction(method MethodType, requestId uint64, body []byte) *SubmitTransaction {
-	tx := &SubmitTransaction{
+func NewRpcRequest(method MethodType, requestId RequestID, body []byte) *RpcRequest {
+	tx := &RpcRequest{
 		Method:    method,
 		RequestId: requestId,
 		Body:      body,
@@ -51,48 +48,49 @@ func NewSubmitTransaction(method MethodType, requestId uint64, body []byte) *Sub
 	return tx
 }
 
-type SubmitTransaction struct {
+type RpcRequest struct {
 	Method    MethodType
-	RequestId uint64
+	RequestId RequestID
 	Body      []byte
 }
 
-func (st *SubmitTransaction) MarshalPostcard(serializer *postcard.Serializer) error {
+func (req *RpcRequest) MarshalPostcard(serializer *postcard.Serializer) error {
 	var err error
 
-	if err = st.Method.MarshalPostcard(serializer); err != nil {
+	if err = req.Method.MarshalPostcard(serializer); err != nil {
 		return fmt.Errorf("failed to serialize Method: %w", err)
 	}
 
-	if err = serializer.SerializeU64(st.RequestId); err != nil {
+	if err = serializer.SerializeU64(uint64(req.RequestId)); err != nil {
 		return fmt.Errorf("failed to serialize RequestId: %w", err)
 	}
 
-	if err = serializer.SerializeBytes(st.Body); err != nil {
+	if err = serializer.SerializeBytes(req.Body); err != nil {
 		return fmt.Errorf("failed to serialize Body: %w", err)
 	}
 
 	return nil
 }
 
-func (st *SubmitTransaction) UnmarshalPostcard(deserializer *postcard.Deserializer) error {
+func (req *RpcRequest) UnmarshalPostcard(deserializer *postcard.Deserializer) error {
 	var err error
 
-	if err = st.Method.UnmarshalPostcard(deserializer); err != nil {
+	if err = req.Method.UnmarshalPostcard(deserializer); err != nil {
 		return fmt.Errorf("failed to deserialize Method: %w", err)
 	}
 
-	st.RequestId, err = deserializer.DeserializeU64()
+	requestId, err := deserializer.DeserializeU64()
 	if err != nil {
 		return fmt.Errorf("failed to deserialize RequestId: %w", err)
 	}
+	req.RequestId = RequestID(requestId)
 
-	st.Body, err = deserializer.DeserializeBytes()
+	req.Body, err = deserializer.DeserializeBytes()
 	if err != nil {
 		return fmt.Errorf("failed to deserialize Body: %w", err)
 	}
-	if st.Body == nil {
-		st.Body = []byte{}
+	if req.Body == nil {
+		req.Body = []byte{}
 	}
 
 	return nil

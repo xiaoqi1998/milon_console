@@ -9,6 +9,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
 // SystemHandler exposes system-level endpoints.
@@ -32,7 +33,7 @@ type chainHeadResponse struct {
 // Health handles GET /api/health
 func (h *SystemHandler) Health(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetChainHead(requestId)
 	if err != nil {
@@ -54,7 +55,7 @@ func (h *SystemHandler) Health(c *gin.Context) {
 // GetChainHead handles GET /api/chain-head
 func (h *SystemHandler) GetChainHead(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetChainHead(requestId)
 	if err != nil {

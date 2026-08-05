@@ -9,25 +9,6 @@ import (
 	"time"
 )
 
-// MaxResponseSize 限制 HTTP 响应体最大字节数（64MB），防止恶意响应导致 OOM。
-const MaxResponseSize = 64 << 20
-
-// defaultHttpClient 是包级复用的 HTTP 客户端，带超时和连接池。
-var defaultHttpClient = &http.Client{
-	Timeout: 30 * time.Second,
-	Transport: &http.Transport{
-		DisableCompression:    true,
-		ResponseHeaderTimeout: 30 * time.Second,
-		IdleConnTimeout:       90 * time.Second,
-	},
-}
-
-// maxRetries 为网络错误时的最大重试次数（不含首次请求）。
-const maxRetries = 3
-
-// retryDelay 为重试之间的固定退避时间。
-const retryDelay = time.Second
-
 func HttpPostByBytes(ctx context.Context, url string, dataBytes []byte, header map[string]string) (statusCode int, responseBytes []byte, err error) {
 	// 1. Create an HTTP request with context
 	var req *http.Request
@@ -49,23 +30,19 @@ func HttpPostByBytes(ctx context.Context, url string, dataBytes []byte, header m
 		}
 	}
 
-	// 3. Send request with retry
+	// 3. Create HTTP client
+	client := &http.Client{
+		Transport: &http.Transport{
+			DisableCompression: true,
+		},
+	}
+
+	// 4. Send request
 	var rsp *http.Response
-	for i := 0; i < maxRetries; i++ {
-		rsp, err = defaultHttpClient.Do(req)
+	for i := 0; i < 1; i++ {
+		rsp, err = client.Do(req)
 		if err != nil {
-			// 重建请求体（Do 会消费 body）
-			if len(dataBytes) > 0 {
-				req, _ = http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(dataBytes))
-				if header == nil {
-					req.Header.Add("Content-Type", "application/json")
-				} else {
-					for key, value := range header {
-						req.Header.Add(key, value)
-					}
-				}
-			}
-			time.Sleep(retryDelay)
+			time.Sleep(time.Second)
 			continue
 		}
 		break
@@ -77,8 +54,8 @@ func HttpPostByBytes(ctx context.Context, url string, dataBytes []byte, header m
 
 	statusCode = rsp.StatusCode
 
-	// 4. Read response with size limit
-	responseBytes, err = io.ReadAll(io.LimitReader(rsp.Body, MaxResponseSize))
+	// 5. Read response
+	responseBytes, err = io.ReadAll(rsp.Body)
 
 	return
 }
@@ -86,8 +63,8 @@ func HttpPostByBytes(ctx context.Context, url string, dataBytes []byte, header m
 func HttpPostByJson(ctx context.Context, url string, data any, header map[string]string) (statusCode int, responseBytes []byte, err error) {
 	// 1. Create an HTTP request with context
 	var req *http.Request
-	var jsonBytes []byte
 	if data != nil {
+		var jsonBytes []byte
 		jsonBytes, err = json.Marshal(data)
 		if err != nil {
 			return
@@ -109,24 +86,15 @@ func HttpPostByJson(ctx context.Context, url string, data any, header map[string
 			req.Header.Add(key, value)
 		}
 	}
+	// 3. Create HTTP client
+	client := &http.Client{}
 
-	// 3. Send request with retry
+	// 4. Send request
 	var rsp *http.Response
-	for i := 0; i < maxRetries; i++ {
-		rsp, err = defaultHttpClient.Do(req)
+	for i := 0; i < 3; i++ {
+		rsp, err = client.Do(req)
 		if err != nil {
-			// 重建请求体（Do 会消费 body）
-			if jsonBytes != nil {
-				req, _ = http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(jsonBytes))
-				if header == nil {
-					req.Header.Add("Content-Type", "application/json")
-				} else {
-					for key, value := range header {
-						req.Header.Add(key, value)
-					}
-				}
-			}
-			time.Sleep(retryDelay)
+			time.Sleep(time.Second)
 			continue
 		}
 		break
@@ -138,8 +106,8 @@ func HttpPostByJson(ctx context.Context, url string, data any, header map[string
 
 	statusCode = rsp.StatusCode
 
-	// 4. Read response with size limit
-	responseBytes, err = io.ReadAll(io.LimitReader(rsp.Body, MaxResponseSize))
+	// 5. Read response
+	responseBytes, err = io.ReadAll(rsp.Body)
 
 	return
 }

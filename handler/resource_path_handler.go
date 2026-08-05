@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/milon-labs/milon-go-sdk/api"
+	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
 // ResourcePathHandler exposes resource path query endpoints.
@@ -55,7 +56,7 @@ func (h *ResourcePathHandler) GetResourcePathByHash(c *gin.Context) {
 	copy(rsHash[:], hashBytes)
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetResourcePathByHash(rsHash, requestId)
 	if err != nil {

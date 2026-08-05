@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/milon-labs/milon-go-sdk/api"
+	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
 // RpcHandler exposes low-level RPC endpoints (read-only).
@@ -64,9 +65,9 @@ func (h *RpcHandler) GetBlock(c *gin.Context) {
 	}
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetBlock(height, requestId)
+	result, err := mc.GetBlockByHeight(height, requestId)
 	if err != nil {
 		logSDKError(c, "GetBlock", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get block: "+err.Error(), nil))
@@ -111,7 +112,7 @@ func (h *RpcHandler) GetResource(c *gin.Context) {
 	copy(rsHash[:], hashBytes)
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetResource(rsHash, requestId)
 	if err != nil {
@@ -156,7 +157,7 @@ func (h *RpcHandler) GetAccessValue(c *gin.Context) {
 	}
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetAccessValue(blobHashList, requestId)
 	if err != nil {

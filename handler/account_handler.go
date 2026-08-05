@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/milon-labs/milon-go-sdk/crypto"
+	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
 // AccountHandler exposes account-related endpoints.
@@ -39,7 +40,7 @@ func (h *AccountHandler) GetAccount(c *gin.Context) {
 	}
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetAccount(address, requestId)
 	if err != nil {
@@ -61,7 +62,7 @@ func (h *AccountHandler) GetAccountResources(c *gin.Context) {
 	}
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetAccount(address, requestId)
 	if err != nil {

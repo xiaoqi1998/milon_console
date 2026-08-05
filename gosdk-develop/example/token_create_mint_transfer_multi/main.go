@@ -5,11 +5,12 @@ import (
 	"github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
+	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/provider"
 )
 
-func example(networkConfig milon.NetworkConfig) {
-	client := milon.NewMilonClient(networkConfig)
+func example(networkConfig milon.Network) {
+	client := milon.NewClient(networkConfig)
 
 	tokenSk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	tokenPk := tokenSk.Ed25519Public()
@@ -38,37 +39,37 @@ func example(networkConfig milon.NetworkConfig) {
 	fmt.Printf("user3Address = %v \n\n", user3Address)
 
 	fmt.Printf("\n================ Initial MIL ================\n")
-	if err := client.ClaimFaucet(tokenSk, *tokenAddress, milon.PubKeySignatureMode{PublicKey: *tokenPk}); err != nil {
+	if err := client.ClaimFaucet(tokenSk, *tokenAddress, lib.PubKeySignatureMode{PublicKey: *tokenPk}); err != nil {
 		panic("Failed to ClaimFaucet token:" + err.Error())
 	}
-	tokenBalance, err := client.AddressBalance(*tokenAddress)
+	tokenBalance, err := client.BalanceOf(*tokenAddress)
 	if err != nil {
 		panic("Failed to get token MIL:" + err.Error())
 	}
 	fmt.Printf("token MIL: %d\n", tokenBalance)
 
-	if err = client.ClaimFaucet(ownerSk, *ownerAddress, milon.PubKeySignatureMode{PublicKey: *ownerPk}); err != nil {
+	if err = client.ClaimFaucet(ownerSk, *ownerAddress, lib.PubKeySignatureMode{PublicKey: *ownerPk}); err != nil {
 		panic("Failed to ClaimFaucet owner:" + err.Error())
 	}
-	ownerBalance, err := client.AddressBalance(*ownerAddress)
+	ownerBalance, err := client.BalanceOf(*ownerAddress)
 	if err != nil {
 		panic("Failed to get owner MIL:" + err.Error())
 	}
 	fmt.Printf("owner MIL: %d\n", ownerBalance)
 
-	if err = client.ClaimFaucet(user1Sk, *user1Address, milon.PubKeySignatureMode{PublicKey: *user1Pk}); err != nil {
+	if err = client.ClaimFaucet(user1Sk, *user1Address, lib.PubKeySignatureMode{PublicKey: *user1Pk}); err != nil {
 		panic("Failed to ClaimFaucet user1:" + err.Error())
 	}
-	user1Balance, err := client.AddressBalance(*user1Address)
+	user1Balance, err := client.BalanceOf(*user1Address)
 	if err != nil {
 		panic("Failed to get user1 MIL:" + err.Error())
 	}
 	fmt.Printf("user1 MIL: %d\n", user1Balance)
 
-	// 1. Look up token IDL provider (loaded during NewMilonClient)
+	// 1. Look up token IDL provider (loaded during NewClient)
 	pd, err := client.GetPdByIDLAppName("token")
 	if err != nil {
-		panic(fmt.Sprintf("failed to get IDL provider for 'token': %v", err))
+		panic("Failed to to get IDL provider for 'token':" + err.Error())
 	}
 
 	// 2. Encode instructions (Create + Mint + Transfer)
@@ -76,14 +77,14 @@ func example(networkConfig milon.NetworkConfig) {
 		"token": tokenAddress,
 		"owner": ownerAddress,
 		"metadata": map[string]any{
-			"name":     "SDK Multi Ix Token",
-			"symbol":   "SMIX",
+			"name":     "Example Token",
+			"symbol":   "Token",
 			"decimals": 6,
 			"icon":     "https://milon.test/token.png",
 		},
 	})
 	if err != nil {
-		panic(fmt.Sprintf("failed to encode Create instruction: %v", err))
+		panic("Failed to encode Create instruction:" + err.Error())
 	}
 
 	mintWire, err := pd.Encode("Mint", provider.Args{
@@ -92,7 +93,7 @@ func example(networkConfig milon.NetworkConfig) {
 		"amount": 1000,
 	})
 	if err != nil {
-		panic(fmt.Sprintf("failed to encode Mint instruction: %v", err))
+		panic("Failed to encode Mint instruction:" + err.Error())
 	}
 
 	transferWire, err := pd.Encode("Transfer", provider.Args{
@@ -102,78 +103,76 @@ func example(networkConfig milon.NetworkConfig) {
 		"amount": 300,
 	})
 	if err != nil {
-		panic(fmt.Sprintf("failed to encode Transfer instruction: %v", err))
+		panic("Failed to encode Transfer instruction:" + err.Error())
 	}
 
-	wires := make([]api.PackedInstruction, 0)
-	skList := make([]crypto.SecretKeyer, 0)
-	addressList := make([]crypto.Address, 0)
-	acSigModList := make([]milon.AccountSignatureMode, 0)
-
-	wires = append(wires, createWire)
-	skList = append(skList, tokenSk)
-	addressList = append(addressList, *tokenAddress)
-	acSigModList = append(acSigModList, milon.PubKeySignatureMode{PublicKey: *tokenPk})
-
-	wires = append(wires, mintWire)
-	skList = append(skList, ownerSk)
-	addressList = append(addressList, *ownerAddress)
-	acSigModList = append(acSigModList, milon.PubKeySignatureMode{PublicKey: *ownerPk})
-
-	wires = append(wires, transferWire)
-	skList = append(skList, user1Sk)
-	addressList = append(addressList, *user1Address)
-	acSigModList = append(acSigModList, milon.PubKeySignatureMode{PublicKey: *user1Pk})
-
-	// 3. Simulate transaction
-	simulateTransactionResult, err := client.BuildAndSimulateMultiIxSplit(
-		wires,
-		addressList,
-		acSigModList,
-		1,
-	)
-	if err != nil {
-		panic(fmt.Sprintf("failed to create transaction for simulation: %v", err))
+	// 2. Define signing slots once (shared by simulate & real sign)
+	slots := []lib.SigningSlot{
+		{*tokenAddress, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *tokenPk}},
+		{*ownerAddress, []uint8{1}, true, lib.PubKeySignatureMode{PublicKey: *ownerPk}},
+		{*user1Address, []uint8{2}, true, lib.PubKeySignatureMode{PublicKey: *user1Pk}},
 	}
-	fmt.Printf("\n================ Simulation ================\n")
-	fmt.Printf("Total gas fee: %d\n", simulateTransactionResult.BodySimulateReceipt.GasCharged)
 
-	// 4. Create on-chain transaction
-	submitTransactionResult, err := client.BuildAndSubmitMultiIxSplit(
-		wires,
-		skList,
-		addressList,
-		acSigModList,
-		1,
-	)
+	// 3. Build transaction once, reuse the same builder for simulate & real sign (same Stamp -> same TxHash)
+	builder := lib.NewTransactionBuilder([]api.PackedInstruction{createWire, mintWire, transferWire}).ApplySlots(slots)
+
+	// 3.1 Simulate on-chain first (no private key needed, dry-run)
+	simulateTx, err := builder.SimulateSlots().Build()
 	if err != nil {
-		panic(fmt.Sprintf("failed to create on-chain transaction: %v", err))
+		panic("Failed to simulate transaction:" + err.Error())
+	}
+	simulateResult, err := client.SimulateTx(simulateTx)
+	if err != nil {
+		panic("Failed to simulate transaction on chain:" + err.Error())
+	}
+	if simulateResult.BodySimulateReceipt.State != api.TxStateSuccess {
+		panic(fmt.Sprintf("Simulate failed on chain: error code = %d", simulateResult.BodySimulateReceipt.Error.Code))
+	}
+	fmt.Printf("Simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
+
+	// 3.2 Replace simulated signatures with real ones on the same transaction
+	tx, err := builder.ResetSigs().
+		SignWith(
+			lib.Signer{SecretKey: user1Sk, PublicKey: *user1Pk},
+			lib.Signer{SecretKey: ownerSk, PublicKey: *ownerPk},
+			lib.Signer{SecretKey: tokenSk, PublicKey: *tokenPk},
+		).
+		Build()
+	if err != nil {
+		panic("Failed to build and sign transaction:" + err.Error())
+	}
+
+	// 4. Submit transaction on chain
+	err = client.SubmitTx(tx)
+	if err != nil {
+		panic("Failed to submit transaction:" + err.Error())
 	}
 
 	// 5. Wait for the transaction to complete
-	fmt.Printf("\nAnd we wait for the transaction %s to complete...\n", submitTransactionResult.BodyTxHash)
-	getTxByHashResult, err := client.WaitForTransaction(submitTransactionResult.BodyTxHash, 1)
+	fmt.Printf("\nAnd we wait for the transaction %s to complete...\n", tx.TxHash())
+	getTxByHashResult, err := client.WaitForTransaction(tx.TxHash(), 1)
 	if err != nil {
-		panic(fmt.Sprintf("failed to wait for transaction: %v", err))
+		panic("Failed to wait for transaction:" + err.Error())
 	}
 	if getTxByHashResult.BodyTxHistory.Receipt.State != api.TxStateSuccess {
-		panic(fmt.Sprintf("transaction failed on chain: error = %v", getTxByHashResult.BodyTxHistory.Receipt.Error))
+		panic(fmt.Sprintf("Transaction failed on chain: error code = %d", *getTxByHashResult.BodyTxHistory.Receipt.Error))
 	}
+	fmt.Printf("Submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	fmt.Printf("\n================ Final MIL ================\n")
-	tokenBalance, err = client.AddressBalance(*tokenAddress)
+	tokenBalance, err = client.BalanceOf(*tokenAddress)
 	if err != nil {
 		panic("Failed to get token MIL:" + err.Error())
 	}
 	fmt.Printf("token MIL: %d\n", tokenBalance)
 
-	ownerBalance, err = client.AddressBalance(*ownerAddress)
+	ownerBalance, err = client.BalanceOf(*ownerAddress)
 	if err != nil {
 		panic("Failed to get owner MIL:" + err.Error())
 	}
 	fmt.Printf("owner MIL: %d\n", ownerBalance)
 
-	user1Balance, err = client.AddressBalance(*user1Address)
+	user1Balance, err = client.BalanceOf(*user1Address)
 	if err != nil {
 		panic("Failed to get user1 MIL:" + err.Error())
 	}
@@ -305,15 +304,10 @@ func example(networkConfig milon.NetworkConfig) {
 	}
 
 	for i, decodedTaggedValue := range decodedTaggedValueList {
-		fmt.Printf("decodedTaggedValueList[%d] : %+v \n", i, decodedTaggedValue)
+		fmt.Printf("view[%d] : %+v \n", i, decodedTaggedValue)
 
 		if failure, ok := decodedTaggedValue.Value.(*api.TxFailurePayload); ok {
-			fmt.Printf("❌ Instruction %d failed | err = %v \n", i, failure)
-			fmt.Printf("    Error code = %d\n", failure.Code)
-			fmt.Printf("    Error message = %s\n", failure.Message)
-			fmt.Printf("    Additional data = %v\n\n", failure.Data)
-		} else {
-			fmt.Printf("✅ Instruction %d: value=%v \n\n", i, decodedTaggedValue.Value)
+			fmt.Printf("❌ err = %+v \n", failure)
 		}
 	}
 }

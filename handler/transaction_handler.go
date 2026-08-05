@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
+	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
 // TransactionHandler exposes transaction query endpoints (read-only).
@@ -190,7 +191,7 @@ func (h *TransactionHandler) GetTransactionByHash(c *gin.Context) {
 	}
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetTxByHash(hash, requestId)
 	if err != nil {
@@ -224,7 +225,7 @@ func (h *TransactionHandler) GetTransactionEvents(c *gin.Context) {
 	}
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.EventsByTxHash(hash, typeTagFilter, requestId)
 	if err != nil {
@@ -258,7 +259,7 @@ func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 	}
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.WaitForTransaction(hash, requestId, options...)
 	if err != nil {
@@ -301,11 +302,18 @@ func (h *TransactionHandler) SimulateTransaction(c *gin.Context) {
 
 	}
 
+	tx, err := lib.NewTransactionFromBytes(postcardBytes)
+	if err != nil {
+		logParamError(c, "SimulateTransaction", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "failed to parse transaction", err.Error()))
+		return
+	}
+
 	mc, _ := h.nm.GetCurrent()
 
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.SimulateTx(postcardBytes, requestId)
+	result, err := mc.SimulateTx(tx, requestId)
 
 	if err != nil {
 		logSDKError(c, "SimulateTransaction", err)
@@ -344,13 +352,18 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 
 	}
 
+	tx, err := lib.NewTransactionFromBytes(postcardBytes)
+	if err != nil {
+		logParamError(c, "SubmitTransaction", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "failed to parse transaction", err.Error()))
+		return
+	}
+
 	mc, _ := h.nm.GetCurrent()
 
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.SubmitTx(postcardBytes, requestId)
-
-	if err != nil {
+	if err := mc.SubmitTx(tx, requestId); err != nil {
 		logSDKError(c, "SubmitTransaction", err)
 
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to submit transaction: "+err.Error(), nil))
@@ -359,8 +372,9 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 
 	}
 
-	logBusinessInfo(c, "SubmitTransaction", "txHash", result.BodyTxHash)
-	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": result.BodyTxHash}, "ok"))
+	txHash := txHashHex(tx)
+	logBusinessInfo(c, "SubmitTransaction", "txHash", txHash)
+	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": txHash}, "ok"))
 }
 
 // InspectTransaction handles POST /api/transactions/inspect
@@ -389,7 +403,7 @@ func (h *TransactionHandler) InspectTransaction(c *gin.Context) {
 
 	}
 
-	tx, err := milon.NewTransactionFromBytes(postcardBytes)
+	tx, err := lib.NewTransactionFromBytes(postcardBytes)
 
 	if err != nil {
 		logParamError(c, "InspectTransaction", err)

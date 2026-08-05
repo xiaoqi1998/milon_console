@@ -1,4 +1,4 @@
-package milon
+package lib
 
 import (
 	"encoding/binary"
@@ -97,7 +97,7 @@ type IxHashItem struct {
 
 // AuthMessage 组装账户授权消息 	Blake3(MILON_ROOT || TX_AUTH_DOMAIN || chain_id || owner || auth_bit || tx_hash || ixHashes)
 func (as *AccountSignature) AuthMessage(owner crypto.Address, txHash api.TxHash, ixHashes []IxHashItem) (api.TxHash, error) {
-	hasher := crypto.Hash32Hasher([]byte(crypto.MilonTxAuthDomainContext))
+	hasher := crypto.Hasher([]byte(crypto.MilonTxAuthDomainContext))
 
 	chainIDBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(chainIDBytes, GetChainId())
@@ -319,6 +319,7 @@ func Sign(owner crypto.Address, sk crypto.SecretKeyer, authBit types.Bitmap64, t
 func SimulateSign(owner crypto.Address, authBit types.Bitmap64, mode AccountSignatureMode) (*AccountSignature, error) {
 	var sigBit types.Bitmap64
 	var pubKeyField *crypto.PublicKey
+	var publicKey crypto.PublicKey
 
 	switch m := mode.(type) {
 	case PubKeySignatureMode:
@@ -329,24 +330,47 @@ func SimulateSign(owner crypto.Address, authBit types.Bitmap64, mode AccountSign
 		if *pkAddr != owner {
 			return nil, fmt.Errorf("public key does not match owner address")
 		}
+		publicKey = m.PublicKey
 		sigBit = types.NewBitmap64(0)
 		pubKeyField = &m.PublicKey
 	case MultisigKeySignatureMode:
 		if m.Index >= 64 {
 			return nil, fmt.Errorf("multisig key index %d out of range (max 63)", m.Index)
 		}
+		publicKey = m.PublicKey
 		sigBit = types.NewBitmap64(uint64(1) << m.Index)
 		pubKeyField = nil
 	default:
 		return nil, fmt.Errorf("invalid signature mode")
 	}
 
+	// 模拟签名：生成与真实签名等长的全零占位签名（长度由公钥类型决定）
+	placeholder := crypto.Signature{
+		Variant: crypto.SignatureType(publicKey.Variant),
+		Bytes:   make([]byte, signatureSizeForPublicKey(&publicKey)),
+	}
+
 	return &AccountSignature{
-		AuthBit:    authBit,
-		SigBit:     sigBit,
-		Signatures: []crypto.Signature{},
+		AuthBit: authBit,
+		SigBit:  sigBit,
+		//Signatures: []crypto.Signature{},
+		Signatures: []crypto.Signature{placeholder},
 		PubKey:     pubKeyField,
 	}, nil
+}
+func signatureSizeForPublicKey(pk *crypto.PublicKey) int {
+	switch pk.Variant {
+	case crypto.PublicKeyTypeSecp256k1:
+		return crypto.SignatureSecp256k1Size
+	case crypto.PublicKeyTypeEd25519:
+		return crypto.SignatureEd25519Size
+	case crypto.PublicKeyTypeBLS12381:
+		return crypto.SignatureBLS12381Size
+	case crypto.PublicKeyTypeFnDsa512:
+		return crypto.SignatureFnDsa512Size
+	default:
+		return 0
+	}
 }
 
 // CollectIxHashes 收集 auth_bit 中 ix 位对应的 IxHash

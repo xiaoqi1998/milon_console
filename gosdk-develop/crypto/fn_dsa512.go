@@ -1,7 +1,6 @@
 package crypto
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 
@@ -30,7 +29,7 @@ var (
 
 // KeyGen512 generates an FN-DSA-512 key pair
 func KeyGen512() (*SecretKeyBytesFnDsa512, *PublicKeyBytesFnDsa512, error) {
-	signKey, verifyKey, err := fndsa.KeyGen(LogN, rand.Reader)
+	signKey, verifyKey, err := fndsa.KeyGen(LogN, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: %v", ErrKeyGenFailed, err)
 	}
@@ -74,10 +73,10 @@ func NewVrfyKey512FromBytes(raw []byte) (*PublicKeyBytesFnDsa512, error) {
 // Sign512 signs the message msg
 func Sign512(signKey *SecretKeyBytesFnDsa512, msg []byte) (*SignatureBytesFnDsa512, error) {
 	// Parameter notes:
-	//   - rng: crypto/rand.Reader (consistent with secretkey.go)
+	//   - rng: nil uses system RNG (recommended)
 	//   - ctx: domain separation context (empty string corresponds to DOMAIN_NONE)
 	//   - id: pre-hash function identifier (0 for raw message, corresponds to HASH_ID_RAW)
-	signature, err := fndsa.Sign(rand.Reader, signKey[:], []byte{}, 0, msg)
+	signature, err := fndsa.Sign(nil, signKey[:], []byte{}, 0, msg)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrSignFailed, err)
 	}

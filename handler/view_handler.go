@@ -9,6 +9,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
 // ViewSingleHandler exposes low-level view endpoints with pre-built postcards.
@@ -44,7 +45,7 @@ func (h *ViewSingleHandler) ViewSingle(c *gin.Context) {
 	}
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.ViewSingle(postcardBytes, requestId)
 	if err != nil {
@@ -74,7 +75,7 @@ func (h *ViewSingleHandler) ViewMulti(c *gin.Context) {
 	}
 
 	mc, _ := h.nm.GetCurrent()
-	requestId := uint64(time.Now().UnixMilli())
+	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.ViewMulti(postcardBytes, requestId)
 	if err != nil {

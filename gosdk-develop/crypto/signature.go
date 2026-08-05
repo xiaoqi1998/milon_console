@@ -207,16 +207,10 @@ func verifySecp256k1(msg []byte, sigBytes []byte, pubKey *PublicKey) error {
 		return fmt.Errorf("invalid secp256k1 signature length: expected %d, got %d", SignatureSecp256k1Size, len(sigBytes))
 	}
 
-	// 4. Validate recovery id (V) value range (27/28 for legacy, 0/1 for EIP-155)
-	v := sigBytes[len(sigBytes)-1]
-	if v != 27 && v != 28 && v != 0 && v != 1 {
-		return fmt.Errorf("invalid signature recovery id (V): %d", v)
-	}
-
-	// 5. Convert secp256k1 public key to compressed format (33 bytes)
+	// 4. Convert secp256k1 public key to compressed format (33 bytes)
 	compressedPubKey := pk.SerializeCompressed()
 
-	// 6. Verify using go-ethereum's verification method
+	// 5. Verify using go-ethereum's verification method
 	signatureWithoutV := sigBytes[:len(sigBytes)-1] // take the first 64 bytes (R, S)
 	if crypto.VerifySignature(compressedPubKey, msgHash[:], signatureWithoutV) == false {
 		return fmt.Errorf("signature verification failed")

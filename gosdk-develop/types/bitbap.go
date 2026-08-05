@@ -53,14 +53,9 @@ func (b Bitmap64) CountOnes() int {
 	return bits.OnesCount64(uint64(b))
 }
 
-// LowestVacantIndex returns the lowest unset (vacant) index.
-// When all 64 bits are occupied, it returns (0, false).
-func (b Bitmap64) LowestVacantIndex() (uint32, bool) {
-	inverted := ^uint64(b)
-	if inverted == 0 {
-		return 0, false // 无空位
-	}
-	return uint32(bits.TrailingZeros64(inverted)), true
+// LowestVacantIndex returns the lowest unset (vacant) index
+func (b Bitmap64) LowestVacantIndex() uint32 {
+	return uint32(bits.TrailingZeros64(^uint64(b)))
 }
 
 // IsSubsetOf checks whether self is a subset of other
@@ -82,16 +77,13 @@ func (b Bitmap64) IterSetBits() []uint8 {
 
 // String implements the fmt.Stringer interface
 func (b Bitmap64) String() string {
-	return fmt.Sprintf("%d", uint64(b))
+	//return fmt.Sprintf("%d", uint64(b))
+	return fmt.Sprintf("%064b", uint64(b))
 }
 
 // GoString implements the fmt.GoStringer interface
 func (b Bitmap64) GoString() string {
 	return fmt.Sprintf("Bitmap64(0b%064b)", uint64(b))
-}
-
-func (b Bitmap64) Format() string {
-	return fmt.Sprintf("%064b", uint64(b))
 }
 
 func (b *Bitmap64) MarshalPostcard(serializer *postcard.Serializer) error {

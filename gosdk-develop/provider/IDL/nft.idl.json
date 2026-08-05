@@ -96,6 +96,70 @@
         },
         {
           "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "attributes",
+          "role": "input",
+          "type": "vec<MetadataAttribute>"
+        }
+      ],
+      "discriminator": 47350,
+      "handler": "set_attributes",
+      "kind": "entry",
+      "name": "SetAttributes",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "collection",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "properties",
+          "role": "input",
+          "type": "vec<MetadataProperty>"
+        }
+      ],
+      "discriminator": 48498,
+      "handler": "set_properties",
+      "kind": "entry",
+      "name": "SetProperties",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "collection",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "collection",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "mint",
           "role": "signer",
           "type": "Signer"
         },
@@ -108,6 +172,16 @@
           "name": "metadata",
           "role": "input",
           "type": "Metadata"
+        },
+        {
+          "name": "attributes",
+          "role": "input",
+          "type": "vec<MetadataAttribute>"
+        },
+        {
+          "name": "properties",
+          "role": "input",
+          "type": "vec<MetadataProperty>"
         },
         {
           "name": "royalty",
@@ -160,6 +234,16 @@
           "name": "metadata",
           "role": "input",
           "type": "Metadata"
+        },
+        {
+          "name": "attributes",
+          "role": "input",
+          "type": "vec<MetadataAttribute>"
+        },
+        {
+          "name": "properties",
+          "role": "input",
+          "type": "vec<MetadataProperty>"
         },
         {
           "name": "royalty",
@@ -364,6 +448,38 @@
           "type": "Address"
         }
       ],
+      "discriminator": 3323,
+      "handler": "attributes",
+      "kind": "view",
+      "name": "Attributes",
+      "returns": {
+        "type": "vec<MetadataAttribute>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 19051,
+      "handler": "properties",
+      "kind": "view",
+      "name": "Properties",
+      "returns": {
+        "type": "vec<MetadataProperty>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
       "discriminator": 6407,
       "handler": "mint_config_view",
       "kind": "view",
@@ -507,14 +623,6 @@
         {
           "name": "external_url",
           "type": "String"
-        },
-        {
-          "name": "attributes",
-          "type": "vec<MetadataAttribute>"
-        },
-        {
-          "name": "properties",
-          "type": "vec<MetadataProperty>"
         }
       ],
       "kind": "struct",
@@ -650,8 +758,103 @@
     },
     {
       "code": 1292,
-      "message": "Invalid parameters: {0}",
-      "name": "InvalidParameters"
+      "message": "Unique mint max supply must be one",
+      "name": "InvalidUniqueMaxSupply"
+    },
+    {
+      "code": 1293,
+      "message": "Batch mint max supply must be positive",
+      "name": "InvalidBatchMaxSupply"
+    },
+    {
+      "code": 1294,
+      "message": "Mint amount must be positive",
+      "name": "InvalidMintAmount"
+    },
+    {
+      "code": 1295,
+      "message": "Mint recipients must not be empty",
+      "name": "EmptyMintRecipients"
+    },
+    {
+      "code": 1296,
+      "message": "Mint recipients and amounts length mismatch",
+      "name": "MintRecipientAmountLengthMismatch"
+    },
+    {
+      "code": 1297,
+      "message": "Invalid collection name",
+      "name": "InvalidCollectionName"
+    },
+    {
+      "code": 1298,
+      "message": "Invalid collection symbol",
+      "name": "InvalidCollectionSymbol"
+    },
+    {
+      "code": 1299,
+      "message": "Invalid collection base URI",
+      "name": "InvalidCollectionBaseUri"
+    },
+    {
+      "code": 1300,
+      "message": "Invalid metadata name",
+      "name": "InvalidMetadataName"
+    },
+    {
+      "code": 1301,
+      "message": "Invalid metadata symbol",
+      "name": "InvalidMetadataSymbol"
+    },
+    {
+      "code": 1302,
+      "message": "Invalid metadata URI",
+      "name": "InvalidMetadataUri"
+    },
+    {
+      "code": 1303,
+      "message": "Invalid metadata external URL",
+      "name": "InvalidMetadataExternalUrl"
+    },
+    {
+      "code": 1304,
+      "message": "Too many metadata attributes",
+      "name": "TooManyMetadataAttributes"
+    },
+    {
+      "code": 1305,
+      "message": "Invalid metadata attribute trait type",
+      "name": "InvalidMetadataAttributeTraitType"
+    },
+    {
+      "code": 1306,
+      "message": "Invalid metadata attribute value",
+      "name": "InvalidMetadataAttributeValue"
+    },
+    {
+      "code": 1307,
+      "message": "Too many metadata properties",
+      "name": "TooManyMetadataProperties"
+    },
+    {
+      "code": 1308,
+      "message": "Invalid metadata property key",
+      "name": "InvalidMetadataPropertyKey"
+    },
+    {
+      "code": 1309,
+      "message": "Invalid metadata property value",
+      "name": "InvalidMetadataPropertyValue"
+    },
+    {
+      "code": 1310,
+      "message": "Royalty basis points exceed the maximum",
+      "name": "InvalidRoyaltyBps"
+    },
+    {
+      "code": 1311,
+      "message": "Royalty recipient must be set when basis points are positive",
+      "name": "InvalidRoyaltyRecipient"
     }
   ]
 }

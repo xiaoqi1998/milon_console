@@ -143,6 +143,11 @@
           "type": "Address"
         },
         {
+          "name": "sponsor_seed",
+          "role": "input",
+          "type": "u16"
+        },
+        {
           "name": "amount",
           "role": "input",
           "type": "u64"
@@ -169,14 +174,6 @@
       "returns": {
         "type": "Address"
       }
-    },
-    {
-      "args": [],
-      "discriminator": 29380,
-      "handler": "sponsor_without_register",
-      "kind": "entry",
-      "name": "SponsorWithoutRegister",
-      "sponsor": true
     },
     {
       "args": [

@@ -46,25 +46,22 @@ func TestBitmap64CountOnes(t *testing.T) {
 
 func TestBitmap64LowestVacantIndex(t *testing.T) {
 	tests := []struct {
-		name        string
-		bits        uint64
-		expected    uint32
-		expectedOk  bool
+		name     string
+		bits     uint64
+		expected uint32
 	}{
-		{"empty", 0, 0, true},
-		{"only_bit0_set", 1, 1, true},
-		{"bits_0-2_set", 0b111, 3, true},
-		{"bits_0-3_set", 0b1111, 4, true},
-		{"alternating", 0b10101, 1, true},
-		{"all_set", ^uint64(0), 0, false},
+		{"empty", 0, 0},
+		{"only_bit0_set", 1, 1},
+		{"bits_0-2_set", 0b111, 3},
+		{"bits_0-3_set", 0b1111, 4},
+		{"alternating", 0b10101, 1},
+		{"all_set", ^uint64(0), 64},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := NewBitmap64(tt.bits)
-			idx, ok := b.LowestVacantIndex()
-			assert.Equal(t, tt.expectedOk, ok)
-			assert.Equal(t, tt.expected, idx)
+			assert.Equal(t, tt.expected, b.LowestVacantIndex())
 		})
 	}
 }
@@ -104,28 +101,24 @@ func TestBitmap64StringAndGoStringAndFormat(t *testing.T) {
 		bits             uint64
 		expectedStr      string
 		expectedGoString string
-		expectedFormat   string
 	}{
 		{
 			name:             "zero",
 			bits:             0b0,
-			expectedStr:      "0",
+			expectedStr:      "0000000000000000000000000000000000000000000000000000000000000000",
 			expectedGoString: "Bitmap64(0b0000000000000000000000000000000000000000000000000000000000000000)",
-			expectedFormat:   "0000000000000000000000000000000000000000000000000000000000000000",
 		},
 		{
 			name:             "bit_0_set",
 			bits:             0b01,
-			expectedStr:      "1",
+			expectedStr:      "0000000000000000000000000000000000000000000000000000000000000001",
 			expectedGoString: "Bitmap64(0b0000000000000000000000000000000000000000000000000000000000000001)",
-			expectedFormat:   "0000000000000000000000000000000000000000000000000000000000000001",
 		},
 		{
 			name:             "multiple_bits",
 			bits:             0b1010,
-			expectedStr:      "10",
+			expectedStr:      "0000000000000000000000000000000000000000000000000000000000001010",
 			expectedGoString: "Bitmap64(0b0000000000000000000000000000000000000000000000000000000000001010)",
-			expectedFormat:   "0000000000000000000000000000000000000000000000000000000000001010",
 		},
 	}
 
@@ -134,7 +127,6 @@ func TestBitmap64StringAndGoStringAndFormat(t *testing.T) {
 			b := NewBitmap64(tt.bits)
 			assert.Equal(t, tt.expectedStr, b.String())
 			assert.Equal(t, tt.expectedGoString, b.GoString())
-			assert.Equal(t, tt.expectedFormat, b.Format())
 		})
 	}
 }
