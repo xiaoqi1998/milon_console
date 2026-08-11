@@ -2522,7 +2522,9 @@ function buildIDLRequest() {
 
   console.log('[IDL DEBUG] paymentMode=', pm, 'isSubmit=', isSubmit);
   console.log('[IDL DEBUG] payerAddress=', payload.payerAddress);
-  console.log('[IDL DEBUG] payerPrivateKey=', payload.payerPrivateKey);
+  var payerPkNode = document.querySelector('#idlPaymentFields [data-field="payerPrivateKey"]');
+  console.log('[IDL DEBUG] payerPrivateKey node exists=', !!payerPkNode, 'value=', payerPkNode ? payerPkNode.value : 'N/A');
+  console.log('[IDL DEBUG] payerPrivateKey payload=', payload.payerPrivateKey);
   console.log('[IDL DEBUG] args=', JSON.stringify(args));
 
   var url = isSubmit ? '/api/write' : '/api/simulate';
