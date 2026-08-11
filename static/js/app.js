@@ -1646,6 +1646,429 @@ var IDL_PAYMENT_MODES = [
   { value: 'split', label: '拆分签名（owner 自付）', needIx: false },
 ];
 
+// IDL 方法实例参数映射表：键为 appName.MethodName，值为该方法的 args 示例对象
+// 数据来源：D:\pprojiect\Auto_test_new\test_cases\milon\ 下 6 个模块的测试用例
+var IDL_EXAMPLE_ARGS = {
+  // ==================== token 模块（app_id=2，30 个方法）====================
+  'token.Create': {
+    token: 'M11onToken1111111111111111111AB',
+    owner: 'MOwner1111111111111111111111CD',
+    metadata: { name: 'IndependentToken', symbol: 'IND', decimals: 6, icon: 'https://example.com/ind.png' }
+  },
+  'token.AbandonOwner': { token: 'M11onToken1111111111111111111AB' },
+  'token.TransferOwner': { token: 'M11onToken1111111111111111111AB', to: 'MNewOwner1111111111111111111EF' },
+  'token.AbandonFreezer': { token: 'M11onToken1111111111111111111AB' },
+  'token.TransferFreezer': { token: 'M11onToken1111111111111111111AB', to: 'MNewFreezer11111111111111111GH' },
+  'token.Mint': { token: 'M11onToken1111111111111111111AB', to: 'MHolder11111111111111111111IJ', amount: 1000000000 },
+  'token.MintBatch': {
+    token: 'M11onToken1111111111111111111AB',
+    to: ['MHolder11111111111111111111IJ', 'MSpender1111111111111111111KL'],
+    amount: [500000000, 300000000]
+  },
+  'token.Burn': { holder: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', amount: 1000000 },
+  'token.Transfer': { from: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', to: 'MSpender1111111111111111111KL', amount: 500000000 },
+  'token.TransferWithTag': { from: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', to: 'MSpender1111111111111111111KL', amount: 500000000, _tag: 1001 },
+  'token.TransferBatch': {
+    from: 'MHolder11111111111111111111IJ',
+    token: 'M11onToken1111111111111111111AB',
+    to: ['MHolder11111111111111111111IJ', 'MSpender1111111111111111111KL'],
+    amount: [1000000, 2000000]
+  },
+  'token.Freeze': { token: 'M11onToken1111111111111111111AB', holder: 'MHolder11111111111111111111IJ', amount: 1000000 },
+  'token.Unfreeze': { token: 'M11onToken1111111111111111111AB', holder: 'MHolder11111111111111111111IJ', amount: 500000 },
+  'token.Approve': { owner: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', spender: 'MSpender1111111111111111111KL', amount: 1000000000 },
+  'token.Revoke': { owner: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', spender: 'MSpender1111111111111111111KL' },
+  'token.TransferFrom': { spender: 'MSpender1111111111111111111KL', token: 'M11onToken1111111111111111111AB', from: 'MHolder11111111111111111111IJ', amount: 500000000 },
+  'token.SetIcon': { token: 'M11onToken1111111111111111111AB', icon_url: 'https://example.com/new_icon.png' },
+  'token.CreateWithCompliance': {
+    token: 'MCompToken1111111111111111111MN',
+    owner: 'MCompOwner111111111111111111OP',
+    metadata: { name: 'ComplianceToken', symbol: 'CMP', decimals: 6, icon: 'https://example.com/cmp.png' },
+    credential_id: 'schema_id_xxx'
+  },
+  'token.SetComplianceMode': { token: 'MCompToken1111111111111111111MN', mode: 'Any' },
+  'token.AddComplianceRequirement': { token: 'MCompToken1111111111111111111MN', credential_id: 'schema_id_xxx' },
+  'token.RemoveComplianceRequirement': { token: 'MCompToken1111111111111111111MN', credential_id: 'schema_id_xxx' },
+  'token.ClearComplianceRequirements': { token: 'MCompToken1111111111111111111MN' },
+  'token.ClaimFaucet': { claimer: 'MClaimer1111111111111111111QR' },
+  'token.BalanceOf': { token: 'M11onToken1111111111111111111AB', account: 'MHolder11111111111111111111IJ' },
+  'token.FrozenOf': { token: 'M11onToken1111111111111111111AB', account: 'MHolder11111111111111111111IJ' },
+  'token.ApprovalOf': { token: 'M11onToken1111111111111111111AB', owner: 'MHolder11111111111111111111IJ', spender: 'MSpender1111111111111111111KL' },
+  'token.TotalSupply': { token: 'M11on1111111111111111111111' },
+  'token.Metadata': { token: 'M11on1111111111111111111111' },
+  'token.Compliance': { token: 'MCompToken1111111111111111111MN' },
+  'token.FaucetCooldownRemaining': { account: 'MOwner1111111111111111111111CD' },
+
+  // ==================== account 模块（app_id=1，15 个方法）====================
+  'account.Create': { owner_pk: '0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e' },
+  'account.EnsureAccount': { owner_pk: '0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e' },
+  'account.CreateMultisig': {
+    owner: '0x1234567890abcdef1234567890abcdef12345678',
+    signers: ['0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e', '0x03b45c3f6e0d1f2b9e5a3c7b8d4e6f0a2c4b6d8e0f2a4c6b8d0e2f4a6c8b0d2e4f'],
+    weights: [1, 1],
+    threshold: 2
+  },
+  'account.AddSigner': { owner: '0x1234567890abcdef1234567890abcdef12345678', signer_pk: '0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e', weight: 1 },
+  'account.AddSigners': {
+    owner: '0x1234567890abcdef1234567890abcdef12345678',
+    signers: ['0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e', '0x03c56d4f7e1f2a3b0c4d6e8f0a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d2e4f6a0b2c'],
+    weights: [1, 1],
+    threshold: 2
+  },
+  'account.RemoveSigner': { owner: '0x1234567890abcdef1234567890abcdef12345678', index: 2, threshold: 2 },
+  'account.SetThreshold': { owner: '0x1234567890abcdef1234567890abcdef12345678', threshold: 3 },
+  'account.SetSignerWeight': { owner: '0x1234567890abcdef1234567890abcdef12345678', index: 2, weight: 2 },
+  'account.VoteInit': {
+    owner: '0x1234567890abcdef1234567890abcdef12345678',
+    intent_hash: '0x0000000000000000000000000000000000000000000000000000000000000001',
+    proposal: { instructions: ['00'], auth_bit: '1' }
+  },
+  'account.Vote': { owner: '0x1234567890abcdef1234567890abcdef12345678', intent_hash: '0x0000000000000000000000000000000000000000000000000000000000000001' },
+  'account.GetAccount': { owner: '0x1234567890abcdef1234567890abcdef12345678' },
+  'account.ListSigners': { owner: '0x1234567890abcdef1234567890abcdef12345678' },
+  'account.ResolveSigners': { owner: '0x1234567890abcdef1234567890abcdef12345678', sig_bit: '1', policy: { min_signers: 1 } },
+  'account.GetVote': { owner: '0x1234567890abcdef1234567890abcdef12345678', intent_hash: '0x0000000000000000000000000000000000000000000000000000000000000001' },
+  'account.ListActiveVotes': { owner: '0x1234567890abcdef1234567890abcdef12345678' },
+
+  // ==================== demo 模块（app_id=255，18 个方法：10 entry + 8 view）====================
+  'demo.OpenOrder': { operator: 'M11onDemoOper1111111111111111111111', order_id: 'order-a1b2c3d4e5f6' },
+  'demo.PayOrder': { payer: 'M11onDemoPayer1111111111111111111111', order_id: 'order-a1b2c3d4e5f6', token: 'M11on1111111111111111111111', amount: 1000 },
+  'demo.SettleOrder': { operator: 'M11onDemoOper1111111111111111111111', order_id: 'order-a1b2c3d4e5f6', token: 'M11on1111111111111111111111', to: 'M11onDemoRecip1111111111111111111111', amount: 400 },
+  'demo.OrderBalance': { order_id: 'order-a1b2c3d4e5f6', token: 'M11on1111111111111111111111' },
+  'demo.OpenGasSponsorPool': { pool: 'M11onDemoPool11111111111111111111111' },
+  'demo.ClaimSponsoredScore': { claimer: 'M11onDemoOper1111111111111111111111', pool: 'M11onDemoPool11111111111111111111111', sponsor_seed: 42, amount: 500 },
+  'demo.SponsorPoolOf': { sponsor_seed: 42 },
+  'demo.InitPool': { pool: 'M11onDemoPool11111111111111111111111', label: 'demo-pool-label' },
+  'demo.InitDex': { dex: 'M11onDemoDex11111111111111111111111', label: 'demo-dex-label' },
+  'demo.SetLabel': { pool: 'M11onDemoPool11111111111111111111111', label: 'updated-pool-label' },
+  'demo.BatchCredit': { pool: 'M11onDemoPool11111111111111111111111', recipients: ['M11onDemoRecip1111111111111111111111'], amount: 1000 },
+  'demo.LabelOf': { pool: 'M11onDemoPool11111111111111111111111' },
+  'demo.ScoreOf': { pool: 'M11onDemoPool11111111111111111111111', account: 'M11onDemoRecip1111111111111111111111' },
+  'demo.SetTierCap': { pool: 'M11onDemoPool11111111111111111111111', tier: 1, cap: 1000 },
+  'demo.TierCapOf': { pool: 'M11onDemoPool11111111111111111111111', tier: 1 },
+  'demo.EchoMode': { mode: { variant: 'Two', value: { val: 32 } } },
+  'demo.LabelTotal': { labels: { alpha: 10, beta: 20, gamma: 30 } },
+  'demo.SpecialTypes': {
+    mode: { variant: 'Two', value: { val: 32 } },
+    maybe_note: 'optional-note-string',
+    tags: ['tag1', 'tag2', 'tag3'],
+    labels: { alpha: 10, beta: 20 },
+    pair: [1, 2]
+  },
+
+  // ==================== identity 模块（app_id=4，39 个方法）====================
+  'identity.Create': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    doc: {
+      subject_type: 'Personal',
+      keys: [{ public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: null }],
+      services: [],
+      avatar_uri: 'https://milon.test/avatar.png'
+    }
+  },
+  'identity.CreateWithAlias': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    doc: {
+      subject_type: 'Personal',
+      keys: [{ public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: null }],
+      services: [],
+      avatar_uri: 'https://milon.test/avatar.png'
+    },
+    name: { alias: 'newuser3847', suffix: 2002 }
+  },
+  'identity.AddKey': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    input: { public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: 'test-key-1' }
+  },
+  'identity.UpdateKey': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    id: 1,
+    input: { public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: 'test-key-1-updated' }
+  },
+  'identity.RemoveKey': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', id: 1 },
+  'identity.AddService': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    input: { label: 'service-1', service_endpoint: 'https://milon.test/service/hub' }
+  },
+  'identity.UpdateService': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    id: 0,
+    input: { label: 'service-1-updated', service_endpoint: 'https://milon.test/service/vault' }
+  },
+  'identity.RemoveService': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', id: 0 },
+  'identity.SetAvatarUri': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', avatar_uri: 'https://milon.test/avatar-v2.png' },
+  'identity.Deactivate': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.SetAlias': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    name: { alias: 'testuser3847', suffix: 1001 }
+  },
+  'identity.RegisterOrganization': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    roles: ['VcIssuer'],
+    credential_schemas: ['OrgSchemaV1']
+  },
+  'identity.UpdateOrganizationCapabilities': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    roles: ['VcIssuer', 'KycProvider'],
+    credential_schemas: ['OrgSchemaV1', 'OrgSchemaV2']
+  },
+  'identity.DeactivateOrganization': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.DiscloseVcAttestation': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b',
+    issuer_key_id: 0,
+    credential_schema: 'TestSchemaV1',
+    credential_hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    valid_until_ms: 1893456000000,
+    issuer_signature: '0x9a8b7c6d5e4f30291a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f7081a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091'
+  },
+  'identity.RemoveVcDisclosure': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b',
+    credential_schema: 'TestSchemaV1'
+  },
+  'identity.RevokeVcAttestation': {
+    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b',
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    credential_schema: 'TestSchemaV1'
+  },
+  'identity.Core': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.Document': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.KeyIndex': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.Keys': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.Key': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', id: 1 },
+  'identity.ServiceIndex': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.Services': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.Service': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', id: 0 },
+  'identity.Alias': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.Avatar': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.UpdatedAt': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.Deactivated': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.NameBinding': { name: { alias: 'testuser', suffix: 1001 } },
+  'identity.CredentialDefinition': { credential_id: 'TestSchemaV1' },
+  'identity.OrganizationCapabilities': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.OrganizationStatus': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.OrganizationUpdatedAt': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.AcceptedVcIssuerIndexMeta': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', credential_schema: 'TestSchemaV1' },
+  'identity.AcceptedVcIssuers': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', credential_schema: 'TestSchemaV1' },
+  'identity.HasValidVcFromIssuer': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b',
+    credential_schema: 'TestSchemaV1',
+    now_ms: 1723382400000
+  },
+  'identity.VcAttestationCore': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    credential_schema: 'TestSchemaV1',
+    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b'
+  },
+  'identity.VcAttestationLifecycle': {
+    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    credential_schema: 'TestSchemaV1',
+    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b'
+  },
+
+  // ==================== nft 模块（app_id=5，20 个方法）====================
+  'nft.CreateCollection': {
+    collection: '5Hh...G7Q8',
+    owner: '5Hh...K9pL',
+    metadata: { name: 'TestNFTCollection', symbol: 'TNFT', base_uri: 'https://milon.test/nft/' }
+  },
+  'nft.SetCollectionMetadata': {
+    collection: '5Hh...G7Q8',
+    metadata: { name: 'UpdatedCollectionName', symbol: 'UPD', base_uri: 'https://milon.test/nft/v2/' }
+  },
+  'nft.SetMetadata': {
+    collection: '5Hh...G7Q8',
+    mint: '5Hh...Mint2',
+    metadata: {
+      name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/v2.json',
+      external_url: 'https://milon.test/nft/1', icon: '',
+      attributes: [{ trait_type: 'Color', value: 'Blue' }],
+      properties: [{ key: 'rarity', value: 'rare' }]
+    }
+  },
+  'nft.SetAttributes': {
+    collection: '5Hh...G7Q8', mint: '5Hh...Mint1',
+    attributes: [{ trait_type: 'Color', value: 'Blue' }, { trait_type: 'Rarity', value: 'Legendary' }]
+  },
+  'nft.SetProperties': {
+    collection: '5Hh...G7Q8', mint: '5Hh...Mint1',
+    properties: [{ key: 'rarity', value: 'rare' }, { key: 'edition', value: 'genesis' }]
+  },
+  'nft.CreateUnique': {
+    collection: '5Hh...G7Q8', mint: '5Hh...Mint1', to: '5Hh...Reci',
+    metadata: {
+      name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/1.json',
+      external_url: 'https://milon.test/nft/1', icon: '',
+      attributes: [{ trait_type: 'Color', value: 'Blue' }],
+      properties: [{ key: 'rarity', value: 'rare' }]
+    },
+    royalty: { recipient: '5Hh...K9pL', bps: 500 }
+  },
+  'nft.CreateBatch': {
+    collection: '5Hh...G7Q8', mint: '5Hh...Mint2',
+    to: ['5Hh...Reci', '5Hh...K9pL'], amounts: [1, 2], max_supply: 10,
+    metadata: {
+      name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/1.json',
+      external_url: 'https://milon.test/nft/1', icon: '',
+      attributes: [{ trait_type: 'Color', value: 'Blue' }],
+      properties: [{ key: 'rarity', value: 'rare' }]
+    },
+    royalty: { recipient: '5Hh...K9pL', bps: 500 }
+  },
+  'nft.MintBatch': { collection: '5Hh...G7Q8', mint: '5Hh...Mint2', to: ['5Hh...Reci'], amounts: [1] },
+  'nft.Transfer': { from: '5Hh...Reci', mint: '5Hh...Mint1', to: '5Hh...K9pL', amount: 1 },
+  'nft.Burn': { owner: '5Hh...K9pL', mint: '5Hh...Mint1', amount: 1 },
+  'nft.SetRoyalty': { collection: '5Hh...G7Q8', mint: '5Hh...Mint2', royalty: { recipient: '5Hh...K9pL', bps: 1000 } },
+  'nft.TransferRoyaltyRecipient': { recipient: '5Hh...K9pL', mint: '5Hh...Mint2', new_recipient: '5Hh...StR' },
+  'nft.CollectionMetadata': { collection: '5Hh...G7Q8' },
+  'nft.MetadataUri': { mint: '5Hh...Mint1' },
+  'nft.Attributes': { mint: '5Hh...Mint1' },
+  'nft.Properties': { mint: '5Hh...Mint1' },
+  'nft.MintConfigView': { mint: '5Hh...Mint1' },
+  'nft.TotalSupply': { mint: '5Hh...Mint1' },
+  'nft.BalanceOf': { mint: '5Hh...Mint1', owner: '5Hh...Reci' },
+  'nft.RoyaltyInfo': { mint: '5Hh...Mint1' },
+
+  // ==================== staking 模块（app_id=3，30 个方法）====================
+  'staking.CreateValidator': {
+    operator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
+    validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e',
+    consensus_account: '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
+    consensus_pubkey: 'fndsa512_public_key_hex_string',
+    bls_pubkey: 'bls12381_public_key_hex_string',
+    network_address: '3030303030303030303030303030303030303030303030303030303030303030',
+    commission_rate_bps: 100
+  },
+  'staking.JoinCandidatePool': { operator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
+  'staking.LeaveCandidatePool': { operator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
+  'staking.FundRewardTreasury': { funder: '0x9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b', amount: 1000 },
+  'staking.Stake': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e', amount: 1000 },
+  'staking.CancelPendingStake': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e', amount: 500 },
+  'staking.ClaimRewards': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
+  'staking.ClaimOperatorRewards': { operator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
+  'staking.RequestUnstake': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e', shares: 500 },
+  'staking.ValidatorProfile': { validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
+  'staking.ValidatorPool': { validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
+  'staking.StakePosition': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
+  'staking.PositionSummary': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
+  'staking.CandidatePool': {},
+  'staking.ActiveSetSnapshot': { epoch: 0 },
+  'staking.ActiveSetHash': { epoch: 0 },
+  'staking.CurrentActiveSetSnapshot': {},
+  'staking.CurrentActiveSetHash': {},
+  'staking.EpochTransition': { epoch: 0 },
+  'staking.EpochConfig': {},
+  'staking.EpochState': {},
+  'staking.RewardTreasury': {},
+  'staking.HeldPrincipal': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d' },
+  'staking.EpochTransitionAttempt': { epoch: 0 },
+  'staking.ConsensusActiveSet': { epoch: 0 },
+  'staking.CurrentConsensusActiveSet': {},
+  'staking.ConsensusActiveValidator': { epoch: 0, index: 0 },
+  'staking.ConsensusActiveValidatorIndex': { epoch: 0, validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
+  'staking.ConsensusActiveValidatorIndexByPubkey': { epoch: 0, consensus_pubkey: 'fndsa512_public_key_hex_string' },
+  'staking.ConsensusActiveValidatorsByBitmap': { epoch: 0, bitmap: 1 }
+};
+
+// IDL Entry 方法支付配置映射表：键为 appName.MethodName
+// paymentMode: 测试用例使用的支付模式；payerRole: 付款角色提示；signerHint: 多签名场景提示
+var IDL_EXAMPLE_PAYMENT = {
+  // token 模块（23 entry）
+  'token.Create': { paymentMode: 'unified_payer_all', payerRole: 'token' },
+  'token.AbandonOwner': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.TransferOwner': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.AbandonFreezer': { paymentMode: 'unified_payer_all', payerRole: 'freezer' },
+  'token.TransferFreezer': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.Mint': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.MintBatch': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.Burn': { paymentMode: 'unified_payer_all', payerRole: 'holder' },
+  'token.Transfer': { paymentMode: 'unified_payer_all', payerRole: 'holder' },
+  'token.TransferWithTag': { paymentMode: 'unified_payer_all', payerRole: 'holder' },
+  'token.TransferBatch': { paymentMode: 'unified_payer_all', payerRole: 'holder' },
+  'token.Freeze': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.Unfreeze': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.Approve': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.Revoke': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.TransferFrom': { paymentMode: 'unified_payer_all', payerRole: 'spender' },
+  'token.SetIcon': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.CreateWithCompliance': { paymentMode: 'unified_payer_all', payerRole: 'token' },
+  'token.SetComplianceMode': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.AddComplianceRequirement': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.RemoveComplianceRequirement': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.ClearComplianceRequirements': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.ClaimFaucet': { paymentMode: 'unified_payer_all', payerRole: 'claimer' },
+
+  // account 模块（10 entry）
+  'account.Create': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'account.EnsureAccount': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'account.CreateMultisig': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'account.AddSigner': { paymentMode: 'split', payerRole: 'owner（多签账户地址）' },
+  'account.AddSigners': { paymentMode: 'split', payerRole: 'owner（多签账户地址）' },
+  'account.RemoveSigner': { paymentMode: 'split', payerRole: 'owner（多签账户地址）' },
+  'account.SetThreshold': { paymentMode: 'split', payerRole: 'owner（多签账户地址）' },
+  'account.SetSignerWeight': { paymentMode: 'split', payerRole: 'owner（多签账户地址）' },
+  'account.VoteInit': { paymentMode: 'split', payerRole: 'owner（多签账户地址）' },
+  'account.Vote': { paymentMode: 'split', payerRole: 'owner（多签账户地址）' },
+
+  // demo 模块（10 entry）
+  'demo.OpenOrder': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
+  'demo.PayOrder': { paymentMode: 'unified_payer_all', payerRole: 'payer' },
+  'demo.SettleOrder': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
+  'demo.OpenGasSponsorPool': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
+  'demo.ClaimSponsoredScore': { paymentMode: 'unified_payer_all', payerRole: 'claimer' },
+  'demo.InitPool': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
+  'demo.InitDex': { paymentMode: 'unified_payer_all', payerRole: 'dex' },
+  'demo.SetLabel': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
+  'demo.BatchCredit': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
+  'demo.SetTierCap': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
+
+  // identity 模块（17 entry）
+  'identity.Create': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.CreateWithAlias': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.AddKey': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.UpdateKey': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.RemoveKey': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.AddService': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.UpdateService': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.RemoveService': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.SetAvatarUri': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.Deactivate': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.SetAlias': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.RegisterOrganization': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.UpdateOrganizationCapabilities': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.DeactivateOrganization': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.DiscloseVcAttestation': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.RemoveVcDisclosure': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
+  'identity.RevokeVcAttestation': { paymentMode: 'unified_payer_all', payerRole: 'issuer' },
+
+  // nft 模块（12 entry）
+  'nft.CreateCollection': { paymentMode: 'unified_payer_all', payerRole: 'collection' },
+  'nft.SetCollectionMetadata': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'nft.SetMetadata': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'nft.SetAttributes': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'nft.SetProperties': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'nft.CreateUnique': { paymentMode: 'unified_payer_all', payerRole: 'mint', signerHint: '该方法需 mint + owner 双签 bit0，建议使用 /api/write/multi-agent 端点（multi_signer 模式）' },
+  'nft.CreateBatch': { paymentMode: 'unified_payer_all', payerRole: 'mint', signerHint: '该方法需 mint + owner 双签 bit0，建议使用 /api/write/multi-agent 端点（multi_signer 模式）' },
+  'nft.MintBatch': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'nft.Transfer': { paymentMode: 'unified_payer_all', payerRole: 'from' },
+  'nft.Burn': { paymentMode: 'unified_payer_all', payerRole: 'owner（NFT 持有者）' },
+  'nft.SetRoyalty': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'nft.TransferRoyaltyRecipient': { paymentMode: 'unified_payer_all', payerRole: 'recipient' },
+
+  // staking 模块（9 entry）
+  'staking.CreateValidator': { paymentMode: 'unified_payer_all', payerRole: 'operator', signerHint: '该方法需 operator + consensus_account 双签，建议使用 /api/write/multi-agent 端点（multi_signer 模式）。注：consensus_pubkey/bls_pubkey/network_address 为 bytes 类型，JSON REST API 可能无法正确序列化' },
+  'staking.JoinCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
+  'staking.LeaveCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
+  'staking.FundRewardTreasury': { paymentMode: 'unified_payer_all', payerRole: 'funder' },
+  'staking.Stake': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'staking.CancelPendingStake': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'staking.ClaimRewards': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'staking.ClaimOperatorRewards': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
+  'staking.RequestUnstake': { paymentMode: 'unified_payer_all', payerRole: 'owner' }
+};
+
 function idlIsScalarType(typeStr) {
   return Object.prototype.hasOwnProperty.call(IDL_SCALAR_TYPES, typeStr);
 }
@@ -1800,7 +2223,7 @@ function renderIDLForm(ix) {
   if (inputArgs.length) {
     var argSec = el('div', { class: 'param-section' });
     argSec.appendChild(el('div', { class: 'param-section-title', text: '参数 (args)' }));
-    inputArgs.forEach(function (a) { argSec.appendChild(buildIDLArgInput(a)); });
+    inputArgs.forEach(function (a) { argSec.appendChild(buildIDLArgInput(a, state.currentIdlApp, ix.name)); });
     body.appendChild(argSec);
   } else {
     body.appendChild(el('div', { class: 'param-section' },
@@ -1832,8 +2255,11 @@ function renderIDLForm(ix) {
   state.idlExecMode = 'simulate';
 }
 
-function buildIDLArgInput(arg) {
+function buildIDLArgInput(arg, appName, methodName) {
   var isScalar = idlIsScalarType(arg.type);
+  var exampleArgs = IDL_EXAMPLE_ARGS[appName + '.' + methodName];
+  var exampleVal = exampleArgs ? exampleArgs[arg.name] : undefined;
+  var hasExample = exampleVal !== undefined;
   var row = el('div', { class: 'param-row idl-arg-row' },
     el('label', { class: 'param-label' },
       el('span', { class: 'idl-arg-name', text: arg.name }),
@@ -1841,22 +2267,26 @@ function buildIDLArgInput(arg) {
     )
   );
   if (isScalar) {
+    var defaultVal = IDL_SCALAR_TYPES[arg.type];
+    var val = hasExample ? String(exampleVal) : defaultVal;
     var inp = el('input', {
       class: 'param-input',
       'data-argname': arg.name,
-      placeholder: IDL_SCALAR_TYPES[arg.type] !== '' ? '如 ' + IDL_SCALAR_TYPES[arg.type] : arg.type,
+      placeholder: defaultVal !== '' ? '如 ' + defaultVal : arg.type,
       type: 'text',
     });
-    inp.value = IDL_SCALAR_TYPES[arg.type];
+    inp.value = val;
     row.appendChild(inp);
   } else {
+    var defaultComplex = idlDefaultComplexValue(arg.type);
+    var complexVal = hasExample ? JSON.stringify(exampleVal, null, 2) : defaultComplex;
     var ta = el('textarea', {
       class: 'body-editor idl-arg-editor',
       'data-argname': arg.name,
       spellcheck: 'false',
-      placeholder: 'JSON，如 ' + idlDefaultComplexValue(arg.type),
+      placeholder: 'JSON，如 ' + defaultComplex,
     });
-    ta.value = idlDefaultComplexValue(arg.type);
+    ta.value = complexVal;
     row.appendChild(ta);
   }
   return row;
@@ -1899,8 +2329,20 @@ function buildIDLPaymentSection() {
   IDL_PAYMENT_MODES.forEach(function (m) {
     pmSelect.appendChild(el('option', { value: m.value, text: m.label }));
   });
+  // 根据实例支付配置自动选择支付模式
+  var examplePay = state.currentIdlApp && state.currentIdlMethod
+    ? IDL_EXAMPLE_PAYMENT[state.currentIdlApp + '.' + state.currentIdlMethod.name]
+    : null;
+  if (examplePay && examplePay.paymentMode) {
+    pmSelect.value = examplePay.paymentMode;
+  }
   pmRow.appendChild(pmSelect);
   sec.appendChild(pmRow);
+
+  // signerHint 提示（多签名场景）
+  if (examplePay && examplePay.signerHint) {
+    sec.appendChild(el('div', { class: 'idl-signer-hint-box', text: examplePay.signerHint }));
+  }
 
   // 动态字段容器
   sec.appendChild(el('div', { id: 'idlPaymentFields' }));
@@ -1922,8 +2364,14 @@ function renderIDLPaymentFields() {
   var isSubmit = state.idlExecMode === 'submit';
   var modeDef = IDL_PAYMENT_MODES.find(function (m) { return m.value === pm; }) || IDL_PAYMENT_MODES[0];
 
-  // 通用：payer/owner 地址
-  container.appendChild(buildIDLFieldRow('payerAddress', '付款/所有者地址 (base58)', '', 'text', 'data-field', 'payerAddress'));
+  // 通用：payer/owner 地址（根据实例支付配置显示角色提示）
+  var examplePay = state.currentIdlApp && state.currentIdlMethod
+    ? IDL_EXAMPLE_PAYMENT[state.currentIdlApp + '.' + state.currentIdlMethod.name]
+    : null;
+  var payerLabel = (examplePay && examplePay.payerRole)
+    ? examplePay.payerRole + ' 地址 (base58)'
+    : '付款/所有者地址 (base58)';
+  container.appendChild(buildIDLFieldRow('payerAddress', payerLabel, '', 'text', 'data-field', 'payerAddress'));
 
   if (pm === 'split') {
     // split 模式用 owner 概念，复用 payerAddress 作为 owner 地址

@@ -2056,6 +2056,16 @@ body::before {
   color: var(--warning);
   font-size: 12px;
 }
+.idl-signer-hint-box {
+  padding: 8px 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px dashed rgba(251, 191, 36, 0.3);
+  color: var(--warning);
+  font-size: 12px;
+  line-height: 1.5;
+}
 
 /* 执行模式单选 */
 .idl-exec-mode-row {
