@@ -359,10 +359,15 @@ const state = {
   idlActiveRespTab: 'idl-json',
   idlLastResponse: null,
   idlCollapsedApps: {}, // appName -> true 表示折叠；默认全部折叠
+  // 账户管理
+  accounts: [],
+  currentAccountId: null,
 };
 
 const MAX_HISTORY = 50;
 const HISTORY_STORAGE_KEY = 'milon_api_history';
+const ACCOUNTS_STORAGE_KEY = 'milon_accounts';
+const CURRENT_ACCOUNT_KEY = 'milon_current_account';
 
 function $(id) {
   return document.getElementById(id);
@@ -1018,6 +1023,219 @@ function saveHistory() {
   try {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(state.history));
   } catch (e) {}
+}
+
+// ===== 账户管理 =====
+function loadAccounts() {
+  try {
+    var stored = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+    if (stored) {
+      state.accounts = JSON.parse(stored) || [];
+    }
+  } catch (e) { state.accounts = []; }
+}
+
+function saveAccounts() {
+  try {
+    localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(state.accounts));
+  } catch (e) {}
+}
+
+function loadCurrentAccount() {
+  try {
+    state.currentAccountId = localStorage.getItem(CURRENT_ACCOUNT_KEY) || null;
+  } catch (e) { state.currentAccountId = null; }
+}
+
+function saveCurrentAccount() {
+  try {
+    if (state.currentAccountId) {
+      localStorage.setItem(CURRENT_ACCOUNT_KEY, state.currentAccountId);
+    } else {
+      localStorage.removeItem(CURRENT_ACCOUNT_KEY);
+    }
+  } catch (e) {}
+}
+
+function getCurrentAccount() {
+  if (!state.currentAccountId) return null;
+  return state.accounts.find(function (a) { return a.id === state.currentAccountId; }) || null;
+}
+
+function genAccountId() {
+  return 'acc_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function updateAccountLabel() {
+  var node = $('accountLabel');
+  if (!node) return;
+  var acc = getCurrentAccount();
+  node.textContent = acc ? acc.label : '未选择';
+}
+
+function openAccountModal() {
+  renderAccountModal();
+  $('accountModal').classList.add('open');
+}
+
+function closeAccountModal() {
+  $('accountModal').classList.remove('open');
+}
+
+function renderAccountModal() {
+  var body = $('accountModalBody');
+  if (!body) return;
+  body.innerHTML = '';
+
+  // 账户列表
+  var listTitle = el('div', { class: 'account-form-title', text: '已保存账户' });
+  body.appendChild(listTitle);
+
+  if (state.accounts.length === 0) {
+    body.appendChild(el('div', { class: 'account-empty-hint', text: '暂无账户，在下方添加' }));
+  } else {
+    var list = el('div', { class: 'account-list' });
+    state.accounts.forEach(function (acc) {
+      var isActive = acc.id === state.currentAccountId;
+      var row = el('div', { class: 'account-row' + (isActive ? ' active' : '') });
+      var info = el('div', { class: 'account-info' },
+        el('div', { class: 'account-name', text: acc.label }),
+        el('div', { class: 'account-addr', text: acc.address })
+      );
+      var actions = el('div', { class: 'account-actions' });
+      if (isActive) {
+        actions.appendChild(el('span', { class: 'account-badge', text: '活跃' }));
+      } else {
+        var setActiveBtn = el('button', { class: 'btn btn-secondary btn-sm', text: '设为活跃' });
+        setActiveBtn.addEventListener('click', function () { setCurrentAccount(acc.id); });
+        actions.appendChild(setActiveBtn);
+      }
+      var delBtn = el('button', { class: 'btn btn-ghost btn-sm', text: '删除' });
+      delBtn.addEventListener('click', function () {
+        if (confirm('确认删除账户 "' + acc.label + '"？')) {
+          removeAccount(acc.id);
+        }
+      });
+      actions.appendChild(delBtn);
+      row.appendChild(info);
+      row.appendChild(actions);
+      list.appendChild(row);
+    });
+    body.appendChild(list);
+  }
+
+  // 新增表单
+  var form = el('div', { class: 'account-form' });
+  form.appendChild(el('div', { class: 'account-form-title', text: '添加账户' }));
+
+  var labelRow = el('div', { class: 'param-row' },
+    el('label', { class: 'param-label', text: '标签' })
+  );
+  var labelInput = el('input', { class: 'param-input', type: 'text', placeholder: '如：测试账户1' });
+  labelRow.appendChild(labelInput);
+  form.appendChild(labelRow);
+
+  var addrRow = el('div', { class: 'param-row' },
+    el('label', { class: 'param-label', text: '地址 (base58)' })
+  );
+  var addrInput = el('input', { class: 'param-input', type: 'text', placeholder: '2Gqw...' });
+  addrRow.appendChild(addrInput);
+  form.appendChild(addrRow);
+
+  var skRow = el('div', { class: 'param-row' },
+    el('label', { class: 'param-label', text: '私钥 (hex/base58)' })
+  );
+  var skInput = el('input', { class: 'param-input', type: 'password', placeholder: 'hex 或 base58' });
+  skRow.appendChild(skInput);
+  form.appendChild(skRow);
+
+  var pkRow = el('div', { class: 'param-row' },
+    el('label', { class: 'param-label', text: '公钥 (可选)' })
+  );
+  var pkInput = el('input', { class: 'param-input', type: 'text', placeholder: 'base58 公钥' });
+  pkRow.appendChild(pkInput);
+  form.appendChild(pkRow);
+
+  var actions = el('div', { class: 'account-form-actions' });
+  var genBtn = el('button', { class: 'btn btn-secondary btn-sm', text: '调用生成接口' });
+  genBtn.addEventListener('click', function () {
+    genBtn.disabled = true;
+    genBtn.textContent = '生成中...';
+    fetch('/api/accounts/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyType: 'secp256k1' })
+    }).then(function (r) { return r.json(); }).then(function (resp) {
+      genBtn.disabled = false;
+      genBtn.textContent = '调用生成接口';
+      if (resp && resp.success && resp.data) {
+        var d = resp.data;
+        if (d.address) addrInput.value = d.address;
+        if (d.privateKey) skInput.value = d.privateKey;
+        if (d.publicKey) pkInput.value = d.publicKey;
+        if (!labelInput.value) labelInput.value = '生成账户 ' + new Date().toLocaleTimeString();
+        showToast('账户已生成，确认后请点保存', 'success');
+      } else {
+        showToast('生成失败：' + (resp && resp.message ? resp.message : '未知错误'), 'error');
+      }
+    }).catch(function (err) {
+      genBtn.disabled = false;
+      genBtn.textContent = '调用生成接口';
+      showToast('请求失败：' + err.message, 'error');
+    });
+  });
+  actions.appendChild(genBtn);
+
+  var saveBtn = el('button', { class: 'btn btn-primary btn-sm', text: '保存账户' });
+  saveBtn.addEventListener('click', function () {
+    var label = labelInput.value.trim();
+    var address = addrInput.value.trim();
+    var privateKey = skInput.value.replace(/\s/g, '');
+    var publicKey = pkInput.value.trim();
+    if (!label) { showToast('请填写标签', 'warning'); return; }
+    if (!address) { showToast('请填写地址', 'warning'); return; }
+    if (!privateKey) { showToast('请填写私钥', 'warning'); return; }
+    addAccount({ label: label, address: address, privateKey: privateKey, publicKey: publicKey });
+  });
+  actions.appendChild(saveBtn);
+  form.appendChild(actions);
+
+  body.appendChild(form);
+}
+
+function addAccount(data) {
+  var acc = {
+    id: genAccountId(),
+    label: data.label,
+    address: data.address,
+    privateKey: data.privateKey,
+    publicKey: data.publicKey || '',
+    createdAt: Date.now()
+  };
+  state.accounts.push(acc);
+  saveAccounts();
+  showToast('账户已保存', 'success');
+  renderAccountModal();
+}
+
+function removeAccount(id) {
+  state.accounts = state.accounts.filter(function (a) { return a.id !== id; });
+  if (state.currentAccountId === id) {
+    state.currentAccountId = null;
+    saveCurrentAccount();
+    updateAccountLabel();
+  }
+  saveAccounts();
+  showToast('账户已删除', 'info');
+  renderAccountModal();
+}
+
+function setCurrentAccount(id) {
+  state.currentAccountId = id;
+  saveCurrentAccount();
+  updateAccountLabel();
+  closeAccountModal();
+  showToast('已设为活跃账户', 'success');
 }
 
 function addToHistory(endpoint, req, statusCode, duration, data) {
@@ -2304,6 +2522,10 @@ function idlDefaultComplexValue(typeStr) {
 function buildIDLPaymentSection() {
   var sec = el('div', { class: 'param-section' });
   sec.appendChild(el('div', { class: 'param-section-title', text: '执行配置' }));
+  var activeAcc = getCurrentAccount();
+  if (activeAcc) {
+    sec.appendChild(el('div', { class: 'idl-active-account-hint', text: '当前账户: ' + activeAcc.label + ' (' + activeAcc.address.slice(0, 10) + '...)' }));
+  }
 
   // 执行模式切换
   var modeRow = el('div', { class: 'param-row idl-exec-mode-row' },
@@ -2363,6 +2585,13 @@ function renderIDLPaymentFields() {
   var pm = $('idlPaymentMode') ? $('idlPaymentMode').value : 'unified_payer_all';
   var isSubmit = state.idlExecMode === 'submit';
   var modeDef = IDL_PAYMENT_MODES.find(function (m) { return m.value === pm; }) || IDL_PAYMENT_MODES[0];
+  var activeAcc = getCurrentAccount();
+  var prefilledAddr = activeAcc ? activeAcc.address : '';
+  var prefilledSk = activeAcc ? activeAcc.privateKey : '';
+  var prefilledPk = (activeAcc && activeAcc.publicKey) ? activeAcc.publicKey : '';
+  var sigModeTpl = prefilledPk
+    ? '{\n  "type": "pubkey",\n  "publicKey": "' + prefilledPk + '"\n}'
+    : '{\n  "type": "pubkey",\n  "publicKey": "base58公钥"\n}';
 
   // 通用：payer/owner 地址（根据实例支付配置显示角色提示）
   var examplePay = state.currentIdlApp && state.currentIdlMethod
@@ -2371,16 +2600,16 @@ function renderIDLPaymentFields() {
   var payerLabel = (examplePay && examplePay.payerRole)
     ? examplePay.payerRole + ' 地址 (base58)'
     : '付款/所有者地址 (base58)';
-  container.appendChild(buildIDLFieldRow('payerAddress', payerLabel, '', 'text', 'data-field', 'payerAddress'));
+  container.appendChild(buildIDLFieldRow('payerAddress', payerLabel, prefilledAddr, 'text', 'data-field', 'payerAddress'));
 
   if (pm === 'split') {
     // split 模式用 owner 概念，复用 payerAddress 作为 owner 地址
     if (isSubmit) {
-      container.appendChild(buildIDLFieldRow('ownerPrivateKey', 'owner 私钥 (hex/base58)', '', 'password', 'data-field', 'ownerPrivateKey'));
+      container.appendChild(buildIDLFieldRow('ownerPrivateKey', 'owner 私钥 (hex/base58)', prefilledSk, 'password', 'data-field', 'ownerPrivateKey'));
     }
   } else {
     if (isSubmit) {
-      container.appendChild(buildIDLFieldRow('payerPrivateKey', 'payer 私钥 (hex/base58)', '', 'password', 'data-field', 'payerPrivateKey'));
+      container.appendChild(buildIDLFieldRow('payerPrivateKey', 'payer 私钥 (hex/base58)', prefilledSk, 'password', 'data-field', 'payerPrivateKey'));
     }
   }
 
@@ -2392,8 +2621,8 @@ function renderIDLPaymentFields() {
     }
   }
 
-  // signatureMode（JSON）
-  container.appendChild(buildIDLFieldRow('signatureMode', 'signatureMode (JSON)', '{\n  "type": "pubkey",\n  "publicKey": "base58公钥"\n}', 'textarea', 'data-field', 'signatureMode'));
+  // signatureMode（JSON）— 若活跃账户有 publicKey 则自动预填
+  container.appendChild(buildIDLFieldRow('signatureMode', 'signatureMode (JSON)', sigModeTpl, 'textarea', 'data-field', 'signatureMode'));
   if (modeDef && modeDef.needIx) {
     container.appendChild(buildIDLFieldRow('ixSignatureMode', 'ixSignatureMode (JSON)', '{\n  "type": "pubkey",\n  "publicKey": "base58公钥"\n}', 'textarea', 'data-field', 'ixSignatureMode'));
   }
@@ -2525,13 +2754,6 @@ function buildIDLRequest() {
   var sigMode = readField('signatureMode');
   if (sigMode) { try { payload.signatureMode = JSON.parse(sigMode); } catch (e) {} }
 
-  console.log('[IDL DEBUG] paymentMode=', pm, 'isSubmit=', isSubmit);
-  console.log('[IDL DEBUG] payerAddress=', payload.payerAddress);
-  var payerPkNode = document.querySelector('#idlPaymentFields [data-field="payerPrivateKey"]');
-  console.log('[IDL DEBUG] payerPrivateKey node exists=', !!payerPkNode, 'value=', payerPkNode ? payerPkNode.value : 'N/A');
-  console.log('[IDL DEBUG] payerPrivateKey payload=', payload.payerPrivateKey);
-  console.log('[IDL DEBUG] args=', JSON.stringify(args));
-
   var url = isSubmit ? '/api/write' : '/api/simulate';
   return { method: 'POST', url: url, body: JSON.stringify(payload, null, 2) };
 }
@@ -2549,7 +2771,6 @@ async function sendIDLRequest() {
   var start = performance.now();
   try {
     var opt = { method: req.method, headers: { 'Content-Type': 'application/json' }, body: req.body };
-    console.log('[IDL DEBUG] request body=', req.body);
     var resp = await fetch(req.url, opt);
     var duration = Math.round(performance.now() - start);
     var text = await resp.text();
@@ -2876,6 +3097,12 @@ function initApp() {
     }
   });
   loadHistory();
+  loadAccounts();
+  loadCurrentAccount();
+  updateAccountLabel();
+  $('accountBtn').addEventListener('click', openAccountModal);
+  $('accountModalCloseBtn').addEventListener('click', closeAccountModal);
+  $('accountModalOverlay').addEventListener('click', closeAccountModal);
   loadNetworks();
   checkHealth();
   renderSdkList();
