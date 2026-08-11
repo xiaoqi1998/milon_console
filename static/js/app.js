@@ -509,11 +509,16 @@ function renderParams(ep) {
   var body = $('editorBody');
   body.innerHTML = '';
   var hasContent = false;
+  var activeAcc = getCurrentAccount();
   if (ep.pathParams && ep.pathParams.length) {
     hasContent = true;
     var sec = el('div', { class: 'param-section' });
     sec.appendChild(el('div', { class: 'param-section-title', text: '路径参数' }));
     ep.pathParams.forEach(function (p) {
+      var prefilled = '';
+      if (activeAcc && /address/i.test(p.name)) {
+        prefilled = activeAcc.address;
+      }
       sec.appendChild(
         el(
           'div',
@@ -525,6 +530,7 @@ function renderParams(ep) {
             'data-pname': p.name,
             placeholder: p.ph || '',
             type: 'text',
+            value: prefilled,
           })
         )
       );
@@ -575,7 +581,13 @@ function renderParams(ep) {
       spellcheck: 'false',
       placeholder: '{\n  // JSON 请求体\n}',
     });
-    ta.value = ep.bodyTemplate || '';
+    var bodyTpl = ep.bodyTemplate || '';
+    if (activeAcc && bodyTpl) {
+      if (activeAcc.address) bodyTpl = bodyTpl.split('base58地址').join(activeAcc.address);
+      if (activeAcc.privateKey) bodyTpl = bodyTpl.split('hex或base58私钥').join(activeAcc.privateKey);
+      if (activeAcc.publicKey) bodyTpl = bodyTpl.split('base58公钥').join(activeAcc.publicKey);
+    }
+    ta.value = bodyTpl;
     bs.appendChild(ta);
     body.appendChild(bs);
   }
