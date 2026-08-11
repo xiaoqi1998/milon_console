@@ -2492,16 +2492,21 @@ function buildIDLRequest() {
     return node ? node.value.trim() : '';
   }
 
+  function readKeyField(field) {
+    var node = document.querySelector('#idlPaymentFields [' + 'data-field' + '="' + field + '"]');
+    return node ? node.value.replace(/\s/g, '') : '';
+  }
+
   payload.payerAddress = readField('payerAddress');
 
   if (pm === 'split') {
     if (isSubmit) {
-      var ownerSk = readField('ownerPrivateKey');
+      var ownerSk = readKeyField('ownerPrivateKey');
       if (ownerSk) payload.ownerPrivateKey = ownerSk;
     }
   } else {
     if (isSubmit) {
-      var payerSk = readField('payerPrivateKey');
+      var payerSk = readKeyField('payerPrivateKey');
       if (payerSk) payload.payerPrivateKey = payerSk;
     }
   }
@@ -2510,7 +2515,7 @@ function buildIDLRequest() {
   if (modeDef && modeDef.needIx) {
     payload.ixAddress = readField('ixAddress');
     if (isSubmit) {
-      var ixSk = readField('ixPrivateKey');
+      var ixSk = readKeyField('ixPrivateKey');
       if (ixSk) payload.ixPrivateKey = ixSk;
     }
     var ixSig = readField('ixSignatureMode');
