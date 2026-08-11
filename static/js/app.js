@@ -2544,6 +2544,7 @@ async function sendIDLRequest() {
   var start = performance.now();
   try {
     var opt = { method: req.method, headers: { 'Content-Type': 'application/json' }, body: req.body };
+    console.log('[IDL DEBUG] request body=', req.body);
     var resp = await fetch(req.url, opt);
     var duration = Math.round(performance.now() - start);
     var text = await resp.text();
