@@ -53,6 +53,10 @@
       </button>
     </nav>
     <div class="topbar-right">
+      <button class="account-btn" id="accountBtn" title="账户管理">
+        <span class="account-icon">👤</span>
+        <span class="account-label" id="accountLabel">未选择</span>
+      </button>
       <div class="network-selector">
         <label class="network-label">网络</label>
         <select id="networkSelect" class="network-select">
@@ -392,6 +396,17 @@
           <p>发送请求后，历史记录将保存在这里</p>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="account-modal" id="accountModal">
+    <div class="modal-overlay" id="accountModalOverlay"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3>账户管理</h3>
+        <button class="btn btn-ghost btn-sm" id="accountModalCloseBtn">✕</button>
+      </div>
+      <div class="modal-body" id="accountModalBody"></div>
     </div>
   </div>
 
