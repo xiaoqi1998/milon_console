@@ -2520,6 +2520,11 @@ function buildIDLRequest() {
   var sigMode = readField('signatureMode');
   if (sigMode) { try { payload.signatureMode = JSON.parse(sigMode); } catch (e) {} }
 
+  console.log('[IDL DEBUG] paymentMode=', pm, 'isSubmit=', isSubmit);
+  console.log('[IDL DEBUG] payerAddress=', payload.payerAddress);
+  console.log('[IDL DEBUG] payerPrivateKey=', payload.payerPrivateKey);
+  console.log('[IDL DEBUG] args=', JSON.stringify(args));
+
   var url = isSubmit ? '/api/write' : '/api/simulate';
   return { method: 'POST', url: url, body: JSON.stringify(payload, null, 2) };
 }
