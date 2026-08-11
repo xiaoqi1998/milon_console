@@ -2422,8 +2422,16 @@ function buildIDLRequest() {
   if (!ix) return null;
   var appName = state.currentIdlApp;
 
-  // 收集 input 参数
+  // 收集所有参数（input + signer）
   var args = {};
+  var exampleArgs = IDL_EXAMPLE_ARGS[appName + '.' + ix.name];
+  var examplePay = IDL_EXAMPLE_PAYMENT[appName + '.' + ix.name];
+  var payerRole = (examplePay && examplePay.payerRole) ? examplePay.payerRole : '';
+  var payerAddress = '';
+  var payerAddressNode = document.querySelector('#idlPaymentFields [data-field="payerAddress"]');
+  if (payerAddressNode) payerAddress = payerAddressNode.value.trim();
+
+  // input 参数：从输入框获取
   var argInputs = document.querySelectorAll('#idlEditorBody [data-argname]');
   argInputs.forEach(function (inp) {
     var name = inp.getAttribute('data-argname');
@@ -2449,6 +2457,21 @@ function buildIDLRequest() {
       catch (e) { args[name] = raw; }
     }
   });
+
+  // signer / any_signer 参数：优先从 payerAddress 获取（payerRole 匹配时），否则回退到示例值
+  if (ix.args) {
+    ix.args.forEach(function (arg) {
+      if ((arg.role === 'signer' || arg.role === 'any_signer') && !args.hasOwnProperty(arg.name)) {
+        var val = '';
+        if (payerRole === arg.name && payerAddress) {
+          val = payerAddress;
+        } else if (exampleArgs && exampleArgs[arg.name]) {
+          val = exampleArgs[arg.name];
+        }
+        if (val !== '') args[arg.name] = val;
+      }
+    });
+  }
 
   if (ix.kind === 'view') {
     // view: POST /api/read
