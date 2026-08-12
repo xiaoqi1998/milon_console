@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "app_id": 7,
+    "name": "randomness",
+    "description": "Milon randomness app IDL"
+  },
+  "instructions": [
+    {
+      "args": [],
+      "discriminator": 49324,
+      "handler": "latest_beacon",
+      "kind": "view",
+      "name": "LatestBeacon",
+      "returns": {
+        "type": "BeaconRecordV1"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "index",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 14904,
+      "handler": "beacon",
+      "kind": "view",
+      "name": "Beacon",
+      "returns": {
+        "type": "BeaconRecordV1"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "BeaconInputV1",
+      "typeTag": 16364217729533752697,
+      "variants": [
+        {
+          "fields": [
+            {
+              "name": "genesis_hash",
+              "type": "B256"
+            }
+          ],
+          "kind": "struct",
+          "name": "Genesis"
+        },
+        {
+          "fields": [
+            {
+              "name": "block_height",
+              "type": "u64"
+            },
+            {
+              "name": "parent_block_hash",
+              "type": "B256"
+            },
+            {
+              "name": "entropy",
+              "type": "B256"
+            }
+          ],
+          "kind": "struct",
+          "name": "LocalBlockEntropy"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "beacon_index",
+          "type": "u64"
+        },
+        {
+          "name": "input",
+          "type": "BeaconInputV1"
+        },
+        {
+          "name": "recorded_at_height",
+          "type": "u64"
+        },
+        {
+          "name": "derivable_from_height",
+          "type": "option<u64>"
+        },
+        {
+          "name": "previous_seed",
+          "type": "B256"
+        },
+        {
+          "name": "seed",
+          "type": "B256"
+        }
+      ],
+      "kind": "struct",
+      "name": "BeaconRecordV1",
+      "typeTag": 9190330151735324740
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "constants": [
+    {
+      "name": "DERIVATION_DELAY_BLOCKS",
+      "type": "u64",
+      "value": 1
+    }
+  ],
+  "errors": [
+    {
+      "code": 1792,
+      "message": "Randomness genesis beacon is already initialized",
+      "name": "AlreadyInitialized"
+    },
+    {
+      "code": 1793,
+      "message": "Randomness genesis beacon is not initialized",
+      "name": "NotInitialized"
+    },
+    {
+      "code": 1794,
+      "message": "Randomness beacon not found: {0}",
+      "name": "BeaconNotFound"
+    },
+    {
+      "code": 1795,
+      "message": "Randomness expected block height {0}, actual block height is {1}",
+      "name": "UnexpectedBlockHeight"
+    },
+    {
+      "code": 1796,
+      "message": "Genesis beacon is a deterministic anchor and cannot be consumed",
+      "name": "GenesisBeaconNotConsumable"
+    },
+    {
+      "code": 1797,
+      "message": "Randomness beacon {0} is derivable from block {1}, current block is {2}",
+      "name": "BeaconNotYetDerivable"
+    }
+  ]
+}

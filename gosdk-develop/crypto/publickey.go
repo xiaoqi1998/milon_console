@@ -135,7 +135,7 @@ func (pk *PublicKey) ToEd25519() (ed25519.PublicKey, error) {
 		return nil, fmt.Errorf("not an ed25519 public key, actual type: %d", pk.Variant)
 	}
 
-	if len(pk.Bytes) != ed25519.PublicKeySize || len(pk.Bytes) != PublicKeyEd25519Size {
+	if len(pk.Bytes) != ed25519.PublicKeySize {
 		return nil, fmt.Errorf("invalid ed25519 public key length: expected %d, got %d", ed25519.PublicKeySize, len(pk.Bytes))
 	}
 
@@ -148,7 +148,7 @@ func (pk *PublicKey) ToBLS12381() (*blst.P1Affine, error) {
 	}
 
 	if len(pk.Bytes) != PublicKeyBLS12381Size {
-		return nil, fmt.Errorf("invalid BLS12-381 public key length: expected %d, got %d", ed25519.PublicKeySize, len(pk.Bytes))
+		return nil, fmt.Errorf("invalid BLS12-381 public key length: expected %d, got %d", PublicKeyBLS12381Size, len(pk.Bytes))
 	}
 
 	p1Affine := new(blst.P1Affine).Uncompress(pk.Bytes)

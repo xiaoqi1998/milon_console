@@ -38,29 +38,8 @@ func DisplayTxHistory(client *milon.Client, txHistory *api.TxHistory) {
 			switch record.FirstSnapshot.Variant {
 			case 0: // Inline
 				fmt.Printf("\t\t\t Inline(type_tag=%d)\n", record.FirstSnapshot.TypeTag)
-				fmt.Printf("\t\t\t Data: %v\n", record.FirstSnapshot.InlineData)
-
-				var idlType *provider.IDLType
-				var pd *provider.Provider
-
-				for _, tmpProvider := range client.GetAllPd() {
-					tmpIDLType, ok := tmpProvider.GetIDLTypeByTypeTag(record.FirstSnapshot.TypeTag)
-					if ok {
-						idlType = tmpIDLType
-						pd = tmpProvider
-						break
-					}
-				}
-
-				if pd == nil || idlType == nil {
-					fmt.Printf("\t\t\t Warning: unknown type_tag %d, skipping decode\n", record.FirstSnapshot.TypeTag)
-				} else {
-					valueDecoded, err := pd.DecodeDataByIDLTypeName(idlType.Name, record.FirstSnapshot.InlineData)
-					if err != nil {
-						panic("failed to decode FirstSnapshot InlineData: " + err.Error())
-					}
-					fmt.Printf("\t\t\t Value Decoded (%s): %+v\n", idlType.Name, valueDecoded)
-				}
+				fmt.Printf("\t\t\t Data: %x\n", record.FirstSnapshot.InlineData)
+				decodeInlineData(client, "FirstSnapshot", record.FirstSnapshot.TypeTag, record.FirstSnapshot.InlineData)
 			case 1: // External
 				fmt.Printf("\t\t\t External(BlobHash=%x)\n", record.FirstSnapshot.ExternalHash)
 			default:
@@ -75,67 +54,47 @@ func DisplayTxHistory(client *milon.Client, txHistory *api.TxHistory) {
 		switch record.LastWritten.Variant {
 		case 0: // Inline
 			fmt.Printf("\t\t\t Inline(type_tag=%d, data_len=%d)\n", record.LastWritten.TypeTag, len(record.LastWritten.InlineData))
-			fmt.Printf("\t\t\t Data: %v\n", record.LastWritten.InlineData)
+			fmt.Printf("\t\t\t Data: %x\n", record.LastWritten.InlineData)
 
-			var idlType *provider.IDLType
-			var pd *provider.Provider
-
-			for _, tmpProvider := range client.GetAllPd() {
-				tmpIDLType, ok := tmpProvider.GetIDLTypeByTypeTag(record.LastWritten.TypeTag)
-				if ok {
-					idlType = tmpIDLType
-					pd = tmpProvider
-					break
-				}
+			valueDecoded, pd, idlType := decodeInlineData(client, "LastWritten", record.LastWritten.TypeTag, record.LastWritten.InlineData)
+			if valueDecoded == nil {
+				break
 			}
 
-			if pd == nil || idlType == nil {
-				fmt.Printf("\t\t\t Warning: unknown type_tag %d, skipping decode\n", record.LastWritten.TypeTag)
+			getResourceResult, err := client.GetResource(record.ResourceID)
+			if err != nil {
+				fmt.Printf("\t\t\t client.GetResource error: %+v \n", err)
 			} else {
-				valueDecoded, err := pd.DecodeDataByIDLTypeName(idlType.Name, record.LastWritten.InlineData)
+				valueDecoded, err = pd.DecodeDataByIDLTypeName(idlType.Name, getResourceResult.BodyGetResource.Data.Value)
 				if err != nil {
-					panic("failed to decode LastWritten InlineData: " + err.Error())
+					panic("failed to decode LastWritten GetResource data: " + err.Error())
 				}
-				fmt.Printf("\t\t\t Value Decoded (%v): %v\n\n", idlType.Name, valueDecoded)
 
-				getResourceResult, err := client.GetResource(record.ResourceID, 1)
-				if err != nil {
-					fmt.Printf("\t\t\t client.GetResource error: %+v \n", err)
-				} else {
-					valueDecoded, err = pd.DecodeDataByIDLTypeName(idlType.Name, getResourceResult.BodyGetResource.Data.Value)
-					if err != nil {
-						panic("failed to decode LastWritten GetResource data: " + err.Error())
-					}
-
-					fmt.Printf("\t\t\t client.GetResource.BodyGetResource: %+v\n", getResourceResult.BodyGetResource)
-					fmt.Printf("\t\t\t getResourceResult.BodyGetResource.Data.Value Decoded (%v): %v\n\n", idlType.Name, valueDecoded)
-				}
+				fmt.Printf("\t\t\t client.GetResource.BodyGetResource: %+v\n", getResourceResult.BodyGetResource)
+				fmt.Printf("\t\t\t getResourceResult.BodyGetResource.Data.Value Decoded (%s): %+v\n\n", idlType.Name, valueDecoded)
 			}
 		case 1: // External
-			fmt.Printf("\t\t\t External(BlobHash=%v)\n", record.LastWritten.ExternalHash)
+			fmt.Printf("\t\t\t External(BlobHash=%x)\n", record.LastWritten.ExternalHash)
 
-			getAccessValueResult, err := client.RpcClient.GetAccessValue([]api.BlobHash{record.LastWritten.ExternalHash}, 1)
+			getAccessValueResult, err := client.RpcClient.GetAccessValue([]api.BlobHash{record.LastWritten.ExternalHash})
 			if err != nil {
 				panic("failed to get LastWritten access value: " + err.Error())
 			}
 
-			fmt.Printf("\t\t\t client.rpcClientV1.GetAccessValue: %+v \n\n", getAccessValueResult)
-			for i2, value := range getAccessValueResult.BodyGetAccessValues {
-				fmt.Printf("\t\t\t\t [%d] BlobHash: %+v\n", i2, value.BlobHash)
-				fmt.Printf("\t\t\t\t [%d] Data: %+v\n", i2, value.Data)
+			fmt.Printf("\t\t\t client.RpcClient.GetAccessValue: %+v \n\n", getAccessValueResult)
+			for j, value := range getAccessValueResult.BodyGetAccessValues {
+				fmt.Printf("\t\t\t\t [%d] BlobHash: %+v\n", j, value.BlobHash)
+				fmt.Printf("\t\t\t\t [%d] Data: %+v\n", j, value.Data)
 
 				if value.Data != nil {
-					for _, pd := range client.GetAllPd() {
-						idlType, ok := pd.GetIDLTypeByTypeTag(value.Data.TypeTag)
-						if ok {
-							decodedValue, err := pd.DecodeDataByIDLTypeName(idlType.Name, value.Data.Value)
-							if err != nil {
-								panic("failed to decode LastWritten access value data: " + err.Error())
-							}
-
-							fmt.Printf("\t\t\t\t [%d] Value Decoded (%s): %+v\n", i2, idlType.Name, decodedValue)
-							break
+					pd, idlType := findIDLTypeByTag(client, value.Data.TypeTag)
+					if pd != nil && idlType != nil {
+						decodedValue, err := pd.DecodeDataByIDLTypeName(idlType.Name, value.Data.Value)
+						if err != nil {
+							panic("failed to decode LastWritten access value data: " + err.Error())
 						}
+
+						fmt.Printf("\t\t\t\t [%d] Value Decoded (%s): %+v\n", j, idlType.Name, decodedValue)
 					}
 				}
 			}
@@ -160,4 +119,28 @@ func DisplayTxHistory(client *milon.Client, txHistory *api.TxHistory) {
 	}
 
 	fmt.Printf("\n================ Display TxHistory ================\n")
+}
+
+func findIDLTypeByTag(client *milon.Client, typeTag uint64) (*provider.Provider, *provider.IDLType) {
+	for _, pd := range client.GetAllPd() {
+		if idlType, ok := pd.GetIDLTypeByTypeTag(typeTag); ok {
+			return pd, idlType
+		}
+	}
+	return nil, nil
+}
+
+func decodeInlineData(client *milon.Client, label string, typeTag uint64, data []byte) (any, *provider.Provider, *provider.IDLType) {
+	pd, idlType := findIDLTypeByTag(client, typeTag)
+	if pd == nil || idlType == nil {
+		fmt.Printf("\t\t\t Warning: unknown type_tag %d, skipping decode\n", typeTag)
+		return nil, nil, nil
+	}
+
+	valueDecoded, err := pd.DecodeDataByIDLTypeName(idlType.Name, data)
+	if err != nil {
+		panic("failed to decode " + label + " InlineData: " + err.Error())
+	}
+	fmt.Printf("\t\t\t Value Decoded (%s): %+v\n", idlType.Name, valueDecoded)
+	return valueDecoded, pd, idlType
 }

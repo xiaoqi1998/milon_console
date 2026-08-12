@@ -197,7 +197,7 @@ func TestProviderReportsErrors(t *testing.T) {
 	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
 	assert.NoError(t, err)
 
-	token, err := crypto.NewAddressFromStringRelaxed("0202020202020202020202020202020202020202")
+	token, err := crypto.NewAddressFromRelaxed("0202020202020202020202020202020202020202")
 	assert.NoError(t, err)
 
 	_, err = pd.Encode("Nope", Args{})

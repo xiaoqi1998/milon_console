@@ -79,19 +79,19 @@ func (s *Serializer) SerializeU128(value *big.Int) error {
 }
 
 func (s *Serializer) SerializeI8(value int8) error {
-	return s.SerializeU8(uint8(encodeZigZag64(int64(value))))
+	return s.SerializeU8(uint8(value))
 }
 
 func (s *Serializer) SerializeI16(value int16) error {
-	return s.SerializeU16(uint16(encodeZigZag64(int64(value))))
+	return s.SerializeU16(uint16(value))
 }
 
 func (s *Serializer) SerializeI32(value int32) error {
-	return s.SerializeU32(uint32(encodeZigZag64(int64(value))))
+	return s.SerializeU32(uint32(value))
 }
 
 func (s *Serializer) SerializeI64(value int64) error {
-	return s.SerializeU64(encodeZigZag64(value))
+	return s.SerializeU64(uint64(value))
 }
 
 func (s *Serializer) SerializeEnumVariant(index uint32) error {
@@ -143,6 +143,17 @@ func (s *Serializer) serializeVarUintBig(value *big.Int) error {
 	return nil
 }
 
+// encodeZigZag64 maps a signed int64 to an unsigned uint64 using ZigZag encoding,
+// so that values with small absolute value (positive or negative) stay compact
+// when serialized as varint.
+//
+// Mapping: 0→0, -1→1, 1→2, -2→3, 2→4, ... (negatives to odd, positives to even).
+//
+// Implementation notes:
+//   - value << 1: shifts left by one, keeping the result even and reserving the LSB
+//   - value >> 63: arithmetic shift that yields 0 for non-negative values and
+//     all-ones for negative ones; XORing flips every bit of (value << 1) for
+//     negatives, producing the odd numbers in the mapping above
 func encodeZigZag64(value int64) uint64 {
 	return uint64((value << 1) ^ (value >> 63))
 }

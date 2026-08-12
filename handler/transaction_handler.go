@@ -14,6 +14,7 @@ import (
 	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/lib"
+	"github.com/milon-labs/milon-go-sdk/postcard"
 )
 
 // TransactionHandler exposes transaction query endpoints (read-only).
@@ -181,6 +182,17 @@ type paramError string
 
 func (e paramError) Error() string { return string(e) }
 
+// unmarshalTransaction deserializes a postcard-encoded transaction.
+func unmarshalTransaction(data []byte) (*lib.Transaction, error) {
+	return postcard.DeserializePostcard(data, func(d *postcard.Deserializer) (*lib.Transaction, error) {
+		tx := &lib.Transaction{}
+		if err := tx.UnmarshalPostcard(d); err != nil {
+			return nil, err
+		}
+		return tx, nil
+	}, false)
+}
+
 // GetTransactionByHash handles GET /api/transactions/:hash
 func (h *TransactionHandler) GetTransactionByHash(c *gin.Context) {
 	hash := c.Param("hash")
@@ -261,7 +273,8 @@ func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.WaitForTransaction(hash, requestId, options...)
+	waitOptions := append([]any{requestId}, options...)
+	result, err := mc.WaitForTransaction(hash, waitOptions...)
 	if err != nil {
 		logSDKError(c, "WaitForTransaction", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to wait for transaction: "+err.Error(), nil))
@@ -302,7 +315,7 @@ func (h *TransactionHandler) SimulateTransaction(c *gin.Context) {
 
 	}
 
-	tx, err := lib.NewTransactionFromBytes(postcardBytes)
+	tx, err := unmarshalTransaction(postcardBytes)
 	if err != nil {
 		logParamError(c, "SimulateTransaction", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "failed to parse transaction", err.Error()))
@@ -352,7 +365,7 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 
 	}
 
-	tx, err := lib.NewTransactionFromBytes(postcardBytes)
+	tx, err := unmarshalTransaction(postcardBytes)
 	if err != nil {
 		logParamError(c, "SubmitTransaction", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "failed to parse transaction", err.Error()))
@@ -403,7 +416,7 @@ func (h *TransactionHandler) InspectTransaction(c *gin.Context) {
 
 	}
 
-	tx, err := lib.NewTransactionFromBytes(postcardBytes)
+	tx, err := unmarshalTransaction(postcardBytes)
 
 	if err != nil {
 		logParamError(c, "InspectTransaction", err)
@@ -426,13 +439,11 @@ func (h *TransactionHandler) InspectTransaction(c *gin.Context) {
 
 	}
 
-	payerAddr, payerErr := tx.ResolvePayer()
-
 	payer := ""
 
-	if payerErr == nil {
+	if tx.Payer != nil {
 
-		payer = payerAddr.ToBase58()
+		payer = tx.Payer.ToBase58()
 
 	}
 

@@ -66,10 +66,10 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 
 	// Build a split-mode ClaimFaucet transaction manually (SDK's BuildAndSubmitSingleIxSplit was removed).
-	pd, err := mc.GetPdByIDLAppName("token")
-	if err != nil {
-		logSDKError(c, "ClaimFaucet", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to load token IDL: "+err.Error(), nil))
+	pd, ok := mc.GetAllPd()["token"]
+	if !ok {
+		logSDKError(c, "ClaimFaucet", fmt.Errorf("token IDL not found"))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to load token IDL", nil))
 		return
 	}
 	wire, err := pd.Encode("ClaimFaucet", provider.Args{"claimer": addr})
@@ -80,19 +80,14 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 	}
 
 	requestId := lib.RequestID(time.Now().UnixMilli())
-	tx, err := lib.NewTransactionWithParam([]api.PackedInstruction{wire}, nil)
+	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		AddIxAndPayerSig(addr, sk, 0, mode).
+		Build()
 	if err != nil {
 		logSDKError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to create tx: "+err.Error(), nil))
 		return
 	}
-	sig, err := tx.SignIxGas(addr, sk, 0, mode)
-	if err != nil {
-		logSDKError(c, "ClaimFaucet", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to sign tx: "+err.Error(), nil))
-		return
-	}
-	tx.AddSignature(addr, *sig)
 	if err := tx.ValidateWire(); err != nil {
 		logSDKError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "transaction validation failed: "+err.Error(), nil))
@@ -146,7 +141,7 @@ func (h *FaucetHandler) GetBalance(c *gin.Context) {
 
 	mc, _ := h.nm.GetCurrent()
 
-	balance, err := mc.BalanceOf(addr)
+	balance, err := mc.BalanceOf(&addr)
 	if err != nil {
 		logSDKError(c, "GetBalance", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get balance: "+err.Error(), nil))

@@ -62,14 +62,41 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 		req.Args = provider.Args{}
 	}
 
-	result, err := mc.BuildAndViewSingleIx(req.AppName, req.MethodName, req.Args, requestId)
+	pd, ok := mc.GetAllPd()[req.AppName]
+	if !ok {
+		logParamError(c, "ReadContract", fmt.Errorf("IDL app %q not found", req.AppName))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q", req.AppName), nil))
+		return
+	}
+	var err error
+	req.Args, err = pd.NormalizeArgs(req.MethodName, req.Args)
+	if err != nil {
+		logParamError(c, "ReadContract", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("invalid arguments for %s.%s: %s", req.AppName, req.MethodName, err.Error()), nil))
+		return
+	}
+	wire, err := pd.Encode(req.MethodName, req.Args)
+	if err != nil {
+		logParamError(c, "ReadContract", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to encode instruction: %s", err.Error()), nil))
+		return
+	}
+
+	result, err := mc.View([]api.PackedInstruction{wire}, requestId)
 	if err != nil {
 		logSDKError(c, "ReadContract", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to read contract: "+err.Error(), nil))
 		return
 	}
 
-	c.JSON(http.StatusOK, types.SuccessResponse(result.BodyValues, "ok"))
+	bodyValues, err := pd.DecodeViewData(req.MethodName, result.HTTPResponseBody)
+	if err != nil {
+		logSDKError(c, "ReadContract", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to decode view values: "+err.Error(), nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, types.SuccessResponse(bodyValues, "ok"))
 }
 
 // readContractMultiRequest is the request body for POST /api/read/multi.
@@ -84,7 +111,7 @@ type readContractMultiItem struct {
 }
 
 // ReadContractMulti handles POST /api/read/multi
-// Executes multiple view queries in a single request using BuildAndViewMultiIx.
+// Executes multiple view queries in a single request using View.
 func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 	var req readContractMultiRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -109,10 +136,17 @@ func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 		if ix.Args == nil {
 			ix.Args = provider.Args{}
 		}
-		pd, err := mc.GetPdByIDLAppName(ix.AppName)
+		pd, ok := mc.GetAllPd()[ix.AppName]
+		if !ok {
+			logParamError(c, "ReadContractMulti", fmt.Errorf("IDL app %q not found", ix.AppName))
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q (instruction %d)", ix.AppName, i), nil))
+			return
+		}
+		var err error
+		ix.Args, err = pd.NormalizeArgs(ix.MethodName, ix.Args)
 		if err != nil {
 			logParamError(c, "ReadContractMulti", err)
-			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q (instruction %d): %s", ix.AppName, i, err.Error()), nil))
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("invalid arguments for instruction %d (%s.%s): %s", i, ix.AppName, ix.MethodName, err.Error()), nil))
 			return
 		}
 		wire, err := pd.Encode(ix.MethodName, ix.Args)
@@ -124,14 +158,14 @@ func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 		wires = append(wires, wire)
 	}
 
-	result, err := mc.BuildAndViewMultiIx(wires, requestId)
+	result, err := mc.View(wires, requestId)
 	if err != nil {
 		logSDKError(c, "ReadContractMulti", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to read multi: "+err.Error(), nil))
 		return
 	}
 
-	c.JSON(http.StatusOK, types.SuccessResponse(result.HttpRspBody, "ok"))
+	c.JSON(http.StatusOK, types.SuccessResponse(result.HTTPResponseBody, "ok"))
 }
 
 // simulateContractRequest is the request body for POST /api/simulate.
@@ -213,11 +247,16 @@ func validatePaymentModeFields(paymentMode string, signers []types.SignerEntry, 
 
 // dispatchSimulate builds a simulated-signature transaction and runs it against the node's simulate endpoint.
 // It selects the appropriate signing strategy based on paymentMode.
-func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContractRequest, requestId lib.RequestID) (*milon.SimulateTransactionResult, error) {
+func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContractRequest, requestId lib.RequestID) (*milon.SimulateTxResult, error) {
 	// Load IDL and encode the instruction wire once.
-	pd, err := mc.GetPdByIDLAppName(req.AppName)
+	pd, ok := mc.GetAllPd()[req.AppName]
+	if !ok {
+		return nil, fmt.Errorf("failed to load IDL: app %q not found", req.AppName)
+	}
+	var err error
+	req.Args, err = pd.NormalizeArgs(req.MethodName, req.Args)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load IDL: %w", err)
+		return nil, fmt.Errorf("invalid arguments for %s.%s: %w", req.AppName, req.MethodName, err)
 	}
 	wire, err := pd.Encode(req.MethodName, req.Args)
 	if err != nil {
@@ -231,15 +270,13 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if err != nil {
 			return nil, err
 		}
-		tx, err := lib.NewTransactionWithParam(instructions, &payerAddr)
+		builder := lib.NewTransactionBuilder(instructions).
+			WithPayer(&payerAddr).
+			AddSimulateIxAndPayerSig(payerAddr, 0, mode)
+		tx, err := builder.Build()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create tx: %w", err)
 		}
-		sig, err := tx.SimulateSignIxAndPayer(payerAddr, 0, mode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to simulate sign payer: %w", err)
-		}
-		tx.AddSignature(payerAddr, *sig)
 		if err := tx.ValidateWire(); err != nil {
 			return nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
@@ -254,20 +291,14 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if err != nil {
 			return nil, fmt.Errorf("invalid ix fields: %w", err)
 		}
-		tx, err := lib.NewTransactionWithParam(instructions, &payerAddr)
+		builder := lib.NewTransactionBuilder(instructions).
+			WithPayer(&payerAddr).
+			AddSimulatePayerSig(payerAddr, payerMode).
+			AddSimulateIxesSig(ixAddr, []uint8{0}, false, ixMode)
+		tx, err := builder.Build()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create tx: %w", err)
 		}
-		sig, err := tx.SimulateSignPayer(payerAddr, payerMode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to simulate sign payer: %w", err)
-		}
-		tx.AddSignature(payerAddr, *sig)
-		sig, err = tx.SimulateSignIx(ixAddr, 0, ixMode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to simulate sign ix: %w", err)
-		}
-		tx.AddSignature(ixAddr, *sig)
 		if err := tx.ValidateWire(); err != nil {
 			return nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
@@ -278,15 +309,13 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if err != nil {
 			return nil, err
 		}
-		tx, err := lib.NewTransactionWithParam(instructions, &payerAddr)
+		builder := lib.NewTransactionBuilder(instructions).
+			WithPayer(&payerAddr).
+			AddSimulatePayerSig(payerAddr, mode)
+		tx, err := builder.Build()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create tx: %w", err)
 		}
-		sig, err := tx.SimulateSignPayer(payerAddr, mode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to simulate sign payer: %w", err)
-		}
-		tx.AddSignature(payerAddr, *sig)
 		if err := tx.ValidateWire(); err != nil {
 			return nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
@@ -301,15 +330,12 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if err != nil {
 			return nil, err
 		}
-		tx, err := lib.NewTransactionWithParam(instructions, nil)
+		builder := lib.NewTransactionBuilder(instructions).
+			AddSimulateIxAndPayerSig(ownerAddr, 0, mode)
+		tx, err := builder.Build()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create tx: %w", err)
 		}
-		sig, err := tx.SimulateSignIxGas(ownerAddr, 0, mode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to simulate sign ix gas: %w", err)
-		}
-		tx.AddSignature(ownerAddr, *sig)
 		if err := tx.ValidateWire(); err != nil {
 			return nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
@@ -378,11 +404,11 @@ func (h *ContractHandler) parsePayerAndMode(addrStr string, sigModeRaw json.RawM
 
 // buildMultiSignerTransaction builds a transaction with multiple signers signing the same ix (bit0).
 // If gasPayer is provided, it signs bit63 (gas) and all signers sign bit0.
-// If gasPayer is nil, signers[0] signs bit63+bit0 (via SignIxGas) and the rest sign bit0 only.
+// If gasPayer is nil, signers[0] signs bit63+bit0 (via AddIxAndPayerSig) and the rest sign bit0 only.
 func (h *ContractHandler) buildMultiSignerTransaction(mc *milon.Client, appName, methodName string, args provider.Args, signerAddrs []crypto.Address, signerSks []crypto.SecretKeyer, signerModes []lib.AccountSignatureMode, gasPayerAddr *crypto.Address, gasPayerSk crypto.SecretKeyer, gasPayerMode lib.AccountSignatureMode) (*lib.Transaction, error) {
-	pd, err := mc.GetPdByIDLAppName(appName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load IDL: %w", err)
+	pd, ok := mc.GetAllPd()[appName]
+	if !ok {
+		return nil, fmt.Errorf("failed to load IDL: app %q not found", appName)
 	}
 
 	wire, err := pd.Encode(methodName, args)
@@ -390,40 +416,26 @@ func (h *ContractHandler) buildMultiSignerTransaction(mc *milon.Client, appName,
 		return nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
 
-	tx, err := lib.NewTransactionWithParam([]api.PackedInstruction{wire}, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create tx: %w", err)
-	}
+	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire})
 
 	if gasPayerAddr != nil {
 		// gasPayer signs bit63 only
-		sig, err := tx.SignPayer(*gasPayerAddr, gasPayerSk, gasPayerMode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to sign gasPayer: %w", err)
-		}
-		tx.AddSignature(*gasPayerAddr, *sig)
+		builder.AddPayerSig(*gasPayerAddr, gasPayerSk, gasPayerMode)
 		// All signers sign bit0
 		for i := range signerAddrs {
-			sig, err := tx.SignIx(signerAddrs[i], signerSks[i], 0, signerModes[i])
-			if err != nil {
-				return nil, fmt.Errorf("failed to sign ix for signer[%d]: %w", i, err)
-			}
-			tx.AddSignature(signerAddrs[i], *sig)
+			builder.AddIxesSig(signerAddrs[i], signerSks[i], []uint8{0}, false, signerModes[i])
 		}
 	} else {
 		// No gasPayer: signers[0] signs bit63+bit0, rest sign bit0
-		sig, err := tx.SignIxGas(signerAddrs[0], signerSks[0], 0, signerModes[0])
-		if err != nil {
-			return nil, fmt.Errorf("failed to sign ix+gas for signer[0]: %w", err)
-		}
-		tx.AddSignature(signerAddrs[0], *sig)
+		builder.AddIxAndPayerSig(signerAddrs[0], signerSks[0], 0, signerModes[0])
 		for i := 1; i < len(signerAddrs); i++ {
-			sig, err := tx.SignIx(signerAddrs[i], signerSks[i], 0, signerModes[i])
-			if err != nil {
-				return nil, fmt.Errorf("failed to sign ix for signer[%d]: %w", i, err)
-			}
-			tx.AddSignature(signerAddrs[i], *sig)
+			builder.AddIxesSig(signerAddrs[i], signerSks[i], []uint8{0}, false, signerModes[i])
 		}
+	}
+
+	tx, err := builder.Build()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tx: %w", err)
 	}
 
 	if err := tx.ValidateWire(); err != nil {
@@ -434,11 +446,11 @@ func (h *ContractHandler) buildMultiSignerTransaction(mc *milon.Client, appName,
 }
 
 // buildMultiSignerSimulateTransaction builds a simulated-signature transaction for multi_signer mode.
-// Same as buildMultiSignerTransaction but uses SimulateSign* methods (no private keys needed).
+// Same as buildMultiSignerTransaction but uses AddSimulate* methods (no private keys needed).
 func (h *ContractHandler) buildMultiSignerSimulateTransaction(mc *milon.Client, appName, methodName string, args provider.Args, signerAddrs []crypto.Address, signerModes []lib.AccountSignatureMode, gasPayerAddr *crypto.Address, gasPayerMode lib.AccountSignatureMode) (*lib.Transaction, error) {
-	pd, err := mc.GetPdByIDLAppName(appName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load IDL: %w", err)
+	pd, ok := mc.GetAllPd()[appName]
+	if !ok {
+		return nil, fmt.Errorf("failed to load IDL: app %q not found", appName)
 	}
 
 	wire, err := pd.Encode(methodName, args)
@@ -446,37 +458,23 @@ func (h *ContractHandler) buildMultiSignerSimulateTransaction(mc *milon.Client, 
 		return nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
 
-	tx, err := lib.NewTransactionWithParam([]api.PackedInstruction{wire}, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create tx: %w", err)
-	}
+	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire})
 
 	if gasPayerAddr != nil {
-		sig, err := tx.SimulateSignPayer(*gasPayerAddr, gasPayerMode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to simulate sign gasPayer: %w", err)
-		}
-		tx.AddSignature(*gasPayerAddr, *sig)
+		builder.AddSimulatePayerSig(*gasPayerAddr, gasPayerMode)
 		for i := range signerAddrs {
-			sig, err := tx.SimulateSignIx(signerAddrs[i], 0, signerModes[i])
-			if err != nil {
-				return nil, fmt.Errorf("failed to simulate sign ix for signer[%d]: %w", i, err)
-			}
-			tx.AddSignature(signerAddrs[i], *sig)
+			builder.AddSimulateIxesSig(signerAddrs[i], []uint8{0}, false, signerModes[i])
 		}
 	} else {
-		sig, err := tx.SimulateSignIxGas(signerAddrs[0], 0, signerModes[0])
-		if err != nil {
-			return nil, fmt.Errorf("failed to simulate sign ix+gas for signer[0]: %w", err)
-		}
-		tx.AddSignature(signerAddrs[0], *sig)
+		builder.AddSimulateIxAndPayerSig(signerAddrs[0], 0, signerModes[0])
 		for i := 1; i < len(signerAddrs); i++ {
-			sig, err := tx.SimulateSignIx(signerAddrs[i], 0, signerModes[i])
-			if err != nil {
-				return nil, fmt.Errorf("failed to simulate sign ix for signer[%d]: %w", i, err)
-			}
-			tx.AddSignature(signerAddrs[i], *sig)
+			builder.AddSimulateIxesSig(signerAddrs[i], []uint8{0}, false, signerModes[i])
 		}
+	}
+
+	tx, err := builder.Build()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tx: %w", err)
 	}
 
 	if err := tx.ValidateWire(); err != nil {
@@ -489,9 +487,9 @@ func (h *ContractHandler) buildMultiSignerSimulateTransaction(mc *milon.Client, 
 // buildSponsoredTransaction builds a unified-mode transaction with sponsored ix validation.
 // The payer signs bit63 (gas), and ix=0 is marked as sponsored (gas paid by sponsor pool).
 func (h *ContractHandler) buildSponsoredTransaction(mc *milon.Client, appName, methodName string, args provider.Args, payerSk crypto.SecretKeyer, payerAddr crypto.Address, mode lib.AccountSignatureMode) (*lib.Transaction, error) {
-	pd, err := mc.GetPdByIDLAppName(appName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load IDL: %w", err)
+	pd, ok := mc.GetAllPd()[appName]
+	if !ok {
+		return nil, fmt.Errorf("failed to load IDL: app %q not found", appName)
 	}
 
 	wire, err := pd.Encode(methodName, args)
@@ -499,16 +497,14 @@ func (h *ContractHandler) buildSponsoredTransaction(mc *milon.Client, appName, m
 		return nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
 
-	tx, err := lib.NewTransactionWithParam([]api.PackedInstruction{wire}, &payerAddr)
+	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(&payerAddr).
+		AddPayerSig(payerAddr, payerSk, mode)
+
+	tx, err := builder.Build()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tx: %w", err)
 	}
-
-	sig, err := tx.SignPayer(payerAddr, payerSk, mode)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign payer: %w", err)
-	}
-	tx.AddSignature(payerAddr, *sig)
 
 	if err := tx.ValidateWireWith([]uint8{0}); err != nil {
 		return nil, fmt.Errorf("transaction validation failed: %w", err)
@@ -519,9 +515,9 @@ func (h *ContractHandler) buildSponsoredTransaction(mc *milon.Client, appName, m
 
 // buildSponsoredSimulateTransaction builds a simulated-signature sponsored transaction.
 func (h *ContractHandler) buildSponsoredSimulateTransaction(mc *milon.Client, appName, methodName string, args provider.Args, payerAddr crypto.Address, mode lib.AccountSignatureMode) (*lib.Transaction, error) {
-	pd, err := mc.GetPdByIDLAppName(appName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load IDL: %w", err)
+	pd, ok := mc.GetAllPd()[appName]
+	if !ok {
+		return nil, fmt.Errorf("failed to load IDL: app %q not found", appName)
 	}
 
 	wire, err := pd.Encode(methodName, args)
@@ -529,16 +525,14 @@ func (h *ContractHandler) buildSponsoredSimulateTransaction(mc *milon.Client, ap
 		return nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
 
-	tx, err := lib.NewTransactionWithParam([]api.PackedInstruction{wire}, &payerAddr)
+	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(&payerAddr).
+		AddSimulatePayerSig(payerAddr, mode)
+
+	tx, err := builder.Build()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tx: %w", err)
 	}
-
-	sig, err := tx.SimulateSignPayer(payerAddr, mode)
-	if err != nil {
-		return nil, fmt.Errorf("failed to simulate sign payer: %w", err)
-	}
-	tx.AddSignature(payerAddr, *sig)
 
 	if err := tx.ValidateWireWith([]uint8{0}); err != nil {
 		return nil, fmt.Errorf("transaction validation failed: %w", err)
@@ -676,9 +670,14 @@ func (h *ContractHandler) WriteContractMultisig(c *gin.Context) {
 // and returns the hex-encoded transaction hash.
 func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractRequest, requestId lib.RequestID) (string, error) {
 	// Load IDL and encode the instruction wire once.
-	pd, err := mc.GetPdByIDLAppName(req.AppName)
+	pd, ok := mc.GetAllPd()[req.AppName]
+	if !ok {
+		return "", fmt.Errorf("failed to load IDL: app %q not found", req.AppName)
+	}
+	var err error
+	req.Args, err = pd.NormalizeArgs(req.MethodName, req.Args)
 	if err != nil {
-		return "", fmt.Errorf("failed to load IDL: %w", err)
+		return "", fmt.Errorf("invalid arguments for %s.%s: %w", req.AppName, req.MethodName, err)
 	}
 	wire, err := pd.Encode(req.MethodName, req.Args)
 	if err != nil {
@@ -708,15 +707,13 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 			return "", err
 		}
 		tx, err := buildTx(func() (*lib.Transaction, error) {
-			tx, err := lib.NewTransactionWithParam(instructions, &payerAddr)
+			tx, err := lib.NewTransactionBuilder(instructions).
+				WithPayer(&payerAddr).
+				AddIxAndPayerSig(payerAddr, payerSk, 0, mode).
+				Build()
 			if err != nil {
 				return nil, fmt.Errorf("failed to create tx: %w", err)
 			}
-			sig, err := tx.SignIxAndPayer(payerAddr, payerSk, 0, mode)
-			if err != nil {
-				return nil, fmt.Errorf("failed to sign payer: %w", err)
-			}
-			tx.AddSignature(payerAddr, *sig)
 			return tx, nil
 		})
 		if err != nil {
@@ -742,20 +739,14 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 			return "", fmt.Errorf("invalid ix fields: %w", err)
 		}
 		tx, err := buildTx(func() (*lib.Transaction, error) {
-			tx, err := lib.NewTransactionWithParam(instructions, &payerAddr)
+			tx, err := lib.NewTransactionBuilder(instructions).
+				WithPayer(&payerAddr).
+				AddPayerSig(payerAddr, payerSk, payerMode).
+				AddIxesSig(ixAddr, ixSk, []uint8{0}, false, ixMode).
+				Build()
 			if err != nil {
 				return nil, fmt.Errorf("failed to create tx: %w", err)
 			}
-			sig, err := tx.SignPayer(payerAddr, payerSk, payerMode)
-			if err != nil {
-				return nil, fmt.Errorf("failed to sign payer: %w", err)
-			}
-			tx.AddSignature(payerAddr, *sig)
-			sig, err = tx.SignIx(ixAddr, ixSk, 0, ixMode)
-			if err != nil {
-				return nil, fmt.Errorf("failed to sign ix: %w", err)
-			}
-			tx.AddSignature(ixAddr, *sig)
 			return tx, nil
 		})
 		if err != nil {
@@ -773,15 +764,13 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 			return "", err
 		}
 		tx, err := buildTx(func() (*lib.Transaction, error) {
-			tx, err := lib.NewTransactionWithParam(instructions, &payerAddr)
+			tx, err := lib.NewTransactionBuilder(instructions).
+				WithPayer(&payerAddr).
+				AddPayerSig(payerAddr, payerSk, mode).
+				Build()
 			if err != nil {
 				return nil, fmt.Errorf("failed to create tx: %w", err)
 			}
-			sig, err := tx.SignPayer(payerAddr, payerSk, mode)
-			if err != nil {
-				return nil, fmt.Errorf("failed to sign payer: %w", err)
-			}
-			tx.AddSignature(payerAddr, *sig)
 			return tx, nil
 		})
 		if err != nil {
@@ -807,15 +796,12 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 			return "", err
 		}
 		tx, err := buildTx(func() (*lib.Transaction, error) {
-			tx, err := lib.NewTransactionWithParam(instructions, nil)
+			tx, err := lib.NewTransactionBuilder(instructions).
+				AddIxAndPayerSig(ownerAddr, ownerSk, 0, mode).
+				Build()
 			if err != nil {
 				return nil, fmt.Errorf("failed to create tx: %w", err)
 			}
-			sig, err := tx.SignIxGas(ownerAddr, ownerSk, 0, mode)
-			if err != nil {
-				return nil, fmt.Errorf("failed to sign ix gas: %w", err)
-			}
-			tx.AddSignature(ownerAddr, *sig)
 			return tx, nil
 		})
 		if err != nil {

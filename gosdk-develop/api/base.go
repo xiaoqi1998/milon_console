@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/postcard"
 )
 
@@ -23,6 +24,16 @@ type BlobHash [BlobHashLen]byte
 
 const MIL = "M11on1111111111111111111111"
 
+var MILToken *crypto.Address
+
+func init() {
+	var err error
+	MILToken, err = crypto.NewAddressFromBytes(base58.Decode(MIL))
+	if err != nil {
+		panic(fmt.Sprintf("failed to decode MIL token address: %v", err))
+	}
+}
+
 // String implements the Stringer interface, returning Base58 format
 func (txHash TxHash) String() string {
 	return base58.Encode(txHash[:])
@@ -39,6 +50,11 @@ func NewTxHashFromRelaxed(input any) (TxHash, error) {
 	var hash TxHash
 
 	switch v := input.(type) {
+	case *TxHash:
+		if v == nil {
+			return hash, fmt.Errorf("nil hash")
+		}
+		return *v, nil
 	case TxHash:
 		return v, nil
 	case string:

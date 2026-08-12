@@ -59,7 +59,7 @@ func NewClassicalSecretKey() SecretKeyer {
 			panic(err)
 		}
 
-		// 检查是否为有效的 secp256k1 私钥
+		// Check whether it is a valid secp256k1 private key.
 		if _, err := crypto.ToECDSA(ret[:]); err == nil {
 			sk := &ClassicalSecretKey{Bytes: ret}
 			return sk
@@ -486,7 +486,7 @@ func SecretKeyerFromBytes(raw []byte) (SecretKeyer, error) {
 	}
 }
 
-// SecretKeyerFromStringRelaxed 从多种格式解析：十六进制、Base58 或数组格式 "[1,2,3,...]"
+// SecretKeyerFromStringRelaxed parses from multiple formats: hex, Base58, or array format "[1,2,3,...]".
 func SecretKeyerFromStringRelaxed(s string) (SecretKeyer, error) {
 	s = strings.TrimSpace(s)
 

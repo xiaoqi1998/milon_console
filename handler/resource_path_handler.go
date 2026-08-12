@@ -67,7 +67,7 @@ func (h *ResourcePathHandler) GetResourcePathByHash(c *gin.Context) {
 
 	// The SDK returns raw HTTP body bytes; parse as a single-element list.
 	var rawList [][]any
-	if err := json.Unmarshal(result.HttpRspBody, &rawList); err != nil {
+	if err := json.Unmarshal(result.HTTPResponseBody, &rawList); err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to parse resource path response: "+err.Error(), nil))
 		return
 	}

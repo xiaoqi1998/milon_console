@@ -1,6 +1,11 @@
 {
   "apps": [
     {
+      "app_id": 0,
+      "idl": "./system.idl.json",
+      "name": "system"
+    },
+    {
       "app_id": 1,
       "idl": "./account.idl.json",
       "name": "account"
@@ -29,11 +34,6 @@
       "app_id": 7,
       "idl": "./randomness.idl.json",
       "name": "randomness"
-    },
-    {
-      "app_id": 254,
-      "idl": "./randomness_demo.idl.json",
-      "name": "randomness_demo"
     },
     {
       "app_id": 255,

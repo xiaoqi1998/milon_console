@@ -74,7 +74,7 @@ func ParsePublicKey(pkStr string) (*crypto.PublicKey, error) {
 
 // ParseAddress parses an address from hex or base58 string.
 func ParseAddress(addrStr string) (crypto.Address, error) {
-	addr, err := crypto.NewAddressFromStringRelaxed(addrStr)
+	addr, err := crypto.NewAddressFromRelaxed(addrStr)
 	if err != nil {
 		return crypto.Address{}, err
 	}

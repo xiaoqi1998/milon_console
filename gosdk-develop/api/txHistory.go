@@ -91,13 +91,13 @@ func (r *TxReceipt) MarshalPostcard(serializer *postcard.Serializer) error {
 
 		// FirstSnapshot: Option<PersistedValue>
 		if err := postcard.SerializeOption(s, rec.FirstSnapshot, func(ss *postcard.Serializer, pv PersistedValue) error {
-			return serializePersistedValue(ss, pv)
+			return SerializePersistedValue(ss, pv)
 		}); err != nil {
 			return fmt.Errorf("failed to serialize FirstSnapshot: %w", err)
 		}
 
 		// LastWritten: PersistedValue
-		if err := serializePersistedValue(s, rec.LastWritten); err != nil {
+		if err := SerializePersistedValue(s, rec.LastWritten); err != nil {
 			return fmt.Errorf("failed to serialize LastWritten: %w", err)
 		}
 		return nil
@@ -110,7 +110,7 @@ func (r *TxReceipt) MarshalPostcard(serializer *postcard.Serializer) error {
 		if err := s.SerializeU64(event.TypeTag); err != nil {
 			return fmt.Errorf("failed to serialize event TypeTag: %w", err)
 		}
-		// AnySerializeOwned: value 没有 length prefix，直接写入
+		// AnySerializeOwned: value has no length prefix, write it directly
 		s.SerializeFixedBytes(event.Value)
 		return nil
 	}); err != nil {
@@ -132,7 +132,7 @@ func (r *TxReceipt) MarshalPostcard(serializer *postcard.Serializer) error {
 	return nil
 }
 
-func serializePersistedValue(serializer *postcard.Serializer, pv PersistedValue) error {
+func SerializePersistedValue(serializer *postcard.Serializer, pv PersistedValue) error {
 	if err := serializer.SerializeU32(pv.Variant); err != nil {
 		return fmt.Errorf("failed to serialize variant: %w", err)
 	}

@@ -210,7 +210,7 @@ Provider 基于 IDL JSON 实现合约方法的序列化与反序列化，支持�
 SDK 自动将链上事件反序列化为结构化数据：
 
 ```go
-    eventsResult, _ := client.EventsByTxHash(txHash, nil, 1) 
+    eventsResult, _ := client.EventsByTxHash(txHash, nil) 
     
     for _, event := range eventsResult.BodyEventsByTxHash.Events { 
         decoded, _ := client.GetProviderManager().DecodeEventDataByTag(

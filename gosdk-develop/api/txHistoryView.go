@@ -12,7 +12,7 @@ const (
 )
 
 type TxHistoryView struct {
-	Stamp        uint64 // 指令中最大时间戳
+	Stamp        uint64
 	Instructions []PackedInstruction
 	Receipt      TxReceiptView
 }

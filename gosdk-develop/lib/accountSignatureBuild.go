@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/types"
@@ -14,8 +15,7 @@ import (
 //
 //	// Path 1: auth → sign (real signing)
 //	sig, err := NewAccountSignatureBuilder().
-//	    AuthorizeIx(0).
-//	    AuthorizePayer().
+//	    AuthorizeIxAndPayer(0).
 //	    Sign(owner, sk, txHash, nil, mode).
 //	    Build()
 //
@@ -24,42 +24,22 @@ import (
 //	    AuthorizeIxAndPayer(0).
 //	    SimulateSign(owner, mode).
 //	    Build()
-//
-//	// Path 3: unsigned → add multisig keys
-//	sig, err := NewAccountSignatureBuilder().
-//	    FromUnsigned(authBit).
-//	    AddMultisigKey(0, sig0).
-//	    AddMultisigKey(1, sig1).
-//	    Build()
 type AccountSignatureBuilder struct {
-	as   *AccountSignature
-	errs []error
+	acSig *AccountSignature
+	errs  []error
 }
 
 // NewAccountSignatureBuilder creates a new AccountSignatureBuilder.
 func NewAccountSignatureBuilder() *AccountSignatureBuilder {
+	acSig := Unsigned(types.NewBitmap64(0))
 	return &AccountSignatureBuilder{
-		as: &AccountSignature{
-			AuthBit:    types.NewBitmap64(0),
-			SigBit:     types.NewBitmap64(0),
-			Signatures: []crypto.Signature{},
-			PubKey:     nil,
-		},
+		acSig: &acSig,
 	}
 }
 
-// AuthorizeIx adds authorization for a single instruction at the given index.
-func (b *AccountSignatureBuilder) AuthorizeIx(ix uint8) *AccountSignatureBuilder {
-	if len(b.errs) > 0 {
-		return b
-	}
-	bit, err := AuthIx(ix)
-	if err != nil {
-		b.errs = append(b.errs, err)
-		return b
-	}
-	b.as.AuthBit = types.Bitmap64(uint64(b.as.AuthBit) | uint64(bit))
-	return b
+// orAuthBit merges the given authorization bits into the current AuthBit.
+func (b *AccountSignatureBuilder) orAuthBit(bits types.Bitmap64) {
+	b.acSig.AuthBit |= bits
 }
 
 // AuthorizeIxes adds authorization for multiple instruction indices.
@@ -72,7 +52,7 @@ func (b *AccountSignatureBuilder) AuthorizeIxes(indices []uint8) *AccountSignatu
 		b.errs = append(b.errs, err)
 		return b
 	}
-	b.as.AuthBit = types.Bitmap64(uint64(b.as.AuthBit) | uint64(bits))
+	b.orAuthBit(bits)
 	return b
 }
 
@@ -81,7 +61,7 @@ func (b *AccountSignatureBuilder) AuthorizePayer() *AccountSignatureBuilder {
 	if len(b.errs) > 0 {
 		return b
 	}
-	b.as.AuthBit = types.Bitmap64(uint64(b.as.AuthBit) | uint64(AuthPayer()))
+	b.orAuthBit(AuthPayer())
 	return b
 }
 
@@ -95,74 +75,110 @@ func (b *AccountSignatureBuilder) AuthorizeIxAndPayer(ix uint8) *AccountSignatur
 		b.errs = append(b.errs, err)
 		return b
 	}
-	b.as.AuthBit = types.Bitmap64(uint64(b.as.AuthBit) | uint64(bit))
-	return b
-}
-
-// FromUnsigned starts from an unsigned AccountSignature with the given authBit.
-// This is the entry point for building multisig signatures.
-func (b *AccountSignatureBuilder) FromUnsigned(authBit types.Bitmap64) *AccountSignatureBuilder {
-	if len(b.errs) > 0 {
-		return b
-	}
-	unsigned := Unsigned(authBit)
-	b.as = &unsigned
+	b.orAuthBit(bit)
 	return b
 }
 
 // Sign computes the auth message and creates a real AccountSignature with the actual signature.
 // ixHashes can be nil if no ix-specific hashes are needed (payer-only signature).
-func (b *AccountSignatureBuilder) Sign(owner crypto.Address, sk crypto.SecretKeyer, txHash api.TxHash, ixHashes []IxHashItem, mode AccountSignatureMode) *AccountSignatureBuilder {
+func (b *AccountSignatureBuilder) Sign(account crypto.Address, sk crypto.SecretKeyer, txHash api.TxHash, ixHashes []IxHashItem, mode AccountSignatureMode) *AccountSignatureBuilder {
 	if len(b.errs) > 0 {
 		return b
 	}
-	sig, err := Sign(owner, sk, b.as.AuthBit, txHash, ixHashes, mode)
+	sig, err := Sign(account, sk, b.acSig.AuthBit, txHash, ixHashes, mode)
 	if err != nil {
 		b.errs = append(b.errs, err)
 		return b
 	}
-	b.as = sig
+	b.acSig = sig
 	return b
 }
 
 // SimulateSign creates a simulated AccountSignature without actual cryptographic signing.
-func (b *AccountSignatureBuilder) SimulateSign(owner crypto.Address, mode AccountSignatureMode) *AccountSignatureBuilder {
+func (b *AccountSignatureBuilder) SimulateSign(account crypto.Address, mode AccountSignatureMode) *AccountSignatureBuilder {
 	if len(b.errs) > 0 {
 		return b
 	}
-	sig, err := SimulateSign(owner, b.as.AuthBit, mode)
+	sig, err := SimulateSign(account, b.acSig.AuthBit, mode)
 	if err != nil {
 		b.errs = append(b.errs, err)
 		return b
 	}
-	b.as = sig
+	b.acSig = sig
 	return b
 }
 
-// AddMultisigKey appends a multisig key signature to the current AccountSignature.
-func (b *AccountSignatureBuilder) AddMultisigKey(keyIndex uint8, signature crypto.Signature) *AccountSignatureBuilder {
+// SignMultisigKey signs the same auth message as the previous Sign with the given
+// multisig participant key and appends it to the current signature.
+func (b *AccountSignatureBuilder) SignMultisigKey(account crypto.Address, sk crypto.SecretKeyer, txHash api.TxHash, ixHashes []IxHashItem, mode AccountSignatureMode) *AccountSignatureBuilder {
 	if len(b.errs) > 0 {
 		return b
 	}
-	if err := b.as.AddMultisigKey(keyIndex, signature); err != nil {
+	index, publicKey, err := resolveMultisigMode(mode, "SignMultisigKey")
+	if err != nil {
+		b.errs = append(b.errs, err)
+		return b
+	}
+
+	msg, err := b.acSig.AuthMessage(account, txHash, ixHashes)
+	if err != nil {
+		b.errs = append(b.errs, err)
+		return b
+	}
+	signature, err := sk.SignFor(publicKey, msg[:])
+	if err != nil {
+		b.errs = append(b.errs, fmt.Errorf("failed to sign message: %w", err))
+		return b
+	}
+	if err = b.acSig.AddMultisigKey(index, *signature); err != nil {
 		b.errs = append(b.errs, err)
 		return b
 	}
 	return b
 }
 
-// Build finalizes and returns the AccountSignature.
+// SimulateSignMultisigKey appends a zero-filled placeholder signature for a
+// multisig participant without real cryptographic signing, keeping the wire
+// size identical to a real signature for accurate gas simulation.
+// Only the mode is needed: the placeholder length is determined by the
+// participant public key type.
+func (b *AccountSignatureBuilder) SimulateSignMultisigKey(mode AccountSignatureMode) *AccountSignatureBuilder {
+	if len(b.errs) > 0 {
+		return b
+	}
+	index, publicKey, err := resolveMultisigMode(mode, "SimulateSignMultisigKey")
+	if err != nil {
+		b.errs = append(b.errs, err)
+		return b
+	}
+
+	if err = b.acSig.AddMultisigKey(index, placeholderSignature(&publicKey)); err != nil {
+		b.errs = append(b.errs, err)
+		return b
+	}
+	return b
+}
+
+// resolveMultisigMode validates that the mode is a MultisigKeySignatureMode and
+// returns the signer index and public key.
+func resolveMultisigMode(mode AccountSignatureMode, caller string) (uint8, crypto.PublicKey, error) {
+	m, ok := mode.(MultisigKeySignatureMode)
+	if !ok {
+		return 0, crypto.PublicKey{}, fmt.Errorf("%s requires MultisigKeySignatureMode", caller)
+	}
+	if m.Index >= 64 {
+		return 0, crypto.PublicKey{}, fmt.Errorf("multisig key index %d out of range (max 63)", m.Index)
+	}
+	return m.Index, m.PublicKey, nil
+}
+
+// Build finalizes and returns a copy of the AccountSignature, so later chain
+// calls on the builder cannot mutate the built signature.
 func (b *AccountSignatureBuilder) Build() (*AccountSignature, error) {
 	if len(b.errs) > 0 {
 		return nil, b.errs[0]
 	}
-	return b.as, nil
-}
-
-// MustBuild returns the AccountSignature or panics on error.
-func (b *AccountSignatureBuilder) MustBuild() *AccountSignature {
-	if len(b.errs) > 0 {
-		panic(b.errs[0])
-	}
-	return b.as
+	sig := *b.acSig
+	sig.Signatures = append([]crypto.Signature(nil), b.acSig.Signatures...)
+	return &sig, nil
 }

@@ -10,8 +10,8 @@ const ContentTypeMilonJson = "application/x-milon+json"
 
 type MethodType uint16
 
-func (mt MethodType) MarshalPostcard(serializer *postcard.Serializer) error {
-	return serializer.SerializeU16(uint16(mt))
+func (mt *MethodType) MarshalPostcard(serializer *postcard.Serializer) error {
+	return serializer.SerializeU16(uint16(*mt))
 }
 
 func (mt *MethodType) UnmarshalPostcard(deserializer *postcard.Deserializer) error {
@@ -24,18 +24,19 @@ func (mt *MethodType) UnmarshalPostcard(deserializer *postcard.Deserializer) err
 }
 
 const (
-	MethodTypeChainHead             MethodType = 1
-	MethodTypeSubmitTx              MethodType = 2
-	MethodTypeSimulateTx            MethodType = 3
-	MethodTypeView                  MethodType = 4
-	MethodTypeGetResource           MethodType = 5
-	MethodTypeGetBlockByHeight      MethodType = 6
-	MethodTypeGetTxByHash           MethodType = 7
-	MethodTypeGetAccount            MethodType = 8
-	MethodTypeEventsByTxHash        MethodType = 9
-	MethodTypeListResourcePath      MethodType = 10
-	MethodTypeGetResourcePathByHash MethodType = 11
-	MethodTypeGetAccessValue        MethodType = 12
+	MethodTypeChainHead                  MethodType = 1
+	MethodTypeSubmitTx                   MethodType = 2
+	MethodTypeSimulateTx                 MethodType = 3
+	MethodTypeView                       MethodType = 4
+	MethodTypeGetResource                MethodType = 5
+	MethodTypeGetBlockByHeight           MethodType = 6
+	MethodTypeGetTxByHash                MethodType = 7
+	MethodTypeGetAccount                 MethodType = 8
+	MethodTypeEventsByTxHash             MethodType = 9
+	MethodTypeListResourcePath           MethodType = 10
+	MethodTypeGetResourcePathByHash      MethodType = 11
+	MethodTypeGetAccessValue             MethodType = 12
+	MethodTypeBatchGetResourcePathByHash MethodType = 13
 )
 
 func NewRpcRequest(method MethodType, requestId RequestID, body []byte) *RpcRequest {

@@ -110,6 +110,11 @@
       "name": "DERIVATION_DELAY_BLOCKS",
       "type": "u64",
       "value": 1
+    },
+    {
+      "name": "LOCAL_BLOCK_BEACON_RES_HINT",
+      "type": "usize",
+      "value": 3
     }
   ],
   "errors": [

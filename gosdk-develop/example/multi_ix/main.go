@@ -5,9 +5,9 @@ import (
 	"github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
+	"github.com/milon-labs/milon-go-sdk/gen"
 	"github.com/milon-labs/milon-go-sdk/helper"
 	"github.com/milon-labs/milon-go-sdk/lib"
-	"github.com/milon-labs/milon-go-sdk/provider"
 )
 
 func example(networkConfig milon.Network) {
@@ -36,15 +36,11 @@ func example(networkConfig milon.Network) {
 	demoRecipientPk := demoRecipientSk.Ed25519Public()
 	demoRecipient, _ := crypto.NewAddressFromPublicKey(demoRecipientPk)
 
-	// --- 获取 IDL 提供者 ---
-	tokenPd, err := client.GetPdByIDLAppName("token")
-	if err != nil {
-		panic("获取 token IDL 失败: %w" + err.Error())
-	}
-	demoPd, err := client.GetPdByIDLAppName("demo")
-	if err != nil {
-		panic("获取 demo IDL 失败: %w" + err.Error())
-	}
+	modeA := lib.PubKeySignatureMode{PublicKey: *pkA}
+	modeB := lib.PubKeySignatureMode{PublicKey: *pkB}
+	modeC := lib.PubKeySignatureMode{PublicKey: *pkC}
+	modeD := lib.PubKeySignatureMode{PublicKey: *pkD}
+	modeDemo := lib.PubKeySignatureMode{PublicKey: *demoPk}
 
 	fmt.Printf("accountA = %v \n", accountA)
 	fmt.Printf("accountB = %v \n", accountB)
@@ -53,143 +49,160 @@ func example(networkConfig milon.Network) {
 	fmt.Printf("demoPool = %v \n", demoPool)
 	fmt.Printf("demoRecipient = %v \n\n", demoRecipient)
 
-	// --- 构建 7 条指令 ---
+	// 1. Encode 7 instructions (ix0 - ix6)
+	var transferAmount uint64 = 1
 
-	transferAmount := 1
-
-	// 指令 0: ClaimFaucet(account_a) — 领取代币
-	wire0, err := tokenPd.Encode("ClaimFaucet", provider.Args{
-		"claimer": accountA,
-	})
+	// ix0: ClaimFaucet(accountA) - claim initial MIL for accountA
+	wire0, err := gen.Token.ClaimFaucet.Args(accountA).Encode()
 	if err != nil {
-		panic("编码 ClaimFaucet 失败: %w" + err.Error())
+		panic("failed to encode ClaimFaucet instruction:" + err.Error())
 	}
 
-	// 指令 1: Transfer(account_a → account_b, 1)
-	wire1, err := tokenPd.Encode("Transfer", provider.Args{
-		"from":   accountA,
-		"token":  api.MIL,
-		"to":     accountB,
-		"amount": transferAmount,
-	})
+	// ix1: Transfer(accountA -> accountB, 1)
+	wire1, err := gen.Token.Transfer.Args(accountA, api.MILToken, accountB, transferAmount).Encode()
 	if err != nil {
-		panic("编码 Transfer[1] 失败: %w" + err.Error())
+		panic("failed to encode Transfer[1] instruction:" + err.Error())
 	}
 
-	// 指令 2: Transfer(account_b → account_c, 1)
-	wire2, err := tokenPd.Encode("Transfer", provider.Args{
-		"from":   accountB,
-		"token":  api.MIL,
-		"to":     accountC,
-		"amount": transferAmount,
-	})
+	// ix2: Transfer(accountB -> accountC, 1)
+	wire2, err := gen.Token.Transfer.Args(accountB, api.MILToken, accountC, transferAmount).Encode()
 	if err != nil {
-		panic("编码 Transfer[2] 失败: %w" + err.Error())
+		panic("failed to encode Transfer[2] instruction:" + err.Error())
 	}
 
-	// 指令 3: InitPool(demo_pool, "simulate batch credit") — 初始化积分池
-	wire3, err := demoPd.Encode("InitPool", provider.Args{
-		"pool":  demoPool,
-		"label": "simulate batch credit",
-	})
+	// ix3: InitPool(demoPool, "simulate batch credit") - initialize the credit pool
+	wire3, err := gen.Demo.InitPool.Args(demoPool, "simulate batch credit").Encode()
 	if err != nil {
-		panic("编码 InitPool 失败: %w" + err.Error())
+		panic("failed to encode InitPool instruction:" + err.Error())
 	}
 
-	// 指令 4: BatchCredit(demo_pool, [demo_recipient], 42) — 批量积分
-	wire4, err := demoPd.Encode("BatchCredit", provider.Args{
-		"pool":       demoPool,
-		"recipients": []crypto.Address{*demoRecipient},
-		"amount":     42,
-	})
+	// ix4: BatchCredit(demoPool, [demoRecipient], 42) - batch credit
+	wire4, err := gen.Demo.BatchCredit.Args(demoPool, []*crypto.Address{demoRecipient}, 42).Encode()
 	if err != nil {
-		panic("编码 BatchCredit 失败: %w" + err.Error())
+		panic("failed to encode BatchCredit instruction:" + err.Error())
 	}
 
-	// 指令 5: Transfer(account_c → account_d, 1)
-	wire5, err := tokenPd.Encode("Transfer", provider.Args{
-		"from":   accountC,
-		"token":  api.MIL,
-		"to":     accountD,
-		"amount": transferAmount,
-	})
+	// ix5: Transfer(accountC -> accountD, 1)
+	wire5, err := gen.Token.Transfer.Args(accountC, api.MILToken, accountD, transferAmount).Encode()
 	if err != nil {
-		panic("编码 Transfer[5] 失败: %w" + err.Error())
+		panic("failed to encode Transfer[5] instruction:" + err.Error())
 	}
 
-	// 指令 6: Transfer(account_d → account_a, 1)
-	wire6, err := tokenPd.Encode("Transfer", provider.Args{
-		"from":   accountD,
-		"token":  api.MIL,
-		"to":     accountA,
-		"amount": transferAmount,
-	})
+	// ix6: Transfer(accountD -> accountA, 1)
+	wire6, err := gen.Token.Transfer.Args(accountD, api.MILToken, accountA, transferAmount).Encode()
 	if err != nil {
-		panic("编码 Transfer[6] 失败: %w" + err.Error())
+		panic("failed to encode Transfer[6] instruction:" + err.Error())
 	}
 
-	// 2. Define signing slots once (shared by simulate & real sign)
-	slots := []lib.SigningSlot{
-		{*accountA, []uint8{0, 1}, true, lib.PubKeySignatureMode{PublicKey: *pkA}},
-		{*accountB, []uint8{2}, false, lib.PubKeySignatureMode{PublicKey: *pkB}},
-		{*demoPool, []uint8{3, 4}, false, lib.PubKeySignatureMode{PublicKey: *demoPk}},
-		{*accountC, []uint8{5}, false, lib.PubKeySignatureMode{PublicKey: *pkC}},
-		{*accountD, []uint8{6}, false, lib.PubKeySignatureMode{PublicKey: *pkD}},
-	}
+	// ==================== Simple mode: direct chained signing (no ApplySlots) ====================
 
-	// 3. Build transaction once, reuse the same builder for simulate & real sign (same Stamp -> same TxHash)
-	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire0, wire1, wire2, wire3, wire4, wire5, wire6}).WithPayer(accountA).ApplySlots(slots)
+	// 3.1 Build once, reuse the same builder for simulate & real sign (same Stamp -> same TxHash)
+	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire0, wire1, wire2, wire3, wire4, wire5, wire6}).WithPayer(accountA)
 
-	// 3.1 Simulate on-chain first (no private key needed, dry-run)
-	simulateTx, err := builder.SimulateSlots().Build()
+	// 3.2 Simulate on-chain first (no private key needed, dry-run)
+	//    UnifiedPayerSeparateIx mode: payer signs gas (bit63) only, ix signed by a separate executor account.
+	simulateTx, err := builder.
+		AddSimulateIxesSig(*accountA, []uint8{0, 1}, true, modeA).     // accountA: ix0 + ix1 + gas (bit63)
+		AddSimulateIxesSig(*accountB, []uint8{2}, false, modeB).       // accountB: ix2 only
+		AddSimulateIxesSig(*demoPool, []uint8{3, 4}, false, modeDemo). // demoPool: ix3 + ix4 only
+		AddSimulateIxesSig(*accountC, []uint8{5}, false, modeC).       // accountC: ix5 only
+		AddSimulateIxesSig(*accountD, []uint8{6}, false, modeD).       // accountD: ix6 only
+		Build()
 	if err != nil {
-		panic("Failed to simulate transaction:" + err.Error())
+		panic("failed to simulate transaction:" + err.Error())
 	}
 	simulateResult, err := client.SimulateTx(simulateTx)
 	if err != nil {
-		panic("Failed to simulate transaction on chain:" + err.Error())
+		panic("failed to simulate transaction on chain:" + err.Error())
 	}
-	if simulateResult.BodySimulateReceipt.State != api.TxStateSuccess {
-		panic(fmt.Sprintf("Simulate failed on chain: error code = %d", simulateResult.BodySimulateReceipt.Error.Code))
-	}
-	fmt.Printf("Simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
+	helper.CheckSimulateSuccess(simulateResult)
+	fmt.Printf("Simple mode - Simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
 
-	// 3.2 Replace simulated signatures with real ones on the same transaction
+	// 3.3 Real sign on the same builder (same TxHash)
 	tx, err := builder.ResetSigs().
+		AddIxesSig(*accountA, signerA, []uint8{0, 1}, true, modeA).    // accountA: ix0 + ix1 + gas (bit63)
+		AddIxesSig(*accountB, signerB, []uint8{2}, false, modeB).      // accountB: ix2 only
+		AddIxesSig(*demoPool, demoSk, []uint8{3, 4}, false, modeDemo). // demoPool: ix3 + ix4 only
+		AddIxesSig(*accountC, signerC, []uint8{5}, false, modeC).      // accountC: ix5 only
+		AddIxesSig(*accountD, signerD, []uint8{6}, false, modeD).      // accountD: ix6 only
+		Build()
+	if err != nil {
+		panic("failed to build and sign transaction:" + err.Error())
+	}
+
+	// 3.4 Submit transaction on chain
+	err = client.SubmitTx(tx)
+	if err != nil {
+		panic("failed to submit transaction:" + err.Error())
+	}
+
+	// 3.5 Wait for the transaction to complete
+	fmt.Printf("simple mode - wait for the transaction %s to complete...\n", tx.TxHash())
+	getTxByHashResult, err := client.WaitForTransaction(tx.TxHash())
+	if err != nil {
+		panic("failed to wait for transaction:" + err.Error())
+	}
+	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	fmt.Printf("simple mode - submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
+
+	// ==================== Complex mode: SigningSlot + ApplySlots ====================
+
+	// 4.1 Define signing slots once (shared by simulate & real sign)
+	slots := []lib.SigningSlot{
+		{*accountA, []uint8{0}, true, modeA},  // accountA: ix0 + gas (bit63)
+		{*accountB, []uint8{1}, false, modeB}, // accountB: ix1 only
+		{*accountC, []uint8{2}, false, modeC}, // accountC: ix2 only
+		{*accountD, []uint8{3}, false, modeD}, // accountD: ix3 only
+	}
+
+	// 4.2 Build transaction once with ApplySlots, reuse the same builder for simulate & real sign (same Stamp -> same TxHash)
+	builderComplex := lib.NewTransactionBuilder([]api.PackedInstruction{wire1, wire2, wire5, wire6}).WithPayer(accountA).ApplySlots(slots)
+
+	// 4.3 Simulate on-chain first (no private key needed, dry-run)
+	simulateTxComplex, err := builderComplex.SimulateSlots().Build()
+	if err != nil {
+		panic("failed to simulate transaction:" + err.Error())
+	}
+	simulateResultComplex, err := client.SimulateTx(simulateTxComplex)
+	if err != nil {
+		panic("failed to simulate transaction on chain:" + err.Error())
+	}
+	helper.CheckSimulateSuccess(simulateResultComplex)
+	fmt.Printf("complex mode - Simulated transaction hash: %s, gas charged: %d\n", simulateTxComplex.TxHash(), simulateResultComplex.BodySimulateReceipt.GasCharged)
+
+	// 4.4 Real sign: private keys are matched to slots by address
+	txComplex, err := builderComplex.ResetSigs().
 		SignWith(
 			lib.Signer{SecretKey: signerA, PublicKey: *pkA},
 			lib.Signer{SecretKey: signerB, PublicKey: *pkB},
 			lib.Signer{SecretKey: signerC, PublicKey: *pkC},
 			lib.Signer{SecretKey: signerD, PublicKey: *pkD},
-			lib.Signer{SecretKey: demoSk, PublicKey: *demoPk},
 		).
 		Build()
 	if err != nil {
-		panic("Failed to build and sign transaction:" + err.Error())
+		panic("failed to build and sign transaction:" + err.Error())
 	}
 
-	// 4. Submit transaction on chain
-	err = client.SubmitTx(tx)
+	// 4.5 Submit transaction on chain
+	err = client.SubmitTx(txComplex)
 	if err != nil {
-		panic("Failed to submit transaction:" + err.Error())
+		panic("failed to submit transaction:" + err.Error())
 	}
 
-	// 5. Wait for the transaction to complete
-	fmt.Printf("\nAnd we wait for the transaction %s to complete...\n", tx.TxHash())
-	getTxByHashResult, err := client.WaitForTransaction(tx.TxHash(), 1)
+	// 4.6 Wait for the transaction to complete
+	fmt.Printf("complex mode - wait for the transaction %s to complete...\n", txComplex.TxHash())
+	getTxByHashResultComplex, err := client.WaitForTransaction(txComplex.TxHash())
 	if err != nil {
-		panic("Failed to wait for transaction:" + err.Error())
+		panic("failed to wait for transaction:" + err.Error())
 	}
-	if getTxByHashResult.BodyTxHistory.Receipt.State != api.TxStateSuccess {
-		panic(fmt.Sprintf("Transaction failed on chain: error code = %d", *getTxByHashResult.BodyTxHistory.Receipt.Error))
-	}
-	fmt.Printf("Submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
+	helper.CheckTxSuccess(getTxByHashResultComplex.BodyTxHistory)
+	fmt.Printf("complex mode - submit transaction hash: %s, gas charged: %d\n", txComplex.TxHash(), getTxByHashResultComplex.BodyTxHistory.Receipt.GasCharged)
 
 	// Display TxHistory
-	helper.DisplayTxHistory(client, getTxByHashResult.BodyTxHistory)
+	helper.DisplayTxHistory(client, getTxByHashResultComplex.BodyTxHistory)
 
 	// Display EventsByTxHash
-	if len(getTxByHashResult.BodyTxHistory.Receipt.Events) > 0 {
-		helper.DisplayEventsByTxHash(client, tx.TxHash(), nil)
+	if len(getTxByHashResultComplex.BodyTxHistory.Receipt.Events) > 0 {
+		helper.DisplayEventsByTxHash(client, txComplex.TxHash(), nil)
 	}
 }

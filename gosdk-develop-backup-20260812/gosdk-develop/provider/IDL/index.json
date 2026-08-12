@@ -1,0 +1,166 @@
+{
+  "apps": [
+    {
+      "app_id": 1,
+      "idl": "./account.idl.json",
+      "name": "account"
+    },
+    {
+      "app_id": 2,
+      "idl": "./token.idl.json",
+      "name": "token"
+    },
+    {
+      "app_id": 3,
+      "idl": "./staking.idl.json",
+      "name": "staking"
+    },
+    {
+      "app_id": 4,
+      "idl": "./identity.idl.json",
+      "name": "identity"
+    },
+    {
+      "app_id": 5,
+      "idl": "./nft.idl.json",
+      "name": "nft"
+    },
+    {
+      "app_id": 7,
+      "idl": "./randomness.idl.json",
+      "name": "randomness"
+    },
+    {
+      "app_id": 254,
+      "idl": "./randomness_demo.idl.json",
+      "name": "randomness_demo"
+    },
+    {
+      "app_id": 255,
+      "idl": "./demo.idl.json",
+      "name": "demo"
+    }
+  ],
+  "errors": [
+    {
+      "code": 1,
+      "message": "unknown app id: {0}",
+      "name": "UnknownAppId"
+    },
+    {
+      "code": 2,
+      "message": "invalid instruction wire format",
+      "name": "InvalidInstructionFormat"
+    },
+    {
+      "code": 3,
+      "message": "instruction too large: {0} bytes",
+      "name": "InstructionTooLarge"
+    },
+    {
+      "code": 4,
+      "name": "PostcardDecodeError",
+      "transparent": true
+    },
+    {
+      "code": 5,
+      "message": "unknown method discriminator: app_id={0}, disc={1}",
+      "name": "UnknownMethodDiscriminator"
+    },
+    {
+      "code": 6,
+      "message": "non-view instruction in view query",
+      "name": "NonViewInstruction"
+    },
+    {
+      "code": 7,
+      "message": "transaction hash invalid",
+      "name": "TransactionHashInvalid"
+    },
+    {
+      "code": 8,
+      "message": "transaction has no instructions",
+      "name": "EmptyInstructions"
+    },
+    {
+      "code": 9,
+      "message": "too many instructions: {0}",
+      "name": "TooManyInstructions"
+    },
+    {
+      "code": 10,
+      "message": "duplicate ix hash in transaction",
+      "name": "DuplicateIxHash"
+    },
+    {
+      "code": 11,
+      "message": "duplicate signature owner",
+      "name": "DuplicateSignatureOwner"
+    },
+    {
+      "code": 12,
+      "message": "empty auth_bit",
+      "name": "EmptyAuthBit"
+    },
+    {
+      "code": 13,
+      "message": "auth ix index out of range: {0}",
+      "name": "AuthIxIndexOutOfRange"
+    },
+    {
+      "code": 14,
+      "message": "payer signature required for unified gas payment",
+      "name": "PayerSignatureRequired"
+    },
+    {
+      "code": 15,
+      "message": "gas signer required for instruction index {0}",
+      "name": "GasSignerRequired"
+    },
+    {
+      "code": 16,
+      "message": "gas payment mode conflict: split billing rejects payer-only signature",
+      "name": "GasPaymentModeConflict"
+    },
+    {
+      "code": 17,
+      "message": "tx stamp out of window",
+      "name": "TxStampOutOfWindow"
+    },
+    {
+      "code": 18,
+      "message": "sponsor intro must register gas sponsor address",
+      "name": "GasSponsorNotRegistered"
+    },
+    {
+      "code": 19,
+      "message": "lazy delta apply failed",
+      "name": "DeltaApplyFailed"
+    },
+    {
+      "code": 20,
+      "message": "instruction {0} requires signer {1:?}",
+      "name": "IxSignerRequired"
+    },
+    {
+      "code": 21,
+      "message": "instruction {0} requires role {1} signer {2:?}",
+      "name": "IxRoleSignerRequired"
+    },
+    {
+      "code": 22,
+      "message": "resource capacity exceeded for transaction",
+      "name": "ResourceCapExceeded"
+    },
+    {
+      "code": 23,
+      "message": "fee pay failed for upstream transaction index {0}",
+      "name": "FeePayDependencyFailed"
+    },
+    {
+      "code": 24,
+      "message": "invalid vote-gated auth_bit shape",
+      "name": "InvalidVoteAuthBit"
+    }
+  ]
+}

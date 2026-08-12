@@ -39,13 +39,13 @@ func (r *SimulateReceipt) MarshalPostcard(serializer *postcard.Serializer) error
 
 		// FirstSnapshot: Option<PersistedValue>
 		if err := postcard.SerializeOption(s, rec.FirstSnapshot, func(ss *postcard.Serializer, pv PersistedValue) error {
-			return serializePersistedValue(ss, pv)
+			return SerializePersistedValue(ss, pv)
 		}); err != nil {
 			return fmt.Errorf("failed to serialize FirstSnapshot: %w", err)
 		}
 
 		// LastWritten: PersistedValue
-		if err := serializePersistedValue(s, rec.LastWritten); err != nil {
+		if err := SerializePersistedValue(s, rec.LastWritten); err != nil {
 			return fmt.Errorf("failed to serialize LastWritten: %w", err)
 		}
 		return nil

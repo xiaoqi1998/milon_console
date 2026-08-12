@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "app_id": 0,
+    "name": "system",
+    "description": "Milon system app IDL"
+  },
+  "instructions": [
+    {
+      "args": [],
+      "discriminator": 13507,
+      "handler": "noop",
+      "kind": "entry",
+      "name": "Noop"
+    },
+    {
+      "args": [
+        {
+          "name": "parent_block_hash",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "entropy",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 9713,
+      "handler": "publish_local_block_beacon",
+      "kind": "entry",
+      "name": "PublishLocalBlockBeacon"
+    },
+    {
+      "args": [
+        {
+          "name": "target_epoch",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "selection_seed",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "source_block_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "source_chain_head_hash",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 42334,
+      "handler": "prepare_staking_epoch",
+      "kind": "entry",
+      "name": "PrepareStakingEpoch"
+    },
+    {
+      "args": [],
+      "discriminator": 10079,
+      "handler": "advance_staking_epoch",
+      "kind": "entry",
+      "name": "AdvanceStakingEpoch"
+    }
+  ],
+  "types": [
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "errors": [
+    {
+      "code": 0,
+      "message": "Randomness action failed: {0}",
+      "name": "RandomnessFailure"
+    },
+    {
+      "code": 1,
+      "message": "System staking action failed: {0}",
+      "name": "StakingFailure"
+    }
+  ]
+}

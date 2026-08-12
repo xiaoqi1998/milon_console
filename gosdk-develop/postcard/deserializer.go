@@ -82,7 +82,7 @@ func (d *Deserializer) DeserializeU128() (*big.Int, error) {
 
 func (d *Deserializer) DeserializeI8() (int8, error) {
 	value, err := d.DeserializeU8()
-	return int8(decodeZigZag64(uint64(value))), err
+	return int8(value), err
 }
 
 func (d *Deserializer) DeserializeI16() (int16, error) {
@@ -164,19 +164,6 @@ func (d *Deserializer) read(length int) ([]byte, error) {
 
 func decodeZigZag64(value uint64) int64 {
 	return int64(value>>1) ^ -int64(value&1)
-}
-
-//************************************** todo----可能不要
-
-// CaptureBytes 捕获 fn 执行期间消耗的原始字节，返回从当前偏移到 fn 完成后偏移之间的字节副本
-func (d *Deserializer) CaptureBytes(fn func() error) ([]byte, error) {
-	start := d.offset
-	if err := fn(); err != nil {
-		return nil, err
-	}
-	result := make([]byte, d.offset-start)
-	copy(result, d.buffer[start:d.offset])
-	return result, nil
 }
 
 func (d *Deserializer) Peek(n int) ([]byte, error) {

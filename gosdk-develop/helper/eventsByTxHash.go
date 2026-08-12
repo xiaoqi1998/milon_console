@@ -8,7 +8,7 @@ import (
 func DisplayEventsByTxHash(client *milon.Client, txHash any, typeTagFilter *uint64) {
 	fmt.Printf("\n================ Display EventsByTxHash ================\n")
 
-	eventsByTxHashResult, err := client.EventsByTxHash(txHash, typeTagFilter, 1)
+	eventsByTxHashResult, err := client.EventsByTxHash(txHash, typeTagFilter)
 	if err != nil {
 		panic("failed to get events by tx hash: " + err.Error())
 	}

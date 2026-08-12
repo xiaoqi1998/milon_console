@@ -212,7 +212,7 @@ func verifySecp256k1(msg []byte, sigBytes []byte, pubKey *PublicKey) error {
 
 	// 5. Verify using go-ethereum's verification method
 	signatureWithoutV := sigBytes[:len(sigBytes)-1] // take the first 64 bytes (R, S)
-	if crypto.VerifySignature(compressedPubKey, msgHash[:], signatureWithoutV) == false {
+	if !crypto.VerifySignature(compressedPubKey, msgHash[:], signatureWithoutV) {
 		return fmt.Errorf("signature verification failed")
 	}
 
@@ -237,7 +237,7 @@ func verifyEd25519(msg []byte, sigBytes []byte, pubKey *PublicKey) error {
 	return nil
 }
 
-// verifyBLS12381 验证 BLS12-381 签名
+// verifyBLS12381 verifies a BLS12-381 signature.
 func verifyBLS12381(msg []byte, sigBytes []byte, pubKey *PublicKey) error {
 	// 1. Get public key
 	pk, err := pubKey.ToBLS12381()

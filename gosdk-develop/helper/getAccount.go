@@ -5,14 +5,13 @@ import (
 	"github.com/milon-labs/milon-go-sdk"
 )
 
-func DisplayGetAccount(client *milon.Client, addressBs58 string) {
-	fmt.Printf("\n================ Display GetAccount ================\n")
+func DisplayGetAccount(client *milon.Client, accountRelaxed any) {
+	fmt.Printf("\n================ Display GetAccount ================\n\n")
 
-	getAccountResult, err := client.GetAccount(addressBs58, 1)
+	getAccountResult, err := client.GetAccount(accountRelaxed)
 	if err != nil {
 		panic("failed to get account: " + err.Error())
 	}
-	fmt.Printf("BodyAccountView : %+v \n\n", getAccountResult.BodyAccountView)
 
 	fmt.Printf("Address : %v \n", getAccountResult.BodyAccountView.Address)
 	fmt.Printf("PublicKeysBs58 : %v \n", getAccountResult.BodyAccountView.PublicKeysBs58)

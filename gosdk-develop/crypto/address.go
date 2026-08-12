@@ -18,10 +18,10 @@ const AddressHexLen = AddressRawLen * 2
 
 // NewAddressFromPublicKey derives a address from a public key
 func NewAddressFromPublicKey(pk *PublicKey) (*Address, error) {
-	// 计算公钥的 BLAKE3 哈希（32字节）
+	// Derive the BLAKE3 hash of the public key (32 bytes).
 	hash := Hash32([]byte(PkAddressDomainContext), pk.Bytes)
 
-	// 取前20字节作为地址
+	// Take the first 20 bytes as the address.
 	var digest [AddressRawLen]byte
 	copy(digest[:], hash[:AddressRawLen])
 
@@ -39,19 +39,32 @@ func NewAddressFromBytes(bytes []byte) (*Address, error) {
 	return &Address{Bytes: digest}, nil
 }
 
-// NewAddressFromStringRelaxed parses an address from a hex or base58 string
-func NewAddressFromStringRelaxed(s string) (*Address, error) {
-	s = strings.TrimSpace(s)
+// NewAddressFromRelaxed parses an address from an *Address, an Address,
+// a hex string (with or without 0x prefix), or a base58 string.
+func NewAddressFromRelaxed(addressRelaxed any) (*Address, error) {
+	switch v := addressRelaxed.(type) {
+	case *Address:
+		if v == nil {
+			return nil, fmt.Errorf("nil address")
+		}
+		return v, nil
+	case Address:
+		return &v, nil
+	case string:
+		str := strings.TrimSpace(v)
 
-	hexBody := s
-	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
-		hexBody = s[2:]
-	}
-	if len(hexBody) == AddressHexLen {
-		return newAddressFromHex(s)
-	}
+		hexBody := str
+		if len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X') {
+			hexBody = str[2:]
+		}
+		if len(hexBody) == AddressHexLen {
+			return newAddressFromHex(hexBody)
+		}
 
-	return newAddressFromBase58(s)
+		return newAddressFromBase58(str)
+	default:
+		return nil, fmt.Errorf("unsupported address input type %T", addressRelaxed)
+	}
 }
 
 func newAddressFromHex(s string) (*Address, error) {
@@ -110,7 +123,7 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	addr, err := NewAddressFromStringRelaxed(s)
+	addr, err := NewAddressFromRelaxed(s)
 	if err != nil {
 		return fmt.Errorf("failed to parse address: %w", err)
 	}
