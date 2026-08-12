@@ -1,355 +1,344 @@
 # Milon API Server
 
-将 Milon Go SDK 封装为 RESTful HTTP 接口，并提供 Web 调试控制台。
+Milon API Server 将 Milon Go SDK 封装成 RESTful HTTP API，并提供一个本地 Web 调试控制台。它适合用来快速调试链上账户、交易、合约调用、RPC 查询、faucet 领水，以及根据 IDL 动态发现可调用的 app 与方法。
 
-## 功能特性
+## 功能概览
 
-- **网络切换**：支持 localNet / devNet 一键切换
-- **32 个 RESTful API 端点**：覆盖系统/账户/交易/合约/RPC/工具/领水/视图八大分类
-- **Web 控制台**：深色主题调试控制台，支持端点导航、参数编辑、响应展示、请求历史
-- **Gas 费用透传**：模拟与交易回执中均返回 `gasCharged` 字段，前端高亮展示
-- **4 种支付模式**：`unified_payer_all` / `unified_dual_sign` / `unified_payer_only_gas` / `split`
-- **多密钥类型**：账户生成支持 secp256k1 / ed25519 / bls12381 / fndsa512
-- **领水功能**：内置 faucet 领水与余额查询，领水成功返回 `txHash` 可追踪
-- **工具接口**：地址派生、公钥派生、签名、验签
+- 网络切换：内置 `devNet`、`localNet`，支持运行时切换当前网络。
+- 合约读写：提供 `/api/read`、`/api/read/multi`、`/api/simulate`、`/api/write` 等通用合约接口。
+- IDL 元数据发现：通过 `/api/idl/metadata` 暴露当前 SDK 已加载的 app、方法、参数、返回值与 signer 角色。
+- 交易能力：支持交易查询、事件查询、等待确认、模拟、提交和 postcard 解析。
+- 账户与密钥工具：支持账户生成、公钥派生、地址派生、签名与验签。
+- 多种支付/签名模式：支持 `unified_payer_all`、`unified_dual_sign`、`unified_payer_only_gas`、`split`、`multi_signer`、`sponsored`。
+- Faucet：支持领水和余额查询。
+- Web 控制台：访问 `http://localhost:8080` 可打开调试页面。
 
----
+## 快速开始
 
-## 本地电脑使用
-
-### 方式一：直接运行（推荐开发）
-
-#### 环境要求
+### 环境要求
 
 - Go 1.25+
-- CGO 启用（因 SDK 依赖 blst 库，需要 C 编译器）
-  - **Windows**：安装 MinGW-w64
-    1. 下载：https://winlibs.com/ （选 Win64 GNU/UCRT runtime）
-    2. 解压后将 mingw64/bin 加入系统 PATH
-    3. 验证：gcc --version
-  - **Linux**：sudo apt install gcc
-  - **macOS**：xcode-select --install
+- CGO enabled
+- C 编译器
+  - Windows：安装 MinGW-w64，并将 `mingw64/bin` 加入 `PATH`
+  - Linux：安装 `gcc`
+  - macOS：执行 `xcode-select --install`
 
-#### 步骤
+### 本地运行
 
 ```bash
-# 1. 克隆项目（SDK 已内置在 gosdk-develop/ 目录，无需额外下载）
-git clone https://github.com/xiaoqi1998/milon_console.git
-cd milon_console
-
-# 2. 启用 CGO
 go env -w CGO_ENABLED=1
-
-# 3. 下载依赖
 go mod tidy
-
-# 4. 编译运行
 go run main.go
-
-# 或编译成可执行文件
-go build -o milon-api-server .
-./milon-api-server
 ```
-访问 http://localhost:8080 打开 Web 控制台。
 
-### 方式二：本地 Docker 运行
+启动后访问：
 
-#### 环境要求
+- Web 控制台：`http://localhost:8080`
+- 健康检查：`http://localhost:8080/api/health`
 
-- Docker Desktop（Windows/macOS）或 Docker Engine（Linux）
-- 至少 2GB 内存
-
-#### 步骤
+### Docker 运行
 
 ```bash
-# 构建并启动（build context 为项目根目录，SDK 已内置）
 docker compose build
 docker compose up -d
-
-# 查看日志
 docker compose logs -f
+```
 
-# 停止服务
+停止服务：
+
+```bash
 docker compose down
 ```
-访问 http://localhost:8080。
 
----
-## 服务器 Docker 部署
+## 配置
 
-### 前置准备
-
-1. **服务器要求**：
-   - Linux 系统（推荐 Ubuntu 22.04+ / Debian 12+）
-   - 至少 2 核 CPU、2GB 内存
-   - Docker 和 Docker Compose 已安装
-
-2. **安装 Docker**（如果尚未安装）：
-```bash
-# Ubuntu/Debian
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
-# 重新登录后生效
-```
-3. **上传项目文件**：
-   - 将 milon_console 目录上传到服务器（SDK 已内置在 `gosdk-develop/` 子目录，无需单独上传）
-   - 推荐使用 scp 或 rsync
-
-### 目录结构
-
-```
-/opt/milon/
-└── milon_console/          # 本项目（SDK 内置在 gosdk-develop/ 子目录）
-    ├── gosdk-develop/      # Milon Go SDK 源码（内置）
-    ├── Dockerfile
-    ├── docker-compose.yml
-    ├── .dockerignore
-    ├── main.go
-    ├── go.mod
-    ├── go.sum
-    └── ...
-```
-### 部署步骤
-
-```bash
-# 1. 进入项目目录
-cd /opt/milon/milon_console
-
-# 2. 构建镜像
-docker compose build
-
-# 3. 启动服务（后台运行）
-docker compose up -d
-
-# 4. 查看是否启动成功
-docker compose ps
-docker compose logs -f
-
-# 5. 测试接口
-curl http://localhost:8080/api/health
-```
-### 配置自定义
-
-修改 docker-compose.yml 中的环境变量，或创建 .env 文件：
-
-```env
-# 端口
-SERVER_PORT=8080
-
-# 默认网络
-DEFAULT_NETWORK=devNet
-
-# CORS 允许来源（生产环境建议指定域名）
-ALLOWED_ORIGINS=https://your-domain.com
-
-# 是否启用签名工具接口（生产环境建议关闭）
-ENABLE_UTIL_SIGN=false
-
-# 服务端签名私钥（可选，用于 write 接口）
-# SIGNER_PRIVATE_KEY=base58_or_hex_private_key
-
-# 自定义 RPC 地址（可选）
-# MILON_RPC_URL=http://your-node:6280/milon/v1
-```
-修改后重启服务：
-```bash
-docker compose up -d --force-recreate
-```
-### Nginx 反向代理（推荐生产环境）
-
-```nginx
-server {
-    listen 80;
-    server_name api.your-domain.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection upgrade;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-配置 HTTPS 建议使用 Let's Encrypt + Certbot。
-
-### 常用运维命令
-
-```bash
-# 查看状态
-docker compose ps
-
-# 查看日志
-docker compose logs -f --tail=100
-
-# 重启服务
-docker compose restart
-
-# 停止服务
-docker compose down
-
-# 更新代码后重新构建
-git pull
-docker compose build
-docker compose up -d
-
-# 清理旧镜像
-docker image prune -f
-```
----
-## 配置说明
-
-通过环境变量配置：
+服务通过环境变量配置。
 
 | 环境变量 | 默认值 | 说明 |
-|---------|--------|------|
-| SERVER_PORT | 8080 | 服务端口 |
-| ALLOWED_ORIGINS | * | CORS 允许来源 |
-| ENABLE_UTIL_SIGN | false | 是否启用签名工具接口 |
-| SIGNER_PRIVATE_KEY | (空) | 服务端签名私钥 |
-| DEFAULT_NETWORK | devNet | 默认网络 |
-| MILON_RPC_URL | (内置) | 自定义 Milon 链节点 RPC 地址 |
+| --- | --- | --- |
+| `SERVER_PORT` | `8080` | HTTP 服务端口 |
+| `ALLOWED_ORIGINS` | `*` | CORS 允许来源 |
+| `ENABLE_UTIL_SIGN` | `false` | 是否启用 `/api/util/sign` 服务端签名接口 |
+| `SIGNER_PRIVATE_KEY` | 空 | 服务端签名私钥，按需使用 |
+| `DEFAULT_NETWORK` | `devNet` | 默认网络，支持 `devNet`、`localNet` |
+| `MILON_RPC_URL` | 空 | 自定义 RPC 地址 |
+| `MILON_CHAIN_ID` | `0` | 自定义 chain id |
 
----
+示例：
 
-## API 端点（共 32 个）
+```env
+SERVER_PORT=8080
+DEFAULT_NETWORK=devNet
+ALLOWED_ORIGINS=https://your-domain.com
+ENABLE_UTIL_SIGN=false
+# SIGNER_PRIVATE_KEY=base58_or_hex_private_key
+# MILON_RPC_URL=http://your-node:6280/milon/v1
+# MILON_CHAIN_ID=2
+```
 
-### 网络管理（3）
+## IDL 元数据
+
+IDL 是这套 API 里最重要的动态发现能力。前端或调用方不需要把每个合约方法的参数写死在页面里，可以先调用 `/api/idl/metadata`，拿到当前网络 SDK 已加载的所有 IDL app，然后根据返回的 schema 动态生成表单、校验参数，并决定调用 `/api/read`、`/api/simulate` 还是 `/api/write`。
+
+### 获取 IDL
+
+```bash
+curl http://localhost:8080/api/idl/metadata
+```
+
+返回值使用统一响应结构，核心数据在 `data` 字段中：
+
+```json
+{
+  "success": true,
+  "code": 0,
+  "message": "ok",
+  "data": [
+    {
+      "appId": 1,
+      "name": "demo",
+      "description": "Demo app",
+      "instructions": [
+        {
+          "name": "GetScore",
+          "kind": "view",
+          "handler": "get_score",
+          "discriminator": 1001,
+          "args": [
+            {
+              "name": "account",
+              "type": "PublicKey",
+              "role": "input"
+            }
+          ],
+          "returns": {
+            "type": "u64"
+          }
+        }
+      ]
+    }
+  ],
+  "timestamp": "2026-07-23T10:00:00+08:00"
+}
+```
+
+### 字段说明
+
+| 字段 | 说明 |
+| --- | --- |
+| `appId` | IDL app 的链上应用编号 |
+| `name` | app 名称，也就是调用合约接口时的 `appName` |
+| `description` | app 描述 |
+| `instructions` | 当前 app 暴露的方法列表 |
+| `instructions[].name` | 方法名，也就是调用合约接口时的 `methodName` |
+| `instructions[].kind` | 方法类型：`view` 表示只读查询，`entry` 表示会构造交易的写入方法 |
+| `instructions[].handler` | SDK/链上 handler 名称 |
+| `instructions[].discriminator` | 方法判别码，用于底层指令识别 |
+| `instructions[].args` | 方法参数列表 |
+| `instructions[].args[].name` | 参数名，对应请求体 `args` 对象里的 key |
+| `instructions[].args[].type` | 参数类型，例如 `u64`、`string`、`PublicKey`、`vec<PublicKey>` |
+| `instructions[].args[].role` | 参数角色：`input` 普通入参，`signer` 签名账户，`any_signer` 多签/任一签名账户 |
+| `instructions[].returns` | `view` 方法的返回类型；写入方法通常没有该字段 |
+| `instructions[].sponsor` | 是否为 sponsored 方法；为 `true` 时可配合 `paymentMode: "sponsored"` |
+
+### 如何根据 IDL 调用接口
+
+1. 先调用 `GET /api/idl/metadata` 获取 app 和方法列表。
+2. 用户选择一个 `appName` 和 `methodName`。
+3. 根据 `args` 生成请求参数表单。
+4. 如果 `kind` 是 `view`，调用 `/api/read` 或 `/api/read/multi`。
+5. 如果 `kind` 是 `entry`，先调用 `/api/simulate` 预估执行结果和 gas，再调用 `/api/write` 提交交易。
+6. 如果方法标记了 `sponsor: true`，可以使用 `paymentMode: "sponsored"`。
+
+只读调用示例：
+
+```json
+{
+  "appName": "demo",
+  "methodName": "GetScore",
+  "args": {
+    "account": "<base58 account address>"
+  }
+}
+```
+
+写入调用示例：
+
+```json
+{
+  "appName": "demo",
+  "methodName": "SetScore",
+  "args": {
+    "account": "<base58 account address>",
+    "score": 100
+  },
+  "paymentMode": "unified_payer_all",
+  "payerPrivateKey": "<hex or base58 private key>",
+  "payerAddress": "<base58 payer address>",
+  "signatureMode": {
+    "type": "pubkey",
+    "publicKey": "<base58 public key>"
+  }
+}
+```
+
+## API 列表
+
+### 网络
+
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/network/list | 获取网络列表 |
-| GET | /api/network/current | 获取当前网络 |
-| POST | /api/network/switch | 切换网络 |
+| --- | --- | --- |
+| `GET` | `/api/network/list` | 获取可用网络列表 |
+| `GET` | `/api/network/current` | 获取当前网络 |
+| `POST` | `/api/network/switch` | 切换当前网络 |
 
-### 系统（2）
+### 系统
+
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/health | 健康检查（返回 blockHeight、chainId） |
-| GET | /api/chain-head | 获取链头 |
+| --- | --- | --- |
+| `GET` | `/api/health` | 健康检查 |
+| `GET` | `/api/chain-head` | 获取链头信息 |
 
-### 账户（3）
+### 账户
+
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/accounts/:address | 获取账户信息 |
-| GET | /api/accounts/:address/resources | 获取该账户的资源列表 |
-| POST | /api/accounts/generate | 生成账户（支持 keyType: secp256k1/ed25519/bls12381/fndsa512） |
+| --- | --- | --- |
+| `POST` | `/api/accounts/generate` | 生成账户 |
+| `GET` | `/api/accounts/:address` | 获取账户信息 |
+| `GET` | `/api/accounts/:address/resources` | 获取账户资源列表 |
 
-### 交易（6）
+### 交易
+
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/transactions/:hash | 按哈希查交易（回执含 gasCharged） |
-| GET | /api/transactions/:hash/events | 获取交易事件 |
-| GET | /api/transactions/:hash/wait | 等待交易确认（回执含 gasCharged） |
-| POST | /api/transactions/simulate | 底层模拟（返回 gasCharged） |
-| POST | /api/transactions/submit | 底层提交（base64 postcard） |
-| POST | /api/transactions/inspect | 检测交易（解析 postcard 返回 txHash/ixHashes/payer/valid） |
+| --- | --- | --- |
+| `GET` | `/api/transactions/:hash` | 按 hash 查询交易 |
+| `GET` | `/api/transactions/:hash/events` | 查询交易事件 |
+| `GET` | `/api/transactions/:hash/wait` | 等待交易确认 |
+| `POST` | `/api/transactions/simulate` | 模拟底层 postcard 交易 |
+| `POST` | `/api/transactions/submit` | 提交底层 postcard 交易 |
+| `POST` | `/api/transactions/inspect` | 解析和检查底层 postcard 交易 |
 
-### 合约（7）
+### 合约
+
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /api/read | 读取视图函数（单返回值） |
-| POST | /api/read/multi | 读取视图函数（多返回值，封装 BuildAndViewMultiIx） |
-| POST | /api/simulate | 模拟合约调用（4 种支付模式，返回 gasCharged） |
-| POST | /api/write | 写入交易（4 种支付模式） |
-| POST | /api/write/multi-agent | 多方签名写入（unified_dual_sign） |
-| POST | /api/write/multisig | 多签写入（split） |
-| POST | /api/view/single | 底层单指令视图（预构建 postcard） |
-| POST | /api/view/multi | 底层多指令视图（预构建 postcard） |
+| --- | --- | --- |
+| `POST` | `/api/read` | 调用单返回值 view 方法 |
+| `POST` | `/api/read/multi` | 调用多返回值 view 方法 |
+| `POST` | `/api/simulate` | 模拟合约写入交易 |
+| `POST` | `/api/write` | 提交合约写入交易 |
+| `POST` | `/api/write/multi-agent` | 多方签名写入 |
+| `POST` | `/api/write/multisig` | 多签写入 |
+| `POST` | `/api/view/single` | 底层单指令 view |
+| `POST` | `/api/view/multi` | 底层多指令 view |
 
-### RPC（4）
+### RPC
+
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/rpc/blocks/:height | 获取区块 |
-| GET | /api/rpc/resources/:hash | 获取资源 |
-| POST | /api/rpc/access-value | 获取访问值 |
-| GET | /api/rpc/resource-paths/:hash | 按哈希获取资源路径 |
+| --- | --- | --- |
+| `GET` | `/api/rpc/blocks/:height` | 获取区块 |
+| `GET` | `/api/rpc/resources/:hash` | 获取资源 |
+| `POST` | `/api/rpc/access-value` | 获取 access value |
+| `GET` | `/api/rpc/resource-paths/:hash` | 按资源 hash 查询资源路径 |
 
-### 领水（2）
+### Faucet
+
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /api/faucet/claim | 领水（返回 address/claimed/txHash） |
-| GET | /api/faucet/balance/:address | 查询 MIL 余额 |
+| --- | --- | --- |
+| `POST` | `/api/faucet/claim` | 领水 |
+| `GET` | `/api/faucet/balance/:address` | 查询 MIL 余额 |
 
-### 工具（4）
+### 工具
+
 | 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /api/util/address/derive | 从公钥派生地址 |
-| POST | /api/util/key/derive-public | 从私钥派生公钥（4 种密钥类型） |
-| POST | /api/util/sign | 签名消息（需 ENABLE_UTIL_SIGN=true） |
-| POST | /api/util/verify | 验签 |
+| --- | --- | --- |
+| `POST` | `/api/util/address/derive` | 从公钥派生地址 |
+| `POST` | `/api/util/key/derive-public` | 从私钥派生公钥 |
+| `POST` | `/api/util/sign` | 服务端签名，需启用 `ENABLE_UTIL_SIGN=true` |
+| `POST` | `/api/util/verify` | 验证签名 |
 
----
+### IDL
 
-### 支付模式说明
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `GET` | `/api/idl/metadata` | 获取当前 SDK 已加载的 IDL app、方法、参数和返回值 schema |
 
-`/api/simulate` 与 `/api/write` 通过请求体 `paymentMode` 字段选择签名与 gas 支付方式：
+## 支付模式
 
-| 支付模式 | 说明 | 适用场景 |
-|---------|------|---------|
-| `unified_payer_all` | 付款人签署全部（payer + ix） | 单账户代付 |
-| `unified_dual_sign` | 付款人付 gas + ix 签名者签名 | 多方协作 |
-| `unified_payer_only_gas` | 付款人仅付 gas，不签 ix | gas 代付场景 |
-| `split` | owner 自付 gas 并签名 | 独立账户 |
+`/api/simulate` 和 `/api/write` 通过 `paymentMode` 指定 gas 支付与签名方式。
 
-`signatureMode` 请求字段格式为 `{"type":"pubkey","publicKey":"<base58公钥>"}`。
+| paymentMode | 说明 | 适用场景 |
+| --- | --- | --- |
+| `unified_payer_all` | payer 支付 gas，并签署 payer 与指令权限 | 单账户支付并签名 |
+| `unified_dual_sign` | payer 支付 gas，指令 signer 单独签名 | gas 支付方和业务账户不同 |
+| `unified_payer_only_gas` | payer 只支付 gas，不签署指令权限 | 指令已由其他方式签名 |
+| `split` | owner 自付 gas 并签署指令 | 独立账户或多签拆分场景 |
+| `multi_signer` | 同一指令需要多个 signer 签署 bit0 | NFT、staking 等多 signer 场景 |
+| `sponsored` | gas 由链上 sponsor pool 支付 | IDL 中标记 `sponsor: true` 的方法 |
 
-### Gas 费用说明
+`signatureMode` 常用格式：
 
-SDK 更新后的 gas 机制下，所有模拟与交易回执接口均透传 `gasCharged` 字段：
-- `POST /api/simulate`、`POST /api/transactions/simulate` — 模拟回执 `gasCharged`
-- `GET /api/transactions/:hash`、`GET /api/transactions/:hash/wait` — 交易回执 `gasCharged`
-- sponsored 交易（如 `ClaimFaucet`）的 `gasCharged=0`，gas 由赞助者支付
+```json
+{
+  "type": "pubkey",
+  "publicKey": "<base58 or hex public key>"
+}
+```
 
-前端控制台在响应展示区以 ⛽ 横幅高亮显示 gas 费用。
+多签格式：
 
----
+```json
+{
+  "type": "multisig",
+  "index": 2,
+  "publicKey": "<base58 or hex public key>"
+}
+```
+
+## Gas 费用
+
+模拟和交易回执相关接口会透传 `gasCharged` 字段：
+
+- `/api/simulate`
+- `/api/transactions/simulate`
+- `/api/transactions/:hash`
+- `/api/transactions/:hash/wait`
+
+对于 sponsored 交易，`gasCharged` 通常为 `0`，因为 gas 由 sponsor pool 支付。
 
 ## 项目结构
 
-```
+```text
 milon-api-server/
-├── Dockerfile               # Docker 镜像构建
-├── docker-compose.yml       # Docker Compose 编排
-├── .dockerignore            # Docker 构建忽略
-├── .gitignore
-├── main.go                  # 入口文件（路由注册）
-├── go.mod
-├── go.sum
-├── config/config.go         # 配置管理
-├── client/network_manager.go # 网络管理与切换
-├── handler/                 # API 处理器
-│   ├── network.go           # 网络管理接口
-│   ├── system_handler.go    # 系统接口
-│   ├── account_handler.go   # 账户接口（含多密钥类型）
-│   ├── transaction_handler.go # 交易接口（含 inspect、gasCharged 透传）
-│   ├── contract.go          # 合约接口（read/simulate/write，4 种支付模式）
-│   ├── faucet_handler.go    # 领水接口（claim 返回 txHash + balance 查询）
-│   ├── view_handler.go      # 底层视图接口（single/multi）
-│   ├── rpc_read.go          # RPC 底层接口
-│   ├── resource_path_handler.go # 资源路径接口
-│   └── util.go              # 工具接口（地址/公钥派生、签名、验签）
-├── middleware/              # 中间件
-│   ├── cors.go              # CORS
-│   └── logging.go           # 请求日志
-├── types/                   # 类型定义
-│   ├── request.go           # 请求结构体
-│   ├── response.go          # 响应结构体
-│   └── conversion.go        # JSON 转换辅助
-└── static/                  # 前端控制台
-    ├── index.html
-    ├── css/style.css
-    └── js/app.js
+├── main.go                       # 服务入口和路由注册
+├── go.mod                        # Go 模块依赖，本地 replace 到 gosdk-develop
+├── Dockerfile
+├── docker-compose.yml
+├── API.md                        # 更完整的接口文档
+├── client/
+│   └── network_manager.go        # 网络和 SDK client 管理
+├── config/
+│   └── config.go                 # 环境变量配置
+├── handler/                      # API handler
+│   ├── account_handler.go
+│   ├── contract.go
+│   ├── faucet_handler.go
+│   ├── idl_handler.go
+│   ├── network.go
+│   ├── resource_path_handler.go
+│   ├── rpc_read.go
+│   ├── system_handler.go
+│   ├── transaction_handler.go
+│   ├── util.go
+│   └── view_handler.go
+├── middleware/                   # CORS 和请求日志
+├── types/                        # 请求、响应和转换辅助类型
+├── static/                       # Web 调试控制台
+└── gosdk-develop/                # 内置 Milon Go SDK
 ```
 
----
+## 备注
 
-## 技术栈
-
-- **后端**：Go + Gin + Milon Go SDK
-- **前端**：原生 HTML/CSS/JavaScript（无框架依赖）
-- **部署**：Docker + Docker Compose
-- **依赖**：gin-gonic/gin、gin-contrib/cors、milon-go-sdk
+- `gosdk-develop/` 是当前项目直接依赖的本地 SDK 源码目录。
+- `gosdk-develop-backup-20260812/` 是备份目录，不参与 `go.mod` 的 replace。
+- 生产环境建议关闭 `ENABLE_UTIL_SIGN`，并将 `ALLOWED_ORIGINS` 配置为明确域名。

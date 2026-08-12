@@ -1874,6 +1874,8 @@ var IDL_PAYMENT_MODES = [
   { value: 'unified_payer_only_gas', label: '统一付款（仅付 gas）', needIx: false },
   { value: 'unified_dual_sign', label: '双重签名（payer + ix）', needIx: true },
   { value: 'split', label: '拆分签名（owner 自付）', needIx: false },
+  { value: 'multi_signer', label: '多 signer（bit0 多签）', needIx: false, needSigners: true },
+  { value: 'sponsored', label: '赞助交易（sponsor pool 付 gas）', needIx: false },
 ];
 
 // IDL 方法实例参数映射表：键为 appName.MethodName，值为该方法的 args 示例对象
@@ -2279,8 +2281,8 @@ var IDL_EXAMPLE_PAYMENT = {
   'nft.SetMetadata': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'nft.SetAttributes': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'nft.SetProperties': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
-  'nft.CreateUnique': { paymentMode: 'unified_payer_all', payerRole: 'mint', signerHint: '该方法需 mint + owner 双签 bit0，建议使用 /api/write/multi-agent 端点（multi_signer 模式）' },
-  'nft.CreateBatch': { paymentMode: 'unified_payer_all', payerRole: 'mint', signerHint: '该方法需 mint + owner 双签 bit0，建议使用 /api/write/multi-agent 端点（multi_signer 模式）' },
+  'nft.CreateUnique': { paymentMode: 'multi_signer', payerRole: 'mint', signerHint: '该方法需 mint + owner 双签 bit0，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用' },
+  'nft.CreateBatch': { paymentMode: 'multi_signer', payerRole: 'mint', signerHint: '该方法需 mint + owner 双签 bit0，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用' },
   'nft.MintBatch': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'nft.Transfer': { paymentMode: 'unified_payer_all', payerRole: 'from' },
   'nft.Burn': { paymentMode: 'unified_payer_all', payerRole: 'owner（NFT 持有者）' },
@@ -2288,7 +2290,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'nft.TransferRoyaltyRecipient': { paymentMode: 'unified_payer_all', payerRole: 'recipient' },
 
   // staking 模块（9 entry）
-  'staking.CreateValidator': { paymentMode: 'unified_payer_all', payerRole: 'operator', signerHint: '该方法需 operator + consensus_account 双签，建议使用 /api/write/multi-agent 端点（multi_signer 模式）。注：consensus_pubkey/bls_pubkey/network_address 为 bytes 类型，JSON REST API 可能无法正确序列化' },
+  'staking.CreateValidator': { paymentMode: 'multi_signer', payerRole: 'operator', signerHint: '该方法需 operator + consensus_account 双签，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用。注：consensus_pubkey/bls_pubkey/network_address 为 bytes 类型，JSON REST API 可能无法正确序列化' },
   'staking.JoinCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
   'staking.LeaveCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
   'staking.FundRewardTreasury': { paymentMode: 'unified_payer_all', payerRole: 'funder' },
@@ -2446,13 +2448,16 @@ function renderIDLForm(ix) {
   });
   body.appendChild(infoSec);
 
-  // input 参数
-  var inputArgs = ix.args.filter(function (a) { return a.role === 'input'; });
+  // IDL 编码参数。后端 pd.NormalizeArgs / Encode 会校验完整 args，
+  // 所以 signer / any_signer 也需要作为 args 提交。
+  var inputArgs = ix.args.filter(function (a) {
+    return a.role === 'input' || a.role === 'signer' || a.role === 'any_signer';
+  });
   var signerArgs = ix.args.filter(function (a) { return a.role === 'signer' || a.role === 'any_signer'; });
 
   if (inputArgs.length) {
     var argSec = el('div', { class: 'param-section' });
-    argSec.appendChild(el('div', { class: 'param-section-title', text: '参数 (args)' }));
+    argSec.appendChild(el('div', { class: 'param-section-title', text: '参数 (args，含 signer 地址参数)' }));
     inputArgs.forEach(function (a) { argSec.appendChild(buildIDLArgInput(a, state.currentIdlApp, ix.name)); });
     body.appendChild(argSec);
   } else {
@@ -2465,12 +2470,12 @@ function renderIDLForm(ix) {
   // signer 参数提示
   if (signerArgs.length) {
     var hintSec = el('div', { class: 'param-section' });
-    hintSec.appendChild(el('div', { class: 'param-section-title', text: '签名者参数（由支付模式提供）' }));
+    hintSec.appendChild(el('div', { class: 'param-section-title', text: '签名者说明' }));
     signerArgs.forEach(function (a) {
       hintSec.appendChild(el('div', { class: 'idl-signer-hint' },
         el('span', { class: 'idl-arg-name', text: a.name }),
         el('span', { class: 'idl-arg-type', text: a.type }),
-        el('span', { class: 'idl-signer-note', text: 'role=' + a.role + '，由下方支付模式字段提供' })
+        el('span', { class: 'idl-signer-note', text: 'role=' + a.role + '，需要在 args 中传地址，同时在下方签名配置里提供对应签名' })
       ));
     });
     body.appendChild(hintSec);
@@ -2570,6 +2575,9 @@ function buildIDLPaymentSection() {
   if (examplePay && examplePay.paymentMode) {
     pmSelect.value = examplePay.paymentMode;
   }
+  if (state.currentIdlMethod && state.currentIdlMethod.sponsor) {
+    pmSelect.value = 'sponsored';
+  }
   pmRow.appendChild(pmSelect);
   sec.appendChild(pmRow);
 
@@ -2604,11 +2612,20 @@ function renderIDLPaymentFields() {
   var sigModeTpl = prefilledPk
     ? '{\n  "type": "pubkey",\n  "publicKey": "' + prefilledPk + '"\n}'
     : '{\n  "type": "pubkey",\n  "publicKey": "base58公钥"\n}';
+  var signerEntryTpl = '{\n  "address": "' + (prefilledAddr || 'base58地址') + '",\n'
+    + (isSubmit ? '  "privateKey": "' + (prefilledSk || 'hex或base58私钥') + '",\n' : '')
+    + '  "signatureMode": ' + sigModeTpl.replace(/\n/g, '\n  ') + '\n}';
 
   // 通用：payer/owner 地址（根据实例支付配置显示角色提示）
   var examplePay = state.currentIdlApp && state.currentIdlMethod
     ? IDL_EXAMPLE_PAYMENT[state.currentIdlApp + '.' + state.currentIdlMethod.name]
     : null;
+  if (pm === 'multi_signer') {
+    container.appendChild(buildIDLFieldRow('signers', 'signers (JSON 数组)', '[\n' + signerEntryTpl + '\n]', 'textarea', 'data-field', 'signers'));
+    container.appendChild(buildIDLFieldRow('gasPayer', 'gasPayer (JSON，可选)', '', 'textarea', 'data-field', 'gasPayer'));
+    return;
+  }
+
   var payerLabel = (examplePay && examplePay.payerRole)
     ? examplePay.payerRole + ' 地址 (base58)'
     : '付款/所有者地址 (base58)';
@@ -2738,9 +2755,13 @@ function buildIDLRequest() {
     return node ? node.value.replace(/\s/g, '') : '';
   }
 
-  payload.payerAddress = readField('payerAddress');
+  if (pm !== 'multi_signer') {
+    payload.payerAddress = readField('payerAddress');
+  }
 
-  if (pm === 'split') {
+  if (pm === 'multi_signer') {
+    // multi_signer uses signers/gasPayer instead of payerPrivateKey fields.
+  } else if (pm === 'split') {
     if (isSubmit) {
       var ownerSk = readKeyField('ownerPrivateKey');
       if (ownerSk) payload.ownerPrivateKey = ownerSk;
@@ -2753,6 +2774,12 @@ function buildIDLRequest() {
   }
 
   var modeDef = IDL_PAYMENT_MODES.find(function (m) { return m.value === pm; });
+  if (pm === 'multi_signer') {
+    var signersRaw = readField('signers');
+    if (signersRaw) { try { payload.signers = JSON.parse(signersRaw); } catch (e) {} }
+    var gasPayerRaw = readField('gasPayer');
+    if (gasPayerRaw) { try { payload.gasPayer = JSON.parse(gasPayerRaw); } catch (e) {} }
+  }
   if (modeDef && modeDef.needIx) {
     payload.ixAddress = readField('ixAddress');
     if (isSubmit) {
