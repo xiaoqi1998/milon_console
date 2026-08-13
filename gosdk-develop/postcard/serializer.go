@@ -7,7 +7,10 @@ import (
 	"unicode/utf8"
 )
 
-var maxU128 = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+var maxU128, _ = new(big.Int).SetString("340282366920938463463374607431768211455", 10)
+
+var varintMask = big.NewInt(0x7f)
+var varintThreshold = big.NewInt(0x80)
 
 type Serializer struct {
 	bytes []byte
@@ -61,7 +64,7 @@ func (s *Serializer) SerializeU16(value uint16) error {
 }
 
 func (s *Serializer) SerializeU32(value uint32) error {
-	return s.serializeVarUint64(uint64(value)) // 使用可变长度编码！
+	return s.serializeVarUint64(uint64(value)) // uses variable-length encoding
 }
 
 func (s *Serializer) SerializeU64(value uint64) error {
@@ -98,42 +101,42 @@ func (s *Serializer) SerializeEnumVariant(index uint32) error {
 	return s.SerializeU32(index)
 }
 
-// serializeVarUint64 将 uint64 值序列化为 varint（可变长度整数）编码
+// serializeVarUint64 serializes a uint64 value using varint (variable-length integer) encoding
 //
-// Varint 编码规则：
-//   - 每个字节的最高位（bit 7）是继续标志：1=还有后续字节，0=最后一个字节
-//   - 低 7 位（bit 0-6）是数据位，采用小端序排列
-//   - 数值越小，使用的字节数越少（优化空间）
+// Varint encoding rules:
+//   - The highest bit (bit 7) of each byte is the continuation flag: 1 = more bytes follow, 0 = last byte
+//   - The low 7 bits (bit 0-6) are data bits, arranged in little-endian order
+//   - Smaller values use fewer bytes (space optimized)
 //
-// 编码示例：
+// Encoding examples:
 //
-//	0         → [0x00]              (1字节)
-//	127       → [0x7F]              (1字节)
-//	128       → [0x80, 0x01]        (2字节)
-//	2581      → [0x95, 0x14]        (2字节)
-//	16384     → [0x80, 0x80, 0x01]  (3字节)
-//	4294967295 → [0xFF, 0xFF, 0xFF, 0xFF, 0x0F] (5字节，uint32最大值)
+//	0         → [0x00]              (1 byte)
+//	127       → [0x7F]              (1 byte)
+//	128       → [0x80, 0x01]        (2 bytes)
+//	2581      → [0x95, 0x14]        (2 bytes)
+//	16384     → [0x80, 0x80, 0x01]  (3 bytes)
+//	4294967295 → [0xFF, 0xFF, 0xFF, 0xFF, 0x0F] (5 bytes, uint32 max)
 //
-// 字节数范围：
-//   - uint8:  1-2 字节
-//   - uint16: 1-3 字节
-//   - uint32: 1-5 字节
-//   - uint64: 1-10 字节
+// Byte count ranges:
+//   - uint8:  1-2 bytes
+//   - uint16: 1-3 bytes
+//   - uint32: 1-5 bytes
+//   - uint64: 1-10 bytes
 func (s *Serializer) serializeVarUint64(value uint64) error {
 	for value >= 0x80 {
-		s.bytes = append(s.bytes, byte(value&0x7f)|0x80) //高位设为 1，表示还有后续字节
+		s.bytes = append(s.bytes, byte(value&0x7f)|0x80) // set high bit to 1, indicating more bytes follow
 		value >>= 7
 	}
-	s.bytes = append(s.bytes, byte(value)) //最后一个字节，高位为 0
+	s.bytes = append(s.bytes, byte(value)) // last byte, high bit is 0
 	return nil
 }
 
 func (s *Serializer) serializeVarUintBig(value *big.Int) error {
 	remaining := new(big.Int).Set(value)
-	mask := big.NewInt(0x7f)
-	for remaining.Cmp(big.NewInt(0x80)) >= 0 {
-		byteValue := new(big.Int).And(remaining, mask).Uint64()
-		s.bytes = append(s.bytes, byte(byteValue)|0x80)
+	part := new(big.Int)
+	for remaining.Cmp(varintThreshold) >= 0 {
+		part.And(remaining, varintMask)
+		s.bytes = append(s.bytes, byte(part.Uint64())|0x80)
 		remaining.Rsh(remaining, 7)
 	}
 	if !remaining.IsUint64() || remaining.Uint64() > math.MaxUint8 {
@@ -141,19 +144,4 @@ func (s *Serializer) serializeVarUintBig(value *big.Int) error {
 	}
 	s.bytes = append(s.bytes, byte(remaining.Uint64()))
 	return nil
-}
-
-// encodeZigZag64 maps a signed int64 to an unsigned uint64 using ZigZag encoding,
-// so that values with small absolute value (positive or negative) stay compact
-// when serialized as varint.
-//
-// Mapping: 0→0, -1→1, 1→2, -2→3, 2→4, ... (negatives to odd, positives to even).
-//
-// Implementation notes:
-//   - value << 1: shifts left by one, keeping the result even and reserving the LSB
-//   - value >> 63: arithmetic shift that yields 0 for non-negative values and
-//     all-ones for negative ones; XORing flips every bit of (value << 1) for
-//     negatives, producing the odd numbers in the mapping above
-func encodeZigZag64(value int64) uint64 {
-	return uint64((value << 1) ^ (value >> 63))
 }

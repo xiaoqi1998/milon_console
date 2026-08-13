@@ -1,0 +1,177 @@
+{
+  "metadata": {
+    "app_id": 254,
+    "name": "randomness_demo",
+    "description": "Milon randomness_demo app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 25685,
+      "handler": "request_reveal",
+      "kind": "entry",
+      "name": "RequestReveal"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 37019,
+      "handler": "settle_reveal",
+      "kind": "entry",
+      "name": "SettleReveal"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 17191,
+      "handler": "reveal",
+      "kind": "view",
+      "name": "Reveal",
+      "returns": {
+        "type": "RevealRecord"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "Rarity",
+      "typeTag": 4901375132924629875,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Common"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Rare"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Epic"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Legendary"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "type": "B256"
+        },
+        {
+          "name": "requested_at_height",
+          "type": "u64"
+        },
+        {
+          "name": "target_beacon_index",
+          "type": "u64"
+        },
+        {
+          "name": "random_bytes",
+          "type": "option<B256>"
+        },
+        {
+          "name": "rarity",
+          "type": "option<Rarity>"
+        },
+        {
+          "name": "revealed_at_height",
+          "type": "option<u64>"
+        }
+      ],
+      "kind": "struct",
+      "name": "RevealRecord",
+      "typeTag": 12321084275421691876
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "errors": [
+    {
+      "code": 65024,
+      "message": "NFT reveal already exists: owner {0:?}, token {1:?}",
+      "name": "RevealAlreadyExists"
+    },
+    {
+      "code": 65025,
+      "message": "NFT reveal not found: owner {0:?}, token {1:?}",
+      "name": "RevealNotFound"
+    },
+    {
+      "code": 65026,
+      "message": "NFT reveal is already settled: owner {0:?}, token {1:?}",
+      "name": "RevealAlreadySettled"
+    },
+    {
+      "code": 65027,
+      "message": "Target randomness beacon {0} was not found",
+      "name": "TargetBeaconNotFound"
+    },
+    {
+      "code": 65028,
+      "message": "Target randomness beacon {0} is derivable from block {1}, current block is {2}",
+      "name": "RandomnessNotReady"
+    },
+    {
+      "code": 65029,
+      "message": "NFT reveal derivation failed: {0}",
+      "name": "RandomnessFailure"
+    },
+    {
+      "code": 65030,
+      "message": "Address is not signed in current transaction: {0:?}",
+      "name": "AddressNotSignatured"
+    }
+  ]
+}

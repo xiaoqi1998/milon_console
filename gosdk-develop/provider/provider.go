@@ -20,7 +20,7 @@ type Provider struct {
 	InstructionByName          map[string]*Instruction // key=Instruction.Name
 	InstructionByDiscriminator map[uint16]*Instruction // key=Instruction.Discriminator
 	IDLTypeByName              map[string]IDLType      // key=IDLType.Name
-	IDLTypeByTypeTag           map[uint64]IDLType      // key=IDLType.typeTag
+	IDLTypeByTypeTag           map[uint64]*IDLType     // key=IDLType.typeTag,
 	EventByTypeTag             map[uint64]Event        // key=Event.typeTag
 }
 
@@ -35,16 +35,17 @@ func NewProvider(idl IDL) *Provider {
 	}
 
 	idlTypeByName := make(map[string]IDLType, len(idl.Types))
-	idlTypeByTypeTag := make(map[uint64]IDLType, len(idl.Types))
-	for _, value := range idl.Types {
-		idlTypeByName[value.Name] = value
+	idlTypeByTypeTag := make(map[uint64]*IDLType, len(idl.Types))
+	for i := range idl.Types {
+		value := &idl.Types[i]
+		idlTypeByName[value.Name] = *value
 		idlTypeByTypeTag[value.TypeTag] = value
 	}
 
 	eventByTypeTag := make(map[uint64]Event, len(idl.Events))
 	for _, event := range idl.Events {
 		// Convert the event into an IDLType so it can be handled uniformly
-		idlType := IDLType{
+		idlType := &IDLType{
 			Name:    event.Name,
 			TypeTag: event.TypeTag,
 			Kind:    "struct", // Event is essentially a struct
@@ -57,8 +58,15 @@ func NewProvider(idl IDL) *Provider {
 			}
 		}
 
-		idlTypeByName[idlType.Name] = idlType
-		idlTypeByTypeTag[idlType.TypeTag] = idlType
+		// Register as IDLType only when it does not collide with an existing
+		// type definition (same name or typeTag); the existing type wins so a
+		// malformed IDL cannot silently shadow a real type.
+		if _, exists := idlTypeByName[idlType.Name]; !exists {
+			idlTypeByName[idlType.Name] = *idlType
+		}
+		if _, exists := idlTypeByTypeTag[idlType.TypeTag]; !exists {
+			idlTypeByTypeTag[idlType.TypeTag] = idlType
+		}
 
 		// Also register it under EventByTypeTag
 		eventByTypeTag[event.TypeTag] = event
@@ -100,10 +108,7 @@ func (p *Provider) GetInstructionByName(name string) (*Instruction, error) {
 
 func (p *Provider) GetIDLTypeByTypeTag(typeTag uint64) (*IDLType, bool) {
 	idlType, ok := p.IDLTypeByTypeTag[typeTag]
-	if !ok {
-		return nil, false
-	}
-	return &idlType, true
+	return idlType, ok
 }
 
 func (p *Provider) GetEventByTypeTag(typeTag uint64) (*Event, bool) {
@@ -114,7 +119,7 @@ func (p *Provider) GetEventByTypeTag(typeTag uint64) (*Event, bool) {
 	return &event, true
 }
 
-// Encode encodes instruction into bytes for on-chain submission
+// Encode encodes instruction args into wire bytes for on-chain submission.
 func (p *Provider) Encode(instructionName string, args Args) ([]byte, error) {
 	instruction, err := p.GetInstructionByName(instructionName)
 	if err != nil {
@@ -128,139 +133,24 @@ func (p *Provider) Encode(instructionName string, args Args) ([]byte, error) {
 	return p.encodeInstruction(instruction, args)
 }
 
-// NormalizeArgs converts string-typed address arguments into crypto.Address before encoding,
-// so invalid addresses fail fast with a clear error instead of a cryptic serialization error.
-func (p *Provider) NormalizeArgs(instructionName string, args Args) (Args, error) {
-	if args == nil {
-		return args, nil
-	}
-	instruction, err := p.GetInstructionByName(instructionName)
-	if err != nil {
-		return args, nil
-	}
-
-	normalized := make(Args, len(args))
-	for k, v := range args {
-		normalized[k] = v
-	}
-
-	for _, arg := range instruction.Args {
-		value, ok := normalized[arg.Name]
-		if !ok {
-			continue
-		}
-		normalizedValue, err := normalizeAddressValue(strings.TrimSpace(arg.Type), value)
-		if err != nil {
-			return nil, fmt.Errorf("invalid argument %q (%s): %w", arg.Name, arg.Type, err)
-		}
-		normalized[arg.Name] = normalizedValue
-	}
-
-	return normalized, nil
-}
-
-// normalizeAddressValue converts string-typed address values into crypto.Address,
-// handling top-level, option<Address> and vec<Address> argument shapes.
-func normalizeAddressValue(typeName string, value any) (any, error) {
-	switch typeName {
-	case "Address", "Signer", "AnySigner":
-		return parseAddressValue(value)
-	}
-
-	// option<Address>
-	if inner, ok := parseWrappedType(typeName, "option"); ok {
-		if value == nil || isNilValue(value) {
-			return value, nil
-		}
-		return normalizeAddressValue(inner, value)
-	}
-
-	// vec<Address>
-	if inner, ok := parseWrappedType(typeName, "vec"); ok {
-		items, err := sliceValues(value)
-		if err != nil {
-			return value, nil // delegate the type error to serializeValue
-		}
-		normalizedItems := make([]any, len(items))
-		for i, item := range items {
-			normalizedItem, err := normalizeAddressValue(inner, item)
-			if err != nil {
-				return nil, err
-			}
-			normalizedItems[i] = normalizedItem
-		}
-		return normalizedItems, nil
-	}
-
-	return value, nil
-}
-
-func parseAddressValue(value any) (any, error) {
-	switch v := value.(type) {
-	case string:
-		addr, err := tryParseAddressString(v)
-		if err != nil {
-			return nil, fmt.Errorf("invalid address %q: %w", v, err)
-		}
-		return addr, nil
-	case *string:
-		if v == nil {
-			return nil, fmt.Errorf("nil address")
-		}
-		return parseAddressValue(*v)
-	default:
-		return value, nil // crypto.Address / []byte handled by serializeAddress
-	}
-}
-
-// tryParseAddressString parses an address from a hex or base58 string,
-// tolerating version/checksum-prefixed base58check variants.
-func tryParseAddressString(s string) (*crypto.Address, error) {
-	// Try hex parsing (40-char / 0x-prefixed -> 20 bytes)
-	if hexBuf, err := decodeHex(s); err == nil && len(hexBuf) == 20 {
-		return crypto.NewAddressFromBytes(hexBuf)
-	}
-
-	// Try base58 parsing, tolerating base58check variants
-	b58Buf := base58.Decode(s)
-	switch {
-	case len(b58Buf) == 20:
-		return crypto.NewAddressFromBytes(b58Buf)
-	case len(b58Buf) == 21:
-		// version byte + 20-byte payload
-		return crypto.NewAddressFromBytes(b58Buf[1:])
-	case len(b58Buf) == 25:
-		// version byte + 20-byte payload + 4-byte checksum
-		return crypto.NewAddressFromBytes(b58Buf[1:21])
-	default:
-		return nil, fmt.Errorf("address must be 20 bytes (decoded %d bytes after base58; use 0x-prefixed 40-char hex or a valid milon base58 address)", len(b58Buf))
-	}
-}
-
 func (p *Provider) encodeInstruction(instruction *Instruction, args Args) ([]byte, error) {
 	serializer := postcard.NewSerializer()
-	// 1. Write app_id (1 byte)
+	// 1. app_id (1 byte)
 	if err := serializer.SerializeU8(p.appID()); err != nil {
 		return nil, err
 	}
 
-	// 2. Write discriminator (u16 LE little-endian encoding, 2 bytes)
+	// 2. discriminator (u16 LE, 2 bytes)
 	serializer.SerializeFixedBytes([]byte{byte(instruction.Discriminator), byte(instruction.Discriminator >> 8)})
 
-	// 3. Serialize all arguments in the order defined by IDL
+	// 3. args in IDL order
 	for _, arg := range instruction.Args {
 		value, ok := args[arg.Name]
 		if !ok {
 			return nil, fmt.Errorf("missing IDL argument: %s", arg.Name)
 		}
 
-		// Normalize string-typed address values to crypto.Address for a clearer error.
-		normalized, err := normalizeAddressValue(strings.TrimSpace(arg.Type), value)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := p.serializeValue(serializer, strings.TrimSpace(arg.Type), normalized); err != nil {
+		if err := p.serializeValue(serializer, strings.TrimSpace(arg.Type), value); err != nil {
 			return nil, err
 		}
 	}
@@ -268,22 +158,19 @@ func (p *Provider) encodeInstruction(instruction *Instruction, args Args) ([]byt
 	return serializer.Bytes(), nil
 }
 
-// serializeValue serializes values into postcard format
+// serializeValue writes one value in postcard format.
 func (p *Provider) serializeValue(serializer *postcard.Serializer, argName string, value any) error {
-	// Handle vec<T>
-	// Format: [length(varint)] + [item1] + [item2] + ... + [itemN]
+	// vec<T>: [len(varint)] + items...
 	if inner, ok := parseWrappedType(argName, "vec"); ok {
-		items, err := sliceValues(value) // Convert Go slice to []any
+		items, err := sliceValues(value)
 		if err != nil {
 			return fmt.Errorf("%s expects an array", argName)
 		}
 
-		// Write array length (varint encoding)
 		if err = serializer.SerializeU32(uint32(len(items))); err != nil {
 			return err
 		}
 
-		// Recursively serialize each element
 		for _, item := range items {
 			if err = p.serializeValue(serializer, inner, item); err != nil {
 				return err
@@ -293,40 +180,33 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 		return nil
 	}
 
-	// Handle option<T>
-	// Format: [has_value(u8: 0 or 1)] + [value(if has_value != 0)]
+	// option<T>: [has_value(u8)] + [value if present]
 	if inner, ok := parseWrappedType(argName, "option"); ok {
-		// Check if nil
 		if value == nil || isNilValue(value) {
-			return serializer.SerializeBool(false) // has_value = false
+			return serializer.SerializeBool(false)
 		}
 
-		// Has value case
-		if err := serializer.SerializeBool(true); err != nil { // has_value = true
+		if err := serializer.SerializeBool(true); err != nil {
 			return err
 		}
 
-		// Recursively serialize actual value
 		return p.serializeValue(serializer, inner, value)
 	}
 
-	// Handle map<K,V>
-	// Format: [length(varint)] + [key1 + value1] + [key2 + value2] + ... + [keyN + valueN]
+	// map<K,V>: [len(varint)] + key/value pairs...
 	if keyType, valueType, ok, err := parseMapType(argName); err != nil {
 		return err
 	} else if ok {
 		var entries [][2]any
-		entries, err = mapEntries(value) // Convert Go map to [][]any
+		entries, err = mapEntries(value)
 		if err != nil {
 			return fmt.Errorf("map expects a map or entry array")
 		}
 
-		// Write key-value pair count (varint encoding)
 		if err = serializer.SerializeU32(uint32(len(entries))); err != nil {
 			return err
 		}
 
-		// Serialize each key-value pair in sequence
 		for _, entry := range entries {
 			if err = p.serializeValue(serializer, keyType, entry[0]); err != nil {
 				return err
@@ -338,18 +218,16 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 		return nil
 	}
 
-	// Handle tuple<T1,T2,...>
-	// Format: [item1] + [item2] + ... + [itemN]
+	// tuple<T1,T2,...>: elements in order
 	if tupleTypes, ok, err := parseTupleType(argName); err != nil {
 		return err
 	} else if ok {
 		var tuple []any
-		tuple, err = tupleValues(value, len(tupleTypes)) // Convert Go slice to fixed-length array
+		tuple, err = tupleValues(value, len(tupleTypes))
 		if err != nil {
 			return err
 		}
 
-		// Serialize each element in order
 		for i, itemType := range tupleTypes {
 			if err = p.serializeValue(serializer, itemType, tuple[i]); err != nil {
 				return err
@@ -358,11 +236,10 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 		return nil
 	}
 
-	// Handle custom types (struct/enum/builtin)
+	// custom IDL type (struct/enum/builtin)
 	if idlType, ok := p.IDLTypeByName[argName]; ok {
 		switch idlType.Kind {
 		case "struct":
-			// Struct: serialize fields in order
 			record, ok := value.(map[string]any)
 			if !ok {
 				return fmt.Errorf("%s expects an object", argName)
@@ -374,17 +251,15 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 					return fmt.Errorf("missing struct field: %s", field.Name)
 				}
 
-				// Recursively serialize each field
 				if err := p.serializeValue(serializer, field.Type, fieldValue); err != nil {
 					return err
 				}
 			}
 			return nil
 		case "enum":
-			// Enum: write variant index first, then variant data
 			return p.serializeEnum(serializer, idlType, value)
 		case "builtin":
-			// builtin types (like PublicKey, Address, etc.) are not handled here
+			// fall through to the primitive switch below
 			break
 		default:
 			return fmt.Errorf("unsupported type kind: %s for type %s", idlType.Kind, argName)
@@ -465,75 +340,29 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 		}
 		return serializer.SerializeBytes(buf)
 	case "B96":
-		switch v := value.(type) {
-		case [12]byte:
-			serializer.SerializeFixedBytes(v[:])
-		case []byte:
-			if len(v) != 12 {
-				return fmt.Errorf("B96 expects exactly 12 bytes, got %d", len(v))
-			}
-			serializer.SerializeFixedBytes(v)
-		default:
-			return fmt.Errorf("B96 expects [12]byte or []byte")
-		}
-		return nil
+		return serializeFixedBytesValue(serializer, value, 12, "B96")
 	case "B144":
-		switch v := value.(type) {
-		case [18]byte:
-			serializer.SerializeFixedBytes(v[:])
-		case []byte:
-			if len(v) != 18 {
-				return fmt.Errorf("B144 expects exactly 18 bytes, got %d", len(v))
-			}
-			serializer.SerializeFixedBytes(v)
-		default:
-			return fmt.Errorf("B144 expects [18]byte or []byte")
-		}
-		return nil
+		return serializeFixedBytesValue(serializer, value, 18, "B144")
 	case "B160":
-		switch v := value.(type) {
-		case [20]byte:
-			serializer.SerializeFixedBytes(v[:])
-		case []byte:
-			if len(v) != 20 {
-				return fmt.Errorf("B160 expects exactly 20 bytes, got %d", len(v))
-			}
-			serializer.SerializeFixedBytes(v)
-		default:
-			return fmt.Errorf("B160 expects [20]byte or []byte")
-		}
-		return nil
+		return serializeFixedBytesValue(serializer, value, 20, "B160")
 	case "B256":
-		switch v := value.(type) {
-		case [32]byte:
-			serializer.SerializeFixedBytes(v[:])
-		case []byte:
-			if len(v) != 32 {
-				return fmt.Errorf("B256 expects exactly 32 bytes, got %d", len(v))
-			}
-			serializer.SerializeFixedBytes(v)
-		default:
-			return fmt.Errorf("B256 expects [32]byte or []byte")
-		}
-		return nil
+		return serializeFixedBytesValue(serializer, value, 32, "B256")
 	default:
 		return fmt.Errorf("unsupported IDL type: %s", argName)
 	}
 }
 
-// serializeEnum serializes enum type to postcard format
+// serializeEnum writes an enum: [variant_index(varint)] + [variant data].
 func (p *Provider) serializeEnum(serializer *postcard.Serializer, idlType IDLType, value any) error {
-	// Parse enum input, get variant name and variant value
 	variantName, variantValue, err := enumVariantInput(value)
 	if err != nil {
 		return err
 	}
 
-	// Find variant index in IDL definition
 	variantIndex := -1
 	var variant EnumVariant
 	for i, candidate := range idlType.Variants {
-		// Use case-insensitive matching
+		// case-insensitive match
 		if strings.EqualFold(candidate.Name, variantName) {
 			variantIndex = i
 			variant = candidate
@@ -544,24 +373,20 @@ func (p *Provider) serializeEnum(serializer *postcard.Serializer, idlType IDLTyp
 		return fmt.Errorf("unknown enum variant %s.%s", idlType.Name, variantName)
 	}
 
-	// Write variant index (varint encoding)
 	if err = serializer.SerializeEnumVariant(uint32(variantIndex)); err != nil {
 		return err
 	}
 
-	// Handle Unit variant (no associated data)
+	// unit: no associated data
 	if variant.Kind == "unit" {
 		return nil
 	}
 
-	// Handle Tuple variant (associated data is tuple)
 	if variant.Kind == "tuple" {
-		// Convert value to fixed-length tuple
 		tuple, err := tupleValues(variantValue, len(variant.Fields))
 		if err != nil {
 			return err
 		}
-		// Serialize each element of tuple in order
 		for i, field := range variant.Fields {
 			if err := p.serializeValue(serializer, field.Type, tuple[i]); err != nil {
 				return err
@@ -570,13 +395,11 @@ func (p *Provider) serializeEnum(serializer *postcard.Serializer, idlType IDLTyp
 		return nil
 	}
 
-	// Handle Struct variant (associated data is named fields)
 	record, ok := variantValue.(map[string]any)
 	if !ok {
 		return fmt.Errorf("%s.%s expects an object", idlType.Name, variant.Name)
 	}
 
-	// Serialize each field in the order defined by IDL
 	for _, field := range variant.Fields {
 		fieldValue, ok := record[field.Name]
 		if !ok {
@@ -590,28 +413,26 @@ func (p *Provider) serializeEnum(serializer *postcard.Serializer, idlType IDLTyp
 	return nil
 }
 
-// Decode decodes instruction bytes into readable argument
+// Decode decodes an encoded instruction body into its arguments.
 func (p *Provider) Decode(instructionName string, body []byte) (Args, error) {
-	// Get instruction definition
 	instruction, err := p.GetInstructionByName(instructionName)
 	if err != nil {
 		return nil, err
 	}
 
 	offset := 0
-	// Check data length, need at least 3 bytes (app_id + discriminator u16 LE)
+	// at least 3 bytes: app_id + u16 discriminator
 	if len(body) < 3 {
 		return nil, fmt.Errorf("empty body: need at least 3 bytes")
 	}
 
-	// Read and verify appID
 	appID := body[offset]
 	offset++
 	if appID != p.appID() {
 		return nil, fmt.Errorf("app_id mismatch: expected %d, got %d", p.appID(), appID)
 	}
 
-	// Decode and verify discriminator (u16 LE little-endian encoding, 2 bytes)
+	// discriminator (u16 LE)
 	discriminatorLow := uint64(body[offset])
 	discriminatorHigh := uint64(body[offset+1])
 	discriminator := discriminatorLow | (discriminatorHigh << 8)
@@ -621,7 +442,6 @@ func (p *Provider) Decode(instructionName string, body []byte) (Args, error) {
 		return nil, fmt.Errorf("discriminator mismatch: expected %d, got %d", instruction.Discriminator, discriminator)
 	}
 
-	// Deserialize instruction arguments one by one
 	args := make(Args)
 	for _, arg := range instruction.Args {
 		value, err := p.deserializeValue(arg.Type, body, &offset)
@@ -631,7 +451,6 @@ func (p *Provider) Decode(instructionName string, body []byte) (Args, error) {
 		args[arg.Name] = value
 	}
 
-	// Check if there are unprocessed bytes
 	if offset != len(body) {
 		return nil, fmt.Errorf("%d trailing bytes after decoding", len(body)-offset)
 	}
@@ -639,12 +458,10 @@ func (p *Provider) Decode(instructionName string, body []byte) (Args, error) {
 	return args, nil
 }
 
-// deserializeValue deserializes a single value into Go object
+// deserializeValue decodes one value by its IDL type name.
 func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int) (any, error) {
-	// Handle vec<T>
-	// Format: [length(varint)] + [element1] + [element2] + ... + [elementN]
+	// vec<T>: [len(varint)] + elements...
 	if inner, ok := parseWrappedType(idlTypeName, "vec"); ok {
-		// Read array length
 		length, err := decodeViewVarUint(body, offset)
 		if err != nil {
 			return nil, err
@@ -652,7 +469,6 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 
 		items := make([]any, length)
 		for i := uint64(0); i < length; i++ {
-			// Recursively deserialize each element
 			item, err := p.deserializeValue(inner, body, offset)
 			if err != nil {
 				return nil, err
@@ -663,30 +479,24 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		return items, nil
 	}
 
-	// Handle option<T>
-	// Format: [has_value(u8: 0 or 1)] + [value(if has_value != 0)]
+	// option<T>: [has_value(u8)] + [value if present]
 	if inner, ok := parseWrappedType(idlTypeName, "option"); ok {
-		// Read has_value flag
 		hasValue, err := decodeViewVarUint(body, offset)
 		if err != nil {
 			return nil, err
 		}
 
-		// If no value, return nil
 		if hasValue == 0 {
 			return nil, nil
 		}
 
-		// Continue to deserialize actual value if has value
 		return p.deserializeValue(inner, body, offset)
 	}
 
-	// Handle map<K,V> type
-	// Format: [length(varint)] + [key1 + value1] + [key2 + value2] + ... + [keyN + valueN]
+	// map<K,V>: [len(varint)] + key/value pairs...
 	if keyType, valueType, ok, err := parseMapType(idlTypeName); err != nil {
 		return nil, err
 	} else if ok {
-		// Read key-value pair count
 		length, err := decodeViewVarUint(body, offset)
 		if err != nil {
 			return nil, err
@@ -694,33 +504,26 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 
 		result := make(map[any]any)
 		for i := uint64(0); i < length; i++ {
-			// Recursively deserialize key
 			key, err := p.deserializeValue(keyType, body, offset)
 			if err != nil {
 				return nil, err
 			}
-
-			// Recursively deserialize value
 			value, err := p.deserializeValue(valueType, body, offset)
 			if err != nil {
 				return nil, err
 			}
-
 			result[key] = value
 		}
 
 		return result, nil
 	}
 
-	// Handle tuple<T1,T2,...>
-	// Format: [element1] + [element2] + ... + [elementN]
+	// tuple<T1,T2,...>: elements in order
 	if tupleTypes, ok, err := parseTupleType(idlTypeName); err != nil {
 		return nil, err
 	} else if ok {
 		items := make([]any, len(tupleTypes))
-
 		for i, itemType := range tupleTypes {
-			// Recursively deserialize each element in order
 			item, err := p.deserializeValue(itemType, body, offset)
 			if err != nil {
 				return nil, err
@@ -731,13 +534,11 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		return items, nil
 	}
 
-	// Handle custom IDL types (struct/enum/builtin)
+	// custom IDL type (struct/enum/builtin)
 	if idlType, ok := p.IDLTypeByName[idlTypeName]; ok {
 		switch idlType.Kind {
 		case "struct":
-			// Struct: deserialize fields in order
 			record := make(map[string]any)
-
 			for _, field := range idlType.Fields {
 				value, err := p.deserializeValue(field.Type, body, offset)
 				if err != nil {
@@ -748,30 +549,25 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 
 			return record, nil
 		case "enum":
-			// Enum: [variant_index(varint)] + [fields(if any)]
-			// Read variant index
+			// enum: [variant_index(varint)] + [fields if any]
 			variantIndex, err := decodeViewVarUint(body, offset)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read enum variant index for %s: %w", idlTypeName, err)
 			}
 
-			// Validate variant index
 			if int(variantIndex) >= len(idlType.Variants) {
 				return nil, fmt.Errorf("invalid variant index %d for enum %s (has %d variants)", variantIndex, idlTypeName, len(idlType.Variants))
 			}
 
 			variant := idlType.Variants[variantIndex]
-
-			// Handle different variant kinds
 			switch variant.Kind {
 			case "unit":
-				// Unit variant: no fields, just return the variant name
+				// unit: no fields
 				return map[string]any{
 					"variant": variant.Name,
 					"index":   variantIndex,
 				}, nil
 			case "struct":
-				// Struct variant: has named fields
 				record := make(map[string]any)
 				record["variant"] = variant.Name
 				record["index"] = variantIndex
@@ -786,7 +582,6 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 
 				return record, nil
 			case "tuple":
-				// Tuple variant: has unnamed fields
 				fields := make([]any, len(variant.Fields))
 				for i, field := range variant.Fields {
 					value, err := p.deserializeValue(field.Type, body, offset)
@@ -805,14 +600,14 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 				return nil, fmt.Errorf("unsupported variant kind %s for %s::%s", variant.Kind, idlTypeName, variant.Name)
 			}
 		case "builtin":
-			// builtin types are not handled here, continue to execute switch idlTypeName below
+			// fall through to the primitive switch below
 			break
 		default:
 			return nil, fmt.Errorf("unsupported type kind: %s for type %s", idlType.Kind, idlTypeName)
 		}
 	}
 
-	// Handle built-in basic types
+	// primitive types
 	switch idlTypeName {
 	case "Address", "Signer", "AnySigner":
 		// Address: fixed 20 bytes
@@ -830,14 +625,12 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 
 		return addr, nil
 	case "PublicKey":
-		// PublicKey: [variant(varint)] + [byte data(fixed length, depends on key type)]
-		// First read Variant (using varint encoding)
+		// PublicKey: [variant(varint)] + [fixed-length data]
 		variantRaw, err := decodeViewVarUint(body, offset)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read PublicKey variant: %w", err)
 		}
 
-		// Determine byte length based on Variant
 		var expectedLen int
 		switch crypto.PublicKeyType(uint32(variantRaw)) {
 		case crypto.PublicKeyTypeSecp256k1:
@@ -852,7 +645,6 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 			return nil, fmt.Errorf("unknown public key variant: %d", variantRaw)
 		}
 
-		// Read fixed length byte data
 		if *offset+expectedLen > len(body) {
 			return nil, fmt.Errorf("insufficient data for PublicKey bytes: expected %d, got %d", expectedLen, len(body)-*offset)
 		}
@@ -867,7 +659,7 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 
 		return pk, nil
 	case "String", "string":
-		// String: [length(varint)] + [UTF-8 byte data]
+		// String: [len(varint)] + UTF-8 bytes
 		length, err := decodeViewVarUint(body, offset)
 		if err != nil {
 			return nil, err
@@ -901,8 +693,14 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 	case "u128":
 		return decodeViewVarUint128(body, offset)
 	case "i8":
-		val, err := decodeViewVarUint(body, offset)
-		return int8(val), err
+		// i8 is a single byte (SerializeI8 -> SerializeU8); varint decoding would
+		// misread negative values (e.g. -1 -> 0xFF, continuation bit set).
+		if *offset >= len(body) {
+			return nil, fmt.Errorf("insufficient data for i8")
+		}
+		val := int8(body[*offset])
+		*offset++
+		return val, nil
 	case "i16":
 		val, err := decodeViewVarUint(body, offset)
 		return int16(val), err
@@ -910,9 +708,10 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		val, err := decodeViewVarUint(body, offset)
 		return int32(val), err
 	case "i64":
-		return decodeViewVarUint(body, offset)
+		val, err := decodeViewVarUint(body, offset)
+		return int64(val), err
 	case "bytes":
-		// bytes: [length(varint)] + [byte data]
+		// bytes: [len(varint)] + data
 		length, err := decodeViewVarUint(body, offset)
 		if err != nil {
 			return nil, err
@@ -927,69 +726,37 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		*offset += int(length)
 		return byteList, nil
 	case "B96":
-		// B96: fixed 12 bytes, no length prefix
-		if *offset+12 > len(body) {
-			return nil, fmt.Errorf("insufficient data for B96")
-		}
-		var b96 [12]byte
-		copy(b96[:], body[*offset:*offset+12])
-		*offset += 12
-		return b96, nil
+		return deserializeFixedBytesValue(body, offset, 12, "B96")
 	case "B144":
-		// B144: fixed 18 bytes, no length prefix
-		if *offset+18 > len(body) {
-			return nil, fmt.Errorf("insufficient data for B144")
-		}
-		var b144 [18]byte
-		copy(b144[:], body[*offset:*offset+18])
-		*offset += 18
-		return b144, nil
+		return deserializeFixedBytesValue(body, offset, 18, "B144")
 	case "B160":
-		// B160: fixed 20 bytes, no length prefix
-		if *offset+20 > len(body) {
-			return nil, fmt.Errorf("insufficient data for B160")
-		}
-		var b160 [20]byte
-		copy(b160[:], body[*offset:*offset+20])
-		*offset += 20
-		return b160, nil
+		return deserializeFixedBytesValue(body, offset, 20, "B160")
 	case "B256":
-		// B256: fixed 32 bytes, no length prefix
-		if *offset+32 > len(body) {
-			return nil, fmt.Errorf("insufficient data for B256")
-		}
-		var b256 [32]byte
-		copy(b256[:], body[*offset:*offset+32])
-		*offset += 32
-		return b256, nil
+		return deserializeFixedBytesValue(body, offset, 32, "B256")
 	default:
 		return nil, fmt.Errorf("unsupported IDL type: %s", idlTypeName)
 	}
 }
 
-// DecodeViewDatas decodes a view response body that contains Vec<Result<T>>,
-// where each Result corresponds to one invocation of the same view method.
+// DecodeViewDatas decodes a view response body of Vec<Result<T>>, one Result
+// per invocation of the same view method.
 func (p *Provider) DecodeViewDatas(instructionName string, body []byte) ([]DecodedTaggedValue, error) {
 	instruction, err := p.GetInstructionByName(instructionName)
 	if err != nil {
 		return nil, err
 	}
 
-	// Verify instruction type, must be view type
 	if instruction.Kind != "view" {
 		return nil, fmt.Errorf("%s is not a view instruction (kind=%s)", instructionName, instruction.Kind)
 	}
 
-	// Get return value type definition
 	returnType := strings.TrimSpace(instruction.Returns.Type)
 	if returnType == "" {
 		return nil, fmt.Errorf("IDL view method %s is missing returns.type", instructionName)
 	}
 
-	// Deserialize outer Vec<Result<...>> structure
 	offset := 0
-
-	// 1. Read Vec length (instruction count)
+	// 1. vec length (result count)
 	resultCount, err := decodeViewVarUint(body, &offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode result count: %w", err)
@@ -997,7 +764,7 @@ func (p *Provider) DecodeViewDatas(instructionName string, body []byte) ([]Decod
 
 	results := make([]DecodedTaggedValue, resultCount)
 
-	// 2. Decode each Result item one by one
+	// 2. each Result item
 	for i := uint64(0); i < resultCount; i++ {
 		value, err := decodeViewResultItem(p, returnType, body, &offset)
 		if err != nil {
@@ -1006,7 +773,6 @@ func (p *Provider) DecodeViewDatas(instructionName string, body []byte) ([]Decod
 		results[i] = value
 	}
 
-	// Check if there are unprocessed bytes
 	if offset != len(body) {
 		return nil, fmt.Errorf("%d trailing bytes after decoding", len(body)-offset)
 	}
@@ -1014,17 +780,15 @@ func (p *Provider) DecodeViewDatas(instructionName string, body []byte) ([]Decod
 	return results, nil
 }
 
-// decodeViewResultItem decodes a single Result<TxFailurePayload> entry from a
-// view response body: variant 0 = Ok(return value bytes), 1 = Err(payload).
+// decodeViewResultItem decodes one Result<T> entry: variant 0 = Ok(value bytes),
+// 1 = Err(TxFailurePayload).
 func decodeViewResultItem(pd *Provider, returnType string, body []byte, offset *int) (DecodedTaggedValue, error) {
-	// Read Result variant index: 0 = Ok, 1 = Err
 	variantIndex, err := decodeViewVarUint(body, offset)
 	if err != nil {
 		return DecodedTaggedValue{}, fmt.Errorf("failed to decode result variant: %w", err)
 	}
 
 	if variantIndex == 0 {
-		// Ok branch: contains actual return value bytes
 		okDataLen, err := decodeViewVarUint(body, offset)
 		if err != nil {
 			return DecodedTaggedValue{}, fmt.Errorf("failed to decode Ok data length: %w", err)
@@ -1037,18 +801,20 @@ func decodeViewResultItem(pd *Provider, returnType string, body []byte, offset *
 		copy(okData, body[*offset:*offset+int(okDataLen)])
 		*offset += int(okDataLen)
 
-		// Deserialize actual return value
 		valueOffset := 0
 		value, err := pd.deserializeValue(returnType, okData, &valueOffset)
 		if err != nil {
 			return DecodedTaggedValue{}, fmt.Errorf("failed to deserialize Ok value: %w", err)
+		}
+		// Ok payload must be fully consumed
+		if valueOffset != len(okData) {
+			return DecodedTaggedValue{}, fmt.Errorf("%d trailing bytes after decoding Ok value", len(okData)-valueOffset)
 		}
 
 		return DecodedTaggedValue{Value: value}, nil
 	}
 
 	if variantIndex == 1 {
-		// Err branch: contains TxFailurePayload
 		failure, err := pd.decodeTxFailurePayload(body, offset)
 		if err != nil {
 			return DecodedTaggedValue{}, fmt.Errorf("failed to decode Err payload: %w", err)
@@ -1061,14 +827,12 @@ func decodeViewResultItem(pd *Provider, returnType string, body []byte, offset *
 }
 
 func (p *Provider) decodeTxFailurePayload(body []byte, offset *int) (*api.TxFailurePayload, error) {
-	// Decode code (u16)
 	codeRaw, err := decodeViewVarUint(body, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode failure code: %w", err)
 	}
 	code := uint16(codeRaw)
 
-	// Decode message (String)
 	messageLen, err := decodeViewVarUint(body, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode message length: %w", err)
@@ -1079,7 +843,6 @@ func (p *Provider) decodeTxFailurePayload(body []byte, offset *int) (*api.TxFail
 	message := string(body[*offset : *offset+int(messageLen)])
 	*offset += int(messageLen)
 
-	// Decode data (Vec<u8>)
 	dataLen, err := decodeViewVarUint(body, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode data length: %w", err)
@@ -1127,50 +890,57 @@ func (p *Provider) DecodeDataByIDLTypeName(idlTypeName string, data []byte) (any
 	return value, nil
 }
 
-//********************** Helper Functions ********************
-
-// decodeViewVarUint varint (variable length integer) decoding function
+// decodeViewVarUint decodes a varint (uint64, at most 10 bytes).
 func decodeViewVarUint(input []byte, offset *int) (uint64, error) {
-	var value uint64 // Store final value
-	var shift uint   // Shift amount, increases by 7 each time
+	var value uint64
+	var shift uint
 
-	for i := 0; i < 10; i++ { // Loop at most 10 times (uint64 needs at most 10 bytes)
+	for i := 0; i < 10; i++ {
 		if *offset >= len(input) {
-			return 0, fmt.Errorf("unexpected end of input") // Insufficient data, report error
+			return 0, fmt.Errorf("unexpected end of input")
 		}
 
-		b := input[*offset]   // Read current byte
-		*offset = *offset + 1 // Move read position
+		b := input[*offset]
+		*offset++
 
-		value |= uint64(b&0x7f) << shift // Take lower 7 bits, left shift and merge into value
-		if b&0x80 == 0 {                 // If highest bit is 0, it's the last byte
-			return value, nil // Decoding complete, return result
+		value |= uint64(b&0x7f) << shift
+		if b&0x80 == 0 {
+			return value, nil
 		}
 
-		shift += 7 // Otherwise continue reading next byte, shift amount increases by 7
+		shift += 7
 	}
 
-	return 0, fmt.Errorf("varint is too long") // Exceeds 10 bytes, report error
+	return 0, fmt.Errorf("varint is too long")
 }
 
-// decodeViewVarUint128 decodes a varint up to 128 bits wide; u128 needs at
-// most 19 bytes (beyond uint64's 10-byte ceiling).
+// decodeViewVarUint128 decodes a varint into a big.Int (u128: at most 19 bytes).
 func decodeViewVarUint128(input []byte, offset *int) (*big.Int, error) {
-	value := new(big.Int)
-	for i := 0; i < 19; i++ {
+	var buf [19]byte
+	n := 0
+	for ; n < len(buf); n++ {
 		if *offset >= len(input) {
 			return nil, fmt.Errorf("unexpected end of input")
 		}
 		b := input[*offset]
 		*offset++
-
-		part := new(big.Int).Lsh(big.NewInt(int64(b&0x7f)), uint(i*7))
-		value.Or(value, part)
+		buf[n] = b & 0x7f
 		if b&0x80 == 0 {
-			return value, nil
+			break
 		}
 	}
-	return nil, fmt.Errorf("varint is too long")
+	if n == len(buf) {
+		return nil, fmt.Errorf("varint is too long")
+	}
+
+	// assemble little-endian 7-bit groups with reused scratch values
+	value := new(big.Int)
+	group := new(big.Int)
+	shifted := new(big.Int)
+	for i := 0; i <= n; i++ {
+		value.Or(value, shifted.Lsh(group.SetInt64(int64(buf[i])), uint(i*7)))
+	}
+	return value, nil
 }
 
 // parseWrappedType parses wrapped types (such as vec<T>, option<T>, map<K,V>, tuple<T1,T2>)
@@ -1185,11 +955,14 @@ func decodeViewVarUint128(input []byte, offset *int) (*big.Int, error) {
 func parseWrappedType(argName, wrapper string) (string, bool) {
 	prefix := wrapper + "<"
 
-	if !strings.HasPrefix(strings.ToLower(argName), prefix) || !strings.HasSuffix(argName, ">") {
+	// Fast path: length guard + suffix check, then case-insensitive prefix match
+	if len(argName) < len(prefix)+1 || !strings.HasSuffix(argName, ">") {
+		return "", false
+	}
+	if !strings.EqualFold(argName[:len(prefix)], prefix) {
 		return "", false
 	}
 
-	// Extract content inside angle brackets
 	return strings.TrimSpace(argName[len(prefix) : len(argName)-1]), true
 }
 
@@ -1207,7 +980,6 @@ func parseMapType(argName string) (string, string, bool, error) {
 		return "", "", false, nil
 	}
 
-	// Split by comma, supports nested types (such as map<String,vec<u8>>)
 	parts := splitTopLevel(inner, ',')
 	if len(parts) != 2 {
 		return "", "", false, fmt.Errorf("invalid map type: %s", argName)
@@ -1230,10 +1002,8 @@ func parseTupleType(argName string) ([]string, bool, error) {
 		return nil, false, nil
 	}
 
-	// Split by comma, supports nested types
 	parts := splitTopLevel(inner, ',')
 
-	// Remove leading/trailing spaces from each element
 	for i := range parts {
 		parts[i] = strings.TrimSpace(parts[i])
 	}
@@ -1380,20 +1150,12 @@ func serializeAddress(serializer *postcard.Serializer, value any) error {
 		if err == nil && len(hexBuf) == 20 {
 			buf = hexBuf
 		} else {
-			// Try base58 parsing, tolerating base58check variants
+			// Try base58 parsing
 			b58Buf := base58.Decode(typed)
-			switch {
-			case len(b58Buf) == 20:
-				buf = b58Buf
-			case len(b58Buf) == 21:
-				// version byte + 20-byte payload
-				buf = b58Buf[1:]
-			case len(b58Buf) == 25:
-				// version byte + 20-byte payload + 4-byte checksum
-				buf = b58Buf[1:21]
-			default:
-				return fmt.Errorf("address must be 20 bytes: input %q is neither a valid 0x-prefixed 40-char hex string nor a decodable milon base58 address (base58 decode yields %d bytes)", typed, len(b58Buf))
+			if len(b58Buf) != 20 {
+				return fmt.Errorf("address must be 20 bytes")
 			}
+			buf = b58Buf
 		}
 	default:
 		return fmt.Errorf("invalid type for Address: %T", value)
@@ -1514,19 +1276,41 @@ func asBigInt(value any, signed bool) (*big.Int, error) {
 			return nil, fmt.Errorf("u128 out of range")
 		}
 		return new(big.Int).Set(typed), nil
-	case uint8, uint16, uint32, uint64, uint, int, int8, int16, int32, int64:
-		rv := reflect.ValueOf(typed)
-		number := big.NewInt(0)
-		switch rv.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			if !signed && rv.Int() < 0 {
-				return nil, fmt.Errorf("u128 out of range")
-			}
-			number.SetInt64(rv.Int())
-		default:
-			number.SetUint64(rv.Convert(reflect.TypeOf(uint64(0))).Uint())
+	case uint8:
+		return big.NewInt(int64(typed)), nil
+	case uint16:
+		return big.NewInt(int64(typed)), nil
+	case uint32:
+		return big.NewInt(int64(typed)), nil
+	case uint64:
+		return new(big.Int).SetUint64(typed), nil
+	case uint:
+		return new(big.Int).SetUint64(uint64(typed)), nil
+	case int:
+		if !signed && typed < 0 {
+			return nil, fmt.Errorf("u128 out of range")
 		}
-		return number, nil
+		return big.NewInt(int64(typed)), nil
+	case int8:
+		if !signed && typed < 0 {
+			return nil, fmt.Errorf("u128 out of range")
+		}
+		return big.NewInt(int64(typed)), nil
+	case int16:
+		if !signed && typed < 0 {
+			return nil, fmt.Errorf("u128 out of range")
+		}
+		return big.NewInt(int64(typed)), nil
+	case int32:
+		if !signed && typed < 0 {
+			return nil, fmt.Errorf("u128 out of range")
+		}
+		return big.NewInt(int64(typed)), nil
+	case int64:
+		if !signed && typed < 0 {
+			return nil, fmt.Errorf("u128 out of range")
+		}
+		return big.NewInt(typed), nil
 	case float64:
 		if typed != math.Trunc(typed) {
 			return nil, fmt.Errorf("u128 out of range")
@@ -1611,4 +1395,75 @@ func decodeHex(value string) ([]byte, error) {
 		return nil, fmt.Errorf("invalid hex string")
 	}
 	return buf, nil
+}
+
+// serializeFixedBytesValue writes a fixed-size byte value (B96/B144/B160/B256);
+// accepts []byte or the matching fixed-size array type.
+func serializeFixedBytesValue(serializer *postcard.Serializer, value any, size int, typeName string) error {
+	switch typed := value.(type) {
+	case []byte:
+		if len(typed) != size {
+			return fmt.Errorf("%s expects exactly %d bytes, got %d", typeName, size, len(typed))
+		}
+		serializer.SerializeFixedBytes(typed)
+		return nil
+	case [12]byte:
+		if size != 12 {
+			return fmt.Errorf("%s expects %d bytes", typeName, size)
+		}
+		serializer.SerializeFixedBytes(typed[:])
+		return nil
+	case [18]byte:
+		if size != 18 {
+			return fmt.Errorf("%s expects %d bytes", typeName, size)
+		}
+		serializer.SerializeFixedBytes(typed[:])
+		return nil
+	case [20]byte:
+		if size != 20 {
+			return fmt.Errorf("%s expects %d bytes", typeName, size)
+		}
+		serializer.SerializeFixedBytes(typed[:])
+		return nil
+	case [32]byte:
+		if size != 32 {
+			return fmt.Errorf("%s expects %d bytes", typeName, size)
+		}
+		serializer.SerializeFixedBytes(typed[:])
+		return nil
+	default:
+		return fmt.Errorf("%s expects [%d]byte or []byte", typeName, size)
+	}
+}
+
+// deserializeFixedBytesValue reads exactly size bytes (B96/B144/B160/B256) and
+// returns the matching fixed-size array: [12]byte/[18]byte/[20]byte/[32]byte.
+func deserializeFixedBytesValue(body []byte, offset *int, size int, typeName string) (any, error) {
+	if *offset+size > len(body) {
+		return nil, fmt.Errorf("insufficient data for %s", typeName)
+	}
+	switch size {
+	case 12:
+		var buf [12]byte
+		copy(buf[:], body[*offset:*offset+12])
+		*offset += 12
+		return buf, nil
+	case 18:
+		var buf [18]byte
+		copy(buf[:], body[*offset:*offset+18])
+		*offset += 18
+		return buf, nil
+	case 20:
+		var buf [20]byte
+		copy(buf[:], body[*offset:*offset+20])
+		*offset += 20
+		return buf, nil
+	case 32:
+		var buf [32]byte
+		copy(buf[:], body[*offset:*offset+32])
+		*offset += 32
+		return buf, nil
+	default:
+		return nil, fmt.Errorf("unsupported fixed byte size %d for %s", size, typeName)
+	}
 }

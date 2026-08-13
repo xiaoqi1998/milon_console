@@ -1,0 +1,1 @@
+{"success":false,"message":"failed to get account: failed to decode accountRelaxed: invalid base58 decoded length: expected 20, got 19","code":5001,"timestamp":"2026-08-13T13:27:49+08:00"}

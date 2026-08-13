@@ -66,7 +66,7 @@ func httpPost(ctx context.Context, url string, body io.Reader, header map[string
 			break
 		}
 		if i < maxRetries-1 {
-			time.Sleep(time.Second)
+			time.Sleep(time.Microsecond * 10)
 		}
 	}
 	if err != nil {

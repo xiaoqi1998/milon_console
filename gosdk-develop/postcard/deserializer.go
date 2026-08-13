@@ -87,17 +87,17 @@ func (d *Deserializer) DeserializeI8() (int8, error) {
 
 func (d *Deserializer) DeserializeI16() (int16, error) {
 	value, err := d.DeserializeU16()
-	return int16(decodeZigZag64(uint64(value))), err
+	return int16(value), err
 }
 
 func (d *Deserializer) DeserializeI32() (int32, error) {
 	value, err := d.DeserializeU32()
-	return int32(decodeZigZag64(uint64(value))), err
+	return int32(value), err
 }
 
 func (d *Deserializer) DeserializeI64() (int64, error) {
 	value, err := d.DeserializeU64()
-	return decodeZigZag64(value), err
+	return int64(value), err
 }
 
 func (d *Deserializer) DeserializeEnumVariant() (uint32, error) {
@@ -133,12 +133,14 @@ func (d *Deserializer) deserializeVarUint64(max uint64, name string) (uint64, er
 
 func (d *Deserializer) deserializeVarUintBig(max *big.Int, name string) (*big.Int, error) {
 	value := big.NewInt(0)
+	part := new(big.Int)
 	for i := 0; i < 19; i++ {
 		byteValue, err := d.DeserializeU8()
 		if err != nil {
 			return nil, err
 		}
-		part := new(big.Int).Lsh(big.NewInt(int64(byteValue&0x7f)), uint(i*7))
+		part.SetInt64(int64(byteValue & 0x7f))
+		part.Lsh(part, uint(i*7))
 		value.Or(value, part)
 		if (byteValue & 0x80) == 0 {
 			if value.Cmp(max) > 0 {
@@ -160,10 +162,6 @@ func (d *Deserializer) read(length int) ([]byte, error) {
 	bytes := append([]byte(nil), d.buffer[d.offset:d.offset+length]...)
 	d.offset += length
 	return bytes, nil
-}
-
-func decodeZigZag64(value uint64) int64 {
-	return int64(value>>1) ^ -int64(value&1)
 }
 
 func (d *Deserializer) Peek(n int) ([]byte, error) {

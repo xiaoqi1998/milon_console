@@ -10,6 +10,10 @@ import (
 	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
+func main() {
+	example(milon.DevNet)
+}
+
 func example(networkConfig milon.Network) {
 	client := milon.NewClient(networkConfig)
 
@@ -116,7 +120,7 @@ func example(networkConfig milon.Network) {
 		panic("failed to simulate transaction on chain:" + err.Error())
 	}
 	helper.CheckSimulateSuccess(simulateResult)
-	fmt.Printf("Simple mode - Simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
+	fmt.Printf("simple mode - Simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
 
 	// 3.3 Real sign on the same builder (same TxHash)
 	tx, err := builder.ResetSigs().
@@ -149,10 +153,10 @@ func example(networkConfig milon.Network) {
 
 	// 4.1 Define signing slots once (shared by simulate & real sign)
 	slots := []lib.SigningSlot{
-		{*accountA, []uint8{0}, true, modeA},  // accountA: ix0 + gas (bit63)
-		{*accountB, []uint8{1}, false, modeB}, // accountB: ix1 only
-		{*accountC, []uint8{2}, false, modeC}, // accountC: ix2 only
-		{*accountD, []uint8{3}, false, modeD}, // accountD: ix3 only
+		{Address: *accountA, InstructionIndices: []uint8{0}, IncludePayer: true, Mode: modeA},  // accountA: ix0 + gas (bit63)
+		{Address: *accountB, InstructionIndices: []uint8{1}, IncludePayer: false, Mode: modeB}, // accountB: ix1 only
+		{Address: *accountC, InstructionIndices: []uint8{2}, IncludePayer: false, Mode: modeC}, // accountC: ix2 only
+		{Address: *accountD, InstructionIndices: []uint8{3}, IncludePayer: false, Mode: modeD}, // accountD: ix3 only
 	}
 
 	// 4.2 Build transaction once with ApplySlots, reuse the same builder for simulate & real sign (same Stamp -> same TxHash)

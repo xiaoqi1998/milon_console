@@ -330,7 +330,7 @@ provider.IDL{
 				Handler: "get_account",
 				Kind: "view",
 				Name: "GetAccount",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "Account",
 				},
 			},
@@ -346,7 +346,7 @@ provider.IDL{
 				Handler: "list_signers",
 				Kind: "view",
 				Name: "ListSigners",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "tuple<Account,vec<tuple<PublicKey,u8,u8>>>",
 				},
 			},
@@ -372,7 +372,7 @@ provider.IDL{
 				Handler: "resolve_signers",
 				Kind: "view",
 				Name: "ResolveSigners",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "vec<PublicKey>",
 				},
 			},
@@ -393,7 +393,7 @@ provider.IDL{
 				Handler: "get_vote",
 				Kind: "view",
 				Name: "GetVote",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "tuple<VoteMeta,Bitmap64,bool>",
 				},
 			},
@@ -409,7 +409,7 @@ provider.IDL{
 				Handler: "list_active_votes",
 				Kind: "view",
 				Name: "ListActiveVotes",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "vec<tuple<VoteMeta,Bitmap64,bool>>",
 				},
 			},
@@ -1196,7 +1196,7 @@ provider.IDL{
 				Handler: "balance_of",
 				Kind: "view",
 				Name: "BalanceOf",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -1217,7 +1217,7 @@ provider.IDL{
 				Handler: "frozen_of",
 				Kind: "view",
 				Name: "FrozenOf",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -1243,7 +1243,7 @@ provider.IDL{
 				Handler: "approval_of",
 				Kind: "view",
 				Name: "ApprovalOf",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -1259,7 +1259,7 @@ provider.IDL{
 				Handler: "total_supply",
 				Kind: "view",
 				Name: "TotalSupply",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -1275,7 +1275,7 @@ provider.IDL{
 				Handler: "metadata",
 				Kind: "view",
 				Name: "Metadata",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "Metadata",
 				},
 			},
@@ -1436,7 +1436,7 @@ provider.IDL{
 				Handler: "compliance",
 				Kind: "view",
 				Name: "Compliance",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "Compliance",
 				},
 			},
@@ -1452,7 +1452,7 @@ provider.IDL{
 				Handler: "faucet_cooldown_remaining",
 				Kind: "view",
 				Name: "FaucetCooldownRemaining",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -1806,7 +1806,7 @@ provider.IDL{
 				Handler: "claim_rewards",
 				Kind: "entry",
 				Name: "ClaimRewards",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -1827,7 +1827,7 @@ provider.IDL{
 				Handler: "claim_operator_rewards",
 				Kind: "entry",
 				Name: "ClaimOperatorRewards",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "OperatorRewardReceipt",
 				},
 			},
@@ -1866,7 +1866,7 @@ provider.IDL{
 				Handler: "validator_profile",
 				Kind: "view",
 				Name: "ValidatorProfile",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "ValidatorProfile",
 				},
 			},
@@ -1882,7 +1882,7 @@ provider.IDL{
 				Handler: "validator_pool",
 				Kind: "view",
 				Name: "ValidatorPool",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "ValidatorPoolView",
 				},
 			},
@@ -1903,7 +1903,7 @@ provider.IDL{
 				Handler: "stake_position",
 				Kind: "view",
 				Name: "StakePosition",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "StakePosition",
 				},
 			},
@@ -1924,7 +1924,7 @@ provider.IDL{
 				Handler: "position_summary",
 				Kind: "view",
 				Name: "PositionSummary",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "PositionSummary",
 				},
 			},
@@ -1934,7 +1934,7 @@ provider.IDL{
 				Handler: "candidate_pool",
 				Kind: "view",
 				Name: "CandidatePool",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "CandidatePool",
 				},
 			},
@@ -1950,7 +1950,7 @@ provider.IDL{
 				Handler: "active_set_snapshot",
 				Kind: "view",
 				Name: "ActiveSetSnapshot",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "ActiveSetSnapshot",
 				},
 			},
@@ -1966,7 +1966,7 @@ provider.IDL{
 				Handler: "active_set_hash",
 				Kind: "view",
 				Name: "ActiveSetHash",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "B256",
 				},
 			},
@@ -1976,7 +1976,7 @@ provider.IDL{
 				Handler: "current_active_set_snapshot",
 				Kind: "view",
 				Name: "CurrentActiveSetSnapshot",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "ActiveSetSnapshot",
 				},
 			},
@@ -1986,7 +1986,7 @@ provider.IDL{
 				Handler: "current_active_set_hash",
 				Kind: "view",
 				Name: "CurrentActiveSetHash",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "B256",
 				},
 			},
@@ -2002,7 +2002,7 @@ provider.IDL{
 				Handler: "epoch_transition",
 				Kind: "view",
 				Name: "EpochTransition",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "EpochTransition",
 				},
 			},
@@ -2012,7 +2012,7 @@ provider.IDL{
 				Handler: "epoch_config",
 				Kind: "view",
 				Name: "EpochConfig",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "EpochConfig",
 				},
 			},
@@ -2022,7 +2022,7 @@ provider.IDL{
 				Handler: "epoch_state",
 				Kind: "view",
 				Name: "EpochState",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "EpochState",
 				},
 			},
@@ -2032,7 +2032,7 @@ provider.IDL{
 				Handler: "reward_treasury",
 				Kind: "view",
 				Name: "RewardTreasury",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "RewardTreasury",
 				},
 			},
@@ -2048,7 +2048,7 @@ provider.IDL{
 				Handler: "held_principal",
 				Kind: "view",
 				Name: "HeldPrincipal",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -2064,7 +2064,7 @@ provider.IDL{
 				Handler: "epoch_transition_attempt",
 				Kind: "view",
 				Name: "EpochTransitionAttempt",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "EpochTransitionAttempt",
 				},
 			},
@@ -2080,7 +2080,7 @@ provider.IDL{
 				Handler: "consensus_active_set",
 				Kind: "view",
 				Name: "ConsensusActiveSet",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "ConsensusActiveSet",
 				},
 			},
@@ -2090,7 +2090,7 @@ provider.IDL{
 				Handler: "current_consensus_active_set",
 				Kind: "view",
 				Name: "CurrentConsensusActiveSet",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "ConsensusActiveSet",
 				},
 			},
@@ -2111,7 +2111,7 @@ provider.IDL{
 				Handler: "consensus_active_validator",
 				Kind: "view",
 				Name: "ConsensusActiveValidator",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "option<ConsensusActiveValidator>",
 				},
 			},
@@ -2132,7 +2132,7 @@ provider.IDL{
 				Handler: "consensus_active_validator_index",
 				Kind: "view",
 				Name: "ConsensusActiveValidatorIndex",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "option<u16>",
 				},
 			},
@@ -2153,7 +2153,7 @@ provider.IDL{
 				Handler: "consensus_active_validator_index_by_pubkey",
 				Kind: "view",
 				Name: "ConsensusActiveValidatorIndexByPubkey",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "option<u16>",
 				},
 			},
@@ -2174,7 +2174,7 @@ provider.IDL{
 				Handler: "consensus_active_validators_by_bitmap",
 				Kind: "view",
 				Name: "ConsensusActiveValidatorsByBitmap",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "vec<ConsensusActiveValidator>",
 				},
 			},
@@ -3247,7 +3247,7 @@ provider.IDL{
 				Handler: "add_key",
 				Kind: "entry",
 				Name: "AddKey",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u8",
 				},
 			},
@@ -3309,7 +3309,7 @@ provider.IDL{
 				Handler: "add_service",
 				Kind: "entry",
 				Name: "AddService",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u8",
 				},
 			},
@@ -3484,7 +3484,7 @@ provider.IDL{
 				Handler: "vc_attestation_core",
 				Kind: "view",
 				Name: "VcAttestationCore",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "VcAttestationCore",
 				},
 			},
@@ -3510,7 +3510,7 @@ provider.IDL{
 				Handler: "vc_attestation_lifecycle",
 				Kind: "view",
 				Name: "VcAttestationLifecycle",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "VcAttestationLifecycle",
 				},
 			},
@@ -3531,7 +3531,7 @@ provider.IDL{
 				Handler: "accepted_vc_issuer_index_meta",
 				Kind: "view",
 				Name: "AcceptedVcIssuerIndexMeta",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "String",
 				},
 			},
@@ -3552,7 +3552,7 @@ provider.IDL{
 				Handler: "accepted_vc_issuers",
 				Kind: "view",
 				Name: "AcceptedVcIssuers",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "vec<AcceptedVcIssuer>",
 				},
 			},
@@ -3583,7 +3583,7 @@ provider.IDL{
 				Handler: "has_valid_vc_from_issuer",
 				Kind: "view",
 				Name: "HasValidVcFromIssuer",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "bool",
 				},
 			},
@@ -3599,7 +3599,7 @@ provider.IDL{
 				Handler: "core",
 				Kind: "view",
 				Name: "Core",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DidCoreState",
 				},
 			},
@@ -3615,7 +3615,7 @@ provider.IDL{
 				Handler: "document",
 				Kind: "view",
 				Name: "Document",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DidDocumentState",
 				},
 			},
@@ -3631,7 +3631,7 @@ provider.IDL{
 				Handler: "key_index",
 				Kind: "view",
 				Name: "KeyIndex",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DidKeyIndexState",
 				},
 			},
@@ -3647,7 +3647,7 @@ provider.IDL{
 				Handler: "keys",
 				Kind: "view",
 				Name: "Keys",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "vec<DidKey>",
 				},
 			},
@@ -3668,7 +3668,7 @@ provider.IDL{
 				Handler: "key",
 				Kind: "view",
 				Name: "Key",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DidKey",
 				},
 			},
@@ -3684,7 +3684,7 @@ provider.IDL{
 				Handler: "service_index",
 				Kind: "view",
 				Name: "ServiceIndex",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DidServiceIndexState",
 				},
 			},
@@ -3700,7 +3700,7 @@ provider.IDL{
 				Handler: "services",
 				Kind: "view",
 				Name: "Services",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "vec<DidService>",
 				},
 			},
@@ -3721,7 +3721,7 @@ provider.IDL{
 				Handler: "service",
 				Kind: "view",
 				Name: "Service",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DidService",
 				},
 			},
@@ -3737,7 +3737,7 @@ provider.IDL{
 				Handler: "alias",
 				Kind: "view",
 				Name: "Alias",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DidAliasState",
 				},
 			},
@@ -3753,7 +3753,7 @@ provider.IDL{
 				Handler: "avatar",
 				Kind: "view",
 				Name: "Avatar",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DidAvatarState",
 				},
 			},
@@ -3769,7 +3769,7 @@ provider.IDL{
 				Handler: "updated_at",
 				Kind: "view",
 				Name: "UpdatedAt",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -3785,7 +3785,7 @@ provider.IDL{
 				Handler: "deactivated",
 				Kind: "view",
 				Name: "Deactivated",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "bool",
 				},
 			},
@@ -3801,7 +3801,7 @@ provider.IDL{
 				Handler: "name_binding",
 				Kind: "view",
 				Name: "NameBinding",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DidNameBinding",
 				},
 			},
@@ -3817,7 +3817,7 @@ provider.IDL{
 				Handler: "credential_definition",
 				Kind: "view",
 				Name: "CredentialDefinition",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "CredentialDefinition",
 				},
 			},
@@ -3833,7 +3833,7 @@ provider.IDL{
 				Handler: "organization_capabilities",
 				Kind: "view",
 				Name: "OrganizationCapabilities",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "OrganizationCapabilities",
 				},
 			},
@@ -3849,7 +3849,7 @@ provider.IDL{
 				Handler: "organization_status",
 				Kind: "view",
 				Name: "OrganizationStatus",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "OrganizationStatus",
 				},
 			},
@@ -3865,7 +3865,7 @@ provider.IDL{
 				Handler: "organization_updated_at",
 				Kind: "view",
 				Name: "OrganizationUpdatedAt",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -4984,7 +4984,7 @@ provider.IDL{
 				Handler: "collection_metadata",
 				Kind: "view",
 				Name: "CollectionMetadata",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "CollectionMetadata",
 				},
 			},
@@ -5000,7 +5000,7 @@ provider.IDL{
 				Handler: "metadata_uri",
 				Kind: "view",
 				Name: "MetadataUri",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "String",
 				},
 			},
@@ -5016,7 +5016,7 @@ provider.IDL{
 				Handler: "attributes",
 				Kind: "view",
 				Name: "Attributes",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "vec<MetadataAttribute>",
 				},
 			},
@@ -5032,7 +5032,7 @@ provider.IDL{
 				Handler: "properties",
 				Kind: "view",
 				Name: "Properties",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "vec<MetadataProperty>",
 				},
 			},
@@ -5048,7 +5048,7 @@ provider.IDL{
 				Handler: "mint_config_view",
 				Kind: "view",
 				Name: "MintConfigView",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "MintConfig",
 				},
 			},
@@ -5064,7 +5064,7 @@ provider.IDL{
 				Handler: "total_supply",
 				Kind: "view",
 				Name: "TotalSupply",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -5085,7 +5085,7 @@ provider.IDL{
 				Handler: "balance_of",
 				Kind: "view",
 				Name: "BalanceOf",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -5101,7 +5101,7 @@ provider.IDL{
 				Handler: "royalty_info",
 				Kind: "view",
 				Name: "RoyaltyInfo",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "Royalty",
 				},
 			},
@@ -5435,7 +5435,7 @@ provider.IDL{
 				Handler: "latest_beacon",
 				Kind: "view",
 				Name: "LatestBeacon",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "BeaconRecordV1",
 				},
 			},
@@ -5451,7 +5451,7 @@ provider.IDL{
 				Handler: "beacon",
 				Kind: "view",
 				Name: "Beacon",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "BeaconRecordV1",
 				},
 			},
@@ -5677,7 +5677,7 @@ provider.IDL{
 				Handler: "order_balance",
 				Kind: "view",
 				Name: "OrderBalance",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -5693,7 +5693,7 @@ provider.IDL{
 				Handler: "open_gas_sponsor_pool",
 				Kind: "entry",
 				Name: "OpenGasSponsorPool",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u16",
 				},
 				SignerLookups: provider.SignerLookups{
@@ -5747,7 +5747,7 @@ provider.IDL{
 				Handler: "sponsor_pool_of",
 				Kind: "view",
 				Name: "SponsorPoolOf",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "Address",
 				},
 			},
@@ -5858,7 +5858,7 @@ provider.IDL{
 				Handler: "label_of",
 				Kind: "view",
 				Name: "LabelOf",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "Label",
 				},
 			},
@@ -5879,7 +5879,7 @@ provider.IDL{
 				Handler: "score_of",
 				Kind: "view",
 				Name: "ScoreOf",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -5932,7 +5932,7 @@ provider.IDL{
 				Handler: "tier_cap_of",
 				Kind: "view",
 				Name: "TierCapOf",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
 			},
@@ -5948,7 +5948,7 @@ provider.IDL{
 				Handler: "echo_mode",
 				Kind: "view",
 				Name: "EchoMode",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "DemoMode",
 				},
 			},
@@ -5964,7 +5964,7 @@ provider.IDL{
 				Handler: "label_total",
 				Kind: "view",
 				Name: "LabelTotal",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u32",
 				},
 			},
@@ -6000,7 +6000,7 @@ provider.IDL{
 				Handler: "special_types",
 				Kind: "view",
 				Name: "SpecialTypes",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "u32",
 				},
 			},
@@ -6057,7 +6057,7 @@ provider.IDL{
 				Handler: "reveal",
 				Kind: "view",
 				Name: "Reveal",
-				Returns: &provider.ReturnValue{
+				Returns: provider.ReturnValue{
 					Type: "RevealRecord",
 				},
 			},

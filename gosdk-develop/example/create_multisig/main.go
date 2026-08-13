@@ -10,10 +10,14 @@ import (
 	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
+func main() {
+	example(milon.DevNet)
+}
+
 func example(networkConfig milon.Network) {
 	client := milon.NewClient(networkConfig)
 
-	// 创建 4 个签名者：signerMultiSig 为多签钱包创建者，signerA/B/C 为多签参与者
+	// Create 4 signers: signerMultiSig is the multisig wallet creator, signerA/B/C are the participants
 	signerMultiSig := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	signerA := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	signerB := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
@@ -33,20 +37,20 @@ func example(networkConfig milon.Network) {
 
 	fmt.Printf("accountMultiSig = %v \n\n", accountMultiSig)
 
-	// 为多签钱包领取初始代币（此时还是普通账户，由创建者单签）
+	// Claim initial MIL for the multisig wallet (still a regular account, signed solo by the creator)
 	if err := client.ClaimFaucet(signerMultiSig, accountMultiSig, lib.PubKeySignatureMode{PublicKey: *pkMultiSig}); err != nil {
 		panic("failed to ClaimFaucet MIL:" + err.Error())
 	}
 
 	fmt.Printf("\n================ 1.CreateMultisig ================\n")
 
-	// 1. 编码指令：创建多签账户，签名者列表 [pkA, pkB, pkC]（位置 0/1/2），权重 [10,20,30]，阈值 40
+	// 1. Encode instruction: create multisig account with signers [pkA, pkB, pkC] (positions 0/1/2), weights [1,2,3], threshold 4
 	wire, err := gen.Account.CreateMultisig.Args(accountMultiSig, []*crypto.PublicKey{pkA, pkB, pkC}, []uint8{1, 2, 3}, 4).Encode()
 	if err != nil {
 		panic("failed to encode CreateMultisig instruction:" + err.Error())
 	}
 
-	// 2. 提交交易上链：统付模式，创建者单签 ix0 + gas（bit63）
+	// 2. Submit transaction: unified payer mode, creator signs ix0 + gas (bit63) solo
 	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).WithPayer(accountMultiSig).
 		AddIxAndPayerSig(*accountMultiSig, signerMultiSig, 0, lib.PubKeySignatureMode{PublicKey: *pkMultiSig}).
 		Build()
@@ -58,7 +62,7 @@ func example(networkConfig milon.Network) {
 		panic("failed to submit transaction:" + err.Error())
 	}
 
-	// 3. 等待交易完成
+	// 3. Wait for the transaction to complete
 	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
 	getTxByHashResult, err := client.WaitForTransaction(tx.TxHash())
 	if err != nil {
@@ -72,14 +76,14 @@ func example(networkConfig milon.Network) {
 
 	fmt.Printf("\n================ 2.transfer MIL ================\n")
 
-	// 1. 编码指令：从多签钱包转账 1000 MIL 给 accountA
+	// 1. Encode instruction: transfer 1000 MIL from the multisig wallet to accountA
 	wire, err = gen.Token.Transfer.Args(accountMultiSig, api.MILToken, accountA, 1000).Encode()
 	if err != nil {
 		panic("failed to encode Transfer instruction:" + err.Error())
 	}
 
-	// 2. 构建交易：统付模式（WithPayer），gas 由多签钱包支付。
-	//    同一 builder 复用（Stamp 固定）→ 模拟与真签的 TxHash 一致。
+	// 2. Build transaction: unified payer mode (WithPayer), gas paid by the multisig wallet.
+	//    Reuse the same builder (fixed Stamp) -> simulate and real sign produce the same TxHash.
 	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).WithPayer(accountMultiSig)
 
 	tx, err = builder.Build()
@@ -89,18 +93,19 @@ func example(networkConfig milon.Network) {
 	txHash := tx.TxHash()
 	ixPart := []lib.IxHashItem{{Index: 0, Hash: tx.IxHashes()[0]}}
 
-	// 3. 先模拟：参与者生成全零占位符签名（长度与真签一致），合并为一条多签签名。
-	//    统付模式：多签签名授权 ix0 + gas（bit63）。
-	//    （pkB 位置 1、pkC 位置 2，权重 20+30 >= 阈值 40。）
+	// 3. Simulate first: participants generate all-zero placeholder signatures (same length as real ones),
+	//    merged into one multisig signature.
+	//    Unified payer mode: the multisig signature authorizes ix0 + gas (bit63).
+	//    (pkB at position 1, pkC at position 2; weights 2+3 >= threshold 4.)
 	simSig, err := lib.NewAccountSignatureBuilder().AuthorizeIxAndPayer(0).
-		SimulateSignMultisigKey(lib.MultisigKeySignatureMode{Index: 1, PublicKey: *pkB}). // 参与者 signerB（位置 1）
-		SimulateSignMultisigKey(lib.MultisigKeySignatureMode{Index: 2, PublicKey: *pkC}). // 参与者 signerC（位置 2）
+		SimulateSignMultisigKey(lib.MultisigKeySignatureMode{Index: 1, PublicKey: *pkB}). // participant signerB (position 1)
+		SimulateSignMultisigKey(lib.MultisigKeySignatureMode{Index: 2, PublicKey: *pkC}). // participant signerC (position 2)
 		Build()
 	if err != nil {
 		panic("failed to build simulated multisig signature:" + err.Error())
 	}
 
-	// 4. 链上模拟（dry-run，无需私钥）
+	// 4. Simulate on-chain (dry-run, no private key needed)
 	simulateTx, err := builder.AddSignature(*accountMultiSig, *simSig).Build()
 	if err != nil {
 		panic("failed to build simulated transaction:" + err.Error())
@@ -112,10 +117,10 @@ func example(networkConfig milon.Network) {
 	helper.CheckSimulateSuccess(simulateResult)
 	fmt.Printf("simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
 
-	// 5. 模拟通过后清空占位符，换真实多签签名（同一 builder → TxHash 不变）
+	// 5. After simulation passes, reset placeholders and sign with the real multisig signature (same builder -> same TxHash)
 	multisigSig, err := lib.NewAccountSignatureBuilder().AuthorizeIxAndPayer(0).
-		SignMultisigKey(*accountMultiSig, signerB, txHash, ixPart, lib.MultisigKeySignatureMode{Index: 1, PublicKey: *pkB}). // 参与者 signerB（位置 1）
-		SignMultisigKey(*accountMultiSig, signerC, txHash, ixPart, lib.MultisigKeySignatureMode{Index: 2, PublicKey: *pkC}). // 参与者 signerC（位置 2）
+		SignMultisigKey(*accountMultiSig, signerB, txHash, ixPart, lib.MultisigKeySignatureMode{Index: 1, PublicKey: *pkB}). // participant signerB (position 1)
+		SignMultisigKey(*accountMultiSig, signerC, txHash, ixPart, lib.MultisigKeySignatureMode{Index: 2, PublicKey: *pkC}). // participant signerC (position 2)
 		Build()
 	if err != nil {
 		panic("failed to build multisig signature:" + err.Error())
@@ -129,7 +134,7 @@ func example(networkConfig milon.Network) {
 		panic("failed to submit transaction:" + err.Error())
 	}
 
-	// 6. 等待交易完成
+	// 6. Wait for the transaction to complete
 	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
 	getTxByHashResult, err = client.WaitForTransaction(tx.TxHash())
 	if err != nil {

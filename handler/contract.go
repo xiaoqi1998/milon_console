@@ -68,13 +68,6 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q", req.AppName), nil))
 		return
 	}
-	var err error
-	req.Args, err = pd.NormalizeArgs(req.MethodName, req.Args)
-	if err != nil {
-		logParamError(c, "ReadContract", err)
-		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("invalid arguments for %s.%s: %s", req.AppName, req.MethodName, err.Error()), nil))
-		return
-	}
 	wire, err := pd.Encode(req.MethodName, req.Args)
 	if err != nil {
 		logParamError(c, "ReadContract", err)
@@ -140,13 +133,6 @@ func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 		if !ok {
 			logParamError(c, "ReadContractMulti", fmt.Errorf("IDL app %q not found", ix.AppName))
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q (instruction %d)", ix.AppName, i), nil))
-			return
-		}
-		var err error
-		ix.Args, err = pd.NormalizeArgs(ix.MethodName, ix.Args)
-		if err != nil {
-			logParamError(c, "ReadContractMulti", err)
-			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("invalid arguments for instruction %d (%s.%s): %s", i, ix.AppName, ix.MethodName, err.Error()), nil))
 			return
 		}
 		wire, err := pd.Encode(ix.MethodName, ix.Args)
@@ -252,11 +238,6 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 	pd, ok := mc.GetAllPd()[req.AppName]
 	if !ok {
 		return nil, fmt.Errorf("failed to load IDL: app %q not found", req.AppName)
-	}
-	var err error
-	req.Args, err = pd.NormalizeArgs(req.MethodName, req.Args)
-	if err != nil {
-		return nil, fmt.Errorf("invalid arguments for %s.%s: %w", req.AppName, req.MethodName, err)
 	}
 	wire, err := pd.Encode(req.MethodName, req.Args)
 	if err != nil {
@@ -673,11 +654,6 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 	pd, ok := mc.GetAllPd()[req.AppName]
 	if !ok {
 		return "", fmt.Errorf("failed to load IDL: app %q not found", req.AppName)
-	}
-	var err error
-	req.Args, err = pd.NormalizeArgs(req.MethodName, req.Args)
-	if err != nil {
-		return "", fmt.Errorf("invalid arguments for %s.%s: %w", req.AppName, req.MethodName, err)
 	}
 	wire, err := pd.Encode(req.MethodName, req.Args)
 	if err != nil {

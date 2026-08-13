@@ -338,7 +338,7 @@ func (c *rpcClientV1) AccountSignerBit(account *crypto.Address) (types.Bitmap64,
 	if !ok || bm == 0 {
 		return types.NewBitmap64(0), fmt.Errorf("unexpected account bitmap: %v", accountMap["bitmap"])
 	}
-	// 单签名账户的 bitmap 中恰好只有一个置位。
+	// A single-signer account's bitmap has exactly one bit set.
 	lowest := bm & -bm
 	if bm != lowest {
 		return types.NewBitmap64(0), fmt.Errorf("account %v bitmap %#x has multiple signer slots; use multisig signing instead", account, bm)

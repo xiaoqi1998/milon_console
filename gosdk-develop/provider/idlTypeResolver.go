@@ -1,35 +1,61 @@
 package provider
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+	"sync"
+)
 
-// IDLTypeResolver resolves type_tag values into raw byte ranges by reusing the
-// provider's IDL-driven deserializer. It is used by the api package to decode
-// resources and events without knowing the concrete Go types in advance.
+// IDLTypeResolver resolves typeTag values into raw byte ranges using the
+// provider's IDL-driven deserializer, so the api package can decode resources
+// and events without knowing concrete Go types in advance.
 type IDLTypeResolver struct {
+	// Providers maps IDL name -> Provider. It must be fully populated before
+	// the first decode call and must not be mutated afterwards; the typeTag
+	// indexes are built lazily on first use (thread-safe).
 	Providers map[string]*Provider
+
+	once                   sync.Once
+	providerByTypeTag      map[uint64]*Provider // resource typeTag -> Provider
+	providerByEventTypeTag map[uint64]*Provider // event typeTag -> Provider
 }
 
-// DecodeResource consumes the bytes of the value registered under typeTag and
-// returns the consumed slice plus the remaining bytes.
-func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueBytes []byte, remaining []byte, err error) {
-	// Find the provider that registered this type_tag
-	var targetProvider *Provider
-	var targetIDLType *IDLType
-
-	for _, pd := range r.Providers {
-		if idlType, ok := pd.GetIDLTypeByTypeTag(typeTag); ok {
-			targetProvider = pd
-			targetIDLType = idlType
-			break
+// buildIndexes precomputes typeTag -> Provider maps for O(1) lookups.
+// On collisions the first registered provider wins (deterministic).
+func (r *IDLTypeResolver) buildIndexes() {
+	r.providerByTypeTag = make(map[uint64]*Provider)
+	r.providerByEventTypeTag = make(map[uint64]*Provider)
+	names := make([]string, 0, len(r.Providers))
+	for name := range r.Providers {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		pd := r.Providers[name]
+		for typeTag := range pd.IDLTypeByTypeTag {
+			if _, ok := r.providerByTypeTag[typeTag]; !ok {
+				r.providerByTypeTag[typeTag] = pd
+			}
+		}
+		for typeTag := range pd.EventByTypeTag {
+			if _, ok := r.providerByEventTypeTag[typeTag]; !ok {
+				r.providerByEventTypeTag[typeTag] = pd
+			}
 		}
 	}
+}
 
-	if targetProvider == nil || targetIDLType == nil {
-		// Type tag definition not found; report error to help user check the IDL
+// DecodeResource returns the consumed bytes of the value registered under
+// typeTag plus the remaining bytes.
+func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueBytes []byte, remaining []byte, err error) {
+	r.once.Do(r.buildIndexes)
+
+	targetProvider := r.providerByTypeTag[typeTag]
+	if targetProvider == nil {
 		return nil, bytes, fmt.Errorf("unknown resource type_tag %d (not found in any loaded IDL)", typeTag)
 	}
+	targetIDLType, _ := targetProvider.GetIDLTypeByTypeTag(typeTag)
 
-	// Reuse the provider deserializer to compute the consumed byte range
 	offset := 0
 	if _, err = targetProvider.deserializeValue(targetIDLType.Name, bytes, &offset); err != nil {
 		return nil, bytes, fmt.Errorf("deserialize %s failed: %w", targetIDLType.Name, err)
@@ -38,27 +64,17 @@ func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueByt
 	return bytes[:offset], bytes[offset:], nil
 }
 
-// DecodeEvent consumes the bytes of the event registered under typeTag and
-// returns the consumed slice plus the remaining bytes.
+// DecodeEvent returns the consumed bytes of the event registered under
+// typeTag plus the remaining bytes.
 func (r *IDLTypeResolver) DecodeEvent(typeTag uint64, bytes []byte) (eventBytes []byte, remaining []byte, err error) {
-	// Find the provider that registered this event type_tag
-	var targetProvider *Provider
-	var targetEvent *Event
+	r.once.Do(r.buildIndexes)
 
-	for _, pd := range r.Providers {
-		if event, ok := pd.GetEventByTypeTag(typeTag); ok {
-			targetProvider = pd
-			targetEvent = event
-			break
-		}
-	}
-
-	if targetProvider == nil || targetEvent == nil {
-		// Event definition not found; report error to help user check the IDL
+	targetProvider := r.providerByEventTypeTag[typeTag]
+	if targetProvider == nil {
 		return nil, nil, fmt.Errorf("unknown event type_tag %d (not found in any loaded IDL)", typeTag)
 	}
+	targetEvent, _ := targetProvider.GetEventByTypeTag(typeTag)
 
-	// Reuse the provider deserializer to consume each field in order
 	offset := 0
 	for _, field := range targetEvent.Fields {
 		if _, err = targetProvider.deserializeValue(field.Type, bytes, &offset); err != nil {

@@ -100,7 +100,7 @@ func buildAppMeta(name string, pd *provider.Provider) idlAppMeta {
 			Sponsor:       ix.Sponsor,
 		}
 
-		if ix.Returns != nil {
+		if ix.Returns.Type != "" {
 			meta.Returns = &idlReturnMeta{Type: ix.Returns.Type}
 		}
 

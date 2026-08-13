@@ -3,15 +3,20 @@ package provider
 import (
 	"fmt"
 	"github.com/milon-labs/milon-go-sdk/crypto"
+	"sort"
 	"strings"
 )
 
 type IDLRegistry struct {
-	providerByAppID map[uint8]*Provider // app_id -> Provider
+	providerByAppID        map[uint8]*Provider  // app_id -> Provider
+	providerByName         map[string]*Provider // app name -> Provider (O(1) lookup for DecodeViewDatas)
+	providerByEventTypeTag map[uint64]*Provider // event typeTag -> Provider (global index)
 }
 
 func NewIDLRegistry(providerByIDLName map[string]*Provider) (*IDLRegistry, error) {
-	providerByAppID := make(map[uint8]*Provider)
+	providerByAppID := make(map[uint8]*Provider, len(providerByIDLName))
+	providerByName := make(map[string]*Provider, len(providerByIDLName))
+	providerByEventTypeTag := make(map[uint64]*Provider)
 
 	for _, pd := range providerByIDLName {
 		appID := pd.appID()
@@ -19,24 +24,34 @@ func NewIDLRegistry(providerByIDLName map[string]*Provider) (*IDLRegistry, error
 			return nil, fmt.Errorf("duplicate app_id: %d", appID)
 		}
 		providerByAppID[appID] = pd
+
+		name := pd.IDL.Metadata.Name
+		if name != "" {
+			if _, ok := providerByName[name]; ok {
+				return nil, fmt.Errorf("duplicate app name: %s", name)
+			}
+			providerByName[name] = pd
+		}
+
+		// event typeTags must be unique across all loaded IDLs, otherwise
+		// event decoding would be ambiguous.
+		for typeTag := range pd.EventByTypeTag {
+			if _, ok := providerByEventTypeTag[typeTag]; ok {
+				return nil, fmt.Errorf("duplicate event type_tag %d across loaded IDLs", typeTag)
+			}
+			providerByEventTypeTag[typeTag] = pd
+		}
 	}
 
 	return &IDLRegistry{
-		providerByAppID: providerByAppID,
+		providerByAppID:        providerByAppID,
+		providerByName:         providerByName,
+		providerByEventTypeTag: providerByEventTypeTag,
 	}, nil
 }
 
-// DecodeInstructions decodes multiple packed instructions in batch.
-// Each element must be a wire-encoded instruction (app_id + discriminator + args).
-//
-//	decodedList, err := manager.DecodeInstructions(instructions)
-//	if err != nil {
-//	    log.Fatalf("failed to decode instructions: %v", err)
-//	}
-//	for i, decoded := range decodedList {
-//	    fmt.Printf("[%d] %s::%s\n", i, decoded["app_name"], decoded["instruction_name"])
-//	    fmt.Printf("    Args: %v\n", decoded["args"])
-//	}
+// DecodeInstructions decodes multiple packed instructions in batch; each
+// element must be a wire-encoded instruction (app_id + discriminator + args).
 func (m *IDLRegistry) DecodeInstructions(instructions [][]byte) ([]map[string]any, error) {
 	results := make([]map[string]any, len(instructions))
 	for i, instr := range instructions {
@@ -58,25 +73,22 @@ func (m *IDLRegistry) DecodeInstruction(instruction []byte) (map[string]any, err
 	appID := instruction[0]
 	offset := 1
 
-	// discriminator (u16 LE little-endian encoding, 2 bytes)
+	// discriminator (u16 LE, 2 bytes)
 	discriminatorLow := uint64(instruction[offset])
 	discriminatorHigh := uint64(instruction[offset+1])
 	discriminator := discriminatorLow | (discriminatorHigh << 8)
 	offset += 2
 
-	// Find provider by app_id
 	provider, ok := m.providerByAppID[appID]
 	if !ok {
 		return nil, fmt.Errorf("unknown app_id: %d", appID)
 	}
 
-	// Use index to quickly find matching instruction
 	matchedInstruction, ok := provider.InstructionByDiscriminator[uint16(discriminator)]
 	if !ok {
 		return nil, fmt.Errorf("unknown discriminator: %d (app: %s)", discriminator, provider.IDL.Metadata.Name)
 	}
 
-	// Decode arguments
 	args := make(map[string]any, len(matchedInstruction.Args))
 	for _, arg := range matchedInstruction.Args {
 		value, err := provider.deserializeValue(arg.Type, instruction, &offset)
@@ -100,35 +112,79 @@ func (m *IDLRegistry) DecodeInstruction(instruction []byte) (map[string]any, err
 	}, nil
 }
 
-// DecodeEventDataByTag decodes event data based on typeTag
-func (m *IDLRegistry) DecodeEventDataByTag(typeTag uint64, data []byte) (map[string]any, error) {
-	// Find the provider that registered this event type_tag
-	var matchedProvider *Provider
-	var matchedEvent *Event
+// DecodeViewDatas decodes a view response body where each Result corresponds
+// to a different method; instructionNames use "appName::methodName" format.
+func (m *IDLRegistry) DecodeViewDatas(appNameAndInstructionNames []string, body []byte) ([]DecodedTaggedValue, error) {
+	offset := 0
 
-	for _, pd := range m.providerByAppID {
-		if event, ok := pd.GetEventByTypeTag(typeTag); ok {
-			matchedProvider = pd
-			matchedEvent = event
-			break
-		}
+	// 1. vec length (result count)
+	resultCount, err := decodeViewVarUint(body, &offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode result count: %w", err)
 	}
 
-	if matchedProvider == nil || matchedEvent == nil {
+	if int(resultCount) != len(appNameAndInstructionNames) {
+		return nil, fmt.Errorf("result count %d does not match instruction count %d", resultCount, len(appNameAndInstructionNames))
+	}
+
+	results := make([]DecodedTaggedValue, resultCount)
+
+	// 2. each Result item, decoded by the corresponding instruction's return type
+	for i := uint64(0); i < resultCount; i++ {
+		parts := strings.Split(appNameAndInstructionNames[i], "::")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("result[%d]: invalid format %q (expected appName::methodName)", i, appNameAndInstructionNames[i])
+		}
+
+		matchedProvider := m.providerByName[parts[0]]
+		if matchedProvider == nil {
+			return nil, fmt.Errorf("result[%d]: unknown app %q", i, parts[0])
+		}
+
+		instruction, err := matchedProvider.GetInstructionByName(parts[1])
+		if err != nil {
+			return nil, fmt.Errorf("result[%d]: %w", i, err)
+		}
+
+		if instruction.Kind != "view" {
+			return nil, fmt.Errorf("result[%d]: %s kind=%s, expected view", i, appNameAndInstructionNames[i], instruction.Kind)
+		}
+
+		returnType := strings.TrimSpace(instruction.Returns.Type)
+		if returnType == "" {
+			return nil, fmt.Errorf("result[%d]: %s has no returns.type in IDL", i, appNameAndInstructionNames[i])
+		}
+
+		value, err := decodeViewResultItem(matchedProvider, returnType, body, &offset)
+		if err != nil {
+			return nil, fmt.Errorf("result[%d]: %w", i, err)
+		}
+		results[i] = value
+	}
+
+	if offset != len(body) {
+		return nil, fmt.Errorf("%d trailing bytes after decoding %d view results", len(body)-offset, resultCount)
+	}
+
+	return results, nil
+}
+
+// DecodeEventDataByTag decodes event data by its typeTag.
+func (m *IDLRegistry) DecodeEventDataByTag(typeTag uint64, data []byte) (map[string]any, error) {
+	matchedProvider := m.providerByEventTypeTag[typeTag]
+	if matchedProvider == nil {
 		return nil, fmt.Errorf("unknown type tag: %d (loaded %d IDLs)", typeTag, len(m.providerByAppID))
 	}
+	matchedEvent, _ := matchedProvider.GetEventByTypeTag(typeTag)
 
-	// Decode all fields in order; skip a leading type_tag prefix when present.
+	// Skip a leading type_tag varint prefix when present.
 	offset := 0
-	savedOffset := offset
 	if storedTypeTag, err := decodeViewVarUint(data, &offset); err == nil && storedTypeTag == typeTag {
-		// Leading typeTag matched, skip it
+		// matched, keep offset
 	} else {
-		// No matching typeTag prefix, decode fields from start
-		offset = savedOffset
+		offset = 0
 	}
 
-	// Decode all fields in order
 	record := make(map[string]any)
 	for _, field := range matchedEvent.Fields {
 		if offset >= len(data) {
@@ -155,86 +211,7 @@ func (m *IDLRegistry) DecodeEventDataByTag(typeTag uint64, data []byte) (map[str
 	}, nil
 }
 
-// DecodeViewDatas decodes view response body where each result corresponds
-// to a different instruction method. instructionNames format: "appName::methodName"
-//
-//	results, err := manager.DecodeViewDatas(
-//	    []string{
-//	        "token::BalanceOf",
-//	        "token::Metadata",
-//	        "token::BalanceOf",
-//	        "token::TotalSupply",
-//	    },
-//	    viewMultiTransactionResult.HTTPResponseBody,
-//	)
-func (m *IDLRegistry) DecodeViewDatas(appNameAndInstructionNames []string, body []byte) ([]DecodedTaggedValue, error) {
-	offset := 0
-
-	// 1. Read Vec length (result count)
-	resultCount, err := decodeViewVarUint(body, &offset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode result count: %w", err)
-	}
-
-	if int(resultCount) != len(appNameAndInstructionNames) {
-		return nil, fmt.Errorf("result count %d does not match instruction count %d", resultCount, len(appNameAndInstructionNames))
-	}
-
-	results := make([]DecodedTaggedValue, resultCount)
-
-	// 2. Decode each Result item using the corresponding instruction's return type
-	for i := uint64(0); i < resultCount; i++ {
-		// Parse "appName::instructionName"
-		parts := strings.Split(appNameAndInstructionNames[i], "::")
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("result[%d]: invalid format %q (expected appName::methodName)", i, appNameAndInstructionNames[i])
-		}
-
-		// Find provider by app name
-		var matchedProvider *Provider
-		for _, pd := range m.providerByAppID {
-			if pd.IDL.Metadata.Name == parts[0] {
-				matchedProvider = pd
-				break
-			}
-		}
-		if matchedProvider == nil {
-			return nil, fmt.Errorf("result[%d]: unknown app %q", i, parts[0])
-		}
-
-		// Get instruction by name
-		instruction, err := matchedProvider.GetInstructionByName(parts[1])
-		if err != nil {
-			return nil, fmt.Errorf("result[%d]: %w", i, err)
-		}
-
-		// Verify instruction type, must be view type
-		if instruction.Kind != "view" {
-			return nil, fmt.Errorf("result[%d]: %s kind=%s, expected view", i, appNameAndInstructionNames[i], instruction.Kind)
-		}
-
-		// Get return value type definition
-		returnType := strings.TrimSpace(instruction.Returns.Type)
-		if returnType == "" {
-			return nil, fmt.Errorf("result[%d]: %s has no returns.type in IDL", i, appNameAndInstructionNames[i])
-		}
-
-		value, err := decodeViewResultItem(matchedProvider, returnType, body, &offset)
-		if err != nil {
-			return nil, fmt.Errorf("result[%d]: %w", i, err)
-		}
-		results[i] = value
-	}
-
-	// Verify no unparsed data remains
-	if offset != len(body) {
-		return nil, fmt.Errorf("%d trailing bytes after decoding %d view results", len(body)-offset, resultCount)
-	}
-
-	return results, nil
-}
-
-// FormatDecodedInstruction formats decoded instruction into readable string
+// FormatDecodedInstruction formats decoded instruction into readable string.
 func (m *IDLRegistry) FormatDecodedInstruction(decoded map[string]any) string {
 	appId, _ := decoded["app_id"].(uint8)
 	appName, _ := decoded["app_name"].(string)
@@ -251,8 +228,15 @@ func (m *IDLRegistry) FormatDecodedInstruction(decoded map[string]any) string {
 	sb.WriteString("    fields: [\n")
 
 	args, _ := decoded["args"].(map[string]any)
+	// Sort keys so the formatted output is deterministic
+	argNames := make([]string, 0, len(args))
+	for name := range args {
+		argNames = append(argNames, name)
+	}
+	sort.Strings(argNames)
+
 	first := true
-	for name, value := range args {
+	for _, name := range argNames {
 		if !first {
 			sb.WriteString(",\n")
 		}
@@ -260,7 +244,7 @@ func (m *IDLRegistry) FormatDecodedInstruction(decoded map[string]any) string {
 
 		sb.WriteString(fmt.Sprintf("        NamedToken {\n"))
 		sb.WriteString(fmt.Sprintf("            name: \"%s\",\n", name))
-		sb.WriteString(fmt.Sprintf("            value: %s,\n", m.formatValue(value)))
+		sb.WriteString(fmt.Sprintf("            value: %s,\n", m.formatValue(args[name])))
 		sb.WriteString("        }")
 	}
 

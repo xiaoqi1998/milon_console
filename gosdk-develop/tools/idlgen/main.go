@@ -111,7 +111,7 @@ func generate(apps []appInfo, pkg string) (string, error) {
 			for _, arg := range ix.Args {
 				goReturnType(arg.Type, &imp, app.name, types)
 			}
-			if ix.Kind == "view" && ix.Returns != nil {
+			if ix.Kind == "view" && ix.Returns.Type != "" {
 				goReturnType(ix.Returns.Type, &imp, app.name, types)
 			}
 		}
@@ -727,7 +727,7 @@ func generateIx(b *strings.Builder, app appInfo, ix provider.Instruction, imp *i
 	for _, arg := range ix.Args {
 		params = append(params, fmt.Sprintf("%s %s", goParamName(arg.Name), goReturnType(arg.Type, imp, app.name, typeByName)))
 	}
-	fmt.Fprintf(b, strings.Join(params, ", "))
+	b.WriteString(strings.Join(params, ", "))
 	fmt.Fprintf(b, ") *%s {\n", argsType)
 	fmt.Fprintf(b, "\treturn &%s{\n", argsType)
 	for _, arg := range ix.Args {
@@ -752,7 +752,7 @@ func generateIx(b *strings.Builder, app appInfo, ix provider.Instruction, imp *i
 	fmt.Fprintf(b, "\treturn api.PackedInstruction(wire), nil\n")
 	fmt.Fprintf(b, "}\n\n")
 
-	if ix.Kind == "view" && ix.Returns != nil {
+	if ix.Kind == "view" && ix.Returns.Type != "" {
 		retType := goReturnType(ix.Returns.Type, imp, app.name, typeByName)
 		fmt.Fprintf(b, "// DecodeView decodes the raw view response body of %s into %s.\n", ix.Name, retType)
 		fmt.Fprintf(b, "func (ix *%s) DecodeView(body []byte) (out %s, err error) {\n", ixType, retType)

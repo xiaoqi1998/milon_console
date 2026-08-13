@@ -1,29 +1,98 @@
 package provider
 
 import (
-	"fmt"
+	"bytes"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/postcard"
 	"github.com/stretchr/testify/assert"
+	"math"
+	"math/big"
 	"testing"
 )
 
-func TestProviderDemoEncode(t *testing.T) {
+func TestProviderDemoEncodeAndDecode(t *testing.T) {
 	pd, err := LoadProviderFromFile("./IDL/demo.idl.json")
 	assert.NoError(t, err)
 
-	_, err = pd.Encode("SpecialTypes", Args{
-		"mode":       map[string]any{"two": map[string]any{"val": 5}},
-		"maybe_note": "note",
-		"tags":       []string{"x", "y"},
-		"labels":     map[string]uint32{"alpha": 10, "beta": 20},
-		"pair":       []any{3, -4},
+	t.Run("enum unit variant", func(t *testing.T) {
+		wire, err := pd.Encode("SpecialTypes", Args{
+			"mode":       "one",
+			"maybe_note": "note",
+			"tags":       []string{},
+			"labels":     map[string]uint32{},
+			"pair":       []any{1, 2},
+		})
+		assert.NoError(t, err)
+
+		decoded, err := pd.Decode("SpecialTypes", wire)
+		assert.NoError(t, err)
+
+		mode := decoded["mode"].(map[string]any)
+		assert.Equal(t, "One", mode["variant"])   // unit: variant name only
+		assert.Equal(t, uint64(0), mode["index"]) // first variant -> index 0
+		assert.NotContains(t, mode, "fields")     // unit carries no data
+
+		assert.Equal(t, "note", decoded["maybe_note"])              // option<String> -> Some("note")
+		assert.Equal(t, []any{}, decoded["tags"])                   // empty vec<String>
+		assert.Equal(t, map[any]any{}, decoded["labels"])           // empty map<String,u32>
+		assert.Equal(t, []any{uint8(1), int16(2)}, decoded["pair"]) // tuple<u8,i16>
 	})
-	assert.NoError(t, err)
+
+	t.Run("enum named variant", func(t *testing.T) {
+		wire, err := pd.Encode("SpecialTypes", Args{
+			"mode":       map[string]any{"two": map[string]any{"val": 5}},
+			"maybe_note": "note",
+			"tags":       []string{"x", "y"},
+			"labels":     map[string]uint32{"alpha": 10},
+			"pair":       []any{3, -4},
+		})
+		assert.NoError(t, err)
+
+		decoded, err := pd.Decode("SpecialTypes", wire)
+		assert.NoError(t, err)
+
+		mode := decoded["mode"].(map[string]any)
+		assert.Equal(t, "Two", mode["variant"])   // decode returns the IDL variant name
+		assert.Equal(t, uint64(1), mode["index"]) // second variant -> index 1
+		assert.Equal(t, uint32(5), mode["val"])   // struct field: u32 -> uint32
+		assert.NotContains(t, mode, "fields")     // struct variant fields are inline
+
+		assert.Equal(t, "note", decoded["maybe_note"])    // option<String> -> Some("note")
+		assert.Equal(t, []any{"x", "y"}, decoded["tags"]) // vec<String>
+		labels, ok := decoded["labels"].(map[any]any)
+		assert.True(t, ok)
+		assert.Len(t, labels, 1)                                     // map<String,u32> with 1 entry
+		assert.Equal(t, uint32(10), labels["alpha"])                 // value u32 -> uint32
+		assert.Equal(t, []any{uint8(3), int16(-4)}, decoded["pair"]) // tuple<u8,i16>
+	})
+
+	t.Run("enum tuple variant", func(t *testing.T) {
+		wire, err := pd.Encode("SpecialTypes", Args{
+			"mode":       map[string]any{"variant": "three", "fields": []any{1, -2}},
+			"maybe_note": "note",
+			"tags":       []string{},
+			"labels":     map[string]uint32{},
+			"pair":       []any{1, 2},
+		})
+		assert.NoError(t, err)
+
+		decoded, err := pd.Decode("SpecialTypes", wire)
+		assert.NoError(t, err)
+
+		mode := decoded["mode"].(map[string]any)
+		assert.Equal(t, "Three", mode["variant"])                   // decode returns the IDL variant name
+		assert.Equal(t, uint64(2), mode["index"])                   // third variant -> index 2
+		assert.Equal(t, []any{uint8(1), int16(-2)}, mode["fields"]) // tuple fields: u8 + i16
+
+		assert.Equal(t, "note", decoded["maybe_note"])              // option<String> -> Some("note")
+		assert.Equal(t, []any{}, decoded["tags"])                   // empty vec<String>
+		assert.Equal(t, map[any]any{}, decoded["labels"])           // empty map<String,u32>
+		assert.Equal(t, []any{uint8(1), int16(2)}, decoded["pair"]) // tuple<u8,i16>
+	})
 }
 
-func TestProviderTokenCreateEncodeAndDecode(t *testing.T) {
+func TestProviderTokenEncodeAndDecode(t *testing.T) {
 	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
 	assert.NoError(t, err)
 
@@ -54,10 +123,6 @@ func TestProviderTokenCreateEncodeAndDecode(t *testing.T) {
 	decodedArgs, err := pd.Decode("Create", createBuf)
 	assert.NoError(t, err)
 
-	fmt.Printf("Deserialization results:\n")
-	fmt.Printf("  token: %v (type: %T)\n", decodedArgs["token"], decodedArgs["token"])
-	fmt.Printf("  owner: %v (type: %T)\n", decodedArgs["owner"], decodedArgs["owner"])
-
 	tokenAddr, ok := decodedArgs["token"].(*crypto.Address)
 	assert.True(t, ok)
 	assert.Equal(t, token.Bytes, tokenAddr.Bytes)
@@ -67,11 +132,6 @@ func TestProviderTokenCreateEncodeAndDecode(t *testing.T) {
 	assert.Equal(t, owner.Bytes, ownerAddr.Bytes)
 
 	if decodedMetadata, ok := decodedArgs["metadata"].(map[string]any); ok {
-		fmt.Printf("  decodedMetadata.name: %#v\n", decodedMetadata["name"])
-		fmt.Printf("  decodedMetadata.symbol: %#v\n", decodedMetadata["symbol"])
-		fmt.Printf("  decodedMetadata.decimals: %#v (type: %T)\n", decodedMetadata["decimals"], decodedMetadata["decimals"])
-		fmt.Printf("  decodedMetadata.icon: %#v\n", decodedMetadata["icon"])
-
 		assert.Equal(t, originalArgs["metadata"].(map[string]any)["name"], decodedMetadata["name"])
 		assert.Equal(t, originalArgs["metadata"].(map[string]any)["symbol"], decodedMetadata["symbol"])
 		assert.Equal(t, originalArgs["metadata"].(map[string]any)["icon"], decodedMetadata["icon"])
@@ -87,49 +147,44 @@ func TestProviderTokenCreateEncodeAndDecode(t *testing.T) {
 	}
 }
 
-func TestProviderTokenMintEncodeAndDecode(t *testing.T) {
+func TestDecode_Errors(t *testing.T) {
 	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
 	assert.NoError(t, err)
 
-	ownerSk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	ownerPk := ownerSk.Ed25519Public()
-	owner, err := crypto.NewAddressFromPublicKey(ownerPk)
+	token, err := crypto.NewAddressFromRelaxed("0202020202020202020202020202020202020202")
+	assert.NoError(t, err)
+	to, err := crypto.NewAddressFromRelaxed("0303030303030303030303030303030303030303")
+	assert.NoError(t, err)
+	valid, err := pd.Encode("Mint", Args{"token": token, "to": to, "amount": uint64(1000)})
 	assert.NoError(t, err)
 
-	toSk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	toPk := toSk.Ed25519Public()
-	to, err := crypto.NewAddressFromPublicKey(toPk)
-	assert.NoError(t, err)
-
-	originalArgs := Args{
-		"token":  owner,
-		"to":     to,
-		"amount": uint64(1000),
+	// Wire format: [app_id(u8)] + [discriminator(u16 LE)] + [args...]
+	// Each case triggers one validation gate in Decode, in order:
+	// 1. minimum length, 2. app_id match, 3. discriminator match, 4. full consumption.
+	cases := []struct {
+		name string
+		body []byte
+		want string
+	}{
+		// 2 bytes < 3 (app_id + discriminator) -> rejected before any parsing
+		{"too short", []byte{1, 2}, "need at least 3 bytes"},
+		// app_id=9 vs token app_id=2 -> cross-app guard
+		{"app_id mismatch", []byte{9, 0, 0}, "app_id mismatch"},
+		// app_id=2 passes, discriminator 0xFFFF=65535 vs Mint 20481 -> method guard
+		{"discriminator mismatch", []byte{2, 0xFF, 0xFF}, "discriminator mismatch"},
+		// valid Mint wire + 1 extra byte (0xAA) -> leftover must not be ignored
+		{"trailing bytes", append(valid, 0xAA), "trailing bytes"},
 	}
-
-	mint, err := pd.Encode("Mint", originalArgs)
-	assert.NoError(t, err)
-
-	decodedArgs, err := pd.Decode("Mint", mint)
-	assert.NoError(t, err)
-
-	fmt.Printf("Deserialization results:\n")
-	fmt.Printf("  token: %v (type: %T)\n", decodedArgs["token"], decodedArgs["token"])
-	fmt.Printf("  to: %v (type: %T)\n", decodedArgs["to"], decodedArgs["to"])
-	fmt.Printf("  amount: %v (type: %T)\n", decodedArgs["amount"], decodedArgs["amount"])
-
-	tokenAddr, ok := decodedArgs["token"].(*crypto.Address)
-	assert.True(t, ok)
-	assert.Equal(t, owner.Bytes, tokenAddr.Bytes)
-
-	toAddr, ok := decodedArgs["to"].(*crypto.Address)
-	assert.True(t, ok)
-	assert.Equal(t, to.Bytes, toAddr.Bytes)
-
-	assert.Equal(t, originalArgs["amount"], decodedArgs["amount"])
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := pd.Decode("Mint", tc.body)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), tc.want)
+		})
+	}
 }
 
-func TestProviderDecodeViewValues(t *testing.T) {
+func TestDecodeViewDatas(t *testing.T) {
 	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
 	assert.NoError(t, err)
 
@@ -145,52 +200,55 @@ func TestProviderDecodeViewValues(t *testing.T) {
 
 	results, err := pd.DecodeViewDatas("BalanceOf", responseBody)
 	assert.NoError(t, err)
-	for i, result := range results {
-		if failure, ok := result.Value.(*api.TxFailurePayload); ok {
-			// Handle failure case
-			fmt.Printf("Instruction %d failed:\n", i)
-			fmt.Printf("  Error code: %d\n", failure.Code)
-			fmt.Printf("  Error message: %s\n", failure.Message)
-			fmt.Printf("  Additional data: %v\n", failure.Data)
-		} else {
-			// Handle success case
-			switch v := result.Value.(type) {
-			case uint64:
-				fmt.Printf("Instruction %d succeeded: return value = %d\n", i, v)
-			case crypto.Address:
-				fmt.Printf("Instruction %d succeeded: address = %s\n", i, v.ToBase58())
-			case string:
-				fmt.Printf("Instruction %d succeeded: string = %s\n", i, v)
-			case map[string]any:
-				fmt.Printf("Instruction %d succeeded: struct = %+v\n", i, v)
-			default:
-				fmt.Printf("Instruction %d succeeded: value = %v (type: %T)\n", i, v, v)
-			}
-		}
+	if !assert.Len(t, results, 1) {
+		return
 	}
+	assert.Equal(t, uint64(700), results[0].Value)
 
 	result, err := pd.DecodeViewData("BalanceOf", responseBody)
 	assert.NoError(t, err)
-	// Check if returns error
-	if failure, ok := result.(*api.TxFailurePayload); ok {
-		// Handle failure case
-		fmt.Printf("Query failed:\n")
-		fmt.Printf("  Error code: %d\n", failure.Code)
-		fmt.Printf("  Error message: %s\n", failure.Message)
-		fmt.Printf("  Additional data: %v\n", failure.Data)
-		t.Fatalf("Expected success but got error: %s", failure.Message)
-	} else {
-		// Handle success case
-		balance, ok := result.(uint64)
-		if !ok {
-			t.Fatalf("Expected uint64 but got %T", result)
+	assert.Equal(t, uint64(700), result)
+}
+
+func TestDecodeViewDatas_ResultBranches(t *testing.T) {
+	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
+	assert.NoError(t, err)
+
+	t.Run("Ok trailing bytes", func(t *testing.T) {
+		// Vec len=1, Result variant=0 (Ok), Ok payload len=2, but the u64 return
+		// value only consumes 1 byte (varint 0x01) -> 1 trailing byte inside the
+		// Ok payload must be rejected.
+		responseBody := []byte{1, 0, 2, 1, 99}
+
+		_, err := pd.DecodeViewDatas("BalanceOf", responseBody)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "trailing bytes")
+	})
+
+	t.Run("Err branch", func(t *testing.T) {
+		body := []byte{
+			1,           // vec len=1
+			1,           // variant=1 (Err)
+			5,           // code=5(u16)
+			2, 'o', 'k', // msg="ok"(len=2)
+			2, 0xAA, 0xBB, // data=[0xAA,0xBB](len=2)
 		}
 
-		fmt.Printf("Query succeeded: balance = %d\n", balance)
+		results, err := pd.DecodeViewDatas("BalanceOf", body)
+		assert.NoError(t, err)
+		failure, ok := results[0].Value.(*api.TxFailurePayload)
+		assert.True(t, ok)
+		assert.Equal(t, uint16(5), failure.Code)
+		assert.Equal(t, "ok", failure.Message)
+		assert.Equal(t, []byte{0xAA, 0xBB}, failure.Data)
+	})
 
-		// Verify return value is 700
-		assert.Equal(t, uint64(700), balance)
-	}
+	t.Run("invalid variant", func(t *testing.T) {
+		// vec len=1, Result variant=2 (invalid)
+		_, err := pd.DecodeViewDatas("BalanceOf", []byte{1, 2})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid result variant index")
+	})
 }
 
 func TestProviderReportsErrors(t *testing.T) {
@@ -217,8 +275,7 @@ func TestSerializeValue_ComplexTypes(t *testing.T) {
 	provider := NewProvider(idl)
 
 	t.Run("empty container - vec<u8>", func(t *testing.T) {
-		value := []any{}
-		// [0]
+		var value []any
 		expected := []byte{0}
 
 		serializer := postcard.NewSerializer()
@@ -231,7 +288,6 @@ func TestSerializeValue_ComplexTypes(t *testing.T) {
 
 	t.Run("empty container - map<String,u64>", func(t *testing.T) {
 		value := map[string]any{}
-		// [0]
 		expected := []byte{0}
 
 		serializer := postcard.NewSerializer()
@@ -277,7 +333,6 @@ func TestSerializeValue_ComplexTypes(t *testing.T) {
 
 	t.Run("outer None - option<option>", func(t *testing.T) {
 		var value any = nil
-		// [0]
 		expected := []byte{0}
 
 		serializer := postcard.NewSerializer()
@@ -299,13 +354,26 @@ func TestSerializeValue_ComplexTypes(t *testing.T) {
 		//	           key="alice"(5 bytes)      key="bob"(3 bytes)
 		//	           value=100(varint)        value=200(varint, 2 bytes)
 		// Note: map iteration order is non-deterministic; only validation is format
-
 		serializer := postcard.NewSerializer()
 		err := provider.serializeValue(serializer, "map<String,u64>", value)
 		assert.NoError(t, err)
 
-		result := serializer.Bytes()
-		t.Logf("result: %v", result)
+		// map iteration order is non-deterministic; parse the output and
+		// verify the key/value set instead of byte order.
+		deserializer := postcard.NewDeserializer(serializer.Bytes())
+		length, err := deserializer.DeserializeU32()
+		assert.NoError(t, err)
+		assert.Equal(t, uint32(2), length)
+
+		got := make(map[string]uint64, length)
+		for i := uint32(0); i < length; i++ {
+			key, err := deserializer.DeserializeStr()
+			assert.NoError(t, err)
+			v, err := deserializer.DeserializeU64()
+			assert.NoError(t, err)
+			got[key] = v
+		}
+		assert.Equal(t, map[string]uint64{"alice": 100, "bob": 200}, got)
 	})
 
 	t.Run("Tuple type - tuple<u8,u16,u32>", func(t *testing.T) {
@@ -328,7 +396,6 @@ func TestSerializeValue_ComplexTypes(t *testing.T) {
 			uint8(1),
 			[]any{uint16(2), uint32(3)},
 		}
-		// [1, 2, 3]
 		expected := []byte{1, 2, 3}
 
 		serializer := postcard.NewSerializer()
@@ -359,12 +426,11 @@ func TestSerializeValue_ComplexTypes(t *testing.T) {
 
 	t.Run("Vec + Option - vec<option<u64>>", func(t *testing.T) {
 		value := []any{uint64(10), nil, uint32(30)}
-		// [3, 1, 10, 0, 1, 30]
 		expected := []byte{
-			3,     //length = 3 elements
-			1, 10, //has_value = true (1st element: Some) 		u64 value = 10 (varint)
-			0,     //has_value = false (2nd element: None, no value follows)
-			1, 30, //has_value = true (3rd element: Some) 		u32 value = 30 (varint)
+			3,     // vec length = 3 elements
+			1, 10, // 1st: Some, u64 value = 10 (varint)
+			0,     // 2nd: None, no value follows
+			1, 30, // 3rd: Some, u32 value = 30 (varint)
 		}
 
 		serializer := postcard.NewSerializer()
@@ -423,7 +489,7 @@ func TestSerializeValue_AddressAndPublicKey(t *testing.T) {
 		}
 	})
 
-	t.Run("B256 固定长度哈希", func(t *testing.T) {
+	t.Run("B256", func(t *testing.T) {
 		hash := [32]byte{}
 		for i := 0; i < 32; i++ {
 			hash[i] = byte(i)
@@ -435,11 +501,7 @@ func TestSerializeValue_AddressAndPublicKey(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		result := serializer.Bytes()
-		// 32字节，无长度前缀
-		if len(result) != 32 {
-			t.Errorf("B256 length: got %d, want 32", len(result))
-		}
+		assert.Equal(t, len(serializer.Bytes()), 32)
 	})
 }
 
@@ -478,7 +540,6 @@ func TestSerializeValue_Struct(t *testing.T) {
 	}
 
 	result := serializer.Bytes()
-	// Bytes:           [7, M, y, T, o, k, e, n,     3, M, T, K,     18,      192, 132, 61]
 	expected := []byte{
 		// Metadata struct serialization
 		7, 'M', 'y', 'T', 'o', 'k', 'e', 'n', // name: String len=7 + "MyToken"
@@ -512,7 +573,6 @@ func TestSerializeValue_DeepNesting(t *testing.T) {
 	}
 
 	result := serializer.Bytes()
-	// Bytes:         [3,       1, 1, 2, 1,'a', 1,'b',     0,       1, 2, 1, 1,'c']
 	expected := []byte{
 		3, // vec length = 3
 
@@ -535,6 +595,146 @@ func TestSerializeValue_DeepNesting(t *testing.T) {
 
 	for i := range expected {
 		assert.Equal(t, result[i], expected[i])
+	}
+}
+
+func TestDeserializeValue_Integer(t *testing.T) {
+	var idl IDL
+	idl.Metadata.Name = "test"
+	idl.Metadata.AppID = 255
+	provider := NewProvider(idl)
+
+	roundTrip := func(t *testing.T, typeName string, value any) {
+		serializer := postcard.NewSerializer()
+		assert.NoError(t, provider.serializeValue(serializer, typeName, value))
+		body := serializer.Bytes()
+
+		offset := 0
+		got, err := provider.deserializeValue(typeName, body, &offset)
+		assert.NoError(t, err)
+		assert.Equal(t, len(body), offset)
+		assert.Equal(t, value, got)
+	}
+
+	t.Run("i8", func(t *testing.T) {
+		roundTrip(t, "i8", int8(-128))
+		roundTrip(t, "i8", int8(-1))
+		roundTrip(t, "i8", int8(0))
+		roundTrip(t, "i8", int8(127))
+	})
+	t.Run("i16", func(t *testing.T) {
+		roundTrip(t, "i16", int16(-32768))
+		roundTrip(t, "i16", int16(-1))
+		roundTrip(t, "i16", int16(32767))
+	})
+	t.Run("i32", func(t *testing.T) {
+		roundTrip(t, "i32", int32(-1))
+		roundTrip(t, "i32", int32(math.MinInt32))
+		roundTrip(t, "i32", int32(math.MaxInt32))
+	})
+	t.Run("i64", func(t *testing.T) {
+		roundTrip(t, "i64", int64(-1))
+		roundTrip(t, "i64", int64(math.MinInt64))
+		roundTrip(t, "i64", int64(math.MaxInt64))
+	})
+}
+
+func TestDeserializeValue_FixedBytes(t *testing.T) {
+	var idl IDL
+	idl.Metadata.Name = "test"
+	idl.Metadata.AppID = 255
+	provider := NewProvider(idl)
+
+	t.Run("roundtrip", func(t *testing.T) {
+		cases := []struct {
+			typeName string
+			value    any
+		}{
+			{"B96", [12]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}},
+			{"B144", [18]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}},
+			{"B160", [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}},
+			{"B256", [32]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32}},
+		}
+		for _, tc := range cases {
+			t.Run(tc.typeName, func(t *testing.T) {
+				serializer := postcard.NewSerializer()
+				assert.NoError(t, provider.serializeValue(serializer, tc.typeName, tc.value))
+				body := serializer.Bytes()
+
+				offset := 0
+				got, err := provider.deserializeValue(tc.typeName, body, &offset)
+				assert.NoError(t, err)
+				assert.Equal(t, len(body), offset)
+				assert.Equal(t, tc.value, got)
+			})
+		}
+	})
+
+	t.Run("insufficient data", func(t *testing.T) {
+		cases := []struct {
+			typeName string
+			size     int
+		}{
+			{"B96", 12},
+			{"B144", 18},
+			{"B160", 20},
+			{"B256", 32},
+		}
+		for _, tc := range cases {
+			offset := 0
+			// size-1 bytes: exactly one byte short
+			_, err := provider.deserializeValue(tc.typeName, make([]byte, tc.size-1), &offset)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "insufficient data for "+tc.typeName)
+		}
+	})
+
+	t.Run("B96 as []byte input", func(t *testing.T) {
+		serializer := postcard.NewSerializer()
+		assert.NoError(t, provider.serializeValue(serializer, "B96", make([]byte, 12)))
+
+		offset := 0
+		got, err := provider.deserializeValue("B96", serializer.Bytes(), &offset)
+		assert.NoError(t, err)
+		assert.Equal(t, [12]byte{}, got) // all-zero []byte roundtrips to zero array
+	})
+
+	t.Run("wrong []byte length", func(t *testing.T) {
+		serializer := postcard.NewSerializer()
+		err := provider.serializeValue(serializer, "B96", make([]byte, 11))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "expects exactly 12 bytes")
+	})
+}
+
+func TestDeserializeValue_U128(t *testing.T) {
+	var idl IDL
+	idl.Metadata.Name = "test"
+	idl.Metadata.AppID = 255
+	provider := NewProvider(idl)
+
+	maxU128 := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1))
+	values := []*big.Int{
+		big.NewInt(0),
+		big.NewInt(1),
+		big.NewInt(127),
+		big.NewInt(128),
+		new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 64), big.NewInt(1)),
+		new(big.Int).Set(maxU128),
+	}
+	for _, v := range values {
+		serializer := postcard.NewSerializer()
+		assert.NoError(t, serializer.SerializeU128(v))
+		body := serializer.Bytes()
+
+		offset := 0
+		got, err := provider.deserializeValue("u128", body, &offset)
+		assert.NoError(t, err)
+		assert.Equal(t, len(body), offset)
+
+		gotBig, ok := got.(*big.Int)
+		assert.True(t, ok)
+		assert.Equal(t, v, gotBig)
 	}
 }
 
@@ -606,4 +806,66 @@ func TestSerializeEnumVariant(t *testing.T) {
 			assert.Equal(t, tc.value, variant)
 		})
 	}
+}
+
+func TestDecodeDataByIDLTypeName(t *testing.T) {
+	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
+	assert.NoError(t, err)
+
+	// token::Metadata struct: name(String) + symbol(String) + decimals(u8) + icon(String)
+	serializer := postcard.NewSerializer()
+	assert.NoError(t, serializer.SerializeStr("TestCoin"))
+	assert.NoError(t, serializer.SerializeStr("TST"))
+	assert.NoError(t, serializer.SerializeU8(6))
+	assert.NoError(t, serializer.SerializeStr("https://example.com/icon.png"))
+	data := serializer.Bytes()
+
+	value, err := pd.DecodeDataByIDLTypeName("Metadata", data)
+	assert.NoError(t, err)
+	record := value.(map[string]any)
+	assert.Equal(t, "TestCoin", record["name"])
+	assert.Equal(t, "TST", record["symbol"])
+	assert.Equal(t, uint8(6), record["decimals"])
+	assert.Equal(t, "https://example.com/icon.png", record["icon"])
+
+	// trailing bytes must error
+	_, err = pd.DecodeDataByIDLTypeName("Metadata", append(append([]byte{}, data...), 0xAA))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "trailing bytes")
+
+	// unknown type name must error
+	_, err = pd.DecodeDataByIDLTypeName("NoSuchType", data)
+	assert.Error(t, err)
+}
+
+func TestDecodeViewVarint_Errors(t *testing.T) {
+	// Varint (LEB128): each byte carries 7 data bits + 1 continuation flag.
+	// 0x80 = all data bits zero with continuation set (expects a next byte),
+	// so it is the canonical byte for probing overflow / truncation paths.
+
+	// uint64 varint: at most 10 bytes (10*7 = 70 >= 64 bits).
+	// 10 continuation bytes -> the 10-byte limit is hit with no terminator -> too long.
+	offset := 0
+	_, err := decodeViewVarUint(bytes.Repeat([]byte{0x80}, 10), &offset)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "varint is too long")
+
+	// Only 8 continuation bytes -> the 9th read runs past the input -> truncated.
+	offset = 0
+	_, err = decodeViewVarUint(bytes.Repeat([]byte{0x80}, 8), &offset)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unexpected end of input")
+
+	// u128 varint: at most 19 bytes (19*7 = 133 >= 128 bits; 18*7 = 126 < 128).
+	// 19 continuation bytes -> limit hit with no terminator -> too long.
+	offset = 0
+	_, err = decodeViewVarUint128(bytes.Repeat([]byte{0x80}, 19), &offset)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "varint is too long")
+
+	// u128: only 8 continuation bytes -> the 9th read runs past the input -> truncated.
+	offset = 0
+	_, err = decodeViewVarUint128(bytes.Repeat([]byte{0x80}, 8), &offset)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unexpected end of input")
 }

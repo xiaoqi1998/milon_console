@@ -11,10 +11,14 @@ import (
 	"github.com/milon-labs/milon-go-sdk/types"
 )
 
+func main() {
+	example(milon.DevNet)
+}
+
 func example(networkConfig milon.Network) {
 	client := milon.NewClient(networkConfig)
 
-	// 创建 4 个签名者：signerMultiSig 为多签钱包创建者，signerA/B/C 为多签参与者
+	// Create 4 signers: signerA/B/C/D as multisig participants
 	signerA := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	signerB := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	signerC := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
@@ -96,7 +100,7 @@ func addSigner(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.Secre
 		panic("failed to encode AddSigner instruction:" + err.Error())
 	}
 
-	// 构建交易：统付模式（WithPayer），gas 由多签钱包支付。
+	// Build transaction: UnifiedPayer mode, gas paid by the multisig wallet.
 	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).WithPayer(accountA)
 
 	tx, err := builder.Build()
@@ -108,7 +112,6 @@ func addSigner(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.Secre
 
 	multisigSig, err := lib.NewAccountSignatureBuilder().AuthorizeIxAndPayer(0).
 		Sign(*accountA, signerA, txHash, ixPart, lib.PubKeySignatureMode{PublicKey: *pkA}).
-		//SignMultisigKey(*accountA, signerA, txHash, ixPart, lib.MultisigKeySignatureMode{Index: 0, PublicKey: *pkA}).//or
 		Build()
 	if err != nil {
 		panic("failed to build multisig signature:" + err.Error())
@@ -137,7 +140,7 @@ func addSigners(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.Secr
 		panic("failed to encode AddSigners instruction:" + err.Error())
 	}
 
-	// 构建交易：统付模式（WithPayer），gas 由多签钱包支付。
+	// Build transaction: UnifiedPayer mode, gas paid by the multisig wallet.
 	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).WithPayer(accountA)
 
 	tx, err := builder.Build()
@@ -149,7 +152,6 @@ func addSigners(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.Secr
 
 	multisigSig, err := lib.NewAccountSignatureBuilder().AuthorizeIxAndPayer(0).
 		Sign(*accountA, signerA, txHash, ixPart, lib.PubKeySignatureMode{PublicKey: *pkA, SkipPubKey: true, SigBit: types.Bitmap64(1)}).
-		//SignMultisigKey(*accountA, signerA, txHash, ixPart, lib.MultisigKeySignatureMode{Index: 0, PublicKey: *pkA}). //or
 		Build()
 	if err != nil {
 		panic("failed to build multisig signature:" + err.Error())
@@ -178,7 +180,7 @@ func setThreshold(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.Se
 		panic("failed to encode SetThreshold instruction:" + err.Error())
 	}
 
-	// 构建交易：统付模式（WithPayer），gas 由多签钱包支付。
+	// Build transaction: UnifiedPayer mode, gas paid by the multisig wallet.
 	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).WithPayer(accountA)
 
 	tx, err := builder.Build()
@@ -219,7 +221,7 @@ func removeSigner(client *milon.Client, pkA *crypto.PublicKey, pkC *crypto.Publi
 		panic("failed to encode RemoveSigner instruction:" + err.Error())
 	}
 
-	// 构建交易：统付模式（WithPayer），gas 由多签钱包支付。
+	// Build transaction: UnifiedPayer mode, gas paid by the multisig wallet.
 	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).WithPayer(accountA)
 
 	tx, err := builder.Build()
@@ -260,7 +262,7 @@ func setSignerWeight(client *milon.Client, pkA *crypto.PublicKey, signerA crypto
 		panic("failed to encode SetSignerWeight instruction:" + err.Error())
 	}
 
-	// 构建交易：统付模式（WithPayer），gas 由多签钱包支付。
+	// Build transaction: UnifiedPayer mode, gas paid by the multisig wallet.
 	builder := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).WithPayer(accountA)
 
 	tx, err := builder.Build()

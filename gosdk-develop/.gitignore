@@ -4,3 +4,5 @@
 /example/token_create_split
 /example/token_create_unified_dual_sign
 /example/token_create_unified_separate_ix
+/example/list_resource_path
+/example/chainhead_block

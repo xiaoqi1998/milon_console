@@ -10,6 +10,10 @@ import (
 	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
+func main() {
+	example(milon.DevNet)
+}
+
 func example(networkConfig milon.Network) {
 	client := milon.NewClient(networkConfig)
 

@@ -2,11 +2,9 @@ package main
 
 import (
 	"testing"
+
+	"github.com/milon-labs/milon-go-sdk"
 )
-
-//import "github.com/milon-labs/milon-go-sdk"
-
-import "github.com/milon-labs/milon-go-sdk"
 
 func Test_Main(t *testing.T) {
 	t.Parallel()
