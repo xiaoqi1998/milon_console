@@ -1883,53 +1883,53 @@ var IDL_PAYMENT_MODES = [
 var IDL_EXAMPLE_ARGS = {
   // ==================== token 模块（app_id=2，30 个方法）====================
   'token.Create': {
-    token: 'M11onToken1111111111111111111AB',
-    owner: 'MOwner1111111111111111111111CD',
+    token: 'M11on1111111111111111111111',
+    owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
     metadata: { name: 'IndependentToken', symbol: 'IND', decimals: 6, icon: 'https://example.com/ind.png' }
   },
-  'token.AbandonOwner': { token: 'M11onToken1111111111111111111AB' },
-  'token.TransferOwner': { token: 'M11onToken1111111111111111111AB', to: 'MNewOwner1111111111111111111EF' },
-  'token.AbandonFreezer': { token: 'M11onToken1111111111111111111AB' },
-  'token.TransferFreezer': { token: 'M11onToken1111111111111111111AB', to: 'MNewFreezer11111111111111111GH' },
-  'token.Mint': { token: 'M11onToken1111111111111111111AB', to: 'MHolder11111111111111111111IJ', amount: 1000000000 },
+  'token.AbandonOwner': { token: 'M11on1111111111111111111111' },
+  'token.TransferOwner': { token: 'M11on1111111111111111111111', to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
+  'token.AbandonFreezer': { token: 'M11on1111111111111111111111' },
+  'token.TransferFreezer': { token: 'M11on1111111111111111111111', to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
+  'token.Mint': { token: 'M11on1111111111111111111111', to: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', amount: 1000000000 },
   'token.MintBatch': {
-    token: 'M11onToken1111111111111111111AB',
-    to: ['MHolder11111111111111111111IJ', 'MSpender1111111111111111111KL'],
+    token: 'M11on1111111111111111111111',
+    to: ['2T2u6f4znq3ps3XvBPQYUtNH4DKx', '3tamDhFSgAdAAFZP7pwoCpNAZzFH'],
     amount: [500000000, 300000000]
   },
-  'token.Burn': { holder: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', amount: 1000000 },
-  'token.Transfer': { from: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', to: 'MSpender1111111111111111111KL', amount: 500000000 },
-  'token.TransferWithTag': { from: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', to: 'MSpender1111111111111111111KL', amount: 500000000, _tag: 1001 },
+  'token.Burn': { holder: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token: 'M11on1111111111111111111111', amount: 1000000 },
+  'token.Transfer': { from: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token: 'M11on1111111111111111111111', to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 500000000 },
+  'token.TransferWithTag': { from: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token: 'M11on1111111111111111111111', to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 500000000, _tag: 1001 },
   'token.TransferBatch': {
-    from: 'MHolder11111111111111111111IJ',
-    token: 'M11onToken1111111111111111111AB',
-    to: ['MHolder11111111111111111111IJ', 'MSpender1111111111111111111KL'],
+    from: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    token: 'M11on1111111111111111111111',
+    to: ['2T2u6f4znq3ps3XvBPQYUtNH4DKx', '3tamDhFSgAdAAFZP7pwoCpNAZzFH'],
     amount: [1000000, 2000000]
   },
-  'token.Freeze': { token: 'M11onToken1111111111111111111AB', holder: 'MHolder11111111111111111111IJ', amount: 1000000 },
-  'token.Unfreeze': { token: 'M11onToken1111111111111111111AB', holder: 'MHolder11111111111111111111IJ', amount: 500000 },
-  'token.Approve': { owner: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', spender: 'MSpender1111111111111111111KL', amount: 1000000000 },
-  'token.Revoke': { owner: 'MHolder11111111111111111111IJ', token: 'M11onToken1111111111111111111AB', spender: 'MSpender1111111111111111111KL' },
-  'token.TransferFrom': { spender: 'MSpender1111111111111111111KL', token: 'M11onToken1111111111111111111AB', from: 'MHolder11111111111111111111IJ', amount: 500000000 },
-  'token.SetIcon': { token: 'M11onToken1111111111111111111AB', icon_url: 'https://example.com/new_icon.png' },
+  'token.Freeze': { token: 'M11on1111111111111111111111', holder: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', amount: 1000000 },
+  'token.Unfreeze': { token: 'M11on1111111111111111111111', holder: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', amount: 500000 },
+  'token.Approve': { owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token: 'M11on1111111111111111111111', spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 1000000000 },
+  'token.Revoke': { owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token: 'M11on1111111111111111111111', spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
+  'token.TransferFrom': { spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', token: 'M11on1111111111111111111111', from: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', amount: 500000000 },
+  'token.SetIcon': { token: 'M11on1111111111111111111111', icon_url: 'https://example.com/new_icon.png' },
   'token.CreateWithCompliance': {
-    token: 'MCompToken1111111111111111111MN',
-    owner: 'MCompOwner111111111111111111OP',
+    token: 'M11on1111111111111111111111',
+    owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
     metadata: { name: 'ComplianceToken', symbol: 'CMP', decimals: 6, icon: 'https://example.com/cmp.png' },
     credential_id: 'schema_id_xxx'
   },
-  'token.SetComplianceMode': { token: 'MCompToken1111111111111111111MN', mode: 'Any' },
-  'token.AddComplianceRequirement': { token: 'MCompToken1111111111111111111MN', credential_id: 'schema_id_xxx' },
-  'token.RemoveComplianceRequirement': { token: 'MCompToken1111111111111111111MN', credential_id: 'schema_id_xxx' },
-  'token.ClearComplianceRequirements': { token: 'MCompToken1111111111111111111MN' },
-  'token.ClaimFaucet': { claimer: 'MClaimer1111111111111111111QR' },
-  'token.BalanceOf': { token: 'M11onToken1111111111111111111AB', account: 'MHolder11111111111111111111IJ' },
-  'token.FrozenOf': { token: 'M11onToken1111111111111111111AB', account: 'MHolder11111111111111111111IJ' },
-  'token.ApprovalOf': { token: 'M11onToken1111111111111111111AB', owner: 'MHolder11111111111111111111IJ', spender: 'MSpender1111111111111111111KL' },
+  'token.SetComplianceMode': { token: 'M11on1111111111111111111111', mode: 'Any' },
+  'token.AddComplianceRequirement': { token: 'M11on1111111111111111111111', credential_id: 'schema_id_xxx' },
+  'token.RemoveComplianceRequirement': { token: 'M11on1111111111111111111111', credential_id: 'schema_id_xxx' },
+  'token.ClearComplianceRequirements': { token: 'M11on1111111111111111111111' },
+  'token.ClaimFaucet': { claimer: 'gKzpjpfWVvwgDs26DTCFFA9eRxb' },
+  'token.BalanceOf': { token: 'M11on1111111111111111111111', account: '2T2u6f4znq3ps3XvBPQYUtNH4DKx' },
+  'token.FrozenOf': { token: 'M11on1111111111111111111111', account: '2T2u6f4znq3ps3XvBPQYUtNH4DKx' },
+  'token.ApprovalOf': { token: 'M11on1111111111111111111111', owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
   'token.TotalSupply': { token: 'M11on1111111111111111111111' },
   'token.Metadata': { token: 'M11on1111111111111111111111' },
-  'token.Compliance': { token: 'MCompToken1111111111111111111MN' },
-  'token.FaucetCooldownRemaining': { account: 'MOwner1111111111111111111111CD' },
+  'token.Compliance': { token: 'M11on1111111111111111111111' },
+  'token.FaucetCooldownRemaining': { account: '48A2Th5n4LoQ5LuwzxF7T27VYDZU' },
 
   // ==================== account 模块（app_id=1，15 个方法）====================
   'account.Create': { owner_pk: '0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e' },
@@ -2102,17 +2102,17 @@ var IDL_EXAMPLE_ARGS = {
 
   // ==================== nft 模块（app_id=5，20 个方法）====================
   'nft.CreateCollection': {
-    collection: '5Hh...G7Q8',
-    owner: '5Hh...K9pL',
+    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
     metadata: { name: 'TestNFTCollection', symbol: 'TNFT', base_uri: 'https://milon.test/nft/' }
   },
   'nft.SetCollectionMetadata': {
-    collection: '5Hh...G7Q8',
+    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     metadata: { name: 'UpdatedCollectionName', symbol: 'UPD', base_uri: 'https://milon.test/nft/v2/' }
   },
   'nft.SetMetadata': {
-    collection: '5Hh...G7Q8',
-    mint: '5Hh...Mint2',
+    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
     metadata: {
       name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/v2.json',
       external_url: 'https://milon.test/nft/1', icon: '',
@@ -2121,47 +2121,47 @@ var IDL_EXAMPLE_ARGS = {
     }
   },
   'nft.SetAttributes': {
-    collection: '5Hh...G7Q8', mint: '5Hh...Mint1',
+    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
     attributes: [{ trait_type: 'Color', value: 'Blue' }, { trait_type: 'Rarity', value: 'Legendary' }]
   },
   'nft.SetProperties': {
-    collection: '5Hh...G7Q8', mint: '5Hh...Mint1',
+    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
     properties: [{ key: 'rarity', value: 'rare' }, { key: 'edition', value: 'genesis' }]
   },
   'nft.CreateUnique': {
-    collection: '5Hh...G7Q8', mint: '5Hh...Mint1', to: '5Hh...Reci',
+    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', to: 'gKzpjpfWVvwgDs26DTCFFA9eRxb',
     metadata: {
       name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/1.json',
       external_url: 'https://milon.test/nft/1', icon: '',
       attributes: [{ trait_type: 'Color', value: 'Blue' }],
       properties: [{ key: 'rarity', value: 'rare' }]
     },
-    royalty: { recipient: '5Hh...K9pL', bps: 500 }
+    royalty: { recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', bps: 500 }
   },
   'nft.CreateBatch': {
-    collection: '5Hh...G7Q8', mint: '5Hh...Mint2',
-    to: ['5Hh...Reci', '5Hh...K9pL'], amounts: [1, 2], max_supply: 10,
+    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
+    to: ['gKzpjpfWVvwgDs26DTCFFA9eRxb', '48A2Th5n4LoQ5LuwzxF7T27VYDZU'], amounts: [1, 2], max_supply: 10,
     metadata: {
       name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/1.json',
       external_url: 'https://milon.test/nft/1', icon: '',
       attributes: [{ trait_type: 'Color', value: 'Blue' }],
       properties: [{ key: 'rarity', value: 'rare' }]
     },
-    royalty: { recipient: '5Hh...K9pL', bps: 500 }
+    royalty: { recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', bps: 500 }
   },
-  'nft.MintBatch': { collection: '5Hh...G7Q8', mint: '5Hh...Mint2', to: ['5Hh...Reci'], amounts: [1] },
-  'nft.Transfer': { from: '5Hh...Reci', mint: '5Hh...Mint1', to: '5Hh...K9pL', amount: 1 },
-  'nft.Burn': { owner: '5Hh...K9pL', mint: '5Hh...Mint1', amount: 1 },
-  'nft.SetRoyalty': { collection: '5Hh...G7Q8', mint: '5Hh...Mint2', royalty: { recipient: '5Hh...K9pL', bps: 1000 } },
-  'nft.TransferRoyaltyRecipient': { recipient: '5Hh...K9pL', mint: '5Hh...Mint2', new_recipient: '5Hh...StR' },
-  'nft.CollectionMetadata': { collection: '5Hh...G7Q8' },
-  'nft.MetadataUri': { mint: '5Hh...Mint1' },
-  'nft.Attributes': { mint: '5Hh...Mint1' },
-  'nft.Properties': { mint: '5Hh...Mint1' },
-  'nft.MintConfigView': { mint: '5Hh...Mint1' },
-  'nft.TotalSupply': { mint: '5Hh...Mint1' },
-  'nft.BalanceOf': { mint: '5Hh...Mint1', owner: '5Hh...Reci' },
-  'nft.RoyaltyInfo': { mint: '5Hh...Mint1' },
+  'nft.MintBatch': { collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', to: ['gKzpjpfWVvwgDs26DTCFFA9eRxb'], amounts: [1] },
+  'nft.Transfer': { from: 'gKzpjpfWVvwgDs26DTCFFA9eRxb', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', to: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', amount: 1 },
+  'nft.Burn': { owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 1 },
+  'nft.SetRoyalty': { collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', royalty: { recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', bps: 1000 } },
+  'nft.TransferRoyaltyRecipient': { recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', new_recipient: 'gKzpjpfWVvwgDs26DTCFFA9eRxb' },
+  'nft.CollectionMetadata': { collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx' },
+  'nft.MetadataUri': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
+  'nft.Attributes': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
+  'nft.Properties': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
+  'nft.MintConfigView': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
+  'nft.TotalSupply': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
+  'nft.BalanceOf': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', owner: 'gKzpjpfWVvwgDs26DTCFFA9eRxb' },
+  'nft.RoyaltyInfo': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
 
   // ==================== staking 模块（app_id=3，30 个方法）====================
   'staking.CreateValidator': {
@@ -2216,9 +2216,9 @@ var IDL_EXAMPLE_PAYMENT = {
   'token.Mint': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.MintBatch': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.Burn': { paymentMode: 'unified_payer_all', payerRole: 'holder' },
-  'token.Transfer': { paymentMode: 'unified_payer_all', payerRole: 'holder' },
-  'token.TransferWithTag': { paymentMode: 'unified_payer_all', payerRole: 'holder' },
-  'token.TransferBatch': { paymentMode: 'unified_payer_all', payerRole: 'holder' },
+  'token.Transfer': { paymentMode: 'unified_payer_all', payerRole: 'from' },
+  'token.TransferWithTag': { paymentMode: 'unified_payer_all', payerRole: 'from' },
+  'token.TransferBatch': { paymentMode: 'unified_payer_all', payerRole: 'from' },
   'token.Freeze': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.Unfreeze': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.Approve': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
@@ -2503,11 +2503,25 @@ function buildIDLArgInput(arg, appName, methodName) {
   );
   if (isScalar) {
     var defaultVal = IDL_SCALAR_TYPES[arg.type];
-    var val = hasExample ? String(exampleVal) : defaultVal;
+    var activeAcc = getCurrentAccount();
+    var activeAddr = (activeAcc && activeAcc.address) ? activeAcc.address : '';
+    var val;
+    if (arg.type === 'Address' || arg.type === 'Signer' || arg.type === 'AnySigner') {
+      if (arg.name === 'token' && hasExample && exampleVal !== '') {
+        // token 是合约地址（如 MIL 原生代币），保留示例值，不被活跃账户覆盖
+        val = String(exampleVal);
+      } else {
+        // 其余地址类参数：优先填活跃账户地址；无活跃账户时再退回示例值
+        val = activeAddr || (hasExample ? String(exampleVal) : defaultVal);
+      }
+    } else {
+      // 非地址类：用示例值（合理默认），无示例时用类型默认
+      val = hasExample ? String(exampleVal) : defaultVal;
+    }
     var inp = el('input', {
       class: 'param-input',
       'data-argname': arg.name,
-      placeholder: defaultVal !== '' ? '如 ' + defaultVal : arg.type,
+      placeholder: (hasExample && exampleVal !== '' ? '如 ' + exampleVal + '（可修改）' : '如 ' + defaultVal),
       type: 'text',
     });
     inp.value = val;
@@ -2716,12 +2730,18 @@ function buildIDLRequest() {
     }
   });
 
-  // signer / any_signer 参数：优先从 payerAddress 获取（payerRole 匹配时），否则回退到示例值
+  // signer / any_signer 参数：优先从 payerAddress 获取（payerRole 匹配或仅有一个 signer 参数时），
+  // 否则回退到示例值（示例值均已校验为合法 20 字节地址）
   if (ix.args) {
-    ix.args.forEach(function (arg) {
-      if ((arg.role === 'signer' || arg.role === 'any_signer') && !args.hasOwnProperty(arg.name)) {
+    var signerArgs2 = ix.args.filter(function (a) { return a.role === 'signer' || a.role === 'any_signer'; });
+    signerArgs2.forEach(function (arg) {
+      if (!args.hasOwnProperty(arg.name)) {
         var val = '';
+        // 优先：payerRole 与参数名匹配时用 payerAddress
         if (payerRole === arg.name && payerAddress) {
+          val = payerAddress;
+        } else if (signerArgs2.length === 1 && payerAddress) {
+          // 兜底：只有一个 signer 参数时直接用 payerAddress（常见于 from/holder/owner 场景）
           val = payerAddress;
         } else if (exampleArgs && exampleArgs[arg.name]) {
           val = exampleArgs[arg.name];
