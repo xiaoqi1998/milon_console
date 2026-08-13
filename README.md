@@ -64,6 +64,7 @@ docker compose down
 | `DEFAULT_NETWORK` | `devNet` | 默认网络，支持 `devNet`、`localNet` |
 | `MILON_RPC_URL` | 空 | 自定义 RPC 地址 |
 | `MILON_CHAIN_ID` | `0` | 自定义 chain id |
+| `ENABLE_BODY_LOG` | `false` | 是否记录请求体与响应体（脱敏后输出，见下方说明） |
 
 示例：
 
@@ -72,10 +73,20 @@ SERVER_PORT=8080
 DEFAULT_NETWORK=devNet
 ALLOWED_ORIGINS=https://your-domain.com
 ENABLE_UTIL_SIGN=false
+# ENABLE_BODY_LOG=true   # 开启请求/响应体日志（敏感字段自动脱敏）
 # SIGNER_PRIVATE_KEY=base58_or_hex_private_key
 # MILON_RPC_URL=http://your-node:6280/milon/v1
 # MILON_CHAIN_ID=2
 ```
+
+### 请求/响应体日志
+
+默认日志只记录请求元数据（`requestId`、`method`、`path`、`status`、耗时等），不包含入参和返参。
+设置 `ENABLE_BODY_LOG=true` 后，每条 POST/PUT/PATCH 请求会额外输出 `reqBody` 与 `respBody` 字段，方便排查参数编码、地址格式等问题。
+
+- 敏感字段自动脱敏：`privateKey`、`private_key`、`mnemonic`、`secret`、`password`（含大小写变体）的值统一替换为 `***`。
+- 每个 body 最多缓存 16KB、输出 4096 字符，超出部分截断并标注 `...(truncated)`。
+- GET 请求与静态资源不记录 body。
 
 ## IDL 元数据
 

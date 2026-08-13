@@ -14,6 +14,7 @@ type AppConfig struct {
 	DefaultNetwork   string
 	RpcUrl           string
 	ChainId          uint64
+	EnableBodyLog    bool
 }
 
 // LoadConfig reads configuration from environment variables with sensible defaults.
@@ -26,6 +27,7 @@ func LoadConfig() *AppConfig {
 		DefaultNetwork:   getEnv("DEFAULT_NETWORK", "devNet"),
 		RpcUrl:           getEnv("MILON_RPC_URL", ""),
 		ChainId:          getEnvUint64("MILON_CHAIN_ID", 0),
+		EnableBodyLog:    getEnvBool("ENABLE_BODY_LOG", false),
 	}
 }
 

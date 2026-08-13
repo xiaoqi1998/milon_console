@@ -19,7 +19,7 @@ func main() {
 
 	r := gin.New()
 	r.Use(gin.Recovery())
-	r.Use(middleware.LoggerMiddleware())
+	r.Use(middleware.LoggerMiddleware(cfg.EnableBodyLog))
 	r.Use(middleware.SetupCORS(cfg.AllowedOrigins))
 
 	// Static files
@@ -113,6 +113,7 @@ func main() {
 	fmt.Printf("  Listening on:  http://localhost:%s\n", cfg.ServerPort)
 	fmt.Println("  Default network:", cfg.DefaultNetwork)
 	fmt.Println("  Enable util sign:", cfg.EnableUtilSign)
+	fmt.Println("  Enable body log:", cfg.EnableBodyLog)
 	fmt.Println("  Endpoints:")
 	fmt.Println("    GET  /api/health                  - Health check")
 	fmt.Println("    GET  /api/chain-head              - Get chain head")
