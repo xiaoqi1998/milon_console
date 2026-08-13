@@ -2312,3 +2312,25 @@ body::before {
   text-align: center;
   padding: 20px 0;
 }
+
+/* 响应面板 tx_hash 行的「⇄ base58」小按钮 */
+.txhash-convert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  padding: 1px 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--accent-cyan);
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 5px;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: all 0.15s ease;
+}
+.txhash-convert-btn:hover {
+  background: rgba(34, 211, 238, 0.22);
+  color: #fff;
+}

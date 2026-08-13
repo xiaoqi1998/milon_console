@@ -736,6 +736,38 @@ function queryTransactionStatus(txHash) {
   showToast('已切换到「等待交易确认」并填入交易哈希', 'success');
 }
 
+// hexToBase58 将 hex 编码的字节（可带 0x 前缀）转换为 Bitcoin 标准 base58 字符串。
+function hexToBase58(hexStr) {
+  if (!hexStr) return '';
+  var hex = String(hexStr).trim();
+  if (hex.startsWith('0x') || hex.startsWith('0X')) hex = hex.slice(2);
+  hex = hex.replace(/[^0-9a-fA-F]/g, '');
+  if (hex.length === 0) return '';
+  // 前导 0 字节 -> 前导 '1'
+  var leadingZeros = 0;
+  for (var i = 0; i < hex.length; i += 2) {
+    if (hex.substr(i, 2) === '00') leadingZeros++;
+    else break;
+  }
+  var digits = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  var bytes = [];
+  for (var j = 0; j < hex.length; j += 2) {
+    bytes.push(parseInt(hex.substr(j, 2), 16));
+  }
+  var b58 = [];
+  var num = BigInt('0x' + hex);
+  if (num === 0n) {
+    return '1'.repeat(bytes.length);
+  }
+  while (num > 0n) {
+    var rem = num % 58n;
+    num = num / 58n;
+    b58.unshift(digits[Number(rem)]);
+  }
+  var result = '1'.repeat(leadingZeros) + b58.join('');
+  return result;
+}
+
 function displayResponse(data, statusCode, duration, headers, rawText, size) {
   var sc = $('statusBadge');
   var statusClass = statusCode >= 200 && statusCode < 300 ? 'success' : statusCode >= 400 ? 'error' : 'warning';
@@ -849,7 +881,14 @@ function formatJSON(obj) {
         return '<span class="' + cls + '">' + match + '</span>';
       }
     )
-    .replace(/([{}\[\],])/g, '<span class="json-punct">$1</span>');
+    .replace(/([{}\[\],])/g, '<span class="json-punct">$1</span>')
+    .replace(
+      /(<span class="json-key">"(?:txHash|tx_hash)"<\/span>:\s*<span class="json-string">)([^<]*)(<\/span>)/g,
+      function (_m, pre, val, post) {
+        return pre + val + post +
+          ' <button class="txhash-convert-btn" data-hash="' + val + '" title="转换为 base58">⇄ base58</button>';
+      }
+    );
 }
 
 function copyCurl() {
@@ -2507,13 +2546,9 @@ function buildIDLArgInput(arg, appName, methodName) {
     var activeAddr = (activeAcc && activeAcc.address) ? activeAcc.address : '';
     var val;
     if (arg.type === 'Address' || arg.type === 'Signer' || arg.type === 'AnySigner') {
-      if (arg.name === 'token' && hasExample && exampleVal !== '') {
-        // token 是合约地址（如 MIL 原生代币），保留示例值，不被活跃账户覆盖
-        val = String(exampleVal);
-      } else {
-        // 其余地址类参数：优先填活跃账户地址；无活跃账户时再退回示例值
-        val = activeAddr || (hasExample ? String(exampleVal) : defaultVal);
-      }
+      // 地址类参数：优先填活跃账户地址；无活跃账户时退回示例值。
+      // 注意：不要盲目用示例值覆盖（示例值可能是假数据或固定合约地址，会导致链端报 requires signer）。
+      val = activeAddr || (hasExample ? String(exampleVal) : defaultVal);
     } else {
       // 非地址类：用示例值（合理默认），无示例时用类型默认
       val = hasExample ? String(exampleVal) : defaultVal;
@@ -2731,7 +2766,7 @@ function buildIDLRequest() {
   });
 
   // signer / any_signer 参数：优先从 payerAddress 获取（payerRole 匹配或仅有一个 signer 参数时），
-  // 否则回退到示例值（示例值均已校验为合法 20 字节地址）
+  // 否则回退到示例值。输入框通常已预填活跃账户地址，此处为兜底逻辑。
   if (ix.args) {
     var signerArgs2 = ix.args.filter(function (a) { return a.role === 'signer' || a.role === 'any_signer'; });
     signerArgs2.forEach(function (arg) {
@@ -3154,6 +3189,22 @@ function initApp() {
         closeHistoryDrawer();
       }
     }
+  });
+  // 响应面板里 tx_hash 行的「⇄ base58」按钮（事件委托，覆盖控制台与 IDL 视图）
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.txhash-convert-btn');
+    if (!btn) return;
+    var raw = (btn.getAttribute('data-hash') || '').replace(/^&quot;|&quot;$/g, '');
+    var b58 = hexToBase58(raw);
+    if (!b58) {
+      showToast('无法转换该哈希', 'error');
+      return;
+    }
+    copyToClipboard(b58, function () {
+      showToast('base58: ' + b58 + ' （已复制）', 'success');
+    }, function () {
+      showToast('base58: ' + b58, 'success');
+    });
   });
   loadHistory();
   loadAccounts();
