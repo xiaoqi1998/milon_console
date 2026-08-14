@@ -393,7 +393,15 @@ function el(tag, attrs) {
   for (var i = 2; i < arguments.length; i++) {
     var c = arguments[i];
     if (c == null) continue;
-    node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    if (Array.isArray(c)) {
+      for (var j = 0; j < c.length; j++) {
+        var cc = c[j];
+        if (cc == null) continue;
+        node.appendChild(typeof cc === 'string' ? document.createTextNode(cc) : cc);
+      }
+    } else {
+      node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
   }
   return node;
 }
