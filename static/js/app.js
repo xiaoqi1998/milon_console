@@ -359,9 +359,14 @@ const state = {
   idlActiveRespTab: 'idl-json',
   idlLastResponse: null,
   idlCollapsedApps: {}, // appName -> true 表示折叠；默认全部折叠
+  idlTypes: {},       // appName -> Map<typeName, typeDef>（struct/enum 定义缓存）
+  idlConstants: {},   // appName -> Map<constName, value>（常量缓存）
+  idlErrors: {},      // appName -> Map<code, errorMeta>（错误码缓存）
   // 账户管理
   accounts: [],
   currentAccountId: null,
+  accountExpanded: {},   // accountId -> true 表示展开详情
+  accountKeyVisible: {}, // accountId -> true 表示私钥明文显示
 };
 
 const MAX_HISTORY = 50;
@@ -1215,7 +1220,23 @@ function renderAccountModal() {
     var list = el('div', { class: 'account-list' });
     state.accounts.forEach(function (acc) {
       var isActive = acc.id === state.currentAccountId;
+      var isExpanded = !!state.accountExpanded[acc.id];
+      var rowWrap = el('div', { class: 'account-row-wrap' });
       var row = el('div', { class: 'account-row' + (isActive ? ' active' : '') });
+
+      // 展开/折叠切换按钮
+      var toggleBtn = el('button', {
+        class: 'account-expand-btn' + (isExpanded ? ' open' : ''),
+        type: 'button',
+        title: isExpanded ? '收起详情' : '展开私钥/公钥',
+        text: isExpanded ? '▾' : '▸',
+      });
+      toggleBtn.addEventListener('click', function () {
+        state.accountExpanded[acc.id] = !state.accountExpanded[acc.id];
+        renderAccountModal();
+      });
+      row.appendChild(toggleBtn);
+
       var info = el('div', { class: 'account-info' },
         el('div', { class: 'account-name', text: acc.label }),
         el('div', { class: 'account-addr', text: acc.address })
@@ -1237,10 +1258,73 @@ function renderAccountModal() {
       actions.appendChild(delBtn);
       row.appendChild(info);
       row.appendChild(actions);
-      list.appendChild(row);
+      rowWrap.appendChild(row);
+
+      // 展开详情面板：私钥（遮蔽+眼睛切换）+ 公钥（明文）
+      if (isExpanded) {
+        var detail = el('div', { class: 'account-detail' });
+
+        // 私钥行
+        var skVisible = !!state.accountKeyVisible[acc.id];
+        detail.appendChild(buildAccountKeyRow(
+          '私钥',
+          acc.privateKey,
+          true,
+          skVisible,
+          function (next) { state.accountKeyVisible[acc.id] = next; }
+        ));
+
+        // 公钥行
+        detail.appendChild(buildAccountKeyRow('公钥', acc.publicKey || '', false, true, null));
+
+        // 地址行（可复制）
+        detail.appendChild(buildAccountKeyRow('地址', acc.address, false, true, null));
+
+        rowWrap.appendChild(detail);
+      }
+
+      list.appendChild(rowWrap);
     });
     body.appendChild(list);
   }
+
+  // 批量导入区
+  var importSection = el('div', { class: 'account-import-section' });
+  importSection.appendChild(el('div', { class: 'account-form-title', text: '批量导入（粘贴 JSON 数组）' }));
+
+  var importHint = el('div', { class: 'account-import-hint', text: '每项格式：{"address":"...","privateKey":"..."}，label 自动生成，同地址覆盖旧账户' });
+  importSection.appendChild(importHint);
+
+  var importTa = el('textarea', {
+    class: 'body-editor account-import-ta',
+    spellcheck: 'false',
+    placeholder: '[\n  {"address":"2Gqw...","privateKey":"..."},\n  {"address":"...","privateKey":"..."}\n]'
+  });
+  importSection.appendChild(importTa);
+
+  var importActions = el('div', { class: 'account-import-actions' });
+  var importBtn = el('button', { class: 'btn btn-primary btn-sm', text: '导入' });
+  importBtn.addEventListener('click', function () {
+    var text = importTa.value.trim();
+    if (!text) { showToast('请先粘贴 JSON 数组文本', 'warning'); return; }
+    var r = importAccounts(text);
+    if (!r) return;
+    if (r.added === 0 && r.updated === 0 && r.skipped === 0) {
+      showToast('导入完成：无可导入的有效账户', 'warning');
+      return;
+    }
+    saveAccounts();
+    importTa.value = '';
+    var parts = [];
+    if (r.added > 0) parts.push('新增 ' + r.added + ' 个');
+    if (r.updated > 0) parts.push('覆盖 ' + r.updated + ' 个');
+    if (r.skipped > 0) parts.push('跳过 ' + r.skipped + ' 个非法项');
+    showToast('导入完成：' + parts.join('，'), 'success');
+    renderAccountModal();
+  });
+  importActions.appendChild(importBtn);
+  importSection.appendChild(importActions);
+  body.appendChild(importSection);
 
   // 新增表单
   var form = el('div', { class: 'account-form' });
@@ -1321,6 +1405,61 @@ function renderAccountModal() {
   body.appendChild(form);
 }
 
+// 构建账户详情中的一行密钥信息（label + value + 可选眼睛切换 + 复制按钮）
+// mask: 是否默认遮蔽；visible: 初始是否明文；onToggle: 眼睛切换回调（可选）
+function buildAccountKeyRow(label, value, mask, visible, onToggle) {
+  var row = el('div', { class: 'account-key-row' });
+  row.appendChild(el('span', { class: 'account-key-label', text: label }));
+
+  var valText = value || '';
+  var masked = mask && !visible;
+  var displayText = masked ? '••••••••••••••••••••' : valText;
+
+  var valEl = el('span', {
+    class: 'account-key-value' + (masked ? ' masked' : ''),
+    text: displayText,
+    title: masked ? '点击眼睛图标显示明文' : valText,
+  });
+  row.appendChild(valEl);
+
+  if (mask) {
+    var eyeBtn = el('button', {
+      class: 'account-eye-btn',
+      type: 'button',
+      title: masked ? '显示明文' : '隐藏明文',
+      text: masked ? '👁' : '🙈',
+    });
+    eyeBtn.addEventListener('click', function () {
+      var next = !visible;
+      if (onToggle) onToggle(next);
+      // 局部更新当前行的显示，避免整表重绘
+      valEl.textContent = next ? valText : '••••••••••••••••••••';
+      valEl.classList.toggle('masked', !next);
+      valEl.title = next ? valText : '点击眼睛图标显示明文';
+      eyeBtn.textContent = next ? '🙈' : '👁';
+      eyeBtn.title = next ? '隐藏明文' : '显示明文';
+      visible = next;
+    });
+    row.appendChild(eyeBtn);
+  }
+
+  var copyBtn = el('button', {
+    class: 'account-copy-btn',
+    type: 'button',
+    title: '复制' + label,
+    text: '复制',
+  });
+  copyBtn.addEventListener('click', function () {
+    if (!valText) { showToast(label + '为空', 'warning'); return; }
+    copyToClipboard(valText,
+      function () { showToast(label + '已复制', 'success'); },
+      function () { showToast('复制失败', 'error'); });
+  });
+  row.appendChild(copyBtn);
+
+  return row;
+}
+
 function addAccount(data) {
   var acc = {
     id: genAccountId(),
@@ -1334,6 +1473,75 @@ function addAccount(data) {
   saveAccounts();
   showToast('账户已保存', 'success');
   renderAccountModal();
+}
+
+// 计算现有账户中「导入账户N」的最大序号，返回下一个可用序号。
+function nextImportLabelSeq() {
+  var max = 0;
+  state.accounts.forEach(function (a) {
+    var m = /^导入账户(\d+)$/.exec(a.label);
+    if (m) {
+      var n = parseInt(m[1], 10);
+      if (n > max) max = n;
+    }
+  });
+  return max + 1;
+}
+
+// 粘贴 JSON 文本批量导入账户。
+// 每项仅需 {address, privateKey}；label 自动生成，publicKey 留空；同地址覆盖旧账户。
+// 返回 {added, updated, skipped}；解析失败或非数组返回 null。
+function importAccounts(jsonText) {
+  var arr;
+  try {
+    arr = JSON.parse(jsonText);
+  } catch (e) {
+    showToast('导入失败：JSON 解析错误', 'error');
+    return null;
+  }
+  if (!Array.isArray(arr)) {
+    showToast('导入失败：请粘贴一个 JSON 数组（如 [{"address":"...","privateKey":"..."}]）', 'error');
+    return null;
+  }
+
+  var result = { added: 0, updated: 0, skipped: 0 };
+  var labelSeq = nextImportLabelSeq();
+
+  arr.forEach(function (item) {
+    if (!item || typeof item !== 'object') { result.skipped++; return; }
+    var address = String(item.address || '').trim();
+    var privateKey = String(item.privateKey || '').replace(/\s/g, '');
+    if (!address || !privateKey) { result.skipped++; return; }
+
+    var label = '导入账户' + labelSeq;
+    labelSeq++;
+
+    var existing = null;
+    for (var i = 0; i < state.accounts.length; i++) {
+      if (state.accounts[i].address === address) { existing = state.accounts[i]; break; }
+    }
+
+    if (existing) {
+      // 同地址覆盖：保留原 id 与 createdAt，更新 label/address/privateKey，publicKey 清空
+      existing.label = label;
+      existing.address = address;
+      existing.privateKey = privateKey;
+      existing.publicKey = '';
+      result.updated++;
+    } else {
+      state.accounts.push({
+        id: genAccountId(),
+        label: label,
+        address: address,
+        privateKey: privateKey,
+        publicKey: '',
+        createdAt: Date.now()
+      });
+      result.added++;
+    }
+  });
+
+  return result;
 }
 
 function removeAccount(id) {
@@ -2225,9 +2433,7 @@ var IDL_EXAMPLE_ARGS = {
     mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
     metadata: {
       name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/v2.json',
-      external_url: 'https://milon.test/nft/1', icon: '',
-      attributes: [{ trait_type: 'Color', value: 'Blue' }],
-      properties: [{ key: 'rarity', value: 'rare' }]
+      external_url: 'https://milon.test/nft/1'
     }
   },
   'nft.SetAttributes': {
@@ -2242,10 +2448,10 @@ var IDL_EXAMPLE_ARGS = {
     collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', to: 'gKzpjpfWVvwgDs26DTCFFA9eRxb',
     metadata: {
       name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/1.json',
-      external_url: 'https://milon.test/nft/1', icon: '',
-      attributes: [{ trait_type: 'Color', value: 'Blue' }],
-      properties: [{ key: 'rarity', value: 'rare' }]
+      external_url: 'https://milon.test/nft/1'
     },
+    attributes: [{ trait_type: 'Color', value: 'Blue' }],
+    properties: [{ key: 'rarity', value: 'rare' }],
     royalty: { recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', bps: 500 }
   },
   'nft.CreateBatch': {
@@ -2253,10 +2459,10 @@ var IDL_EXAMPLE_ARGS = {
     to: ['gKzpjpfWVvwgDs26DTCFFA9eRxb', '48A2Th5n4LoQ5LuwzxF7T27VYDZU'], amounts: [1, 2], max_supply: 10,
     metadata: {
       name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/1.json',
-      external_url: 'https://milon.test/nft/1', icon: '',
-      attributes: [{ trait_type: 'Color', value: 'Blue' }],
-      properties: [{ key: 'rarity', value: 'rare' }]
+      external_url: 'https://milon.test/nft/1'
     },
+    attributes: [{ trait_type: 'Color', value: 'Blue' }],
+    properties: [{ key: 'rarity', value: 'rare' }],
     royalty: { recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', bps: 500 }
   },
   'nft.MintBatch': { collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', to: ['gKzpjpfWVvwgDs26DTCFFA9eRxb'], amounts: [1] },
@@ -2415,6 +2621,55 @@ function idlIsScalarType(typeStr) {
   return Object.prototype.hasOwnProperty.call(IDL_SCALAR_TYPES, typeStr);
 }
 
+// 根据加载的元数据构建类型/常量/错误缓存，供表单渲染与默认值填充使用。
+function buildIDLCaches(apps) {
+  state.idlTypes = {};
+  state.idlConstants = {};
+  state.idlErrors = {};
+  apps.forEach(function (app) {
+    var typeMap = new Map();
+    (app.types || []).forEach(function (t) { typeMap.set(t.name, t); });
+    state.idlTypes[app.name] = typeMap;
+
+    var constMap = new Map();
+    (app.constants || []).forEach(function (c) {
+      // 解析常量值：字符串值去除首尾引号，数字/布尔保持原类型
+      var v = c.value;
+      if (typeof v === 'string') {
+        var s = v.trim();
+        if ((s[0] === '"' && s[s.length - 1] === '"') || (s[0] === "'" && s[s.length - 1] === "'")) {
+          v = s.slice(1, -1);
+        }
+      }
+      constMap.set(c.name, v);
+    });
+    state.idlConstants[app.name] = constMap;
+
+    var errMap = new Map();
+    (app.errors || []).forEach(function (e) { errMap.set(e.code, e); });
+    state.idlErrors[app.name] = errMap;
+  });
+}
+
+// 解析类型字符串，返回 { base, generic }。
+// 如 "vec<Address>" -> { base: "vec", generic: "Address" }；"Address" -> { base: "Address", generic: "" }
+function idlParseType(typeStr) {
+  var s = (typeStr || '').trim();
+  var lt = s.indexOf('<');
+  if (lt > 0 && s[s.length - 1] === '>') {
+    return { base: s.slice(0, lt), generic: s.slice(lt + 1, -1) };
+  }
+  return { base: s, generic: '' };
+}
+
+// 根据 app 名称查询类型定义（struct/enum），返回 typeDef 或 null。
+function idlGetTypeDef(appName, typeName) {
+  if (!appName || !typeName) return null;
+  var map = state.idlTypes[appName];
+  if (!map) return null;
+  return map.get(typeName) || null;
+}
+
 async function loadIDLMetadata() {
   var tree = $('idlTree');
   tree.innerHTML = '';
@@ -2428,6 +2683,7 @@ async function loadIDLMetadata() {
     // 默认全部折叠
     state.idlCollapsedApps = {};
     apps.forEach(function (a) { state.idlCollapsedApps[a.name] = true; });
+    buildIDLCaches(apps);
     renderIDLAppList();
   } catch (err) {
     tree.innerHTML = '';
@@ -2586,7 +2842,7 @@ function renderIDLForm(ix) {
     ));
   }
 
-  // signer 参数提示
+  // signer 参数提示（结合 signerLookups 展示签名者角色与参数映射）
   if (signerArgs.length) {
     var hintSec = el('div', { class: 'param-section' });
     hintSec.appendChild(el('div', { class: 'param-section-title', text: '签名者说明' }));
@@ -2597,6 +2853,15 @@ function renderIDLForm(ix) {
         el('span', { class: 'idl-signer-note', text: 'role=' + a.role + '，需要在 args 中传地址，同时在下方签名配置里提供对应签名' })
       ));
     });
+    // 展示 signerLookups 的角色 -> 参数映射
+    if (ix.signerLookups) {
+      Object.keys(ix.signerLookups).forEach(function (role) {
+        var lk = ix.signerLookups[role];
+        hintSec.appendChild(el('div', { class: 'idl-signer-hint lookup' },
+          el('span', { class: 'idl-signer-note', text: '签名者角色「' + role + '」→ 取参数「' + (lk.arg || '—') + '」(' + (lk.type || 'Address') + ')' + (lk.res ? '，资源 res=' + lk.res : '') })
+        ));
+      });
+    }
     body.appendChild(hintSec);
   }
 
@@ -2610,10 +2875,7 @@ function renderIDLForm(ix) {
 }
 
 function buildIDLArgInput(arg, appName, methodName) {
-  var isScalar = idlIsScalarType(arg.type);
-  var exampleArgs = IDL_EXAMPLE_ARGS[appName + '.' + methodName];
-  var exampleVal = exampleArgs ? exampleArgs[arg.name] : undefined;
-  var hasExample = exampleVal !== undefined;
+  var typeDef = idlGetTypeDef(appName, arg.type);
   var paramDesc = arg.description;
   var row = el('div', { class: 'param-row idl-arg-row' },
     el('label', { class: 'param-label' },
@@ -2622,18 +2884,41 @@ function buildIDLArgInput(arg, appName, methodName) {
       paramDesc ? el('span', { class: 'idl-arg-cn', text: paramDesc }) : null
     )
   );
+
+  // 枚举类型：渲染为下拉选择
+  if (typeDef && typeDef.kind === 'enum') {
+    row.appendChild(buildIDLEnumInput(arg, appName, methodName, typeDef));
+    return row;
+  }
+
+  // struct 类型：渲染为字段级子表单
+  if (typeDef && typeDef.kind === 'struct') {
+    row.appendChild(buildIDLStructInput(arg, appName, methodName, typeDef));
+    return row;
+  }
+
+  var isScalar = idlIsScalarType(arg.type);
   if (isScalar) {
     var defaultVal = IDL_SCALAR_TYPES[arg.type];
     var activeAcc = getCurrentAccount();
     var activeAddr = (activeAcc && activeAcc.address) ? activeAcc.address : '';
+    var exampleVal = idlArgExampleValue(appName, methodName, arg);
+    var hasExample = exampleVal !== undefined;
     var val;
     if (arg.type === 'Address' || arg.type === 'Signer' || arg.type === 'AnySigner') {
       // 地址类参数：优先填活跃账户地址；无活跃账户时退回示例值。
       // 注意：不要盲目用示例值覆盖（示例值可能是假数据或固定合约地址，会导致链端报 requires signer）。
       val = activeAddr || (hasExample ? String(exampleVal) : defaultVal);
     } else {
-      // 非地址类：用示例值（合理默认），无示例时用类型默认
-      val = hasExample ? String(exampleVal) : defaultVal;
+      // 非地址类：优先常量默认值 -> 示例值 -> 类型默认
+      var constVal = idlConstantForArg(appName, arg);
+      if (constVal !== undefined) {
+        val = String(constVal);
+      } else if (hasExample) {
+        val = String(exampleVal);
+      } else {
+        val = defaultVal;
+      }
     }
     var inp = el('input', {
       class: 'param-input',
@@ -2646,19 +2931,263 @@ function buildIDLArgInput(arg, appName, methodName) {
     if (arg.type === 'Address' || arg.type === 'Signer' || arg.type === 'AnySigner' || /hash/i.test(arg.name)) {
       row.appendChild(makeBase58ToggleBtn(inp));
     }
-  } else {
-    var defaultComplex = idlDefaultComplexValue(arg.type);
-    var complexVal = hasExample ? JSON.stringify(exampleVal, null, 2) : defaultComplex;
-    var ta = el('textarea', {
-      class: 'body-editor idl-arg-editor',
-      'data-argname': arg.name,
-      spellcheck: 'false',
-      placeholder: 'JSON，如 ' + defaultComplex,
-    });
-    ta.value = complexVal;
-    row.appendChild(ta);
+    return row;
   }
+
+  // 其它复合类型（vec/map/tuple/option/未知 struct）：JSON textarea
+  var parsed = idlParseType(arg.type);
+  var genericHint = parsed.generic ? '元素类型 ' + parsed.generic : '';
+  var defaultComplex = idlDefaultComplexValue(arg.type);
+  var complexVal;
+  var exampleComplex = idlArgExampleValue(appName, methodName, arg);
+  if (exampleComplex !== undefined) {
+    // 复合类型：注入当前活跃账户的真实公钥，替换示例里的假/占位公钥
+    var activeAccForComplex = getCurrentAccount();
+    var injected = idlInjectAccountPublicKey(exampleComplex, activeAccForComplex);
+    complexVal = JSON.stringify(injected, null, 2);
+  } else {
+    complexVal = defaultComplex;
+  }
+  var ta = el('textarea', {
+    class: 'body-editor idl-arg-editor',
+    'data-argname': arg.name,
+    spellcheck: 'false',
+    placeholder: (genericHint ? genericHint + '；' : '') + 'JSON，如 ' + defaultComplex,
+  });
+  ta.value = complexVal;
+  row.appendChild(ta);
   return row;
+}
+
+// 获取某个参数在 IDL_EXAMPLE_ARGS 中的示例值（优先），否则返回 undefined。
+function idlArgExampleValue(appName, methodName, arg) {
+  var exampleArgs = IDL_EXAMPLE_ARGS[appName + '.' + methodName];
+  if (exampleArgs && exampleArgs[arg.name] !== undefined) {
+    return exampleArgs[arg.name];
+  }
+  return undefined;
+}
+
+// 从 IDL constants 中推断参数的默认值（按参数名模糊匹配常量名）。
+function idlConstantForArg(appName, arg) {
+  var constMap = state.idlConstants[appName];
+  if (!constMap || !constMap.size) return undefined;
+  var name = arg.name.toLowerCase();
+  var candidates = [
+    arg.name.toUpperCase(),
+    arg.name.toUpperCase() + '_ADDRESS',
+    arg.name.toUpperCase() + '_ID',
+    name + '_address',
+    name + '_id',
+  ];
+  for (var i = 0; i < candidates.length; i++) {
+    if (constMap.has(candidates[i])) {
+      var v = constMap.get(candidates[i]);
+      if (typeof v === 'string' && /^M11on/i.test(v)) return v;
+    }
+  }
+  return undefined;
+}
+
+// 枚举参数：渲染为 select，选项值为合法的 JSON 编码（unit variant 用字符串，带字段 variant 用对象）。
+function buildIDLEnumInput(arg, appName, methodName, typeDef) {
+  var exampleVal = idlArgExampleValue(appName, methodName, arg);
+  var selectedVariant = '';
+  if (typeof exampleVal === 'string') {
+    selectedVariant = exampleVal;
+  } else if (exampleVal && typeof exampleVal === 'object' && exampleVal.variant) {
+    selectedVariant = exampleVal.variant;
+  }
+
+  var sel = el('select', { class: 'param-input idl-enum-select', 'data-argname': arg.name });
+  // 空占位项
+  sel.appendChild(el('option', { value: '', text: '— 选择枚举值 —' }));
+
+  typeDef.variants.forEach(function (v) {
+    var optVal;
+    if (v.kind === 'unit' || (v.fields && v.fields.length === 0)) {
+      // unit 变体：直接是字符串
+      optVal = JSON.stringify(v.name);
+    } else if (v.kind === 'tuple') {
+      // tuple 变体：{"variant":"X","value":[...]}
+      optVal = JSON.stringify({ variant: v.name, value: v.fields.map(function () { return null; }) });
+    } else {
+      // struct 变体：{"variant":"X","value":{...}}
+      var fieldsObj = {};
+      v.fields.forEach(function (f) {
+        fieldsObj[f.name] = idlDefaultForType(appName, f.type);
+      });
+      optVal = JSON.stringify({ variant: v.name, value: fieldsObj });
+    }
+    var opt = el('option', { value: optVal, text: v.name });
+    sel.appendChild(opt);
+  });
+
+  if (selectedVariant) {
+    for (var i = 0; i < sel.options.length; i++) {
+      var o = sel.options[i];
+      if (o.textContent === selectedVariant) { sel.selectedIndex = i; break; }
+    }
+  }
+  return sel;
+}
+
+// struct 参数：渲染为字段级子表单，隐藏 textarea 保存完整 JSON，字段变化时同步。
+function buildIDLStructInput(arg, appName, methodName, typeDef) {
+  var container = el('div', { class: 'idl-struct-input' });
+
+  // 初始对象：优先示例值，否则按字段类型生成默认值
+  var exampleVal = idlArgExampleValue(appName, methodName, arg);
+  var initial = (exampleVal && typeof exampleVal === 'object' && !Array.isArray(exampleVal))
+    ? exampleVal
+    : {};
+  if (!exampleVal || typeof exampleVal !== 'object') {
+    typeDef.fields.forEach(function (f) { initial[f.name] = idlDefaultForType(appName, f.type); });
+  }
+  if (Object.keys(initial).length === 0) {
+    typeDef.fields.forEach(function (f) { initial[f.name] = idlDefaultForType(appName, f.type); });
+  }
+
+  // 隐藏 textarea 承载完整 JSON，供 buildIDLRequest 统一收集
+  var hidden = el('textarea', {
+    class: 'idl-struct-hidden',
+    'data-argname': arg.name,
+    style: 'display:none;',
+  });
+  hidden.value = JSON.stringify(initial, null, 2);
+  container.appendChild(hidden);
+
+  function sync() {
+    hidden.value = JSON.stringify(initial, null, 2);
+  }
+
+  var fieldsBox = el('div', { class: 'idl-struct-fields' });
+  typeDef.fields.forEach(function (f) {
+    var fTypeDef = idlGetTypeDef(appName, f.type);
+    var fRow = el('div', { class: 'idl-struct-field-row' },
+      el('label', { class: 'idl-struct-field-label' },
+        el('span', { class: 'idl-arg-name', text: f.name }),
+        el('span', { class: 'idl-arg-type', text: f.type })
+      )
+    );
+
+    if (fTypeDef && fTypeDef.kind === 'enum') {
+      var sel = el('select', { class: 'param-input idl-enum-select' });
+      sel.appendChild(el('option', { value: '', text: '— 选择 —' }));
+      fTypeDef.variants.forEach(function (v) {
+        var optVal;
+        if (v.kind === 'unit' || (v.fields && v.fields.length === 0)) {
+          optVal = JSON.stringify(v.name);
+        } else {
+          var fieldsObj = {};
+          v.fields.forEach(function (vf) { fieldsObj[vf.name] = idlDefaultForType(appName, vf.type); });
+          optVal = JSON.stringify({ variant: v.name, value: fieldsObj });
+        }
+        sel.appendChild(el('option', { value: optVal, text: v.name }));
+      });
+      // 选中当前值对应的变体
+      var cur = initial[f.name];
+      if (cur !== undefined && cur !== null && cur !== '') {
+        var curName = typeof cur === 'string' ? cur : cur.variant;
+        for (var si = 0; si < sel.options.length; si++) {
+          if (sel.options[si].textContent === curName) { sel.selectedIndex = si; break; }
+        }
+      }
+      sel.addEventListener('change', function () {
+        try { initial[f.name] = JSON.parse(sel.value); } catch (e) { initial[f.name] = ''; }
+        sync();
+      });
+      fRow.appendChild(sel);
+    } else if (idlIsScalarType(f.type)) {
+      var inp = el('input', { class: 'param-input', type: 'text' });
+      var fVal = initial[f.name];
+      // 地址类字段：示例/默认为空时预填活跃账户地址
+      if ((fVal === undefined || fVal === null || fVal === '') &&
+          (f.type === 'Address' || f.type === 'PublicKey' || f.type === 'Signer' || f.type === 'AnySigner')) {
+        var act = getCurrentAccount();
+        if (act && act.address) { fVal = act.address; initial[f.name] = act.address; sync(); }
+      }
+      inp.value = (fVal === undefined || fVal === null) ? '' : String(fVal);
+      inp.addEventListener('input', function () {
+        initial[f.name] = idlCoerceScalar(f.type, inp.value);
+        sync();
+      });
+      fRow.appendChild(inp);
+    } else {
+      // 嵌套复合字段：textarea JSON
+      var ta = el('textarea', { class: 'body-editor idl-struct-nested', spellcheck: 'false' });
+      ta.value = JSON.stringify(initial[f.name], null, 2);
+      ta.addEventListener('input', function () {
+        try { initial[f.name] = JSON.parse(ta.value || 'null'); } catch (e) {}
+        sync();
+      });
+      fRow.appendChild(ta);
+    }
+    fieldsBox.appendChild(fRow);
+  });
+  container.appendChild(fieldsBox);
+  return container;
+}
+
+// 根据类型名生成默认值（用于 struct 字段、enum 变体字段等）。
+function idlDefaultForType(appName, typeStr) {
+  var typeDef = idlGetTypeDef(appName, typeStr);
+  if (typeDef && typeDef.kind === 'enum') {
+    if (typeDef.variants && typeDef.variants.length) {
+      var v0 = typeDef.variants[0];
+      if (v0.kind === 'unit' || !v0.fields || v0.fields.length === 0) {
+        return v0.name; // 字符串
+      }
+      var obj = {};
+      v0.fields.forEach(function (f) { obj[f.name] = idlDefaultForType(appName, f.type); });
+      return { variant: v0.name, value: obj };
+    }
+    return '';
+  }
+  if (typeDef && typeDef.kind === 'struct') {
+    var o = {};
+    typeDef.fields.forEach(function (f) { o[f.name] = idlDefaultForType(appName, f.type); });
+    return o;
+  }
+  if (idlIsScalarType(typeStr)) return IDL_SCALAR_TYPES[typeStr];
+  return idlDefaultComplexValue(typeStr);
+}
+
+// 将输入框文本按标量类型转换为合适的 JS 值。
+function idlCoerceScalar(typeStr, raw) {
+  if (typeStr === 'bool' || typeStr === 'boolean') {
+    return raw === 'true' || raw === '1';
+  }
+  return raw;
+}
+
+// 判断字符串是否形如 secp256k1 压缩公钥（33 字节，02/03 开头，共 66 个 hex 字符）
+function idlLooksLikeSecpPk(v) {
+  if (typeof v !== 'string') return false;
+  var s = v.replace(/^0x/i, '').replace(/\s/g, '');
+  return /^(02|03)[0-9a-fA-F]{64}$/.test(s);
+}
+
+// 递归把复合参数示例里的 secp256k1 公钥字段替换为当前活跃账户的真实公钥，
+// 避免示例里的假/占位公钥导致链端 "invalid base58 string" 报错。
+function idlInjectAccountPublicKey(val, activeAcc) {
+  if (!val || typeof val !== 'object') return val;
+  if (Array.isArray(val)) {
+    return val.map(function (v) { return idlInjectAccountPublicKey(v, activeAcc); });
+  }
+  var pk = (activeAcc && activeAcc.publicKey) ? activeAcc.publicKey : '';
+  var out = {};
+  Object.keys(val).forEach(function (k) {
+    var v = val[k];
+    // 公钥字段名（public_key / pubkey / *_pk），但排除 fndsa512/bls 等特殊曲线字段
+    var isPkField = /(public_key|pubkey|pub_key|_pk)$/i.test(k) && !/(bls|consensus|fndsa|ed25519)/i.test(k);
+    if (isPkField && idlLooksLikeSecpPk(v) && pk) {
+      out[k] = pk;
+    } else {
+      out[k] = idlInjectAccountPublicKey(v, activeAcc);
+    }
+  });
+  return out;
 }
 
 function idlDefaultComplexValue(typeStr) {
@@ -2668,6 +3197,28 @@ function idlDefaultComplexValue(typeStr) {
   if (typeStr.indexOf('tuple<') === 0) return '[]';
   // 自定义 struct/enum：返回空对象
   return '{}';
+}
+
+// 从 signerLookups 推导支付/签名角色与对应参数。
+// 返回 { role, argName }：role 为签名者角色名（如 owner/freezer），argName 为该角色对应的参数名（如 token）。
+// 若当前方法没有 signerLookups，返回 null。
+function idlDerivePayerRole(ix) {
+  if (!ix || !ix.signerLookups) return null;
+  var keys = Object.keys(ix.signerLookups);
+  if (keys.length === 0) return null;
+  // 取第一个 signer 角色（通常即为主要付款/签名者）
+  var role = keys[0];
+  var lookup = ix.signerLookups[role];
+  return { role: role, argName: lookup ? lookup.arg : '' };
+}
+
+// 计算 entry 方法的付款/签名者角色提示（优先 signerLookups 推导，回退硬编码 payerRole）。
+function idlPayerRoleLabel(ix, examplePay) {
+  var derived = idlDerivePayerRole(ix);
+  if (derived && derived.role) {
+    return derived.role + '（signer）';
+  }
+  return (examplePay && examplePay.payerRole) ? examplePay.payerRole : '';
 }
 
 function buildIDLPaymentSection() {
@@ -2765,7 +3316,7 @@ function renderIDLPaymentFields() {
     + (isSubmit ? '  "privateKey": "' + (prefilledSk || 'hex或base58私钥') + '",\n' : '')
     + '  "signatureMode": ' + sigModeTpl.replace(/\n/g, '\n  ') + '\n}';
 
-  // 通用：payer/owner 地址（根据实例支付配置显示角色提示）
+  // 通用：payer/owner 地址（优先用 signerLookups 推导签名角色，回退实例支付配置）
   var examplePay = state.currentIdlApp && state.currentIdlMethod
     ? IDL_EXAMPLE_PAYMENT[state.currentIdlApp + '.' + state.currentIdlMethod.name]
     : null;
@@ -2775,8 +3326,9 @@ function renderIDLPaymentFields() {
     return;
   }
 
-  var payerLabel = (examplePay && examplePay.payerRole)
-    ? examplePay.payerRole + ' 地址 (base58)'
+  var payerRoleLabel = idlPayerRoleLabel(state.currentIdlMethod, examplePay);
+  var payerLabel = payerRoleLabel
+    ? payerRoleLabel + ' 地址 (base58)'
     : '付款/所有者地址 (base58)';
   container.appendChild(buildIDLFieldRow('payerAddress', payerLabel, prefilledAddr, 'text', 'data-field', 'payerAddress'));
 
@@ -2828,9 +3380,10 @@ function buildIDLRequest() {
   var ix = state.currentIdlMethod;
   if (!ix) return null;
   var appName = state.currentIdlApp;
+  // 占位：用于参数 JSON 解析失败时短路返回
+  var args = {};
 
   // 收集所有参数（input + signer）
-  var args = {};
   var exampleArgs = IDL_EXAMPLE_ARGS[appName + '.' + ix.name];
   var examplePay = IDL_EXAMPLE_PAYMENT[appName + '.' + ix.name];
   var payerRole = (examplePay && examplePay.payerRole) ? examplePay.payerRole : '';
@@ -2861,19 +3414,30 @@ function buildIDLRequest() {
       }
     } else {
       try { args[name] = JSON.parse(raw); }
-      catch (e) { args[name] = raw; }
+      catch (e) {
+        showToast('参数 ' + name + ' 的 JSON 解析失败：' + e.message + '（请检查语法，特别是字符串是否带引号）', 'error', 6000);
+        delete args.__invalidJson;
+        args.__invalidJson = name;
+      }
     }
   });
+  if (args.__invalidJson) {
+    return null; // 调用方会通过 if (!req) return; 终止
+  }
 
-  // signer / any_signer 参数：优先从 payerAddress 获取（payerRole 匹配或仅有一个 signer 参数时），
+  // signer / any_signer 参数：优先从 payerAddress 获取（signerLookups 推导的角色参数或仅有一个 signer 参数时），
   // 否则回退到示例值。输入框通常已预填活跃账户地址，此处为兜底逻辑。
+  var derivedRole = idlDerivePayerRole(ix);
   if (ix.args) {
     var signerArgs2 = ix.args.filter(function (a) { return a.role === 'signer' || a.role === 'any_signer'; });
     signerArgs2.forEach(function (arg) {
       if (!args.hasOwnProperty(arg.name)) {
         var val = '';
-        // 优先：payerRole 与参数名匹配时用 payerAddress
+        // 优先：payerRole（signerLookups 推导或硬编码）与参数名匹配时用 payerAddress
         if (payerRole === arg.name && payerAddress) {
+          val = payerAddress;
+        } else if (derivedRole && derivedRole.argName === arg.name && payerAddress) {
+          // signerLookups 指明了该签名者对应的参数名，直接用 payerAddress
           val = payerAddress;
         } else if (signerArgs2.length === 1 && payerAddress) {
           // 兜底：只有一个 signer 参数时直接用 payerAddress（常见于 from/holder/owner 场景）
