@@ -108,6 +108,7 @@ func main() {
 
 		// Bulk transfer (generate accounts, claim faucet, consolidate MIL)
 		api.POST("/tool/bulk-transfer", bulkTransferHandler.BulkTransfer)
+		api.GET("/tool/bulk-transfer/:id", bulkTransferHandler.GetBulkTransferStatus)
 	}
 
 	// Print startup banner
@@ -152,7 +153,8 @@ func main() {
 	fmt.Println("    POST /api/view/multi              - Low-level multi view")
 	fmt.Println("    GET  /api/rpc/resource-paths/:hash- Get resource path by hash")
 	fmt.Println("    GET  /api/idl/metadata            - IDL 方法元数据（app/方法/参数 schema）")
-	fmt.Println("    POST /api/tool/bulk-transfer      - 批量生成账户并归集 MIL")
+	fmt.Println("    POST /api/tool/bulk-transfer      - 批量生成账户并归集 MIL（异步任务）")
+	fmt.Println("    GET  /api/tool/bulk-transfer/:id  - 查询批量归集任务进度")
 	fmt.Println("    GET  /                            - Web console")
 	fmt.Println("    GET  /static/*                    - Static files")
 	fmt.Println("========================================")

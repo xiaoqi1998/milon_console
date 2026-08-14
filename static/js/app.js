@@ -57,6 +57,8 @@ const ENDPOINTS = [
     pathParams: [{ name: 'address', ph: 'base58地址' }] },
   { id: 'bulk-transfer', method: 'POST', path: '/api/tool/bulk-transfer', summary: '批量生成账户并归集MIL', group: '工具',
     bodyTemplate: JSON.stringify({ count: 1000, toAddress: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', concurrency: 16 }, null, 2) },
+  { id: 'bulk-transfer-status', method: 'GET', path: '/api/tool/bulk-transfer/:id', summary: '查询归集任务进度', group: '工具',
+    pathParams: [{ name: 'id', ph: '任务ID (jobId)' }] },
   { id: 'view-single', method: 'POST', path: '/api/view/single', summary: '底层单指令视图', group: '合约',
     bodyTemplate: JSON.stringify({ transactionPostcard: 'base64编码' }, null, 2) },
   { id: 'view-multi', method: 'POST', path: '/api/view/multi', summary: '底层多指令视图', group: '合约',
@@ -705,6 +707,16 @@ async function sendRequest() {
     } catch (e) {
       data = text;
     }
+
+    // bulk-transfer 为异步任务：POST 返回 jobId 后自动轮询进度，直到完成
+    if (state.currentEndpoint.id === 'bulk-transfer' && data && data.data && data.data.jobId) {
+      state.loading = false;
+      setSendLoading(false);
+      addToHistory(state.currentEndpoint, req, resp.status, duration, data);
+      await pollBulkTransfer(data.data.jobId);
+      return;
+    }
+
     displayResponse(data, resp.status, duration, resp.headers, text, size);
     addToHistory(state.currentEndpoint, req, resp.status, duration, data);
   } catch (err) {
@@ -715,6 +727,70 @@ async function sendRequest() {
     state.loading = false;
     setSendLoading(false);
   }
+}
+
+// sleep 毫秒级延迟。
+function sleep(ms) {
+  return new Promise(function (resolve) { setTimeout(resolve, ms); });
+}
+
+// pollBulkTransfer 轮询批量归集任务进度，实时刷新进度条，完成后展示最终结果。
+async function pollBulkTransfer(jobId) {
+  showToast('归集任务已启动: ' + jobId, 'info');
+  var pollReq = { method: 'GET', url: '/api/tool/bulk-transfer/' + jobId, body: null };
+  while (true) {
+    await sleep(2000);
+    var resp, data;
+    try {
+      resp = await fetch(pollReq.url);
+      var text = await resp.text();
+      try { data = JSON.parse(text); } catch (e) { data = text; }
+    } catch (err) {
+      // 网络抖动，继续轮询
+      continue;
+    }
+
+    var job = data && data.data ? data.data : null;
+    if (!job) continue;
+
+    renderBulkProgress(job);
+
+    if (job.status === 'completed') {
+      showToast('归集完成: ' + job.success + '/' + job.count + ' 成功, ' + job.failed + ' 失败', job.failed ? 'warning' : 'success');
+      var raw = JSON.stringify(data);
+      displayResponse(data, resp.status, Math.round(job.finishedAt - job.startedAt), resp.headers, raw, new Blob([raw]).size);
+      addToHistory(state.currentEndpoint, pollReq, resp.status, 0, data);
+      return;
+    }
+  }
+}
+
+// renderBulkProgress 在响应区渲染任务进度条。
+function renderBulkProgress(job) {
+  var pct = job.count > 0 ? Math.round((job.done / job.count) * 100) : 0;
+  var jp = $('tab-json');
+  jp.innerHTML = '';
+  var box = el('div', { class: 'bulk-progress-box' });
+  var title = el('div', { class: 'bulk-progress-title', text: '批量归集进行中  ' + job.done + ' / ' + job.count + '  (' + pct + '%)' });
+  var barWrap = el('div', { class: 'bulk-progress-bar-wrap' });
+  var bar = el('div', { class: 'bulk-progress-bar', style: 'width:' + pct + '%' });
+  barWrap.appendChild(bar);
+  var meta = el('div', { class: 'bulk-progress-meta', text: '成功 ' + job.success + ' · 失败 ' + job.failed + ' · 已归集 ' + formatAmount(job.totalTransferred) + ' MIL' });
+  box.appendChild(title);
+  box.appendChild(barWrap);
+  box.appendChild(meta);
+  jp.appendChild(box);
+  $('statusBadge').className = 'status-badge loading';
+  $('statusBadge').textContent = 'RUN';
+  $('respTime').textContent = '--';
+  $('respSize').textContent = '--';
+}
+
+// formatAmount 将最小单位换算为 MIL 展示（decimals=6）。
+function formatAmount(units) {
+  if (units === undefined || units === null) return '0';
+  var n = Number(units) / 1_000_000;
+  return n.toLocaleString('zh-CN', { maximumFractionDigits: 2 });
 }
 
 function setSendLoading(loading) {
