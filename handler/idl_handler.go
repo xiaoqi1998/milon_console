@@ -35,6 +35,7 @@ type idlInstructionMeta struct {
 	Kind          string        `json:"kind"` // "entry" | "view"
 	Handler       string        `json:"handler"`
 	Discriminator uint16        `json:"discriminator"`
+	Description   string        `json:"description"` // 方法中文说明
 	Args          []idlArgMeta  `json:"args"`
 	Returns       *idlReturnMeta `json:"returns,omitempty"` // view 必有
 	Sponsor       bool          `json:"sponsor,omitempty"`  // entry 可有
@@ -42,9 +43,10 @@ type idlInstructionMeta struct {
 
 // idlArgMeta 描述一个方法参数。
 type idlArgMeta struct {
-	Name string `json:"name"`
-	Type string `json:"type"` // 原始 IDL 类型字符串，如 "vec<PublicKey>"
-	Role string `json:"role"` // "input" | "signer" | "any_signer"
+	Name        string `json:"name"`
+	Type        string `json:"type"` // 原始 IDL 类型字符串，如 "vec<PublicKey>"
+	Role        string `json:"role"` // "input" | "signer" | "any_signer"
+	Description string `json:"description"` // 参数中文说明
 }
 
 // idlReturnMeta 描述 view 方法的返回值类型。
@@ -84,11 +86,21 @@ func buildAppMeta(name string, pd *provider.Provider) idlAppMeta {
 	for _, ix := range idl.Instructions {
 		args := make([]idlArgMeta, 0, len(ix.Args))
 		for _, a := range ix.Args {
+			desc := a.Description
+			if desc == "" {
+				desc = describeArg(a.Name, a.Role)
+			}
 			args = append(args, idlArgMeta{
-				Name: a.Name,
-				Type: a.Type,
-				Role: a.Role,
+				Name:        a.Name,
+				Type:        a.Type,
+				Role:        a.Role,
+				Description: desc,
 			})
+		}
+
+		ixDesc := ix.Description
+		if ixDesc == "" {
+			ixDesc = describeInstruction(name, ix.Name, ix.Handler, ix.Kind)
 		}
 
 		meta := idlInstructionMeta{
@@ -96,6 +108,7 @@ func buildAppMeta(name string, pd *provider.Provider) idlAppMeta {
 			Kind:          ix.Kind,
 			Handler:       ix.Handler,
 			Discriminator: ix.Discriminator,
+			Description:   ixDesc,
 			Args:          args,
 			Sponsor:       ix.Sponsor,
 		}
@@ -113,4 +126,181 @@ func buildAppMeta(name string, pd *provider.Provider) idlAppMeta {
 		Description:  idl.Metadata.Description,
 		Instructions: instructions,
 	}
+}
+
+// describeInstruction 根据 app/方法名/handler/kind 推断方法的中文说明。
+func describeInstruction(app, name, handler, kind string) string {
+	h := handler
+	verb := ""
+	switch {
+	case hasPrefix(h, "create"):
+		verb = "创建"
+	case hasPrefix(h, "mint"):
+		verb = "铸造/增发"
+	case hasPrefix(h, "burn"):
+		verb = "销毁"
+	case hasPrefix(h, "transfer"):
+		verb = "转账"
+	case hasPrefix(h, "freeze"):
+		verb = "冻结"
+	case hasPrefix(h, "unfreeze"):
+		verb = "解冻"
+	case hasPrefix(h, "approve"):
+		verb = "授权"
+	case hasPrefix(h, "revoke"):
+		verb = "撤销授权"
+	case hasPrefix(h, "set"):
+		verb = "设置"
+	case hasPrefix(h, "update"):
+		verb = "更新"
+	case hasPrefix(h, "add"):
+		verb = "添加"
+	case hasPrefix(h, "remove"):
+		verb = "移除"
+	case hasPrefix(h, "open"):
+		verb = "开启/创建"
+	case hasPrefix(h, "close"):
+		verb = "关闭"
+	case hasPrefix(h, "init"):
+		verb = "初始化"
+	case hasPrefix(h, "pause"):
+		verb = "暂停"
+	case hasPrefix(h, "unpause"):
+		verb = "恢复"
+	case hasPrefix(h, "upgrade"):
+		verb = "升级"
+	case hasPrefix(h, "claim"):
+		verb = "领取"
+	case hasPrefix(h, "deposit"):
+		verb = "存入"
+	case hasPrefix(h, "withdraw"):
+		verb = "取出"
+	case hasPrefix(h, "batch"):
+		verb = "批量处理"
+	case hasPrefixAny(h, "get_", "query_", "list_", "fetch_", "of", "balance", "total"):
+		verb = "查询"
+	case hasPrefix(h, "disclose"):
+		verb = "披露"
+	case hasPrefix(h, "register"):
+		verb = "注册"
+	case hasPrefix(h, "submit"):
+		verb = "提交"
+	case hasPrefix(h, "vote"):
+		verb = "投票"
+	case hasPrefix(h, "delegate"):
+		verb = "委托"
+	case hasPrefix(h, "lock"):
+		verb = "锁定"
+	case hasPrefix(h, "unlock"):
+		verb = "解锁"
+	case hasPrefix(h, "echo"):
+		verb = "回显"
+	}
+
+	obj := appNameCN(app) + "对象"
+	switch app {
+	case "system":
+		obj = "系统"
+	case "account":
+		obj = "账户"
+	case "token":
+		obj = "代币"
+	case "staking":
+		obj = "质押"
+	case "identity":
+		obj = "身份（DID）"
+	case "nft":
+		obj = "NFT"
+	case "randomness":
+		obj = "随机数（VRF）信标"
+	case "demo":
+		obj = "示例/demo"
+	}
+
+	if verb != "" {
+		if kind == "view" {
+			return "（只读查询）" + verb + obj + "相关信息。"
+		}
+		return verb + obj + "（handler: " + h + "）。"
+	}
+	return "调用 " + obj + " 的 " + name + " 方法（handler: " + h + "）。"
+}
+
+// describeArg 根据参数名/角色推断中文含义。
+func describeArg(name, role string) string {
+	switch role {
+	case "signer":
+		return "签名者（发起方账户，需签名授权）"
+	case "any_signer":
+		return "任意签名者"
+	}
+	switch name {
+	case "token":
+		return "代币地址"
+	case "account", "owner", "holder", "subject", "to", "from", "recipient", "payer", "operator", "claimer", "spender", "issuer", "validator", "delegator", "collection", "pool", "dex", "signer", "mint", "addr", "address":
+		return "地址"
+	case "amount", "value", "balance", "score", "cap", "threshold", "royalty", "max_supply", "total":
+		return "数量（u64）"
+	case "amounts":
+		return "数量列表（vec<u64>）"
+	case "metadata":
+		return "元数据"
+	case "key", "keys":
+		return "密钥"
+	case "epoch":
+		return "纪元（epoch）编号"
+	case "nonce":
+		return "随机数 nonce"
+	case "seq", "sequence":
+		return "序列号"
+	case "name":
+		return "名称"
+	case "id":
+		return "编号/ID"
+	case "label":
+		return "标签"
+	case "doc", "input":
+		return "内容/输入数据"
+	case "hash", "credential_hash", "genesis_hash", "parent_block_hash", "seed", "entropy":
+		return "哈希/种子值"
+	case "uri", "avatar_uri", "icon_url":
+		return "URI 地址"
+	case "data", "payload", "proof", "signature", "issuer_signature":
+		return "数据/签名"
+	case "attributes", "properties":
+		return "属性/特性"
+	case "config", "initial_config":
+		return "配置"
+	}
+	return ""
+}
+
+func appNameCN(app string) string {
+	m := map[string]string{
+		"system":     "系统",
+		"account":    "账户",
+		"token":      "代币",
+		"staking":    "质押",
+		"identity":   "身份",
+		"nft":        "NFT",
+		"randomness": "随机数",
+		"demo":       "示例",
+	}
+	if v, ok := m[app]; ok {
+		return v
+	}
+	return app
+}
+
+func hasPrefix(s, prefix string) bool {
+	return len(s) >= len(prefix) && s[:len(prefix)] == prefix
+}
+
+func hasPrefixAny(s string, prefixes ...string) bool {
+	for _, p := range prefixes {
+		if hasPrefix(s, p) {
+			return true
+		}
+	}
+	return false
 }

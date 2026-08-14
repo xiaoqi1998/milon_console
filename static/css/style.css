@@ -2035,6 +2035,38 @@ body::before {
   border-radius: 3px;
   border: 1px solid rgba(34, 211, 238, 0.25);
 }
+.idl-arg-cn {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-left: 4px;
+}
+/* 中文备注区 */
+.idl-doc-section {
+  background: rgba(34, 211, 238, 0.04);
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.idl-doc-desc {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.idl-doc-params {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.idl-doc-param {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.idl-doc-param-name {
+  font-family: var(--mono-font);
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
 .idl-arg-editor {
   min-height: 60px;
   font-size: 12px;
@@ -2331,6 +2363,28 @@ body::before {
   transition: all 0.15s ease;
 }
 .txhash-convert-btn:hover {
+  background: rgba(34, 211, 238, 0.22);
+  color: #fff;
+}
+
+/* 输入框旁的 hex ⇄ base58 互转按钮（控制台 / IDL 表单通用） */
+.base58-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--accent-cyan);
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.base58-toggle-btn:hover {
   background: rgba(34, 211, 238, 0.22);
   color: #fff;
 }

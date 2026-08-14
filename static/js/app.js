@@ -519,20 +519,23 @@ function renderParams(ep) {
       if (activeAcc && /address/i.test(p.name)) {
         prefilled = activeAcc.address;
       }
+      var input = el('input', {
+        class: 'param-input',
+        'data-pkind': 'path',
+        'data-pname': p.name,
+        placeholder: p.ph || '',
+        type: 'text',
+        value: prefilled,
+      });
+      var rowChildren = [
+        el('label', { class: 'param-label', text: ':' + p.name }),
+        input,
+      ];
+      if (/hash/i.test(p.name)) {
+        rowChildren.push(makeBase58ToggleBtn(input));
+      }
       sec.appendChild(
-        el(
-          'div',
-          { class: 'param-row' },
-          el('label', { class: 'param-label', text: ':' + p.name }),
-          el('input', {
-            class: 'param-input',
-            'data-pkind': 'path',
-            'data-pname': p.name,
-            placeholder: p.ph || '',
-            type: 'text',
-            value: prefilled,
-          })
-        )
+        el('div', { class: 'param-row' }, rowChildren)
       );
     });
     body.appendChild(sec);
@@ -766,6 +769,70 @@ function hexToBase58(hexStr) {
   }
   var result = '1'.repeat(leadingZeros) + b58.join('');
   return result;
+}
+
+// base58ToHex 将 base58 字符串解码回 hex（带 0x 前缀）。
+function base58ToHex(b58Str) {
+  if (!b58Str) return '';
+  var s = String(b58Str).trim();
+  var digits = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  var val = 0n;
+  for (var i = 0; i < s.length; i++) {
+    var c = s[i];
+    var d = digits.indexOf(c);
+    if (d < 0) return ''; // 非法 base58 字符
+    val = val * 58n + BigInt(d);
+  }
+  // 前导 '1' 表示前导 0 字节
+  var leadingOnes = 0;
+  for (var j = 0; j < s.length; j++) {
+    if (s[j] === '1') leadingOnes++;
+    else break;
+  }
+  if (val === 0n) {
+    return '0x' + '00'.repeat(leadingOnes);
+  }
+  var hex = val.toString(16);
+  if (hex.length % 2) hex = '0' + hex;
+  return '0x' + '00'.repeat(leadingOnes) + hex;
+}
+
+// looksLikeHex 判断字符串是否像 hex（允许 0x 前缀，其余全为 hex 字符）。
+function looksLikeHex(str) {
+  var s = String(str).trim();
+  if (s.startsWith('0x') || s.startsWith('0X')) s = s.slice(2);
+  s = s.replace(/[^0-9a-fA-F]/g, '');
+  return s.length > 0 && s === String(str).trim().replace(/^0x/i, '');
+}
+
+// makeBase58ToggleBtn 创建一个按钮，点击后把关联输入框的 hex/base58 互转。
+function makeBase58ToggleBtn(input) {
+  var btn = el('button', {
+    class: 'base58-toggle-btn',
+    type: 'button',
+    title: 'hex ⇄ base58 互转',
+    text: '⇄ base58',
+  });
+  btn.addEventListener('click', function () {
+    var v = (input.value || '').trim();
+    if (!v) {
+      showToast('输入框为空', 'error');
+      return;
+    }
+    var out;
+    if (looksLikeHex(v)) {
+      out = hexToBase58(v);
+    } else {
+      out = base58ToHex(v);
+    }
+    if (!out) {
+      showToast('无法识别该格式（需为 hex 或 base58）', 'error');
+      return;
+    }
+    input.value = out;
+    showToast('已转换：' + out, 'success');
+  });
+  return btn;
 }
 
 function displayResponse(data, statusCode, duration, headers, rawText, size) {
@@ -2464,9 +2531,18 @@ function renderIDLHeader(app, ix) {
   $('idlMethodPath').textContent = '::' + ix.name + (ix.returns ? ' → ' + ix.returns.type : '');
 }
 
+
 function renderIDLForm(ix) {
   var body = $('idlEditorBody');
   body.innerHTML = '';
+
+  // 中文备注区（来自 IDL 数据里的 description）
+  if (ix.description) {
+    var descSec = el('div', { class: 'param-section idl-doc-section' });
+    descSec.appendChild(el('div', { class: 'param-section-title', text: '说明' }));
+    descSec.appendChild(el('div', { class: 'idl-doc-desc', text: ix.description || '' }));
+    body.appendChild(descSec);
+  }
 
   // 方法说明区
   var infoSec = el('div', { class: 'param-section' });
@@ -2534,10 +2610,12 @@ function buildIDLArgInput(arg, appName, methodName) {
   var exampleArgs = IDL_EXAMPLE_ARGS[appName + '.' + methodName];
   var exampleVal = exampleArgs ? exampleArgs[arg.name] : undefined;
   var hasExample = exampleVal !== undefined;
+  var paramDesc = arg.description;
   var row = el('div', { class: 'param-row idl-arg-row' },
     el('label', { class: 'param-label' },
       el('span', { class: 'idl-arg-name', text: arg.name }),
-      el('span', { class: 'idl-arg-type', text: arg.type })
+      el('span', { class: 'idl-arg-type', text: arg.type }),
+      paramDesc ? el('span', { class: 'idl-arg-cn', text: paramDesc }) : null
     )
   );
   if (isScalar) {
@@ -2561,6 +2639,9 @@ function buildIDLArgInput(arg, appName, methodName) {
     });
     inp.value = val;
     row.appendChild(inp);
+    if (arg.type === 'Address' || arg.type === 'Signer' || arg.type === 'AnySigner' || /hash/i.test(arg.name)) {
+      row.appendChild(makeBase58ToggleBtn(inp));
+    }
   } else {
     var defaultComplex = idlDefaultComplexValue(arg.type);
     var complexVal = hasExample ? JSON.stringify(exampleVal, null, 2) : defaultComplex;
