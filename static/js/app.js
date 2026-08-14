@@ -55,6 +55,8 @@ const ENDPOINTS = [
     bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址', signatureMode: { type: 'pubkey', publicKey: 'base58公钥' } }, null, 2) },
   { id: 'faucet-balance', method: 'GET', path: '/api/faucet/balance/:address', summary: '查询MIL余额', group: '水龙头',
     pathParams: [{ name: 'address', ph: 'base58地址' }] },
+  { id: 'bulk-transfer', method: 'POST', path: '/api/tool/bulk-transfer', summary: '批量生成账户并归集MIL', group: '工具',
+    bodyTemplate: JSON.stringify({ count: 1000, toAddress: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', concurrency: 16 }, null, 2) },
   { id: 'view-single', method: 'POST', path: '/api/view/single', summary: '底层单指令视图', group: '合约',
     bodyTemplate: JSON.stringify({ transactionPostcard: 'base64编码' }, null, 2) },
   { id: 'view-multi', method: 'POST', path: '/api/view/multi', summary: '底层多指令视图', group: '合约',
@@ -1987,6 +1989,15 @@ var API_DOCS = {
     desc: '查询指定地址的 MIL 代币余额。',
     params: [{ name: 'address', type: 'string', required: true, desc: 'Base58 编码的账户地址', in: 'path' }],
     response: { success: true, code: 0, message: 'ok', data: { address: '2L26F...', balance: 9989324 } },
+  },
+  'bulk-transfer': {
+    desc: '批量生成账户、逐个领水，并把每个账户领到的 MIL 全部归集到指定地址。该接口为长任务，生成 count 个账户后并发处理（领水 → 模拟 → 转账），建议通过较小 count 先行验证。',
+    params: [
+      { name: 'count', type: 'int', required: true, desc: '要生成的账户数量（1-5000）' },
+      { name: 'toAddress', type: 'string', required: true, desc: '归集目标地址（base58）' },
+      { name: 'concurrency', type: 'int', required: false, desc: '并发数（默认 16，最大 128）' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { count: 1000, toAddress: 'RqcF...', successCount: 1000, failedCount: 0, totalTransferred: 10000000000, elapsedMs: 123456, results: [] } },
   },
   'derive-addr': {
     desc: '从公钥派生账户地址。',

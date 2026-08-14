@@ -40,6 +40,7 @@ func main() {
 	viewHandler := handler.NewViewSingleHandler(nm)
 	resourcePathHandler := handler.NewResourcePathHandler(nm)
 	idlHandler := handler.NewIDLHandler(nm)
+	bulkTransferHandler := handler.NewBulkTransferHandler(nm)
 
 	api := r.Group("/api")
 	{
@@ -104,6 +105,9 @@ func main() {
 
 		// IDL metadata (discovery for all IDL apps & methods)
 		api.GET("/idl/metadata", idlHandler.GetIDLMetadata)
+
+		// Bulk transfer (generate accounts, claim faucet, consolidate MIL)
+		api.POST("/tool/bulk-transfer", bulkTransferHandler.BulkTransfer)
 	}
 
 	// Print startup banner
@@ -148,6 +152,7 @@ func main() {
 	fmt.Println("    POST /api/view/multi              - Low-level multi view")
 	fmt.Println("    GET  /api/rpc/resource-paths/:hash- Get resource path by hash")
 	fmt.Println("    GET  /api/idl/metadata            - IDL 方法元数据（app/方法/参数 schema）")
+	fmt.Println("    POST /api/tool/bulk-transfer      - 批量生成账户并归集 MIL")
 	fmt.Println("    GET  /                            - Web console")
 	fmt.Println("    GET  /static/*                    - Static files")
 	fmt.Println("========================================")
