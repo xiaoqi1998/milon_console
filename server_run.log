@@ -44,7 +44,7 @@
   Listening on:  http://localhost:8080
   Default network: devNet
   Enable util sign: false
-  Enable body log: true
+  Enable body log: false
   Endpoints:
     GET  /api/health                  - Health check
     GET  /api/chain-head              - Get chain head

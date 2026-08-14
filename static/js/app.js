@@ -1354,6 +1354,10 @@ function setCurrentAccount(id) {
   updateAccountLabel();
   closeAccountModal();
   showToast('已设为活跃账户', 'success');
+  // 若当前在 IDL 视图，重新预填执行配置（signatureMode / payer 地址等带入新账户）
+  if (state.view === 'idl' && state.currentIdlMethod) {
+    renderIDLPaymentFields();
+  }
 }
 
 function addToHistory(endpoint, req, statusCode, duration, data) {
@@ -2096,7 +2100,7 @@ var IDL_EXAMPLE_ARGS = {
 
   // ==================== identity 模块（app_id=4，39 个方法）====================
   'identity.Create': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     doc: {
       subject_type: 'Personal',
       keys: [{ public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: null }],
@@ -2105,7 +2109,7 @@ var IDL_EXAMPLE_ARGS = {
     }
   },
   'identity.CreateWithAlias': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     doc: {
       subject_type: 'Personal',
       keys: [{ public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: null }],
@@ -2115,45 +2119,45 @@ var IDL_EXAMPLE_ARGS = {
     name: { alias: 'newuser3847', suffix: 2002 }
   },
   'identity.AddKey': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     input: { public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: 'test-key-1' }
   },
   'identity.UpdateKey': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     id: 1,
     input: { public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: 'test-key-1-updated' }
   },
-  'identity.RemoveKey': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', id: 1 },
+  'identity.RemoveKey': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', id: 1 },
   'identity.AddService': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     input: { label: 'service-1', service_endpoint: 'https://milon.test/service/hub' }
   },
   'identity.UpdateService': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     id: 0,
     input: { label: 'service-1-updated', service_endpoint: 'https://milon.test/service/vault' }
   },
-  'identity.RemoveService': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', id: 0 },
-  'identity.SetAvatarUri': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', avatar_uri: 'https://milon.test/avatar-v2.png' },
-  'identity.Deactivate': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.RemoveService': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', id: 0 },
+  'identity.SetAvatarUri': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', avatar_uri: 'https://milon.test/avatar-v2.png' },
+  'identity.Deactivate': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
   'identity.SetAlias': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     name: { alias: 'testuser3847', suffix: 1001 }
   },
   'identity.RegisterOrganization': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     roles: ['VcIssuer'],
     credential_schemas: ['OrgSchemaV1']
   },
   'identity.UpdateOrganizationCapabilities': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     roles: ['VcIssuer', 'KycProvider'],
     credential_schemas: ['OrgSchemaV1', 'OrgSchemaV2']
   },
-  'identity.DeactivateOrganization': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.DeactivateOrganization': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
   'identity.DiscloseVcAttestation': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
-    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
     issuer_key_id: 0,
     credential_schema: 'TestSchemaV1',
     credential_hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
@@ -2161,49 +2165,49 @@ var IDL_EXAMPLE_ARGS = {
     issuer_signature: '0x9a8b7c6d5e4f30291a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f7081a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091'
   },
   'identity.RemoveVcDisclosure': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
-    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
     credential_schema: 'TestSchemaV1'
   },
   'identity.RevokeVcAttestation': {
-    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b',
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     credential_schema: 'TestSchemaV1'
   },
-  'identity.Core': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.Document': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.KeyIndex': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.Keys': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.Key': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', id: 1 },
-  'identity.ServiceIndex': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.Services': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.Service': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', id: 0 },
-  'identity.Alias': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.Avatar': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.UpdatedAt': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.Deactivated': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
+  'identity.Core': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.Document': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.KeyIndex': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.Keys': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.Key': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', id: 1 },
+  'identity.ServiceIndex': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.Services': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.Service': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', id: 0 },
+  'identity.Alias': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.Avatar': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.UpdatedAt': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.Deactivated': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
   'identity.NameBinding': { name: { alias: 'testuser', suffix: 1001 } },
   'identity.CredentialDefinition': { credential_id: 'TestSchemaV1' },
-  'identity.OrganizationCapabilities': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.OrganizationStatus': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.OrganizationUpdatedAt': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u' },
-  'identity.AcceptedVcIssuerIndexMeta': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', credential_schema: 'TestSchemaV1' },
-  'identity.AcceptedVcIssuers': { subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u', credential_schema: 'TestSchemaV1' },
+  'identity.OrganizationCapabilities': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.OrganizationStatus': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.OrganizationUpdatedAt': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.AcceptedVcIssuerIndexMeta': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', credential_schema: 'TestSchemaV1' },
+  'identity.AcceptedVcIssuers': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', credential_schema: 'TestSchemaV1' },
   'identity.HasValidVcFromIssuer': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
-    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
     credential_schema: 'TestSchemaV1',
     now_ms: 1723382400000
   },
   'identity.VcAttestationCore': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     credential_schema: 'TestSchemaV1',
-    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b'
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'
   },
   'identity.VcAttestationLifecycle': {
-    subject: 'fuel1q2z4wg5eu2pe5u20u4ld4h2mfx0kde0pg2yd3s7j8d6k3v9u5nq3qzq2u',
+    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
     credential_schema: 'TestSchemaV1',
-    issuer: 'fuel1q9z8x7c6v5b4n3m2l1k0j9h8g7f6e5d4c3b2a1n0m9l8k7j6h5g4f3e2d1c0b'
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'
   },
 
   // ==================== nft 模块（app_id=5，20 个方法）====================
@@ -2742,6 +2746,21 @@ function renderIDLPaymentFields() {
   var sigModeTpl = prefilledPk
     ? '{\n  "type": "pubkey",\n  "publicKey": "' + prefilledPk + '"\n}'
     : '{\n  "type": "pubkey",\n  "publicKey": "base58公钥"\n}';
+  // 若账户只有私钥而无公钥，则异步派生公钥并回填 signatureMode 字段
+  if (activeAcc && !prefilledPk && prefilledSk) {
+    fetch('/api/util/key/derive-public', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ privateKey: prefilledSk.replace(/\s/g, ''), keyType: 'secp256k1' })
+    }).then(function (r) { return r.json(); }).then(function (resp) {
+      if (resp && resp.success && resp.data && resp.data.publicKey) {
+        var pk = resp.data.publicKey;
+        activeAcc.publicKey = pk;
+        var sigNode = document.querySelector('#idlPaymentFields [data-field="signatureMode"]');
+        if (sigNode) sigNode.value = '{\n  "type": "pubkey",\n  "publicKey": "' + pk + '"\n}';
+      }
+    }).catch(function () {});
+  }
   var signerEntryTpl = '{\n  "address": "' + (prefilledAddr || 'base58地址') + '",\n'
     + (isSubmit ? '  "privateKey": "' + (prefilledSk || 'hex或base58私钥') + '",\n' : '')
     + '  "signatureMode": ' + sigModeTpl.replace(/\n/g, '\n  ') + '\n}';
