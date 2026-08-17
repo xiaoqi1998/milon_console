@@ -1552,10 +1552,12 @@ curl -X POST http://localhost:8080/api/util/key/derive-public \
 | 字段 | 类型 | 是否必填 | 说明 |
 | --- | --- | --- | --- |
 | `privateKey` | string | 是 | 私钥（hex 或 base58） |
-| `message` | string | 是 | 待签名消息（hex 编码） |
+| `message` | string | 是 | 待签名消息：优先按 hex 解码；若 hex 解析失败则按 UTF-8 明文处理（支持中文等非 ASCII 文本） |
 | `keyType` | string | 是 | 密钥类型：`secp256k1`、`ed25519`、`bls12381`、`fndsa512` |
 
-**请求示例**
+> **注意**：`message` 同时支持 **hex 编码** 与 **明文** 两种形式。服务端先尝试 hex 解码，失败则回退为 UTF-8 字节直接签名。因此纯 hex 字符组成的明文（如 `"deadbeef"`）存在歧义，会被当作 hex 处理。
+
+**请求示例（hex 编码）**
 
 ```bash
 curl -X POST http://localhost:8080/api/util/sign \
@@ -1563,6 +1565,18 @@ curl -X POST http://localhost:8080/api/util/sign \
   -d '{
     "privateKey":"a1b2c3d4e5f6...",
     "message":"deadbeef",
+    "keyType":"secp256k1"
+  }'
+```
+
+**请求示例（明文，含中文）**
+
+```bash
+curl -X POST http://localhost:8080/api/util/sign \
+  -H "Content-Type: application/json" \
+  -d '{
+    "privateKey":"a1b2c3d4e5f6...",
+    "message":"编码",
     "keyType":"secp256k1"
   }'
 ```
@@ -1597,7 +1611,7 @@ curl -X POST http://localhost:8080/api/util/sign \
 | 字段 | 类型 | 是否必填 | 说明 |
 | --- | --- | --- | --- |
 | `publicKey` | string | 是 | 公钥（hex 或 base58） |
-| `message` | string | 是 | 原始消息（hex 编码） |
+| `message` | string | 是 | 原始消息（hex 编码或明文，解码规则同 `/api/util/sign`） |
 | `signature` | string | 是 | 签名（hex 编码） |
 
 **请求示例**

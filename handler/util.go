@@ -179,12 +179,7 @@ func (h *UtilHandler) SignMessage(c *gin.Context) {
 		return
 	}
 
-	msg, err := hex.DecodeString(req.Message)
-	if err != nil {
-		logParamError(c, "SignMessage", err)
-		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid hex message: "+err.Error(), nil))
-		return
-	}
+	msg := decodeMessageFlexible(req.Message)
 
 	sk, err := crypto.SecretKeyerFromStringRelaxed(req.PrivateKey)
 	if err != nil {
@@ -261,12 +256,7 @@ func (h *UtilHandler) VerifySignature(c *gin.Context) {
 		return
 	}
 
-	msg, err := hex.DecodeString(req.Message)
-	if err != nil {
-		logParamError(c, "VerifySignature", err)
-		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid hex message: "+err.Error(), nil))
-		return
-	}
+	msg := decodeMessageFlexible(req.Message)
 
 	sigBytes, err := hex.DecodeString(req.Signature)
 	if err != nil {
@@ -286,6 +276,18 @@ func (h *UtilHandler) VerifySignature(c *gin.Context) {
 
 	resp := verifySignatureResponse{Valid: valid}
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
+}
+
+// decodeMessageFlexible decodes the message to sign from a string.
+// It first attempts to interpret the input as hex; if that fails, it falls back
+// to treating the input as a plain UTF-8 text (e.g. Chinese characters).
+// NOTE: all-lowercase/uppercase hex-like plain text (e.g. "deadbeef") is
+// ambiguous and will be treated as hex.
+func decodeMessageFlexible(s string) []byte {
+	if b, err := hex.DecodeString(s); err == nil {
+		return b
+	}
+	return []byte(s)
 }
 
 // derivePublicKeyByType derives the public key from a secret key based on keyType.
