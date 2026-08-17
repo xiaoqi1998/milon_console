@@ -44,13 +44,13 @@ const ENDPOINTS = [
   { id: 'access-value', method: 'POST', path: '/api/rpc/access-value', summary: '获取访问值', group: 'RPC',
     bodyTemplate: JSON.stringify({ blobHashes: ['hex 32字节'] }, null, 2) },
   { id: 'derive-addr', method: 'POST', path: '/api/util/address/derive', summary: '从公钥派生地址', group: '工具',
-    bodyTemplate: JSON.stringify({ publicKey: 'hex或base58', keyType: 'secp256k1' }, null, 2) },
+    bodyTemplate: JSON.stringify({ publicKey: 'base58公钥', keyType: 'secp256k1' }, null, 2) },
   { id: 'derive-pub', method: 'POST', path: '/api/util/key/derive-public', summary: '从私钥派生公钥', group: '工具',
-    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58', keyType: 'secp256k1' }, null, 2) },
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', keyType: 'secp256k1' }, null, 2) },
   { id: 'sign', method: 'POST', path: '/api/util/sign', summary: '签名消息', group: '工具',
-    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58', message: 'hex编码或明文', keyType: 'secp256k1' }, null, 2) },
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', message: 'hex编码或明文', keyType: 'secp256k1' }, null, 2) },
   { id: 'verify', method: 'POST', path: '/api/util/verify', summary: '验签', group: '工具',
-    bodyTemplate: JSON.stringify({ publicKey: 'hex或base58', message: 'hex编码或明文', signature: 'hex', keyType: 'secp256k1' }, null, 2) },
+    bodyTemplate: JSON.stringify({ publicKey: 'base58公钥', message: 'hex编码或明文', signature: 'hex签名', keyType: 'secp256k1' }, null, 2) },
   { id: 'faucet-claim', method: 'POST', path: '/api/faucet/claim', summary: '领取水龙头代币', group: '水龙头',
     bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址', signatureMode: { type: 'pubkey', publicKey: 'base58公钥' } }, null, 2) },
   { id: 'faucet-balance', method: 'GET', path: '/api/faucet/balance/:address', summary: '查询MIL余额', group: '水龙头',
@@ -615,6 +615,23 @@ function renderParams(ep) {
       if (activeAcc.publicKey) bodyTpl = bodyTpl.split('base58公钥').join(activeAcc.publicKey);
     }
     ta.value = bodyTpl;
+    // 模板仍需要公钥但活跃账户只有私钥（如手动导入未填公钥）时，异步派生公钥并回填
+    if (activeAcc && activeAcc.privateKey && !activeAcc.publicKey && bodyTpl.indexOf('base58公钥') !== -1) {
+      (function (acc, textarea) {
+        fetch('/api/util/key/derive-public', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ privateKey: acc.privateKey.replace(/\s/g, ''), keyType: 'secp256k1' })
+        }).then(function (r) { return r.json(); }).then(function (resp) {
+          if (resp && resp.success && resp.data && resp.data.publicKey) {
+            acc.publicKey = resp.data.publicKey;
+            if (textarea.value.indexOf('base58公钥') !== -1) {
+              textarea.value = textarea.value.split('base58公钥').join(resp.data.publicKey);
+            }
+          }
+        }).catch(function () {});
+      })(activeAcc, ta);
+    }
     bs.appendChild(ta);
     body.appendChild(bs);
   }
