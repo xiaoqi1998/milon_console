@@ -371,12 +371,19 @@ const state = {
   currentAccountId: null,
   accountExpanded: {},   // accountId -> true 表示展开详情
   accountKeyVisible: {}, // accountId -> true 表示私钥明文显示
+  // 请求集合（测试流程保存与一键重放）
+  collections: [],
+  historyTab: 'history',   // history | collections
+  expandedCollections: {}, // collectionId -> true 表示展开条目
+  diffSelection: [],       // 已加入对比的历史条目 id（最多 2 条）
+  replaying: false,        // 集合重放进行中标记
 };
 
 const MAX_HISTORY = 50;
 const HISTORY_STORAGE_KEY = 'milon_api_history';
 const ACCOUNTS_STORAGE_KEY = 'milon_accounts';
 const CURRENT_ACCOUNT_KEY = 'milon_current_account';
+const COLLECTIONS_STORAGE_KEY = 'milon_api_collections';
 
 function $(id) {
   return document.getElementById(id);
@@ -1291,6 +1298,103 @@ function closeAccountModal() {
   $('accountModal').classList.remove('open');
 }
 
+// ============================================================
+// 通用对话框（替代原生 prompt/confirm，兼容无原生对话框的自动化环境）
+// uiConfirm(message, opts) => Promise<boolean>
+// uiPrompt(message, defaultValue, opts) => Promise<string|null>
+// uiDialog({pickList}) => Promise<string|null>，点击列表项直接返回对应序号
+// ============================================================
+
+var uiDialogState = { resolve: null, needInput: false };
+
+function uiDialog(opts) {
+  opts = opts || {};
+  return new Promise(function (resolve) {
+    uiDialogState.resolve = resolve;
+    uiDialogState.needInput = !!opts.input;
+
+    $('uiDialogTitle').textContent = opts.title || '确认';
+
+    var msg = $('uiDialogMsg');
+    msg.textContent = opts.message || '';
+    msg.style.display = opts.message ? '' : 'none';
+
+    var hint = $('uiDialogHint');
+    hint.innerHTML = '';
+    hint.style.display = 'none';
+    if (opts.pickList && opts.pickList.length) {
+      hint.style.display = '';
+      opts.pickList.forEach(function (p) {
+        var row = el('div', { class: 'ui-dialog-pick-row' },
+          el('span', { class: 'ui-dialog-pick-idx', text: p.index }),
+          el('span', { class: 'ui-dialog-pick-name', text: p.label })
+        );
+        row.addEventListener('click', function () {
+          finishUiDialog(String(p.index));
+        });
+        hint.appendChild(row);
+      });
+    } else if (opts.hintText) {
+      hint.style.display = '';
+      hint.textContent = opts.hintText;
+    }
+
+    var input = $('uiDialogInput');
+    if (opts.input) {
+      input.style.display = '';
+      input.value = opts.input.value || '';
+      input.placeholder = opts.input.placeholder || '';
+    } else {
+      input.style.display = 'none';
+    }
+
+    var okBtn = $('uiDialogOkBtn');
+    okBtn.textContent = opts.okText || '确定';
+    okBtn.className = 'btn ' + (opts.danger ? 'btn-danger' : 'btn-primary');
+
+    $('uiDialog').classList.add('open');
+    if (opts.input) {
+      setTimeout(function () {
+        input.focus();
+        input.select();
+      }, 60);
+    }
+  });
+}
+
+function finishUiDialog(value) {
+  if (!uiDialogState.resolve) return;
+  var resolve = uiDialogState.resolve;
+  uiDialogState.resolve = null;
+  $('uiDialog').classList.remove('open');
+  resolve(value);
+}
+
+function cancelUiDialog() {
+  if (!uiDialogState.resolve) return;
+  finishUiDialog(uiDialogState.needInput ? null : false);
+}
+
+function submitUiDialog() {
+  if (!uiDialogState.resolve) return;
+  if (uiDialogState.needInput) finishUiDialog($('uiDialogInput').value);
+  else finishUiDialog(true);
+}
+
+function uiConfirm(message, opts) {
+  opts = opts || {};
+  opts.message = message;
+  opts.input = null;
+  return uiDialog(opts).then(function (v) { return v === true; });
+}
+
+function uiPrompt(message, defaultValue, opts) {
+  opts = opts || {};
+  opts.message = message;
+  opts.input = { value: defaultValue || '' };
+  return uiDialog(opts);
+}
+
 function renderAccountModal() {
   var body = $('accountModalBody');
   if (!body) return;
@@ -1337,9 +1441,10 @@ function renderAccountModal() {
       }
       var delBtn = el('button', { class: 'btn btn-ghost btn-sm', text: '删除' });
       delBtn.addEventListener('click', function () {
-        if (confirm('确认删除账户 "' + acc.label + '"？')) {
-          removeAccount(acc.id);
-        }
+        uiConfirm('确认删除账户 "' + acc.label + '"？', { title: '删除账户', okText: '删除', danger: true })
+          .then(function (ok) {
+            if (ok) removeAccount(acc.id);
+          });
       });
       actions.appendChild(delBtn);
       row.appendChild(info);
@@ -1689,11 +1794,12 @@ function renderHistory() {
   }
   state.history.forEach(function (h) {
     var sc = h.statusCode === 0 ? 'error' : h.statusCode >= 200 && h.statusCode < 300 ? 'success' : 'error';
+    var inDiff = state.diffSelection.indexOf(h.id) >= 0;
     panel.appendChild(
       el(
         'div',
         {
-          class: 'history-item',
+          class: 'history-item' + (inDiff ? ' diff-selected' : ''),
           'data-id': h.id,
           onclick: function () {
             reloadHistory(h.id);
@@ -1704,7 +1810,31 @@ function renderHistory() {
           { class: 'history-item-header' },
           el('span', { class: 'h-method ' + h.endpoint.method, text: h.endpoint.method }),
           el('span', { class: 'h-path', text: h.req.url }),
-          el('span', { class: 'h-status ' + sc, text: h.statusCode === 0 ? 'ERR' : String(h.statusCode) })
+          el('span', { class: 'h-status ' + sc, text: h.statusCode === 0 ? 'ERR' : String(h.statusCode) }),
+          el(
+            'span',
+            { class: 'history-item-actions' },
+            el('button', {
+              class: 'h-act-btn',
+              type: 'button',
+              title: '加入请求集合',
+              text: '📌',
+              onclick: function (e) {
+                e.stopPropagation();
+                addHistoryToCollection(h);
+              },
+            }),
+            el('button', {
+              class: 'h-act-btn' + (inDiff ? ' active' : ''),
+              type: 'button',
+              title: '加入响应对比（选 2 条）',
+              text: '⚖',
+              onclick: function (e) {
+                e.stopPropagation();
+                toggleDiffSelection(h.id);
+              },
+            })
+          )
         ),
         el(
           'div',
@@ -1782,11 +1912,14 @@ function reloadHistory(id) {
 
 function clearHistory() {
   if (!state.history.length) return;
-  if (!confirm('确定要清空所有历史记录吗？')) return;
-  state.history = [];
-  saveHistory();
-  renderHistory();
-  showToast('历史记录已清空', 'success');
+  uiConfirm('确定要清空所有历史记录吗？', { title: '清空历史', okText: '清空', danger: true })
+    .then(function (ok) {
+      if (!ok) return;
+      state.history = [];
+      saveHistory();
+      renderHistory();
+      showToast('历史记录已清空', 'success');
+    });
 }
 
 function openHistoryDrawer() {
@@ -1799,6 +1932,627 @@ function closeHistoryDrawer() {
 
 function toggleHistoryDrawer() {
   $('historyDrawer').classList.toggle('open');
+}
+
+// ============================================================
+// 请求集合：保存常用测试流程（如 领币 -> mint -> transfer），一键顺序重放
+// ============================================================
+
+function loadCollections() {
+  try {
+    var stored = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
+    if (stored) {
+      state.collections = JSON.parse(stored) || [];
+    }
+  } catch (e) {
+    state.collections = [];
+  }
+}
+
+function saveCollections() {
+  try {
+    localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(state.collections));
+  } catch (e) {}
+}
+
+function genCollectionId() {
+  return 'col_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// addHistoryToCollection 将一条历史记录加入集合（列表点选已有集合，或输入新名称创建）。
+function addHistoryToCollection(h) {
+  var pickList = state.collections.map(function (c, i) {
+    return { index: String(i + 1), label: c.name + '（' + c.items.length + ' 项）' };
+  });
+  uiDialog({
+    title: '加入集合',
+    message: pickList.length ? '点击下方集合直接加入，或在输入框输入序号 / 新集合名称：' : '输入新集合名称：',
+    pickList: pickList,
+    input: {
+      value: pickList.length ? '' : '回归流程',
+      placeholder: '序号或新集合名称',
+    },
+    okText: '加入',
+  }).then(function (input) {
+    if (input === null) return;
+    input = input.trim();
+    if (!input) return;
+
+    var col = null;
+    var idx = parseInt(input, 10);
+    if (!isNaN(idx) && idx >= 1 && idx <= state.collections.length) {
+      col = state.collections[idx - 1];
+    } else {
+      col = { id: genCollectionId(), name: input, items: [], createdAt: Date.now() };
+      state.collections.push(col);
+    }
+
+    col.items.push({
+      id: 'ci_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+      endpoint: h.endpoint,
+      req: h.req,
+      statusCode: h.statusCode,
+      time: h.time,
+    });
+    saveCollections();
+    renderCollections();
+    showToast('已加入集合「' + col.name + '」（' + col.items.length + ' 项）', 'success');
+  });
+}
+
+function deleteCollection(id) {
+  var col = state.collections.find(function (c) { return c.id === id; });
+  if (!col) return;
+  uiConfirm('删除集合「' + col.name + '」？该操作不可恢复。', { title: '删除集合', okText: '删除', danger: true })
+    .then(function (ok) {
+      if (!ok) return;
+      state.collections = state.collections.filter(function (c) { return c.id !== id; });
+      saveCollections();
+      renderCollections();
+      showToast('集合已删除', 'success');
+    });
+}
+
+function renameCollection(id) {
+  var col = state.collections.find(function (c) { return c.id === id; });
+  if (!col) return;
+  uiPrompt('集合名称:', col.name, { title: '重命名集合', okText: '保存' })
+    .then(function (name) {
+      if (name === null) return;
+      name = name.trim();
+      if (!name) return;
+      col.name = name;
+      saveCollections();
+      renderCollections();
+      showToast('集合已重命名', 'success');
+    });
+}
+
+function removeCollectionItem(colId, itemId) {
+  var col = state.collections.find(function (c) { return c.id === colId; });
+  if (!col) return;
+  col.items = col.items.filter(function (it) { return it.id !== itemId; });
+  saveCollections();
+  renderCollections();
+}
+
+function moveCollectionItem(colId, itemId, dir) {
+  var col = state.collections.find(function (c) { return c.id === colId; });
+  if (!col) return;
+  var i = col.items.findIndex(function (it) { return it.id === itemId; });
+  var j = i + dir;
+  if (i < 0 || j < 0 || j >= col.items.length) return;
+  var tmp = col.items[i];
+  col.items[i] = col.items[j];
+  col.items[j] = tmp;
+  saveCollections();
+  renderCollections();
+}
+
+// replayCollection 顺序重放集合中的全部请求：结果逐条写入历史，最后展示汇总。
+async function replayCollection(col) {
+  if (state.replaying) {
+    showToast('已有重放任务进行中', 'error');
+    return;
+  }
+  if (!col.items.length) {
+    showToast('集合为空，先从历史记录 📌 添加请求', 'error');
+    return;
+  }
+  state.replaying = true;
+  var total = col.items.length;
+  var ok = 0;
+  var fail = 0;
+  var lastShow = null;
+  showToast('开始重放「' + col.name + '」共 ' + total + ' 个请求', 'info');
+
+  for (var i = 0; i < total; i++) {
+    var item = col.items[i];
+    var ep = item.endpoint;
+    var req = item.req;
+    var opt = { method: req.method, headers: {} };
+    if (req.body) {
+      opt.headers['Content-Type'] = 'application/json';
+      opt.body = req.body;
+    }
+    var start = performance.now();
+    try {
+      var resp = await fetch(req.url, opt);
+      var duration = Math.round(performance.now() - start);
+      var text = await resp.text();
+      var size = new Blob([text]).size;
+      var data;
+      try { data = JSON.parse(text); } catch (e) { data = text; }
+      if (resp.status >= 200 && resp.status < 300) ok++; else fail++;
+      var histEntry = {
+        id: Date.now(),
+        endpoint: ep,
+        req: req,
+        statusCode: resp.status,
+        duration: duration,
+        time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+        timestamp: Date.now(),
+        respData: data,
+        respSize: size,
+      };
+      state.history.unshift(histEntry);
+      if (state.history.length > MAX_HISTORY) state.history.length = MAX_HISTORY;
+      lastShow = { isIdl: !!(ep.id && ep.id.indexOf('idl:') === 0), data: data, status: resp.status, duration: duration, headers: resp.headers, text: text, size: size };
+    } catch (err) {
+      fail++;
+      var d2 = Math.round(performance.now() - start);
+      state.history.unshift({
+        id: Date.now(),
+        endpoint: ep,
+        req: req,
+        statusCode: 0,
+        duration: d2,
+        time: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+        timestamp: Date.now(),
+        respData: { error: String(err) },
+        respSize: 0,
+      });
+    }
+  }
+
+  saveHistory();
+  renderHistory();
+
+  // 展示最后一个成功请求的响应（不强制切换视图，结果已写入历史）
+  if (lastShow) {
+    if (lastShow.isIdl) {
+      displayIDLResponse(lastShow.data, lastShow.status, lastShow.duration, lastShow.headers, lastShow.text, lastShow.size);
+    } else {
+      displayResponse(lastShow.data, lastShow.status, lastShow.duration, lastShow.headers, lastShow.text, lastShow.size);
+    }
+  }
+
+  state.replaying = false;
+  var t = fail === 0 ? 'success' : 'warning';
+  showToast('重放完成: ' + ok + ' 成功 / ' + fail + ' 失败，结果已写入历史', t);
+}
+
+// exportCollectionFile 将集合导出为 JSON 文件（供其他环境导入）。
+function exportCollectionFile(col) {
+  var payload = {
+    type: 'milon-api-collection',
+    version: 1,
+    name: col.name,
+    items: col.items,
+  };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'collection-' + col.name.replace(/[\\/:*?"<>|\s]+/g, '_') + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('集合已导出', 'success');
+}
+
+// importCollectionFile 从 JSON 文件导入集合。
+function importCollectionFile(file) {
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      var payload = JSON.parse(reader.result);
+      if (payload.type !== 'milon-api-collection' || !Array.isArray(payload.items)) {
+        showToast('不是有效的集合文件', 'error');
+        return;
+      }
+      var col = {
+        id: genCollectionId(),
+        name: (payload.name || '导入集合').slice(0, 50),
+        items: payload.items.filter(function (it) { return it && it.req && it.req.url; }),
+        createdAt: Date.now(),
+      };
+      if (!col.items.length) {
+        showToast('文件中无有效请求', 'error');
+        return;
+      }
+      state.collections.push(col);
+      saveCollections();
+      renderCollections();
+      showToast('已导入集合「' + col.name + '」（' + col.items.length + ' 项）', 'success');
+    } catch (e) {
+      showToast('解析失败: ' + e.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// renderCollections 渲染「请求集合」Tab。
+function renderCollections() {
+  var panel = $('collectionsList');
+  if (!panel) return;
+  panel.innerHTML = '';
+
+  // 顶部操作行：导入
+  var topBar = el('div', { class: 'collections-topbar' });
+  var importBtn = el('button', { class: 'btn btn-secondary btn-sm', type: 'button', text: '⬆ 导入集合 JSON' });
+  var fileInput = el('input', { type: 'file', accept: '.json,application/json', style: 'display:none' });
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files && fileInput.files[0]) importCollectionFile(fileInput.files[0]);
+    fileInput.value = '';
+  });
+  importBtn.addEventListener('click', function () { fileInput.click(); });
+  topBar.appendChild(importBtn);
+  topBar.appendChild(fileInput);
+  panel.appendChild(topBar);
+
+  if (state.collections.length === 0) {
+    panel.appendChild(
+      el('div',
+        { class: 'empty-state small' },
+        el('div', { class: 'empty-icon-wrapper small' }, el('span', { class: 'empty-icon', text: '🗂' })),
+        el('h4', { text: '暂无集合' }),
+        el('p', { text: '在历史记录中点 📌 把常用流程保存为集合，支持一键顺序重放' })
+      )
+    );
+    return;
+  }
+
+  state.collections.forEach(function (col) {
+    var expanded = !!state.expandedCollections[col.id];
+    var card = el('div', { class: 'collection-card' + (expanded ? ' expanded' : '') });
+
+    // 标题行
+    var headRow = el('div', { class: 'collection-head' });
+    var toggleBtn = el('button', { class: 'account-expand-btn' + (expanded ? ' open' : ''), type: 'button', text: expanded ? '▾' : '▸', title: expanded ? '收起条目' : '展开条目' });
+    toggleBtn.addEventListener('click', function () {
+      state.expandedCollections[col.id] = !expanded;
+      renderCollections();
+    });
+    var nameBtn = el('button', { class: 'collection-name-btn', type: 'button', title: '重命名' });
+    nameBtn.appendChild(el('span', { class: 'collection-name', text: col.name }));
+    nameBtn.appendChild(el('span', { class: 'collection-count', text: col.items.length + ' 项' }));
+    nameBtn.addEventListener('click', function () { renameCollection(col.id); });
+    headRow.appendChild(toggleBtn);
+    headRow.appendChild(nameBtn);
+
+    var actions = el('span', { class: 'collection-actions' },
+      el('button', { class: 'h-act-btn', type: 'button', title: '一键顺序重放', text: '▶', onclick: function () { replayCollection(col); } }),
+      el('button', { class: 'h-act-btn', type: 'button', title: '导出 JSON', text: '⬇', onclick: function () { exportCollectionFile(col); } }),
+      el('button', { class: 'h-act-btn', type: 'button', title: '删除集合', text: '🗑', onclick: function () { deleteCollection(col.id); } })
+    );
+    headRow.appendChild(actions);
+    card.appendChild(headRow);
+
+    // 条目列表
+    if (expanded) {
+      var list = el('div', { class: 'collection-items' });
+      if (!col.items.length) {
+        list.appendChild(el('div', { class: 'collection-empty-hint', text: '集合为空，从历史记录 📌 添加' }));
+      }
+      col.items.forEach(function (it, i) {
+        list.appendChild(
+          el('div', { class: 'collection-item' },
+            el('span', { class: 'ci-index', text: String(i + 1) }),
+            el('span', { class: 'h-method ' + it.req.method, text: it.req.method }),
+            el('span', { class: 'h-path', text: it.req.url }),
+            el('span', { class: 'collection-item-actions' },
+              el('button', { class: 'h-act-btn', type: 'button', title: '上移', text: '↑', onclick: function () { moveCollectionItem(col.id, it.id, -1); } }),
+              el('button', { class: 'h-act-btn', type: 'button', title: '下移', text: '↓', onclick: function () { moveCollectionItem(col.id, it.id, 1); } }),
+              el('button', { class: 'h-act-btn', type: 'button', title: '移除', text: '✕', onclick: function () { removeCollectionItem(col.id, it.id); } })
+            )
+          )
+        );
+      });
+      card.appendChild(list);
+    }
+    panel.appendChild(card);
+  });
+}
+
+// switchHistoryTab 切换抽屉内的 历史/集合 Tab。
+function switchHistoryTab(tab) {
+  state.historyTab = tab;
+  document.querySelectorAll('.drawer-tab').forEach(function (t) {
+    t.classList.toggle('active', t.getAttribute('data-htab') === tab);
+  });
+  $('historyList').style.display = tab === 'history' ? '' : 'none';
+  $('collectionsList').style.display = tab === 'collections' ? '' : 'none';
+  $('clearHistoryBtn').style.display = tab === 'history' ? '' : 'none';
+  $('exportPytestBtn').style.display = tab === 'history' ? '' : 'none';
+  if (tab === 'collections') renderCollections();
+}
+
+// ============================================================
+// 响应对比：选 2 条历史记录，对比响应 JSON 差异（自动忽略动态字段）
+// ============================================================
+
+// diff 忽略的动态字段（key 归一化：小写去下划线/连字符后匹配）
+var DIFF_IGNORE_KEYS = [
+  'timestamp', 'time', 'requestid', 'txhash', 'hash', 'blockhash',
+  'blockheight', 'height', 'latency', 'duration', 'gascharged',
+  'startedat', 'finishedat', 'date',
+];
+
+function isDiffIgnoredKey(key) {
+  var norm = String(key).toLowerCase().replace(/[_-]/g, '');
+  return DIFF_IGNORE_KEYS.indexOf(norm) >= 0;
+}
+
+// normalizeForDiff 递归剔除被忽略的动态字段。
+function normalizeForDiff(value) {
+  if (Array.isArray(value)) {
+    return value.map(normalizeForDiff);
+  }
+  if (value && typeof value === 'object') {
+    var out = {};
+    Object.keys(value).forEach(function (k) {
+      if (isDiffIgnoredKey(k)) return;
+      out[k] = normalizeForDiff(value[k]);
+    });
+    return out;
+  }
+  return value;
+}
+
+// collectDiff 递归收集差异：[{path, left, right, kind: changed|left-only|right-only|type}]
+function collectDiff(a, b, path, out) {
+  var aIsObj = a && typeof a === 'object' && !Array.isArray(a);
+  var bIsObj = b && typeof b === 'object' && !Array.isArray(b);
+  if (aIsObj && bIsObj) {
+    var keys = {};
+    Object.keys(a).forEach(function (k) { keys[k] = true; });
+    Object.keys(b).forEach(function (k) { keys[k] = true; });
+    Object.keys(keys).sort().forEach(function (k) {
+      var p = path ? path + '.' + k : k;
+      if (!(k in a)) out.push({ path: p, left: undefined, right: b[k], kind: 'right-only' });
+      else if (!(k in b)) out.push({ path: p, left: a[k], right: undefined, kind: 'left-only' });
+      else collectDiff(a[k], b[k], p, out);
+    });
+    return;
+  }
+  if (Array.isArray(a) && Array.isArray(b)) {
+    var n = Math.max(a.length, b.length);
+    for (var i = 0; i < n; i++) {
+      var p = path + '[' + i + ']';
+      if (i >= a.length) out.push({ path: p, left: undefined, right: b[i], kind: 'right-only' });
+      else if (i >= b.length) out.push({ path: p, left: a[i], right: undefined, kind: 'left-only' });
+      else collectDiff(a[i], b[i], p, out);
+    }
+    return;
+  }
+  var sa = JSON.stringify(a);
+  var sb = JSON.stringify(b);
+  if (sa !== sb) {
+    out.push({ path: path || '(root)', left: a, right: b, kind: 'changed' });
+  }
+}
+
+function fmtDiffValue(v) {
+  if (v === undefined) return '(不存在)';
+  var s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+  return s.length > 120 ? s.slice(0, 117) + '...' : s;
+}
+
+function toggleDiffSelection(id) {
+  var i = state.diffSelection.indexOf(id);
+  if (i >= 0) {
+    state.diffSelection.splice(i, 1);
+  } else {
+    if (state.diffSelection.length >= 2) {
+      state.diffSelection.shift();
+      showToast('已替换最早选中的一条', 'info');
+    }
+    state.diffSelection.push(id);
+  }
+  renderHistory();
+  updateDiffBar();
+}
+
+function updateDiffBar() {
+  var bar = $('diffBar');
+  if (!bar) return;
+  if (state.diffSelection.length === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = '';
+  var n = state.diffSelection.length;
+  $('diffBarText').textContent = '已选 ' + n + '/2 条响应，选满 2 条即可对比';
+  $('diffCompareBtn').disabled = n < 2;
+}
+
+function openDiffModal() {
+  if (state.diffSelection.length < 2) {
+    showToast('请在历史记录中点 ⚖ 选择 2 条记录', 'error');
+    return;
+  }
+  var h1 = state.history.find(function (x) { return x.id === state.diffSelection[0]; });
+  var h2 = state.history.find(function (x) { return x.id === state.diffSelection[1]; });
+  if (!h1 || !h2) {
+    showToast('选中的记录已被清理', 'error');
+    state.diffSelection = [];
+    updateDiffBar();
+    renderHistory();
+    return;
+  }
+
+  var body = $('diffModalBody');
+  body.innerHTML = '';
+
+  // 左右两侧元信息
+  var metaRow = el('div', { class: 'diff-meta-row' },
+    el('div', { class: 'diff-meta-col' },
+      el('div', { class: 'diff-meta-tag', text: '左侧 (基准)' }),
+      el('div', { class: 'diff-meta-detail' },
+        el('span', { class: 'h-method ' + h1.endpoint.method, text: h1.endpoint.method }),
+        el('span', { class: 'diff-meta-url', text: h1.req.url }),
+        el('span', { class: 'diff-meta-sub', text: h1.time + ' · ' + h1.statusCode + ' · ' + h1.duration + 'ms' })
+      )
+    ),
+    el('div', { class: 'diff-meta-col' },
+      el('div', { class: 'diff-meta-tag right', text: '右侧 (对比)' }),
+      el('div', { class: 'diff-meta-detail' },
+        el('span', { class: 'h-method ' + h2.endpoint.method, text: h2.endpoint.method }),
+        el('span', { class: 'diff-meta-url', text: h2.req.url }),
+        el('span', { class: 'diff-meta-sub', text: h2.time + ' · ' + h2.statusCode + ' · ' + h2.duration + 'ms' })
+      )
+    )
+  );
+  body.appendChild(metaRow);
+
+  var a = normalizeForDiff(h1.respData);
+  var b = normalizeForDiff(h2.respData);
+  var diffs = [];
+  collectDiff(a, b, '', diffs);
+
+  if (!diffs.length) {
+    body.appendChild(el('div', { class: 'diff-identical' },
+      '✅ 响应一致（已自动忽略动态字段: ' + DIFF_IGNORE_KEYS.slice(0, 8).join(', ') + ' 等）'
+    ));
+  } else {
+    body.appendChild(el('div', { class: 'diff-summary', text: '共发现 ' + diffs.length + ' 处差异：' }));
+    var tbl = el('table', { class: 'diff-table' },
+      el('thead', {}, el('tr', {},
+        el('th', { text: '字段路径' }),
+        el('th', { text: '左侧值' }),
+        el('th', { text: '右侧值' }),
+        el('th', { text: '差异类型' })
+      ))
+    );
+    var tb = el('tbody', {});
+    diffs.forEach(function (d) {
+      var kindMap = { changed: ['值变化', 'changed'], 'left-only': ['左侧独有', 'left-only'], 'right-only': ['右侧独有', 'right-only'] };
+      var k = kindMap[d.kind] || d.kind;
+      tb.appendChild(el('tr', { class: 'diff-row ' + d.kind },
+        el('td', { class: 'diff-path', text: d.path }),
+        el('td', { class: 'diff-val left', text: fmtDiffValue(d.left) }),
+        el('td', { class: 'diff-val right', text: fmtDiffValue(d.right) }),
+        el('td', { text: k[0] })
+      ));
+    });
+    tbl.appendChild(tb);
+    var wrap = el('div', { class: 'diff-table-wrap' });
+    wrap.appendChild(tbl);
+    body.appendChild(wrap);
+  }
+
+  body.appendChild(el('div', { class: 'diff-ignore-hint', text: '提示: 忽略的动态字段列表可在 app.js 的 DIFF_IGNORE_KEYS 中调整' }));
+  $('diffModal').classList.add('open');
+}
+
+function closeDiffModal() {
+  $('diffModal').classList.remove('open');
+}
+
+function clearDiffSelection() {
+  state.diffSelection = [];
+  updateDiffBar();
+  renderHistory();
+}
+
+// ============================================================
+// 导出 pytest 用例骨架：将历史记录转为可执行的 pytest + allure 用例文件
+// ============================================================
+
+function pytestFuncName(h, i) {
+  var base = (h.endpoint.id || h.endpoint.path || 'api').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').toLowerCase();
+  if (!base) base = 'api';
+  return 'test_' + String(i + 1).padStart(2, '0') + '_' + base;
+}
+
+function pyRepr(v) {
+  if (v === undefined || v === null) return 'None';
+  return JSON.stringify(v);
+}
+
+// exportPytest 生成 pytest 文件并触发下载。
+function exportPytest() {
+  if (!state.history.length) {
+    showToast('暂无历史记录可导出', 'error');
+    return;
+  }
+  // 倒序恢复为时间正序（history 是新的在前）
+  var items = state.history.slice().reverse();
+
+  var lines = [];
+  lines.push('# -*- coding: utf-8 -*-');
+  lines.push('"""');
+  lines.push('Milon API 自动化用例（由控制台历史记录导出）');
+  lines.push('导出时间: ' + new Date().toLocaleString('zh-CN', { hour12: false }));
+  lines.push('共 ' + items.length + ' 条请求。请按业务流程补充断言后执行。');
+  lines.push('"""');
+  lines.push('import json');
+  lines.push('');
+  lines.push('import allure');
+  lines.push('import pytest');
+  lines.push('import requests');
+  lines.push('');
+  lines.push('BASE_URL = "' + window.location.origin + '"');
+  lines.push('TIMEOUT = 30');
+  lines.push('');
+  lines.push('');
+  items.forEach(function (h, i) {
+    var fn = pytestFuncName(h, i);
+    var url = h.req.url;
+    var method = h.req.method.toUpperCase();
+    lines.push('@allure.feature("milon-api")');
+    lines.push('@allure.story(' + pyRepr(h.endpoint.summary || h.endpoint.path) + ')');
+    lines.push('def ' + fn + '():');
+    lines.push('    """' + method + ' ' + url + '（原状态码: ' + (h.statusCode === 0 ? 'ERR' : h.statusCode) + '）"""');
+
+    // 请求
+    var urlExpr = 'BASE_URL + ' + pyRepr(url);
+    if (method === 'GET') {
+      lines.push('    with allure.step("GET ' + url + '"):');
+      lines.push('        resp = requests.get(' + urlExpr + ', timeout=TIMEOUT)');
+    } else {
+      lines.push('    with allure.step("' + method + ' ' + url + '"):');
+      lines.push('        payload = ' + (h.req.body ? '(' + h.req.body.replace(/\n\s*/g, ' ') + ')' : '{}'));
+      lines.push('        allure.attach(json.dumps(payload, ensure_ascii=False), "请求参数", allure.attachment_type.JSON)');
+      lines.push('        resp = requests.' + method.toLowerCase() + '(' + urlExpr + ', json=payload, timeout=TIMEOUT)');
+    }
+    lines.push('');
+    lines.push('    with allure.step("记录响应"):');
+    lines.push('        allure.attach(resp.text, "响应数据", allure.attachment_type.JSON)');
+    lines.push('');
+    lines.push('    # TODO: 按业务预期补充断言（原响应: ' + fmtDiffValue(typeof h.respData === 'object' ? h.respData : { value: h.respData }).replace(/"/g, '\\"').slice(0, 100) + '）');
+    lines.push('    assert resp.status_code == ' + (h.statusCode >= 200 && h.statusCode < 300 ? h.statusCode : '200') + ', resp.text');
+    lines.push("    body = resp.json()");
+    if (h.statusCode >= 200 && h.statusCode < 300) {
+      lines.push('    assert body.get("success") is True, body');
+    }
+    lines.push('');
+    lines.push('');
+  });
+
+  var content = lines.join('\n');
+  var blob = new Blob([content], { type: 'text/x-python' });
+  var url2 = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url2;
+  a.download = 'test_milon_api_console.py';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url2);
+  showToast('已导出 ' + items.length + ' 条用例到 test_milon_api_console.py', 'success');
 }
 
 function renderSdkList(filter) {
@@ -3920,6 +4674,26 @@ function initApp() {
   $('historyToggle').addEventListener('click', toggleHistoryDrawer);
   $('drawerOverlay').addEventListener('click', closeHistoryDrawer);
   $('clearHistoryBtn').addEventListener('click', clearHistory);
+  document.querySelectorAll('.drawer-tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      switchHistoryTab(t.getAttribute('data-htab'));
+    });
+  });
+  $('exportPytestBtn').addEventListener('click', exportPytest);
+  $('diffCompareBtn').addEventListener('click', openDiffModal);
+  $('diffClearBtn').addEventListener('click', clearDiffSelection);
+  $('diffModalCloseBtn').addEventListener('click', closeDiffModal);
+  $('diffModalOverlay').addEventListener('click', closeDiffModal);
+  $('uiDialogOkBtn').addEventListener('click', submitUiDialog);
+  $('uiDialogCancelBtn').addEventListener('click', cancelUiDialog);
+  $('uiDialogCloseBtn').addEventListener('click', cancelUiDialog);
+  $('uiDialogOverlay').addEventListener('click', cancelUiDialog);
+  $('uiDialogInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitUiDialog();
+    }
+  });
   document.querySelectorAll('.lang-tab').forEach(function (t) {
     t.addEventListener('click', function () {
       switchLang(t.getAttribute('data-lang'));
@@ -3944,7 +4718,11 @@ function initApp() {
       }
     }
     if (e.key === 'Escape') {
-      if ($('historyDrawer').classList.contains('open')) {
+      if ($('uiDialog').classList.contains('open')) {
+        cancelUiDialog();
+      } else if ($('diffModal').classList.contains('open')) {
+        closeDiffModal();
+      } else if ($('historyDrawer').classList.contains('open')) {
         closeHistoryDrawer();
       }
     }
@@ -3966,6 +4744,8 @@ function initApp() {
     });
   });
   loadHistory();
+  loadCollections();
+  updateDiffBar();
   loadAccounts();
   loadCurrentAccount();
   updateAccountLabel();

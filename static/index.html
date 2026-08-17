@@ -384,8 +384,13 @@
     <div class="drawer-overlay" id="drawerOverlay"></div>
     <div class="drawer-panel">
       <div class="drawer-header">
-        <h3>历史记录</h3>
+        <h3>请求记录</h3>
+        <button class="btn btn-ghost btn-sm" id="exportPytestBtn" title="将历史记录导出为 pytest 用例骨架">导出 pytest</button>
         <button class="btn btn-ghost btn-sm" id="clearHistoryBtn">清空全部</button>
+      </div>
+      <div class="drawer-tabs">
+        <button class="drawer-tab active" data-htab="history">历史记录</button>
+        <button class="drawer-tab" data-htab="collections">请求集合</button>
       </div>
       <div class="drawer-body" id="historyList">
         <div class="empty-state small">
@@ -394,6 +399,14 @@
           </div>
           <h4>暂无历史</h4>
           <p>发送请求后，历史记录将保存在这里</p>
+        </div>
+      </div>
+      <div class="drawer-body" id="collectionsList" style="display:none"></div>
+      <div class="diff-bar" id="diffBar" style="display:none">
+        <span id="diffBarText"></span>
+        <div class="diff-bar-actions">
+          <button class="btn btn-primary btn-sm" id="diffCompareBtn">对比</button>
+          <button class="btn btn-ghost btn-sm" id="diffClearBtn">取消</button>
         </div>
       </div>
     </div>
@@ -407,6 +420,36 @@
         <button class="btn btn-ghost btn-sm" id="accountModalCloseBtn">✕</button>
       </div>
       <div class="modal-body" id="accountModalBody"></div>
+    </div>
+  </div>
+
+  <div class="account-modal" id="diffModal">
+    <div class="modal-overlay" id="diffModalOverlay"></div>
+    <div class="modal-panel modal-panel-wide">
+      <div class="modal-header">
+        <h3>响应对比</h3>
+        <button class="btn btn-ghost btn-sm" id="diffModalCloseBtn">✕</button>
+      </div>
+      <div class="modal-body" id="diffModalBody"></div>
+    </div>
+  </div>
+
+  <div class="account-modal" id="uiDialog">
+    <div class="modal-overlay" id="uiDialogOverlay"></div>
+    <div class="modal-panel modal-panel-dialog">
+      <div class="modal-header">
+        <h3 id="uiDialogTitle">确认</h3>
+        <button class="btn btn-ghost btn-sm" id="uiDialogCloseBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="ui-dialog-msg" id="uiDialogMsg"></div>
+        <div class="ui-dialog-hint" id="uiDialogHint"></div>
+        <input type="text" class="param-input ui-dialog-input" id="uiDialogInput" autocomplete="off" />
+      </div>
+      <div class="ui-dialog-footer">
+        <button class="btn btn-ghost" id="uiDialogCancelBtn">取消</button>
+        <button class="btn btn-primary" id="uiDialogOkBtn">确定</button>
+      </div>
     </div>
   </div>
 
