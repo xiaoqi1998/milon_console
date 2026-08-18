@@ -26,16 +26,9 @@ func UnmarshalListResourcePathListFromRawList(rawList [][]any) ([]*ListResourceP
 			return nil, fmt.Errorf("invalid ListResourcePathInfo response")
 		}
 
-		var rsHash RsHash
-		for i, b := range rsHashBytesRaw {
-			// Limit to RsHash length (18 bytes)
-			if i >= RsHashLen {
-				return nil, fmt.Errorf("invalid ListResourcePathInfo response")
-			}
-			// JSON number is decoded as float64, convert to byte
-			if val, ok := b.(float64); ok {
-				rsHash[i] = byte(val)
-			}
+		rsHash, err := UnmarshalRsHashFromJSONArray(rsHashBytesRaw)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse RsHash: %w", err)
 		}
 
 		pathStr, ok := item[1].(string)

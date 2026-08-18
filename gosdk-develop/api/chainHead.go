@@ -50,9 +50,7 @@ func (ch *ChainHead) UnmarshalPostcard(deserializer *postcard.Deserializer) erro
 	if err != nil {
 		return fmt.Errorf("failed to deserialize BlockHash: %w", err)
 	}
-	for i := 0; i < len(blockHash); i++ {
-		ch.BlockHash[i] = blockHash[i]
-	}
+	copy(ch.BlockHash[:], blockHash)
 
 	ch.TimestampMsecs, err = deserializer.DeserializeU64()
 	if err != nil {

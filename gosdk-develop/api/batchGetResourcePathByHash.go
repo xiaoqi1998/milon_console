@@ -24,16 +24,9 @@ func UnmarshalBatchResourcePathListFromRawList(rawList [][]any) ([]*BatchGetReso
 			return nil, fmt.Errorf("invalid BatchGetResourcePathInfo response")
 		}
 
-		var rsHash RsHash
-		for i, b := range rsHashBytesRaw {
-			// Limit to RsHash length (18 bytes)
-			if i >= RsHashLen {
-				return nil, fmt.Errorf("invalid BatchGetResourcePathInfo response")
-			}
-			// JSON number is decoded as float64, convert to byte
-			if val, ok := b.(float64); ok {
-				rsHash[i] = byte(val)
-			}
+		rsHash, err := UnmarshalRsHashFromJSONArray(rsHashBytesRaw)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse RsHash: %w", err)
 		}
 
 		// Parse Result<String, String>: externally tagged enum {"Ok": path} or {"Err": message}

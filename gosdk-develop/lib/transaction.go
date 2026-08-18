@@ -43,9 +43,9 @@ type TransactionSignatures struct {
 	AccountSignature AccountSignature
 }
 
-// TxHash = Blake3(MILON_ROOT || TX_HASH_DOMAIN || chain_id || Stamp || [Payer] || ix_hashes...)
+// TxHash = Blake3(MILON_ROOT || TX_HASH_DOMAIN || GetChainId() || Stamp || [Payer] || ix_hashes...)
 func (tx *Transaction) TxHash() api.TxHash {
-	hasher := crypto.Hasher([]byte(crypto.MilonTxHashDomainContext))
+	hasher := crypto.Hasher(crypto.TxHashDomainBytes)
 
 	chainIDBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(chainIDBytes, GetChainId()) //big-endian
@@ -84,9 +84,9 @@ func (tx *Transaction) IxHashes() []api.TxHash {
 	return hashes
 }
 
-// IxHashFromWire compute ix hash from PackedInstruction: IxHash = Blake3(MILON_ROOT || IX_HASH_DOMAIN || chain_id || wire)
+// IxHashFromWire compute ix hash from PackedInstruction: IxHash = Blake3(MILON_ROOT || IX_HASH_DOMAIN || GetChainId() || wire)
 func (tx *Transaction) IxHashFromWire(wire api.PackedInstruction) api.TxHash {
-	hasher := crypto.Hasher([]byte(crypto.MilonIxHashDomainContext))
+	hasher := crypto.Hasher(crypto.IxHashDomainBytes)
 
 	chainIDBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(chainIDBytes, GetChainId()) // big-endian
@@ -126,23 +126,21 @@ func (tx *Transaction) ValidateWireWith(sponsorIx []uint8) error {
 		return fmt.Errorf("too many instructions: %d (max %d)", len(tx.Instructions), AuthReservedBit)
 	}
 
-	seenIx := make(map[string]bool)
+	seenIx := make(map[api.TxHash]bool)
 	for _, wire := range tx.Instructions {
 		h := tx.IxHashFromWire(wire)
-		key := string(h[:])
-		if seenIx[key] {
+		if seenIx[h] {
 			return fmt.Errorf("duplicate ix hash")
 		}
-		seenIx[key] = true
+		seenIx[h] = true
 	}
 
-	owners := make(map[string]bool)
+	owners := make(map[crypto.Address]bool)
 	for _, sig := range tx.TxSigs {
-		ownerKey := string(sig.Address.Bytes[:])
-		if owners[ownerKey] {
+		if owners[sig.Address] {
 			return fmt.Errorf("duplicate signature owner")
 		}
-		owners[ownerKey] = true
+		owners[sig.Address] = true
 
 		if sig.AccountSignature.AuthBit.Raw() == 0 {
 			return fmt.Errorf("empty auth bit")
@@ -207,7 +205,12 @@ func (tx *Transaction) ValidateWireWith(sponsorIx []uint8) error {
 
 // ToBytes serialize to byte array
 func (tx *Transaction) ToBytes() ([]byte, error) {
-	return postcard.SerializePostcard(tx)
+	est := 64 + len(tx.Instructions)*100 + len(tx.TxSigs)*800
+	serializer := postcard.NewSerializerWithCap(est)
+	if err := tx.MarshalPostcard(serializer); err != nil {
+		return nil, err
+	}
+	return serializer.Bytes(), nil
 }
 
 func (tx *Transaction) MarshalPostcard(serializer *postcard.Serializer) error {

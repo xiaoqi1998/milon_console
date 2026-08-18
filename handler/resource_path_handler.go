@@ -12,6 +12,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/lib"
 )
@@ -58,7 +59,7 @@ func (h *ResourcePathHandler) GetResourcePathByHash(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetResourcePathByHash(rsHash, requestId)
+	result, err := mc.GetResourcePathByHash(rsHash, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetResourcePathByHash", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get resource path by hash: "+err.Error(), nil))

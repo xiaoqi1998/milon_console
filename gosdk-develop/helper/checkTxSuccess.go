@@ -13,6 +13,6 @@ func CheckTxSuccess(txHistory *api.TxHistory) {
 		if txHistory != nil && txHistory.Receipt.Error != nil {
 			code = *txHistory.Receipt.Error
 		}
-		panic(fmt.Sprintf("Transaction failed on chain: error code = %d", code))
+		panic(fmt.Sprintf("transaction failed on chain: error code = %d", code))
 	}
 }

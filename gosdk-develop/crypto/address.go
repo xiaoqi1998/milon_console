@@ -19,7 +19,7 @@ const AddressHexLen = AddressRawLen * 2
 // NewAddressFromPublicKey derives a address from a public key
 func NewAddressFromPublicKey(pk *PublicKey) (*Address, error) {
 	// Derive the BLAKE3 hash of the public key (32 bytes).
-	hash := Hash32([]byte(PkAddressDomainContext), pk.Bytes)
+	hash := Hash32(PkAddressDomainBytes, pk.Bytes)
 
 	// Take the first 20 bytes as the address.
 	var digest [AddressRawLen]byte

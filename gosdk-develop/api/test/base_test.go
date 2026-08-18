@@ -48,10 +48,6 @@ func TestTxHashString(t *testing.T) {
 }
 
 func TestDeserializeAccessRecord_InlinePersistedValue(t *testing.T) {
-	prev := api.GlobalTypeResolver
-	api.SetGlobalTypeResolver(nil)
-	defer api.SetGlobalTypeResolver(prev)
-
 	ser := postcard.NewSerializer()
 	ser.SerializeFixedBytes(make([]byte, api.RsHashLen)) // ResourceID
 	ser.SerializeBool(false)                             // FirstSnapshot: None
@@ -68,10 +64,6 @@ func TestDeserializeAccessRecord_InlinePersistedValue(t *testing.T) {
 }
 
 func TestDeserializeAccessRecord_ExternalWithFirstSnapshot(t *testing.T) {
-	prev := api.GlobalTypeResolver
-	api.SetGlobalTypeResolver(nil)
-	defer api.SetGlobalTypeResolver(prev)
-
 	ser := postcard.NewSerializer()
 	ser.SerializeFixedBytes(make([]byte, api.RsHashLen))   // ResourceID
 	ser.SerializeBool(true)                                // FirstSnapshot: Some
@@ -107,10 +99,6 @@ func TestPersistedValueSerializeRoundTrip(t *testing.T) {
 	})
 
 	t.Run("external variant round trip", func(t *testing.T) {
-		prev := api.GlobalTypeResolver
-		api.SetGlobalTypeResolver(nil)
-		defer api.SetGlobalTypeResolver(prev)
-
 		pv := api.PersistedValue{Variant: 1, ExternalHash: [api.BlobHashLen]byte{1, 2, 3}}
 		ser := postcard.NewSerializer()
 		ser.SerializeFixedBytes(make([]byte, api.RsHashLen)) // ResourceID
@@ -124,10 +112,6 @@ func TestPersistedValueSerializeRoundTrip(t *testing.T) {
 }
 
 func TestPersistedValueUnknownVariant(t *testing.T) {
-	prev := api.GlobalTypeResolver
-	api.SetGlobalTypeResolver(nil)
-	defer api.SetGlobalTypeResolver(prev)
-
 	t.Run("serialize unknown variant", func(t *testing.T) {
 		ser := postcard.NewSerializer()
 		err := api.SerializePersistedValue(ser, api.PersistedValue{Variant: 2})
@@ -145,10 +129,6 @@ func TestPersistedValueUnknownVariant(t *testing.T) {
 }
 
 func TestDeserializeEventEntryFallback(t *testing.T) {
-	prev := api.GlobalTypeResolver
-	api.SetGlobalTypeResolver(nil)
-	defer api.SetGlobalTypeResolver(prev)
-
 	ser := postcard.NewSerializer()
 	ser.SerializeU64(99)             // type_tag
 	ser.SerializeBytes([]byte{1, 2}) // event value (Vec<u8>)

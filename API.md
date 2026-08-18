@@ -1228,10 +1228,10 @@ curl http://localhost:8080/api/rpc/blocks/12345
     "number": 12345,
     "hash": "a1b2c3d4e5f6...",
     "prevHash": "f6e5d4c3b2a1...",
-    "timestamp": 1753230000000,
-    "txProofIdentifiers": ["a1b2c3..."],
-    "witnessAddress": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
-    "witnessSignature": "deadbeef..."
+    "stateHash": "c3d4e5f6a1b2...",
+    "txRoot": "d4e5f6a1b2c3...",
+    "txCount": 12,
+    "timestamp": 1753230000000
   },
   "timestamp": "2026-07-23T10:00:00+08:00"
 }

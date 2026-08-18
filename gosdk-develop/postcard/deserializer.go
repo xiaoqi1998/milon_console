@@ -7,14 +7,30 @@ import (
 	"unicode/utf8"
 )
 
+// TypeResolver resolves a type_tag into the byte range of its value.
+// Implemented by provider.IDLTypeResolver; injected per-deserializer so
+// multiple clients can decode with their own loaded IDLs concurrently.
+type TypeResolver interface {
+	DecodeResource(typeTag uint64, bytes []byte) (valueBytes []byte, remaining []byte, err error)
+	DecodeEvent(typeTag uint64, bytes []byte) (eventBytes []byte, remaining []byte, err error)
+}
+
 type Deserializer struct {
-	buffer []byte
-	offset int
+	buffer       []byte
+	offset       int
+	typeResolver TypeResolver
 }
 
 func NewDeserializer(data []byte) *Deserializer {
-	return &Deserializer{buffer: append([]byte(nil), data...)}
+	return &Deserializer{buffer: data}
 }
+
+// SetTypeResolver sets the type_tag resolver used by api.ReadAnySerializeValueWithTypeTag
+// and api.DeserializeEventEntry during this deserialization.
+func (d *Deserializer) SetTypeResolver(r TypeResolver) { d.typeResolver = r }
+
+// TypeResolver returns the resolver set via SetTypeResolver, or nil.
+func (d *Deserializer) TypeResolver() TypeResolver { return d.typeResolver }
 
 func (d *Deserializer) Remaining() int {
 	return len(d.buffer) - d.offset
@@ -36,6 +52,9 @@ func (d *Deserializer) DeserializeBytes() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if int(length) > d.Remaining() {
+		return nil, fmt.Errorf("bytes length %d exceeds remaining buffer %d", length, d.Remaining())
+	}
 	return d.DeserializeFixedBytes(int(length))
 }
 
@@ -55,11 +74,12 @@ func (d *Deserializer) DeserializeBool() (bool, error) {
 }
 
 func (d *Deserializer) DeserializeU8() (uint8, error) {
-	bytes, err := d.read(1)
-	if err != nil {
-		return 0, err
+	if d.offset >= len(d.buffer) {
+		return 0, fmt.Errorf("reached end of postcard buffer")
 	}
-	return bytes[0], nil
+	b := d.buffer[d.offset]
+	d.offset++
+	return b, nil
 }
 
 func (d *Deserializer) DeserializeU16() (uint16, error) {
@@ -115,12 +135,13 @@ func (d *Deserializer) deserializeVarUint64(max uint64, name string) (uint64, er
 	var value uint64
 	var shift uint
 	for i := 0; i < 19; i++ {
-		byteValue, err := d.DeserializeU8()
-		if err != nil {
-			return 0, err
+		if d.offset >= len(d.buffer) {
+			return 0, fmt.Errorf("reached end of postcard buffer")
 		}
-		value |= uint64(byteValue&0x7f) << shift
-		if (byteValue & 0x80) == 0 {
+		b := d.buffer[d.offset]
+		d.offset++
+		value |= uint64(b&0x7f) << shift
+		if (b & 0x80) == 0 {
 			if value > max {
 				return 0, fmt.Errorf("%s overflow", name)
 			}
@@ -135,14 +156,15 @@ func (d *Deserializer) deserializeVarUintBig(max *big.Int, name string) (*big.In
 	value := big.NewInt(0)
 	part := new(big.Int)
 	for i := 0; i < 19; i++ {
-		byteValue, err := d.DeserializeU8()
-		if err != nil {
-			return nil, err
+		if d.offset >= len(d.buffer) {
+			return nil, fmt.Errorf("reached end of postcard buffer")
 		}
-		part.SetInt64(int64(byteValue & 0x7f))
+		b := d.buffer[d.offset]
+		d.offset++
+		part.SetInt64(int64(b & 0x7f))
 		part.Lsh(part, uint(i*7))
 		value.Or(value, part)
-		if (byteValue & 0x80) == 0 {
+		if (b & 0x80) == 0 {
 			if value.Cmp(max) > 0 {
 				return nil, fmt.Errorf("%s overflow", name)
 			}
@@ -159,9 +181,10 @@ func (d *Deserializer) read(length int) ([]byte, error) {
 	if d.offset+length > len(d.buffer) {
 		return nil, fmt.Errorf("reached end of postcard buffer")
 	}
-	bytes := append([]byte(nil), d.buffer[d.offset:d.offset+length]...)
+	result := make([]byte, length)
+	copy(result, d.buffer[d.offset:d.offset+length])
 	d.offset += length
-	return bytes, nil
+	return result, nil
 }
 
 func (d *Deserializer) Peek(n int) ([]byte, error) {
@@ -179,9 +202,13 @@ func (d *Deserializer) Buffer() []byte {
 	return d.buffer
 }
 
-func (d *Deserializer) Advance(n int) {
+func (d *Deserializer) Advance(n int) error {
 	if n < 0 {
-		panic("Advance with negative offset")
+		return fmt.Errorf("Advance with negative offset %d", n)
+	}
+	if d.offset+n > len(d.buffer) {
+		return fmt.Errorf("Advance(%d) would exceed buffer length %d (current offset %d)", n, len(d.buffer), d.offset)
 	}
 	d.offset += n
+	return nil
 }

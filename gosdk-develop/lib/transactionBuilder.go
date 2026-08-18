@@ -35,6 +35,26 @@ type TransactionBuilder struct {
 	tx    *Transaction
 	slots []SigningSlot
 	errs  []error
+
+	txHash   *api.TxHash  // lazy cache: nil = not computed or dirty
+	ixHashes []api.TxHash // lazy cache: nil = not computed or dirty
+}
+
+// cachedTxHash returns the transaction hash, recomputing lazily when dirty.
+func (b *TransactionBuilder) cachedTxHash() api.TxHash {
+	if b.txHash == nil {
+		h := b.tx.TxHash()
+		b.txHash = &h
+	}
+	return *b.txHash
+}
+
+// cachedIxHashes returns all instruction hashes, recomputing lazily when dirty.
+func (b *TransactionBuilder) cachedIxHashes() []api.TxHash {
+	if b.ixHashes == nil {
+		b.ixHashes = b.tx.IxHashes()
+	}
+	return b.ixHashes
 }
 
 func (b *TransactionBuilder) Tx() *Transaction {
@@ -47,6 +67,7 @@ func (b *TransactionBuilder) WithPayer(account *crypto.Address) *TransactionBuil
 		return b
 	}
 	b.tx.Payer = account
+	b.txHash = nil // payer changed -> recompute txHash; ixHashes depend only on Instructions, so they stay valid
 	return b
 }
 
@@ -56,6 +77,7 @@ func (b *TransactionBuilder) WithStamp(stamp TransactionStamp) *TransactionBuild
 		return b
 	}
 	b.tx.Stamp = stamp
+	b.txHash = nil // stamp changed -> recompute txHash; ixHashes unchanged
 	return b
 }
 
@@ -194,7 +216,7 @@ func (b *TransactionBuilder) AddPayerSig(account crypto.Address, sk crypto.Secre
 	}
 	sig, err := NewAccountSignatureBuilder().
 		AuthorizePayer().
-		Sign(account, sk, b.tx.TxHash(), nil, mode).
+		Sign(account, sk, b.cachedTxHash(), nil, mode).
 		Build()
 	if err != nil {
 		b.errs = append(b.errs, err)
@@ -216,7 +238,7 @@ func (b *TransactionBuilder) AddIxAndPayerSig(account crypto.Address, sk crypto.
 	}
 	sig, err := NewAccountSignatureBuilder().
 		AuthorizeIxAndPayer(ixIndex).
-		Sign(account, sk, b.tx.TxHash(), ixPart, mode).
+		Sign(account, sk, b.cachedTxHash(), ixPart, mode).
 		Build()
 	if err != nil {
 		b.errs = append(b.errs, err)
@@ -240,7 +262,7 @@ func (b *TransactionBuilder) AddIxesSig(account crypto.Address, sk crypto.Secret
 	if includePayer {
 		sigBuilder.AuthorizePayer()
 	}
-	sig, err := sigBuilder.Sign(account, sk, b.tx.TxHash(), ixPart, mode).Build()
+	sig, err := sigBuilder.Sign(account, sk, b.cachedTxHash(), ixPart, mode).Build()
 	if err != nil {
 		b.errs = append(b.errs, err)
 		return b
@@ -261,7 +283,7 @@ func (b *TransactionBuilder) ResetSigs() *TransactionBuilder {
 // ixHashesForIndices builds the IxHashItem list for the given instruction indices,
 // rejecting reserved and out-of-range indices (previously silently skipped).
 func (b *TransactionBuilder) ixHashesForIndices(ixIndices []uint8) ([]IxHashItem, error) {
-	hashes := b.tx.IxHashes()
+	hashes := b.cachedIxHashes()
 	items := make([]IxHashItem, 0, len(ixIndices))
 	for _, i := range ixIndices {
 		if i == AuthPayerBit {

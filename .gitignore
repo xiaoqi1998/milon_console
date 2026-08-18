@@ -43,3 +43,6 @@ _write_js.py
 _verify_e2e.ps1
 _tmp_modify_appjs.ps1
 _commit_msg.txt
+
+# SDK backup
+gosdk-develop-backup-*/

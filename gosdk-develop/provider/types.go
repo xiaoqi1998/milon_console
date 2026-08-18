@@ -21,7 +21,6 @@ type Instruction struct {
 	Handler       string        `json:"handler"`
 	Kind          string        `json:"kind"`                      // entry + view
 	Name          string        `json:"name"`
-	Description   string        `json:"description,omitempty"`     // 方法中文说明
 	Returns       ReturnValue   `json:"returns,omitempty"`         // required for view
 	SignerLookups SignerLookups `json:"signer_lookups,omitempty"`  // optional for entry
 	Sponsor       bool          `json:"sponsor,omitempty"`         // optional for entry
@@ -43,10 +42,9 @@ type LookupPath struct {
 }
 
 type Arg struct {
-	Name        string `json:"name"`
-	Role        string `json:"role"`                  // input + signer + any_signer
-	Type        string `json:"type"`                  // IDL type name (u8, u16, ...)
-	Description string `json:"description,omitempty"` // 参数中文说明
+	Name string `json:"name"`
+	Role string `json:"role"` // input + signer + any_signer
+	Type string `json:"type"` // IDL type name (u8, u16, ...)
 }
 type ReturnValue struct {
 	Type string `json:"type"` // IDL type name (u8, u16, ...)

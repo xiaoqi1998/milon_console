@@ -10,6 +10,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/lib"
 )
@@ -31,13 +32,13 @@ type typeTagWithDataResponse struct {
 }
 
 type blockResponse struct {
-	Number             uint64   `json:"number"`
-	Hash               string   `json:"hash"`
-	PrevHash           string   `json:"prevHash"`
-	Timestamp          uint64   `json:"timestamp"`
-	TxProofIdentifiers []string `json:"txProofIdentifiers"`
-	WitnessAddress     string   `json:"witnessAddress"`
-	WitnessSignature   string   `json:"witnessSignature"`
+	Number    uint64 `json:"number"`
+	Hash      string `json:"hash"`
+	PrevHash  string `json:"prevHash"`
+	StateHash string `json:"stateHash"`
+	TxRoot    string `json:"txRoot"`
+	TxCount   uint32 `json:"txCount"`
+	Timestamp uint64 `json:"timestamp"`
 }
 
 type getResourceResponse struct {
@@ -67,7 +68,7 @@ func (h *RpcHandler) GetBlock(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetBlockByHeight(height, requestId)
+	result, err := mc.GetBlockByHeight(height, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetBlock", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get block: "+err.Error(), nil))
@@ -75,19 +76,15 @@ func (h *RpcHandler) GetBlock(c *gin.Context) {
 	}
 
 	b := result.BodyBlock
-	txProofIds := make([]string, 0, len(b.TxProofIdentifiers))
-	for _, id := range b.TxProofIdentifiers {
-		txProofIds = append(txProofIds, hex.EncodeToString(id[:]))
-	}
 
 	resp := blockResponse{
-		Number:             b.Number,
-		Hash:               hex.EncodeToString(b.Hash[:]),
-		PrevHash:           hex.EncodeToString(b.PrevHash[:]),
-		Timestamp:          b.Timestamp,
-		TxProofIdentifiers: txProofIds,
-		WitnessAddress:     b.WitnessAddress.ToBase58(),
-		WitnessSignature:   hex.EncodeToString(b.WitnessSignature[:]),
+		Number:    b.Number,
+		Hash:      hex.EncodeToString(b.Hash[:]),
+		PrevHash:  hex.EncodeToString(b.PrevHash[:]),
+		StateHash: hex.EncodeToString(b.StateHash[:]),
+		TxRoot:    hex.EncodeToString(b.TxRoot[:]),
+		TxCount:   b.TxCount,
+		Timestamp: b.Timestamp,
 	}
 
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
@@ -114,7 +111,7 @@ func (h *RpcHandler) GetResource(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetResource(rsHash, requestId)
+	result, err := mc.GetResource(rsHash, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetResource", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get resource: "+err.Error(), nil))
@@ -159,7 +156,7 @@ func (h *RpcHandler) GetAccessValue(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetAccessValue(blobHashList, requestId)
+	result, err := mc.GetAccessValue(blobHashList, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetAccessValue", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get access value: "+err.Error(), nil))

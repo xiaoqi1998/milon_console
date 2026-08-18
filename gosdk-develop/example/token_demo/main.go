@@ -33,17 +33,18 @@ func example(networkConfig milon.Network) {
 	account2Pk := account2Sk.Ed25519Public()
 	account2, _ := crypto.NewAddressFromPublicKey(account2Pk)
 
-	account3Sk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	account3Pk := account3Sk.Ed25519Public()
-	account3, _ := crypto.NewAddressFromPublicKey(account3Pk)
+	spenderSk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
+	spenderPk := spenderSk.Ed25519Public()
+	spender, _ := crypto.NewAddressFromPublicKey(spenderPk)
 
 	fmt.Printf("token = %v \n", token)
 	fmt.Printf("owner = %v \n", owner)
+	fmt.Printf("spender = %v \n", spender)
 	fmt.Printf("account1 = %v \n", account1)
 	fmt.Printf("account2 = %v \n", account2)
-	fmt.Printf("account3 = %v \n\n", account3)
+	fmt.Printf("spender = %v \n\n", spender)
 
-	fmt.Printf("\n================ Initial MIL ================\n")
+	fmt.Printf("\n================ 1.Initial MIL ================\n")
 	if err := client.ClaimFaucet(tokenSk, token, lib.PubKeySignatureMode{PublicKey: *tokenPk}); err != nil {
 		panic("failed to ClaimFaucet MIL:" + err.Error())
 	}
@@ -71,8 +72,9 @@ func example(networkConfig milon.Network) {
 	}
 	fmt.Printf("account1 MIL: %d\n", account1Balance)
 
-	// 1. Encode instructions (Create + Mint + Transfer)
-	createWire, err := gen.Token.Create.Args(token, owner, gen.TokenMetadata{
+	fmt.Printf("\n================ 2.Create(token sign) ================\n")
+
+	wire, err := gen.Token.Create.Args(token, owner, gen.TokenMetadata{
 		Name:     "Example Token",
 		Symbol:   "Token",
 		Decimals: 6,
@@ -82,58 +84,18 @@ func example(networkConfig milon.Network) {
 		panic("failed to encode Create instruction:" + err.Error())
 	}
 
-	mintWire, err := gen.Token.Mint.Args(token, account1, 1000).Encode()
-	if err != nil {
-		panic("failed to encode Mint instruction:" + err.Error())
-	}
-
-	mintWire2, err := gen.Token.Mint.Args(token, account1, 2000).Encode()
-	if err != nil {
-		panic("failed to encode Mint instruction:" + err.Error())
-	}
-
-	transferWire, err := gen.Token.Transfer.Args(account1, token, account2, 300).Encode()
-	if err != nil {
-		panic("failed to encode Transfer instruction:" + err.Error())
-	}
-
-	// 2. Build transaction once, reuse the same builder for simulate & real sign (same Stamp -> same TxHash)
-	//    SplitPayerSelfPay mode: no payer; each executor signs its own ix bit(s) and gas bit (bit63).
-	builder := lib.NewTransactionBuilder([]api.PackedInstruction{createWire, mintWire, mintWire2, transferWire})
-
-	// 3. Simulate on-chain first (no private key needed, dry-run)
-	simulateTx, err := builder.
-		AddSimulateIxesSig(*token, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *tokenPk}).
-		AddSimulateIxesSig(*owner, []uint8{1, 2}, true, lib.PubKeySignatureMode{PublicKey: *ownerPk}).
-		AddSimulateIxesSig(*account1, []uint8{3}, true, lib.PubKeySignatureMode{PublicKey: *account1Pk}).
-		Build()
-	if err != nil {
-		panic("failed to simulate transaction:" + err.Error())
-	}
-	simulateResult, err := client.SimulateTx(simulateTx)
-	if err != nil {
-		panic("failed to simulate transaction on chain:" + err.Error())
-	}
-	helper.CheckSimulateSuccess(simulateResult)
-	fmt.Printf("Simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
-
-	// 4. Real sign on the same builder (same TxHash)
-	tx, err := builder.ResetSigs().
+	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(token).
 		AddIxesSig(*token, tokenSk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *tokenPk}).
-		AddIxesSig(*owner, ownerSk, []uint8{1, 2}, true, lib.PubKeySignatureMode{PublicKey: *ownerPk}).
-		AddIxesSig(*account1, account1Sk, []uint8{3}, true, lib.PubKeySignatureMode{PublicKey: *account1Pk}).
 		Build()
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-
-	// 5. Submit transaction on chain
 	err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
 
-	// 6. Wait for the transaction to complete
 	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
 	getTxByHashResult, err := client.WaitForTransaction(tx.TxHash())
 	if err != nil {
@@ -142,127 +104,346 @@ func example(networkConfig milon.Network) {
 	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	fmt.Printf("\n================ Final MIL ================\n")
-	tokenBalance, err = client.BalanceOf(token)
+	fmt.Printf("\n================ 3.Mint(owner mint 1000 to account1 + owner sign) ================\n")
+
+	wire, err = gen.Token.Mint.Args(token, account1, 1000).Encode()
 	if err != nil {
-		panic("failed to get token MIL:" + err.Error())
+		panic("failed to encode Mint instruction:" + err.Error())
 	}
-	fmt.Printf("token MIL: %d\n", tokenBalance)
-
-	ownerBalance, err = client.BalanceOf(owner)
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(owner).
+		AddIxesSig(*owner, ownerSk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *ownerPk}).
+		Build()
 	if err != nil {
-		panic("failed to get owner MIL:" + err.Error())
+		panic("failed to build and sign transaction:" + err.Error())
 	}
-	fmt.Printf("owner MIL: %d\n", ownerBalance)
-
-	account1Balance, err = client.BalanceOf(account1)
+	err = client.SubmitTx(tx)
 	if err != nil {
-		panic("failed to get account1 MIL:" + err.Error())
+		panic("failed to submit transaction:" + err.Error())
 	}
-	fmt.Printf("account1 MIL: %d\n", account1Balance)
+	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
+	getTxByHashResult, err = client.WaitForTransaction(tx.TxHash())
+	if err != nil {
+		panic("failed to wait for transaction:" + err.Error())
+	}
+	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	fmt.Printf("\n================ token Balances ================\n")
-
-	balanceAccount1Wire, err := gen.Token.BalanceOf.Args(token, account1).Encode()
+	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err := client.View([]api.PackedInstruction{balanceAccount1Wire})
+	viewTxResult, err := client.View([]api.PackedInstruction{wire})
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
-	wire0ViewDecode, err := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
 	if err != nil {
 		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
-		fmt.Printf("token account1 balance: %+v \n", wire0ViewDecode)
+		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	balanceAccount2Wire, err := gen.Token.BalanceOf.Args(token, account2).Encode()
+	fmt.Printf("\n================ 4.Transfer(account1 transfer 100 to account2  + account1 sign) ================\n")
+
+	wire, err = gen.Token.Transfer.Args(account1, token, account2, 100).Encode()
+	if err != nil {
+		panic("failed to encode Transfer instruction:" + err.Error())
+	}
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(account1).
+		AddIxesSig(*account1, account1Sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *account1Pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign transaction:" + err.Error())
+	}
+	err = client.SubmitTx(tx)
+	if err != nil {
+		panic("failed to submit transaction:" + err.Error())
+	}
+	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
+	getTxByHashResult, err = client.WaitForTransaction(tx.TxHash())
+	if err != nil {
+		panic("failed to wait for transaction:" + err.Error())
+	}
+	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
+
+	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{balanceAccount2Wire})
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
-	wire1ViewDecode, err := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
 	if err != nil {
-		fmt.Printf("token account2 balance DecodeView error:%v \n", err.Error())
+		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
-		fmt.Printf("token account2 balance: %+v \n", wire1ViewDecode)
+		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	balanceAccount3Wire, err := gen.Token.BalanceOf.Args(token, account3).Encode()
+	fmt.Printf("\n================ 5.Burn(account1 burn 200 + account1 sign) ================\n")
+
+	wire, err = gen.Token.Burn.Args(account1, token, 200).Encode()
+	if err != nil {
+		panic("failed to encode Burn instruction:" + err.Error())
+	}
+
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(account1).
+		AddIxesSig(*account1, account1Sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *account1Pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign transaction:" + err.Error())
+	}
+	err = client.SubmitTx(tx)
+	if err != nil {
+		panic("failed to submit transaction:" + err.Error())
+	}
+	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
+	getTxByHashResult, err = client.WaitForTransaction(tx.TxHash())
+	if err != nil {
+		panic("failed to wait for transaction:" + err.Error())
+	}
+	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
+
+	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{balanceAccount3Wire})
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
-	wire2ViewDecode, err := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
 	if err != nil {
-		fmt.Printf("token account3 balance DecodeView error:%v \n", err.Error())
+		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
-		fmt.Printf("token account3 balance: %+v \n", wire2ViewDecode)
+		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	metadataWire, err := gen.Token.Metadata.Args(token).Encode()
+	fmt.Printf("\n================ 6.Freeze(account1 freeze 300 + owner sign) ================\n")
+
+	wire, err = gen.Token.Freeze.Args(token, account1, 300).Encode()
 	if err != nil {
-		panic("failed to encode Metadata:" + err.Error())
+		panic("failed to encode Freeze instruction:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{metadataWire})
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(owner).
+		AddIxesSig(*owner, ownerSk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *ownerPk}).
+		Build()
 	if err != nil {
-		panic("failed to view Metadata:" + err.Error())
+		panic("failed to build and sign transaction:" + err.Error())
 	}
-	wire3ViewDecode, err := gen.Token.Metadata.DecodeView(viewTxResult.HTTPResponseBody)
+	err = client.SubmitTx(tx)
 	if err != nil {
-		fmt.Printf("token Metadata DecodeView error:%v \n", err.Error())
+		panic("failed to submit transaction:" + err.Error())
+	}
+
+	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
+	getTxByHashResult, err = client.WaitForTransaction(tx.TxHash())
+	if err != nil {
+		panic("failed to wait for transaction:" + err.Error())
+	}
+	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
+
+	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
+	if err != nil {
+		panic("failed to encode BalanceOf:" + err.Error())
+	}
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	if err != nil {
+		panic("failed to view BalanceOf:" + err.Error())
+	}
+	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	if err != nil {
+		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
-		fmt.Printf("token Metadata : %+v \n", wire3ViewDecode)
+		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	totalSupplyWire, err := gen.Token.TotalSupply.Args(token).Encode()
+	wire, err = gen.Token.FrozenOf.Args(token, account1).Encode()
 	if err != nil {
-		panic("failed to encode TotalSupply:" + err.Error())
+		panic("failed to encode FrozenOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{totalSupplyWire})
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
 	if err != nil {
-		panic("failed to view TotalSupply:" + err.Error())
+		panic("failed to view FrozenOf:" + err.Error())
 	}
-	wire4ViewDecode, err := gen.Token.TotalSupply.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = gen.Token.FrozenOf.DecodeView(viewTxResult.HTTPResponseBody)
 	if err != nil {
-		fmt.Printf("token TotalSupply DecodeView error:%v \n", err.Error())
+		fmt.Printf("token account1 frozen query error:%v \n", err.Error())
 	} else {
-		fmt.Printf("token TotalSupply : %+v \n", wire4ViewDecode)
+		fmt.Printf("token account1 frozen: %+v \n", wireViewDecode)
 	}
 
-	fmt.Printf("\n================ Now do it again, but with a different method ================\n")
+	fmt.Printf("\n================ 7.Unfreeze(account1 unfreeze 300 + owner sign) ================\n")
 
-	viewTxResult, err = client.View([]api.PackedInstruction{balanceAccount1Wire, balanceAccount2Wire, balanceAccount3Wire, metadataWire, totalSupplyWire})
+	wire, err = gen.Token.Unfreeze.Args(token, account1, 300).Encode()
 	if err != nil {
-		panic("failed to view: " + err.Error())
+		panic("failed to encode Unfreeze instruction:" + err.Error())
 	}
-
-	decodedTaggedValueList, err := client.GetProviderManager().DecodeViewDatas(
-		[]string{
-			"token::BalanceOf",
-			"token::BalanceOf",
-			"token::BalanceOf",
-			"token::Metadata",
-			"token::TotalSupply",
-		},
-		viewTxResult.HTTPResponseBody,
-	)
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(owner).
+		AddIxesSig(*owner, ownerSk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *ownerPk}).
+		Build()
 	if err != nil {
-		panic("failed to decode view data: " + err.Error())
+		panic("failed to build and sign transaction:" + err.Error())
+	}
+	err = client.SubmitTx(tx)
+	if err != nil {
+		panic("failed to submit transaction:" + err.Error())
+	}
+	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
+	getTxByHashResult, err = client.WaitForTransaction(tx.TxHash())
+	if err != nil {
+		panic("failed to wait for transaction:" + err.Error())
+	}
+	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
+
+	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
+	if err != nil {
+		panic("failed to encode BalanceOf:" + err.Error())
+	}
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	if err != nil {
+		panic("failed to view BalanceOf:" + err.Error())
+	}
+	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	if err != nil {
+		fmt.Printf("token account1 balance query error:%v \n", err.Error())
+	} else {
+		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	for i, decodedTaggedValue := range decodedTaggedValueList {
-		fmt.Printf("view[%d] : %+v \n", i, decodedTaggedValue)
-		if failure, ok := decodedTaggedValue.Value.(*api.TxFailurePayload); ok {
-			fmt.Printf("❌ err = %+v \n", failure)
-		}
+	wire, err = gen.Token.FrozenOf.Args(token, account1).Encode()
+	if err != nil {
+		panic("failed to encode FrozenOf:" + err.Error())
+	}
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	if err != nil {
+		panic("failed to view FrozenOf:" + err.Error())
+	}
+	wireViewDecode, err = gen.Token.FrozenOf.DecodeView(viewTxResult.HTTPResponseBody)
+	if err != nil {
+		fmt.Printf("token account1 frozen query error:%v \n", err.Error())
+	} else {
+		fmt.Printf("token account1 frozen: %+v \n", wireViewDecode)
+	}
+
+	fmt.Printf("\n================ 8.Approve(account1 Approve 400 to spender + account1 sign) ================\n")
+
+	wire, err = gen.Token.Approve.Args(account1, token, spender, 400).Encode()
+	if err != nil {
+		panic("failed to encode TransferFrom instruction:" + err.Error())
+	}
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(account1).
+		AddIxesSig(*account1, account1Sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *account1Pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign transaction:" + err.Error())
+	}
+	err = client.SubmitTx(tx)
+	if err != nil {
+		panic("failed to submit transaction:" + err.Error())
+	}
+	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
+	getTxByHashResult, err = client.WaitForTransaction(tx.TxHash())
+	if err != nil {
+		panic("failed to wait for transaction:" + err.Error())
+	}
+	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
+
+	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
+	if err != nil {
+		panic("failed to encode BalanceOf:" + err.Error())
+	}
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	if err != nil {
+		panic("failed to view BalanceOf:" + err.Error())
+	}
+	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	if err != nil {
+		fmt.Printf("token account1 balance query error:%v \n", err.Error())
+	} else {
+		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
+	}
+
+	wire, err = gen.Token.ApprovalOf.Args(token, account1, spender).Encode()
+	if err != nil {
+		panic("failed to encode BalanceOf:" + err.Error())
+	}
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	if err != nil {
+		panic("failed to view BalanceOf:" + err.Error())
+	}
+	wireViewDecode, err = gen.Token.ApprovalOf.DecodeView(viewTxResult.HTTPResponseBody)
+	if err != nil {
+		fmt.Printf("token spender approval query error:%v \n", err.Error())
+	} else {
+		fmt.Printf("token spender approval: %+v \n", wireViewDecode)
+	}
+
+	fmt.Printf("\n================ 9.TransferFrom(account1 TransferFrom 200 to spender + spender sign and account1 sign+sponsored) ================\n")
+
+	wire, err = gen.Token.TransferFrom.Args(spender, token, account1, 200).Encode()
+	if err != nil {
+		panic("failed to encode TransferFrom instruction:" + err.Error())
+	}
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(account1).
+		AddIxesSig(*spender, spenderSk, []uint8{0}, false, lib.PubKeySignatureMode{PublicKey: *spenderPk}).
+		AddPayerSig(*account1, account1Sk, lib.PubKeySignatureMode{PublicKey: *account1Pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign transaction:" + err.Error())
+	}
+	err = client.SubmitTx(tx)
+	if err != nil {
+		panic("failed to submit transaction:" + err.Error())
+	}
+	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
+	getTxByHashResult, err = client.WaitForTransaction(tx.TxHash())
+	if err != nil {
+		panic("failed to wait for transaction:" + err.Error())
+	}
+	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
+
+	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
+	if err != nil {
+		panic("failed to encode BalanceOf:" + err.Error())
+	}
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	if err != nil {
+		panic("failed to view BalanceOf:" + err.Error())
+	}
+	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	if err != nil {
+		fmt.Printf("token account1 balance query error:%v \n", err.Error())
+	} else {
+		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
+	}
+
+	wire, err = gen.Token.ApprovalOf.Args(token, account1, spender).Encode()
+	if err != nil {
+		panic("failed to encode BalanceOf:" + err.Error())
+	}
+	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	if err != nil {
+		panic("failed to view BalanceOf:" + err.Error())
+	}
+	wireViewDecode, err = gen.Token.ApprovalOf.DecodeView(viewTxResult.HTTPResponseBody)
+	if err != nil {
+		fmt.Printf("token spender approval query error:%v \n", err.Error())
+	} else {
+		fmt.Printf("token spender approval: %+v \n", wireViewDecode)
 	}
 }

@@ -3,81 +3,112 @@ package tools
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 )
 
-// maxRetries is the number of attempts for each HTTP request on network errors.
-const maxRetries = 3
+const (
+	maxRetries      = 3
+	maxResponseSize = 16 << 20 // 16 MiB
+)
 
-// httpClient is shared across calls so TCP connections (keep-alive) are reused.
 var httpClient = &http.Client{
+	Timeout: 30 * time.Second,
 	Transport: &http.Transport{
-		DisableCompression: true,
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 32,
+		DisableCompression:  true,
 	},
 }
 
 // HttpPostByBytes sends an HTTP POST request with raw bytes as the body.
 func HttpPostByBytes(ctx context.Context, url string, dataBytes []byte, header map[string]string) (statusCode int, responseBytes []byte, err error) {
-	var body io.Reader
-	if len(dataBytes) > 0 {
-		body = bytes.NewReader(dataBytes)
+	bodyFactory := func() io.Reader {
+		if len(dataBytes) > 0 {
+			return bytes.NewReader(dataBytes)
+		}
+		return nil
 	}
-	return httpPost(ctx, url, body, header)
+	return httpPost(ctx, url, bodyFactory, header)
 }
 
-// HttpPostByJson sends an HTTP POST request with a JSON-encoded body.
-func HttpPostByJson(ctx context.Context, url string, data any, header map[string]string) (statusCode int, responseBytes []byte, err error) {
-	var body io.Reader
-	if data != nil {
-		jsonBytes, err := json.Marshal(data)
+// httpPost sends an HTTP POST request, retrying up to maxRetries times on
+// network errors and 5xx responses with exponential backoff. The bodyFactory
+// is called for each attempt so the request body is always fresh (avoids
+// "body already closed" on retry). 5xx responses are fully read before retry
+// so the keep-alive connection can be reused; the last attempt's response is
+// returned as-is for the caller to surface.
+func httpPost(ctx context.Context, url string, bodyFactory func() io.Reader, header map[string]string) (statusCode int, responseBytes []byte, err error) {
+	for i := 0; i < maxRetries; i++ {
+		var body io.Reader
+		if bodyFactory != nil {
+			body = bodyFactory()
+		}
+
+		req, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
+		if reqErr != nil {
+			return 0, nil, reqErr
+		}
+
+		if header == nil {
+			req.Header.Add("Content-Type", "application/json")
+		} else {
+			for key, value := range header {
+				req.Header.Add(key, value)
+			}
+		}
+
+		var rsp *http.Response
+		rsp, err = httpClient.Do(req)
+		if err != nil {
+			// network-layer failure (dial, timeout, reset, ...)
+			if ctx.Err() != nil {
+				return 0, nil, ctx.Err()
+			}
+			if i < maxRetries-1 {
+				if waitErr := retryBackoff(ctx, i); waitErr != nil {
+					return 0, nil, waitErr
+				}
+			}
+			continue
+		}
+
+		statusCode = rsp.StatusCode
+		responseBytes, err = io.ReadAll(io.LimitReader(rsp.Body, maxResponseSize+1))
+		rsp.Body.Close()
 		if err != nil {
 			return 0, nil, err
 		}
-		body = bytes.NewReader(jsonBytes)
+		if len(responseBytes) > maxResponseSize {
+			return 0, nil, fmt.Errorf("response body exceeds max size %d bytes", maxResponseSize)
+		}
+
+		// 5xx: transient node failures (overload, rolling upgrade, ...).
+		// The body is fully read above so the connection can be reused.
+		if statusCode >= 500 && statusCode < 600 && i < maxRetries-1 {
+			if waitErr := retryBackoff(ctx, i); waitErr != nil {
+				return 0, nil, waitErr
+			}
+			continue
+		}
+
+		return statusCode, responseBytes, nil
 	}
-	return httpPost(ctx, url, body, header)
+
+	// All attempts failed with network errors; err holds the last failure.
+	return statusCode, responseBytes, err
 }
 
-// httpPost sends an HTTP POST request, retrying up to maxRetries times on network errors.
-func httpPost(ctx context.Context, url string, body io.Reader, header map[string]string) (statusCode int, responseBytes []byte, err error) {
-	// 1. Create an HTTP request with context
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
-	if err != nil {
-		return
+// retryBackoff waits with exponential backoff (100ms, 200ms, ...), returning
+// early with ctx.Err() when the context is cancelled.
+func retryBackoff(ctx context.Context, attempt int) error {
+	backoff := time.Duration(1<<uint(attempt)) * 100 * time.Millisecond
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(backoff):
+		return nil
 	}
-
-	// 2. Add request headers
-	if header == nil {
-		req.Header.Add("Content-Type", "application/json")
-	} else {
-		for key, value := range header {
-			req.Header.Add(key, value)
-		}
-	}
-
-	// 3. Send request with retry
-	var rsp *http.Response
-	for i := 0; i < maxRetries; i++ {
-		rsp, err = httpClient.Do(req)
-		if err == nil {
-			break
-		}
-		if i < maxRetries-1 {
-			time.Sleep(time.Microsecond * 10)
-		}
-	}
-	if err != nil {
-		return
-	}
-	defer rsp.Body.Close()
-
-	statusCode = rsp.StatusCode
-
-	// 4. Read response
-	responseBytes, err = io.ReadAll(rsp.Body)
-
-	return
 }

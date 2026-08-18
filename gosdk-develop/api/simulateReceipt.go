@@ -5,6 +5,17 @@ import (
 	"github.com/milon-labs/milon-go-sdk/postcard"
 )
 
+/*
+	rust
+		pub type SimulateReceipt = TxReceipt<TxFailurePayload>;
+
+		pub struct TxFailurePayload {
+			pub code: u16,
+			pub message: String,
+			pub data: Vec<u8>,
+		}
+*/
+
 type SimulateReceipt struct {
 	TxID       TxId
 	TxHash     TxHash

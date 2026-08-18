@@ -75,7 +75,7 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 		return
 	}
 
-	result, err := mc.View([]api.PackedInstruction{wire}, requestId)
+	result, err := mc.View([]api.PackedInstruction{wire}, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "ReadContract", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to read contract: "+err.Error(), nil))
@@ -144,7 +144,7 @@ func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 		wires = append(wires, wire)
 	}
 
-	result, err := mc.View(wires, requestId)
+	result, err := mc.View(wires, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "ReadContractMulti", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to read multi: "+err.Error(), nil))
@@ -261,7 +261,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if err := tx.ValidateWire(); err != nil {
 			return nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
-		return mc.SimulateTx(tx, requestId)
+		return mc.SimulateTx(tx, milon.WithRequestID(requestId))
 
 	case PaymentModeUnifiedDualSign:
 		payerAddr, payerMode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
@@ -283,7 +283,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if err := tx.ValidateWire(); err != nil {
 			return nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
-		return mc.SimulateTx(tx, requestId)
+		return mc.SimulateTx(tx, milon.WithRequestID(requestId))
 
 	case PaymentModeUnifiedPayerOnlyGas:
 		payerAddr, mode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
@@ -300,7 +300,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if err := tx.ValidateWire(); err != nil {
 			return nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
-		return mc.SimulateTx(tx, requestId)
+		return mc.SimulateTx(tx, milon.WithRequestID(requestId))
 
 	case PaymentModeSplit:
 		ownerAddrStr := req.OwnerAddress
@@ -320,7 +320,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if err := tx.ValidateWire(); err != nil {
 			return nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
-		return mc.SimulateTx(tx, requestId)
+		return mc.SimulateTx(tx, milon.WithRequestID(requestId))
 
 	case PaymentModeMultiSigner:
 		signerAddrs, _, signerModes, err := types.ParseSignerList(req.Signers, false)
@@ -344,7 +344,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 			return nil, err
 		}
 
-		return mc.SimulateTx(tx, requestId)
+		return mc.SimulateTx(tx, milon.WithRequestID(requestId))
 
 	case PaymentModeSponsored:
 		if req.PayerAddress == "" {
@@ -360,7 +360,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 			return nil, err
 		}
 
-		return mc.SimulateTx(tx, requestId)
+		return mc.SimulateTx(tx, milon.WithRequestID(requestId))
 
 	default:
 		return nil, fmt.Errorf("unsupported paymentMode: %s", req.PaymentMode)
@@ -666,7 +666,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		if err != nil {
 			return nil, err
 		}
-		if err := mc.SubmitTx(tx, requestId); err != nil {
+		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 			return nil, err
 		}
 		return tx, nil
@@ -813,7 +813,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 			return "", err
 		}
 
-		if err := mc.SubmitTx(tx, requestId); err != nil {
+		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 			return "", err
 		}
 		return txHashHex(tx), nil
@@ -839,7 +839,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 			return "", err
 		}
 
-		if err := mc.SubmitTx(tx, requestId); err != nil {
+		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 			return "", err
 		}
 		return txHashHex(tx), nil

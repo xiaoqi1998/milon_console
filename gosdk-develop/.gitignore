@@ -6,3 +6,4 @@
 /example/token_create_unified_separate_ix
 /example/list_resource_path
 /example/chainhead_block
+/example/get_tx_history_proof

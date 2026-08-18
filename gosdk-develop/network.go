@@ -18,12 +18,3 @@ var DevNet = Network{
 	ChainId: 900_000_001,
 	RpcUrl:  "http://47.84.39.153:6280/milon/v1",
 }
-
-var NamedNetworks map[string]Network
-
-func init() {
-	NamedNetworks = make(map[string]Network, 4)
-
-	NamedNetworks[LocalNet.Name] = LocalNet
-	NamedNetworks[DevNet.Name] = DevNet
-}

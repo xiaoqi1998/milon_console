@@ -7,6 +7,50 @@ import (
 	"github.com/milon-labs/milon-go-sdk/types"
 )
 
+/*
+	rust
+		pub struct TxHistory {
+			pub stamp: u64,
+			pub payer: Option<u8>,
+			pub signatures: Vec<TxHistorySignature>,
+			pub instructions: Vec<PackedInstruction>,
+			pub receipt: TxReceipt,
+		}
+
+		pub struct TxHistorySignature {
+			pub signer: Address,
+			pub auth_bit: Bitmap64,
+			pub sig_bit: Bitmap64,
+		}
+
+		pub struct TxReceipt<E = u16> {
+			pub tx_id: TxID,
+			pub tx_hash: TxHash,
+			pub state: u8,
+			pub access: Vec<AccessRecord>,
+			pub events: Vec<AnySerializeOwned>,
+			pub error: Option<E>,
+			pub gas_charged: u64,
+		}
+
+		pub struct AccessRecord {
+			pub resource_id: RsHash,
+			pub first_snapshot: Option<PersistedValue>,
+			pub last_written: PersistedValue,
+		}
+
+		pub enum PersistedValue {
+			Inline(AnySerializeOwned),
+			External(BlobHash),
+		}
+*/
+
+const (
+	TxStatePending uint8 = iota
+	TxStateSuccess
+	TxStateFailed
+)
+
 type TxHistory struct {
 	Stamp        uint64
 	Payer        *uint8
@@ -24,7 +68,7 @@ type TxHistorySignature struct {
 type TxReceipt struct {
 	TxID       TxId
 	TxHash     TxHash
-	State      uint8
+	State      uint8 //TxStatePending + TxStateSuccess + TxStateFailed
 	Access     []AccessRecord
 	Events     []TypeTagWithData
 	Error      *uint16

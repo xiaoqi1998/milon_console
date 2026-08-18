@@ -9,6 +9,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
@@ -35,7 +36,7 @@ func (h *SystemHandler) Health(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetChainHead(requestId)
+	result, err := mc.GetChainHead(milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "Health", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get chain head: "+err.Error(), nil))
@@ -57,7 +58,7 @@ func (h *SystemHandler) GetChainHead(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetChainHead(requestId)
+	result, err := mc.GetChainHead(milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetChainHead", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get chain head: "+err.Error(), nil))

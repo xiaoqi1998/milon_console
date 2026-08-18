@@ -14,10 +14,6 @@ func TestSimulateReceipt_WithRealProvider_EventCreditApplied(t *testing.T) {
 	pd, err := provider.LoadProviderFromFile("../../provider/IDL/demo.idl.json")
 	assert.NoError(t, err)
 
-	api.SetGlobalTypeResolver(&provider.IDLTypeResolver{
-		Providers: map[string]*provider.Provider{"demo": pd},
-	})
-
 	// 2. Build event data for EventCreditApplied (typeTag: 7407037194950745602)
 	pool := make([]byte, 20)
 	for i := 0; i < 20; i++ {
@@ -64,13 +60,15 @@ func TestSimulateReceipt_WithRealProvider_EventCreditApplied(t *testing.T) {
 	data, err := postcard.SerializePostcard(&original)
 	assert.NoError(t, err)
 
-	deserialized, err := postcard.DeserializePostcard(data, func(d *postcard.Deserializer) (api.SimulateReceipt, error) {
+	deserialized, err := postcard.DeserializePostcardWithResolver(data, func(d *postcard.Deserializer) (api.SimulateReceipt, error) {
 		var r api.SimulateReceipt
 		if err := r.UnmarshalPostcard(d); err != nil {
 			return r, err
 		}
 		return r, nil
-	}, false)
+	}, false, &provider.IDLTypeResolver{
+		Providers: map[string]*provider.Provider{"demo": pd},
+	})
 	assert.NoError(t, err)
 
 	assert.Equal(t, original.TxID, deserialized.TxID)

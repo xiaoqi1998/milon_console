@@ -244,13 +244,13 @@ func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *cryp
 		return res
 	}
 
-	if err := mc.SubmitTx(tx, lib.RequestID(time.Now().UnixMilli())); err != nil {
+	if err := mc.SubmitTx(tx, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli()))); err != nil {
 		res.Error = "submit transfer: " + err.Error()
 		return res
 	}
 
 	res.TransferTxHash = txHashHex(tx)
-	if _, err := mc.WaitForTransaction(tx.TxHash(), lib.RequestID(1)); err != nil {
+	if _, err := mc.WaitForTransaction(tx.TxHash(), milon.WithWaitRequestID(lib.RequestID(1))); err != nil {
 		res.Error = "transfer submitted but wait failed: " + err.Error()
 		return res
 	}

@@ -20,8 +20,14 @@ func NewSerializer() *Serializer {
 	return &Serializer{bytes: make([]byte, 0, 64)}
 }
 
+// NewSerializerWithCap creates a Serializer with the given initial capacity,
+// avoiding repeated slice growth for known-large payloads.
+func NewSerializerWithCap(capacity int) *Serializer {
+	return &Serializer{bytes: make([]byte, 0, capacity)}
+}
+
 func (s *Serializer) Bytes() []byte {
-	return append([]byte(nil), s.bytes...)
+	return s.bytes
 }
 
 func (s *Serializer) Serialize(value Marshaler) error {

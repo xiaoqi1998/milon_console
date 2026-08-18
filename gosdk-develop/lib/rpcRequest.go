@@ -24,19 +24,24 @@ func (mt *MethodType) UnmarshalPostcard(deserializer *postcard.Deserializer) err
 }
 
 const (
-	MethodTypeChainHead                  MethodType = 1
-	MethodTypeSubmitTx                   MethodType = 2
-	MethodTypeSimulateTx                 MethodType = 3
-	MethodTypeView                       MethodType = 4
-	MethodTypeGetResource                MethodType = 5
-	MethodTypeGetBlockByHeight           MethodType = 6
-	MethodTypeGetTxByHash                MethodType = 7
-	MethodTypeGetAccount                 MethodType = 8
-	MethodTypeEventsByTxHash             MethodType = 9
-	MethodTypeListResourcePath           MethodType = 10
-	MethodTypeGetResourcePathByHash      MethodType = 11
-	MethodTypeGetAccessValue             MethodType = 12
-	MethodTypeBatchGetResourcePathByHash MethodType = 13
+	// --- Core chain / execute (1-49, step 5)
+	MethodTypeChainHead      MethodType = 1
+	MethodTypeSubmitTx       MethodType = 5
+	MethodTypeSimulateTx     MethodType = 10
+	MethodTypeView           MethodType = 15
+	MethodTypeGetAccount     MethodType = 20
+	MethodTypeEventsByTxHash MethodType = 25
+
+	// --- Query block / tx (50-149, step 5) -----------------------------
+	MethodTypeGetBlockByHeight  MethodType = 50
+	MethodTypeGetTxByHash       MethodType = 55
+	MethodTypeGetTxHistoryProof MethodType = 60
+
+	// --- Resource raw / batch (150-199, step 5) ------------------------
+	MethodTypeGetResource                MethodType = 150
+	MethodTypeGetResourcePathByHash      MethodType = 155
+	MethodTypeBatchGetResourcePathByHash MethodType = 160
+	MethodTypeGetAccessValue             MethodType = 165
 )
 
 func NewRpcRequest(method MethodType, requestId RequestID, body []byte) *RpcRequest {

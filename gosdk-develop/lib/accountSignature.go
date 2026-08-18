@@ -7,6 +7,7 @@ import (
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/postcard"
 	"github.com/milon-labs/milon-go-sdk/types"
+	"math/bits"
 )
 
 const AuthPayerBit = 63
@@ -78,18 +79,18 @@ type IxHashItem struct {
 // AuthMessage assembles the account auth message:
 // Blake3(MILON_ROOT || TX_AUTH_DOMAIN || chain_id || owner || auth_bit || tx_hash || ixHashes)
 func (as *AccountSignature) AuthMessage(account crypto.Address, txHash api.TxHash, ixHashes []IxHashItem) (api.TxHash, error) {
-	hasher := crypto.Hasher([]byte(crypto.MilonTxAuthDomainContext))
+	hasher := crypto.Hasher(crypto.TxAuthDomainBytes)
 
-	chainIDBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(chainIDBytes, GetChainId())
-	hasher.Write(chainIDBytes)
+	var chainIDBytes [8]byte
+	binary.BigEndian.PutUint64(chainIDBytes[:], GetChainId())
+	hasher.Write(chainIDBytes[:])
 
 	ownerBytes := account.AsBytes()
 	hasher.Write(ownerBytes[:])
 
-	authBitBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(authBitBytes, uint64(as.AuthBit))
-	hasher.Write(authBitBytes)
+	var authBitBytes [8]byte
+	binary.LittleEndian.PutUint64(authBitBytes[:], uint64(as.AuthBit))
+	hasher.Write(authBitBytes[:])
 
 	hasher.Write(txHash[:])
 
@@ -229,7 +230,7 @@ func Unsigned(authBit types.Bitmap64) AccountSignature {
 	return AccountSignature{
 		AuthBit:    authBit,
 		SigBit:     types.NewBitmap64(0),
-		Signatures: []crypto.Signature{},
+		Signatures: nil,
 		PubKey:     nil,
 	}
 }
@@ -271,10 +272,9 @@ func Sign(account crypto.Address, sk crypto.SecretKeyer, authBit types.Bitmap64,
 	}
 
 	accountSignature := AccountSignature{
-		AuthBit:    authBit,
-		SigBit:     sigBit,
-		Signatures: []crypto.Signature{},
-		PubKey:     pubKeyField,
+		AuthBit: authBit,
+		SigBit:  sigBit,
+		PubKey:  pubKeyField,
 	}
 
 	authHash, err := accountSignature.AuthMessage(account, txHash, ixHashes)
@@ -333,7 +333,7 @@ func signatureSizeForPublicKey(pk *crypto.PublicKey) int {
 
 // CollectIxHashes collects the IxHashItems for the ix bits set in auth_bit.
 func CollectIxHashes(authBit types.Bitmap64, ixHashes []api.TxHash) []IxHashItem {
-	var out []IxHashItem
+	out := make([]IxHashItem, 0, bits.OnesCount64(authBit.Raw()))
 	for i := uint8(0); i < AuthReservedBit; i++ {
 		if !authBit.Test(i) {
 			continue

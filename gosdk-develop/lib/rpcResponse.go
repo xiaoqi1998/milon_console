@@ -41,7 +41,7 @@ func (rsp *RpcResponse) MarshalPostcard(serializer *postcard.Serializer) error {
 	}
 
 	err = postcard.SerializeOption(serializer, rsp.Error, func(s *postcard.Serializer, af RpcResponseError) error {
-		return af.MarshalPostcard(serializer)
+		return af.MarshalPostcard(s)
 	})
 	if err != nil {
 		return fmt.Errorf("failed to serialize Error: %w", err)
@@ -73,14 +73,13 @@ func (rsp *RpcResponse) UnmarshalPostcard(deserializer *postcard.Deserializer) e
 
 	rsp.Error, err = postcard.DeserializeOption(deserializer, func(d *postcard.Deserializer) (RpcResponseError, error) {
 		var af RpcResponseError
-		err = af.UnmarshalPostcard(deserializer)
-		if err != nil {
+		if err := af.UnmarshalPostcard(d); err != nil {
 			return RpcResponseError{}, fmt.Errorf("failed to deserialize Error: %w", err)
 		}
 		return af, nil
 	})
 
-	return nil
+	return err
 }
 
 type RpcResponseError struct {
@@ -96,14 +95,14 @@ func (rspErr *RpcResponseError) MarshalPostcard(serializer *postcard.Serializer)
 	}
 
 	err = postcard.SerializeOption(serializer, rspErr.Code, func(s *postcard.Serializer, code uint16) error {
-		return serializer.SerializeU16(code)
+		return s.SerializeU16(code)
 	})
 	if err != nil {
 		return fmt.Errorf("failed to serialize Code: %w", err)
 	}
 
 	err = postcard.SerializeOption(serializer, rspErr.Data, func(s *postcard.Serializer, data []byte) error {
-		return serializer.SerializeBytes(data)
+		return s.SerializeBytes(data)
 	})
 	if err != nil {
 		return fmt.Errorf("failed to serialize Data: %w", err)
@@ -121,14 +120,14 @@ func (rspErr *RpcResponseError) UnmarshalPostcard(deserializer *postcard.Deseria
 	}
 
 	rspErr.Code, err = postcard.DeserializeOption(deserializer, func(d *postcard.Deserializer) (uint16, error) {
-		return deserializer.DeserializeU16()
+		return d.DeserializeU16()
 	})
 	if err != nil {
 		return fmt.Errorf("failed to deserialize Code: %w", err)
 	}
 
 	rspErr.Data, err = postcard.DeserializeOption(deserializer, func(d *postcard.Deserializer) ([]byte, error) {
-		return deserializer.DeserializeBytes()
+		return d.DeserializeBytes()
 	})
 	if err != nil {
 		return fmt.Errorf("failed to deserialize Data: %w", err)

@@ -232,7 +232,8 @@ func TestErrorPaths(t *testing.T) {
 		assert.EqualError(t, err, "not enough bytes to peek")
 	})
 	t.Run("advance negative panics", func(t *testing.T) {
-		assert.Panics(t, func() { NewDeserializer([]byte{1}).Advance(-1) })
+		err := NewDeserializer([]byte{1}).Advance(-1)
+		assert.Error(t, err)
 	})
 
 	t.Run("serialize u128 nil", func(t *testing.T) {
@@ -265,7 +266,8 @@ func TestPeekRemainingOffset(t *testing.T) {
 	assert.Equal(t, 0, d.Offset())
 	assert.Equal(t, []byte{1, 2, 3}, d.Buffer())
 
-	d.Advance(2)
+	err = d.Advance(2)
+	assert.NoError(t, err)
 	assert.Equal(t, 1, d.Remaining())
 	assert.Equal(t, 2, d.Offset())
 	assert.Equal(t, []byte{1, 2, 3}, d.Buffer())

@@ -10,6 +10,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/provider"
@@ -93,7 +94,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "transaction validation failed: "+err.Error(), nil))
 		return
 	}
-	if err := mc.SubmitTx(tx, requestId); err != nil {
+	if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 		logSDKError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to claim faucet: "+err.Error(), nil))
 		return
@@ -101,7 +102,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 	txHash := txHashHex(tx)
 
 	// Wait for the transaction to be confirmed (like the SDK's ClaimFaucet does internally)
-	_, err = mc.WaitForTransaction(txHash, lib.RequestID(1))
+	_, err = mc.WaitForTransaction(txHash, milon.WithWaitRequestID(lib.RequestID(1)))
 	if err != nil {
 		logSDKError(c, "ClaimFaucet", err)
 		// Still return the txHash so the caller can track it, but note the wait error

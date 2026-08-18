@@ -205,7 +205,7 @@ func (h *TransactionHandler) GetTransactionByHash(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetTxByHash(hash, requestId)
+	result, err := mc.GetTxByHash(hash, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetTransactionByHash", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get transaction: "+err.Error(), nil))
@@ -239,7 +239,7 @@ func (h *TransactionHandler) GetTransactionEvents(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.EventsByTxHash(hash, typeTagFilter, requestId)
+	result, err := mc.EventsByTxHash(hash, typeTagFilter, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetTransactionEvents", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get transaction events: "+err.Error(), nil))
@@ -259,7 +259,7 @@ func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 		return
 	}
 
-	var options []any
+	var options []milon.WaitOption
 	if timeoutStr := c.Query("timeoutSecs"); timeoutStr != "" {
 		secs, err := strconv.ParseUint(timeoutStr, 10, 64)
 		if err != nil {
@@ -267,13 +267,13 @@ func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid timeoutSecs parameter", err.Error()))
 			return
 		}
-		options = append(options, milon.PollTimeout(time.Duration(secs)*time.Second))
+		options = append(options, milon.WithWaitPollTimeout(time.Duration(secs)*time.Second))
 	}
 
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	waitOptions := append([]any{requestId}, options...)
+	waitOptions := append([]milon.WaitOption{milon.WithWaitRequestID(requestId)}, options...)
 	result, err := mc.WaitForTransaction(hash, waitOptions...)
 	if err != nil {
 		logSDKError(c, "WaitForTransaction", err)
@@ -326,7 +326,7 @@ func (h *TransactionHandler) SimulateTransaction(c *gin.Context) {
 
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.SimulateTx(tx, requestId)
+	result, err := mc.SimulateTx(tx, milon.WithRequestID(requestId))
 
 	if err != nil {
 		logSDKError(c, "SimulateTransaction", err)
@@ -376,7 +376,7 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	if err := mc.SubmitTx(tx, requestId); err != nil {
+	if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 		logSDKError(c, "SubmitTransaction", err)
 
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to submit transaction: "+err.Error(), nil))

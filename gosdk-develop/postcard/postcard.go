@@ -1,5 +1,7 @@
 package postcard
 
+import "fmt"
+
 type Marshaler interface {
 	MarshalPostcard(*Serializer) error
 }
@@ -57,7 +59,15 @@ func SerializeOption[T any](serializer *Serializer, value *T, fn SerializerFunc[
 //   - T: the deserialized value of the target type, or the zero value on error
 //   - error: error during deserialization, nil on success
 func DeserializePostcard[T any](data []byte, fn DeserializerFunc[T], allowTrailing bool) (T, error) {
+	return DeserializePostcardWithResolver(data, fn, allowTrailing, nil)
+}
+
+// DeserializePostcardWithResolver is like DeserializePostcard, but injects a
+// TypeResolver into the deserializer so type_tag-based decoding can resolve
+// values against the caller's loaded IDLs.
+func DeserializePostcardWithResolver[T any](data []byte, fn DeserializerFunc[T], allowTrailing bool, resolver TypeResolver) (T, error) {
 	deserializer := NewDeserializer(data)
+	deserializer.SetTypeResolver(resolver)
 	value, err := fn(deserializer)
 	if err != nil {
 		var zero T
@@ -81,7 +91,14 @@ func DeserializeSeq[T any](deserializer *Deserializer, fn DeserializerFunc[T]) (
 	if err != nil {
 		return nil, err
 	}
-	values := make([]T, 0, length)
+	if int(length) > deserializer.Remaining() {
+		return nil, fmt.Errorf("seq length %d exceeds remaining buffer %d", length, deserializer.Remaining())
+	}
+	initialCap := length
+	if initialCap > 1024 {
+		initialCap = 1024
+	}
+	values := make([]T, 0, initialCap)
 	for i := uint32(0); i < length; i++ {
 		value, err := fn(deserializer)
 		if err != nil {

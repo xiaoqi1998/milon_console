@@ -9,6 +9,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/postcard"
@@ -75,7 +76,7 @@ func (h *ViewSingleHandler) ViewSingle(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.View(wires, requestId)
+	result, err := mc.View(wires, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "ViewSingle", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to view single: "+err.Error(), nil))
@@ -112,7 +113,7 @@ func (h *ViewSingleHandler) ViewMulti(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.View(wires, requestId)
+	result, err := mc.View(wires, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "ViewMulti", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to view multi: "+err.Error(), nil))

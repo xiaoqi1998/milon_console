@@ -16,6 +16,6 @@ func CheckSimulateSuccess(result *milon.SimulateTxResult) {
 			code = result.BodySimulateReceipt.Error.Code
 			message = result.BodySimulateReceipt.Error.Message
 		}
-		panic(fmt.Sprintf("Simulate failed on chain: error code = %d, message = %s", code, message))
+		panic(fmt.Sprintf("simulate failed on chain: error code = %d, message = %s", code, message))
 	}
 }

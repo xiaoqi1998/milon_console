@@ -2,18 +2,17 @@ package api
 
 import (
 	"fmt"
-	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/postcard"
 )
 
 type Block struct {
-	Number             uint64
-	Hash               TxHash
-	PrevHash           TxHash
-	Timestamp          uint64
-	TxProofIdentifiers []TxProofIdentifier
-	WitnessAddress     crypto.Address
-	WitnessSignature   [crypto.SignatureFnDsa512Size]byte
+	Number    uint64
+	Hash      TxHash
+	PrevHash  TxHash
+	StateHash TxHash
+	TxRoot    TxHash
+	TxCount   uint32
+	Timestamp uint64
 }
 
 func (b *Block) MarshalPostcard(serializer *postcard.Serializer) error {
@@ -25,33 +24,27 @@ func (b *Block) MarshalPostcard(serializer *postcard.Serializer) error {
 
 	serializer.SerializeFixedBytes(b.PrevHash[:])
 
+	serializer.SerializeFixedBytes(b.StateHash[:])
+
+	serializer.SerializeFixedBytes(b.TxRoot[:])
+
+	if err := serializer.SerializeU32(b.TxCount); err != nil {
+		return fmt.Errorf("failed to serialize TxCount: %w", err)
+	}
+
 	if err := serializer.SerializeU64(b.Timestamp); err != nil {
 		return fmt.Errorf("failed to serialize Timestamp: %w", err)
 	}
-
-	if err := postcard.SerializeSeq(serializer, b.TxProofIdentifiers, func(s *postcard.Serializer, id TxProofIdentifier) error {
-		s.SerializeFixedBytes(id[:])
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to serialize TxProofIdentifiers: %w", err)
-	}
-
-	if err := b.WitnessAddress.MarshalPostcard(serializer); err != nil {
-		return fmt.Errorf("failed to serialize WitnessAddress: %w", err)
-	}
-
-	serializer.SerializeFixedBytes(b.WitnessSignature[:])
 
 	return nil
 }
 
 func (b *Block) UnmarshalPostcard(deserializer *postcard.Deserializer) error {
-	var err error
-
-	b.Number, err = deserializer.DeserializeU64()
+	number, err := deserializer.DeserializeU64()
 	if err != nil {
 		return fmt.Errorf("failed to deserialize Number: %w", err)
 	}
+	b.Number = number
 
 	hash, err := deserializer.DeserializeFixedBytes(TxHashLen)
 	if err != nil {
@@ -65,33 +58,29 @@ func (b *Block) UnmarshalPostcard(deserializer *postcard.Deserializer) error {
 	}
 	copy(b.PrevHash[:], prevHash)
 
-	b.Timestamp, err = deserializer.DeserializeU64()
+	stateHash, err := deserializer.DeserializeFixedBytes(TxHashLen)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize StateHash: %w", err)
+	}
+	copy(b.StateHash[:], stateHash)
+
+	txRoot, err := deserializer.DeserializeFixedBytes(TxHashLen)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize TxRoot: %w", err)
+	}
+	copy(b.TxRoot[:], txRoot)
+
+	txCount, err := deserializer.DeserializeU32()
+	if err != nil {
+		return fmt.Errorf("failed to deserialize TxCount: %w", err)
+	}
+	b.TxCount = txCount
+
+	timestamp, err := deserializer.DeserializeU64()
 	if err != nil {
 		return fmt.Errorf("failed to deserialize Timestamp: %w", err)
 	}
-
-	b.TxProofIdentifiers, err = postcard.DeserializeSeq(deserializer, func(d *postcard.Deserializer) (TxProofIdentifier, error) {
-		buf, err := d.DeserializeFixedBytes(TxProofIdentifierLen)
-		if err != nil {
-			return TxProofIdentifier{}, fmt.Errorf("failed to deserialize TxProofIdentifier element: %w", err)
-		}
-		var id TxProofIdentifier
-		copy(id[:], buf)
-		return id, nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to deserialize TxProofIdentifiers: %w", err)
-	}
-
-	if err = b.WitnessAddress.UnmarshalPostcard(deserializer); err != nil {
-		return fmt.Errorf("failed to deserialize WitnessAddress: %w", err)
-	}
-
-	witnessSig, err := deserializer.DeserializeFixedBytes(crypto.SignatureFnDsa512Size)
-	if err != nil {
-		return fmt.Errorf("failed to deserialize WitnessSignature: %w", err)
-	}
-	copy(b.WitnessSignature[:], witnessSig)
+	b.Timestamp = timestamp
 
 	return nil
 }

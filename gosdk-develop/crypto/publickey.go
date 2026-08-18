@@ -39,7 +39,7 @@ func NewPublicKeyFromBytes(raw []byte) (*PublicKey, error) {
 		}
 		return &PublicKey{
 			Variant: PublicKeyTypeSecp256k1,
-			Bytes:   raw,
+			Bytes:   append([]byte(nil), raw...),
 		}, nil
 	case PublicKeyEd25519Size:
 		if len(raw) != ed25519.PublicKeySize {
@@ -47,7 +47,7 @@ func NewPublicKeyFromBytes(raw []byte) (*PublicKey, error) {
 		}
 		return &PublicKey{
 			Variant: PublicKeyTypeEd25519,
-			Bytes:   raw,
+			Bytes:   append([]byte(nil), raw...),
 		}, nil
 	case PublicKeyBLS12381Size:
 		var pub bls.PublicKey[bls.G1]
@@ -56,12 +56,12 @@ func NewPublicKeyFromBytes(raw []byte) (*PublicKey, error) {
 		}
 		return &PublicKey{
 			Variant: PublicKeyTypeBLS12381,
-			Bytes:   raw,
+			Bytes:   append([]byte(nil), raw...),
 		}, nil
 	case PublicKeyFnDsa512Size:
 		return &PublicKey{
 			Variant: PublicKeyTypeFnDsa512,
-			Bytes:   raw,
+			Bytes:   append([]byte(nil), raw...),
 		}, nil
 	default:
 		return nil, ErrInvalidPublicKey

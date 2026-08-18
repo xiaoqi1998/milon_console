@@ -29,7 +29,9 @@ func (gr *GetResource) UnmarshalPostcard(deserializer *postcard.Deserializer) er
 	remaining := deserializer.Buffer()[deserializer.Offset():]
 	gr.Data.Value = make([]byte, len(remaining))
 	copy(gr.Data.Value, remaining)
-	deserializer.Advance(len(remaining))
+	if err = deserializer.Advance(len(remaining)); err != nil {
+		return fmt.Errorf("failed to advance deserializer: %w", err)
+	}
 
 	return nil
 }

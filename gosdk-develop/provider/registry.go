@@ -266,13 +266,18 @@ func (m *IDLRegistry) FormatDecodedEvent(decoded map[string]any) string {
 
 	switch v := data.(type) {
 	case map[string]any:
+		keys := make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
 		first := true
-		for k, val := range v {
+		for _, k := range keys {
 			if !first {
 				sb.WriteString(",\n")
 			}
 			first = false
-			sb.WriteString(fmt.Sprintf("    %s: %s", k, m.formatValue(val)))
+			sb.WriteString(fmt.Sprintf("    %s: %s", k, m.formatValue(v[k])))
 		}
 	default:
 		sb.WriteString(fmt.Sprintf("    value: %s", m.formatValue(v)))
@@ -337,13 +342,18 @@ func (m *IDLRegistry) formatValue(value any) string {
 	case map[string]any:
 		var sb strings.Builder
 		sb.WriteString("Struct {\n")
+		keys := make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
 		first := true
-		for k, val := range v {
+		for _, k := range keys {
 			if !first {
 				sb.WriteString(",\n")
 			}
 			first = false
-			sb.WriteString(fmt.Sprintf("                %s: %s", k, m.formatValue(val)))
+			sb.WriteString(fmt.Sprintf("                %s: %s", k, m.formatValue(v[k])))
 		}
 		sb.WriteString("\n            }")
 		return sb.String()

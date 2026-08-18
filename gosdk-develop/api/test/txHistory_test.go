@@ -15,10 +15,6 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 	pd, err := provider.LoadProviderFromFile("../../provider/IDL/demo.idl.json")
 	assert.NoError(t, err)
 
-	api.SetGlobalTypeResolver(&provider.IDLTypeResolver{
-		Providers: map[string]*provider.Provider{"demo": pd},
-	})
-
 	// 2. Build event data for EventCreditApplied (typeTag: 7407037194950745602)
 	// Fields: pool(Address, 20B), recipient(Address, 20B), amount(u64)
 	pool := make([]byte, 20)
@@ -78,13 +74,15 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 	data, err := postcard.SerializePostcard(&original)
 	assert.NoError(t, err)
 
-	deserialized, err := postcard.DeserializePostcard(data, func(d *postcard.Deserializer) (api.TxHistory, error) {
+	deserialized, err := postcard.DeserializePostcardWithResolver(data, func(d *postcard.Deserializer) (api.TxHistory, error) {
 		var h api.TxHistory
 		if err = h.UnmarshalPostcard(d); err != nil {
 			return h, err
 		}
 		return h, nil
-	}, false)
+	}, false, &provider.IDLTypeResolver{
+		Providers: map[string]*provider.Provider{"demo": pd},
+	})
 	assert.NoError(t, err)
 
 	assert.Equal(t, original.Stamp, deserialized.Stamp)

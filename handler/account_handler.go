@@ -9,6 +9,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/lib"
 )
@@ -42,7 +43,7 @@ func (h *AccountHandler) GetAccount(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetAccount(address, requestId)
+	result, err := mc.GetAccount(address, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetAccount", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get account: "+err.Error(), nil))
@@ -64,7 +65,7 @@ func (h *AccountHandler) GetAccountResources(c *gin.Context) {
 	mc, _ := h.nm.GetCurrent()
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetAccount(address, requestId)
+	result, err := mc.GetAccount(address, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetAccountResources", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get account: "+err.Error(), nil))

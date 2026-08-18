@@ -38,22 +38,22 @@ func NewSignatureFromBytes(raw []byte) (*Signature, error) {
 	case SignatureEd25519Size:
 		return &Signature{
 			Variant: SignatureTypeEd25519,
-			Bytes:   raw,
+			Bytes:   append([]byte(nil), raw...),
 		}, nil
 	case SignatureBLS12381Size:
 		return &Signature{
 			Variant: SignatureTypeBLS12381,
-			Bytes:   raw,
+			Bytes:   append([]byte(nil), raw...),
 		}, nil
 	case SignatureSecp256k1Size:
 		return &Signature{
 			Variant: SignatureTypeSecp256k1,
-			Bytes:   raw,
+			Bytes:   append([]byte(nil), raw...),
 		}, nil
 	case SignatureFnDsa512Size:
 		return &Signature{
 			Variant: SignatureTypeFnDsa512,
-			Bytes:   raw,
+			Bytes:   append([]byte(nil), raw...),
 		}, nil
 	default:
 		return nil, ErrInvalidSignature

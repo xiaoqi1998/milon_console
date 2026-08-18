@@ -132,22 +132,15 @@ func buildAppMeta(name string, pd *provider.Provider) idlAppMeta {
 	for _, ix := range idl.Instructions {
 		args := make([]idlArgMeta, 0, len(ix.Args))
 		for _, a := range ix.Args {
-			desc := a.Description
-			if desc == "" {
-				desc = describeArg(a.Name, a.Role)
-			}
 			args = append(args, idlArgMeta{
 				Name:        a.Name,
 				Type:        a.Type,
 				Role:        a.Role,
-				Description: desc,
+				Description: describeArg(a.Name, a.Role),
 			})
 		}
 
-		ixDesc := ix.Description
-		if ixDesc == "" {
-			ixDesc = describeInstruction(name, ix.Name, ix.Handler, ix.Kind)
-		}
+		ixDesc := describeInstruction(name, ix.Name, ix.Handler, ix.Kind)
 
 		meta := idlInstructionMeta{
 			Name:          ix.Name,

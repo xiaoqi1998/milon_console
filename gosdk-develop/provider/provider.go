@@ -466,7 +466,11 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		if err != nil {
 			return nil, err
 		}
-
+		// Each element consumes at least 1 byte; reject impossible lengths
+		// before allocating to prevent OOM from malicious input.
+		if length > uint64(len(body)) {
+			return nil, fmt.Errorf("vec length %d exceeds input size %d", length, len(body))
+		}
 		items := make([]any, length)
 		for i := uint64(0); i < length; i++ {
 			item, err := p.deserializeValue(inner, body, offset)
@@ -760,6 +764,9 @@ func (p *Provider) DecodeViewDatas(instructionName string, body []byte) ([]Decod
 	resultCount, err := decodeViewVarUint(body, &offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode result count: %w", err)
+	}
+	if resultCount > uint64(len(body)) {
+		return nil, fmt.Errorf("result count %d exceeds input size %d", resultCount, len(body))
 	}
 
 	results := make([]DecodedTaggedValue, resultCount)
