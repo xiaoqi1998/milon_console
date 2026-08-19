@@ -1122,7 +1122,98 @@ curl -X POST http://localhost:8080/api/write/multisig \
 
 ---
 
-#### 21. 底层单指令视图
+#### 21. 多指令模拟调用（打包）
+
+- **方法**: `POST`
+- **路径**: `/api/simulate/multi`
+- **说明**: 一次请求携带多条指令，打包成单笔交易做链上模拟（dry-run，不落链），返回模拟回执（含 `gasCharged`）。支持 6 种支付模式。指令按数组顺序编号，签名账户默认对**全部指令**授权，与 multi_ix_demo 的多指令打包逻辑一致。
+
+**请求参数**
+
+| 字段 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `instructions` | array | 是 | 指令数组，每条含 `appName` / `methodName` / `args` |
+| `paymentMode` | string | 是 | 支付模式：`unified_payer_all` / `unified_dual_sign` / `unified_payer_only_gas` / `split` / `multi_signer` / `sponsored` |
+| `payerAddress` | string | 除 split/multi_signer 外必填 | 付款方地址（base58） |
+| `signatureMode` | object | 是 | 付款方签名模式 |
+| `ixAddress` | object | dual_sign 模式必填 | 指令账户地址（base58） |
+| `ixSignatureMode` | object | dual_sign 模式必填 | 指令账户签名模式 |
+| `ownerAddress` | string | split 模式可选 | 所有者地址（默认同 payerAddress） |
+| `signers` | array | multi_signer 模式必填 | 签名者列表，详见 [multi_signer 多签名者模式](#multi_signer-多签名者模式) |
+| `gasPayer` | object | multi_signer 模式可选 | 独立 gas 付款方，详见 [multi_signer 多签名者模式](#multi_signer-多签名者模式) |
+
+**请求示例**
+
+```bash
+curl -X POST http://localhost:8080/api/simulate/multi \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instructions": [
+      {"appName": "token", "methodName": "transfer", "args": {"to": "1Bz2Qk4R9pHn...", "amount": 1000}},
+      {"appName": "token", "methodName": "transfer", "args": {"to": "1C3fWm7aKpXv...", "amount": 2000}},
+      {"appName": "demo", "methodName": "batch_credit", "args": {"recipients": ["1Bz2Qk4R9pHn..."], "amount": 42}}
+    ],
+    "paymentMode": "unified_payer_all",
+    "payerAddress": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+    "signatureMode": {
+      "type": "pubkey",
+      "publicKey": "04a1b2c3d4e5f6..."
+    }
+  }'
+```
+
+**响应示例**：与 [`/api/simulate`](#17-模拟合约调用) 相同，返回模拟回执（含 `gasCharged`）。
+
+---
+
+#### 22. 多指令打包写入
+
+- **方法**: `POST`
+- **路径**: `/api/write/multi`
+- **说明**: 一次请求携带多条指令，打包成**单笔交易**签名后提交上链，多条指令原子执行（全部成功或全部失败）。支持 6 种支付模式。实现方式与 multi_ix_demo 相同：每条指令独立 Encode 为 `PackedInstruction`，再通过 `lib.NewTransactionBuilder` 装入同一交易，按支付模式分配签名。
+
+**请求参数**
+
+| 字段 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `instructions` | array | 是 | 指令数组，每条含 `appName` / `methodName` / `args` |
+| `paymentMode` | string | 是 | 支付模式（同 `/api/write`） |
+| `payerPrivateKey` | string | 除 split/multi_signer 外必填 | 付款方私钥（hex 或 base58） |
+| `payerAddress` | string | 除 split/multi_signer 外必填 | 付款方地址（base58） |
+| `signatureMode` | object | 是 | 付款方签名模式 |
+| `ixPrivateKey` | string | dual_sign 模式必填 | 指令账户私钥 |
+| `ixAddress` | string | dual_sign 模式必填 | 指令账户地址 |
+| `ixSignatureMode` | object | dual_sign 模式必填 | 指令账户签名模式 |
+| `ownerPrivateKey` | string | split 模式可选 | 所有者私钥（默认同 payerPrivateKey） |
+| `ownerAddress` | string | split 模式可选 | 所有者地址（默认同 payerAddress） |
+| `signers` | array | multi_signer 模式必填 | 签名者列表，详见 [multi_signer 多签名者模式](#multi_signer-多签名者模式) |
+| `gasPayer` | object | multi_signer 模式可选 | 独立 gas 付款方，详见 [multi_signer 多签名者模式](#multi_signer-多签名者模式) |
+
+**请求示例**
+
+```bash
+curl -X POST http://localhost:8080/api/write/multi \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instructions": [
+      {"appName": "token", "methodName": "transfer", "args": {"to": "1Bz2Qk4R9pHn...", "amount": 1000}},
+      {"appName": "token", "methodName": "transfer", "args": {"to": "1C3fWm7aKpXv...", "amount": 2000}}
+    ],
+    "paymentMode": "unified_payer_all",
+    "payerPrivateKey": "a1b2c3d4e5f6...",
+    "payerAddress": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+    "signatureMode": {
+      "type": "pubkey",
+      "publicKey": "04a1b2c3d4e5f6..."
+    }
+  }'
+```
+
+**响应示例**：与 [`/api/write`](#18-写入交易) 相同，返回 `txHash`。
+
+---
+
+#### 23. 底层单指令视图
 
 - **方法**: `POST`
 - **路径**: `/api/view/single`
@@ -1158,7 +1249,7 @@ curl -X POST http://localhost:8080/api/view/single \
 
 ---
 
-#### 22. 底层多指令视图
+#### 24. 底层多指令视图
 
 - **方法**: `POST`
 - **路径**: `/api/view/multi`
@@ -1199,7 +1290,7 @@ curl -X POST http://localhost:8080/api/view/multi \
 
 ### 六、RPC
 
-#### 23. 获取区块
+#### 25. 获取区块
 
 - **方法**: `GET`
 - **路径**: `/api/rpc/blocks/:height`
@@ -1239,7 +1330,7 @@ curl http://localhost:8080/api/rpc/blocks/12345
 
 ---
 
-#### 24. 获取资源
+#### 26. 获取资源
 
 - **方法**: `GET`
 - **路径**: `/api/rpc/resources/:hash`
@@ -1274,7 +1365,7 @@ curl http://localhost:8080/api/rpc/resources/a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f
 
 ---
 
-#### 25. 获取访问值
+#### 27. 获取访问值
 
 - **方法**: `POST`
 - **路径**: `/api/rpc/access-value`
@@ -1325,7 +1416,7 @@ curl -X POST http://localhost:8080/api/rpc/access-value \
 
 ---
 
-#### 26. 按哈希查询资源路径
+#### 28. 按哈希查询资源路径
 
 - **方法**: `GET`
 - **路径**: `/api/rpc/resource-paths/:hash`
@@ -1362,7 +1453,7 @@ curl http://localhost:8080/api/rpc/resource-paths/a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3
 
 ### 七、水龙头
 
-#### 27. 领水
+#### 29. 领水
 
 - **方法**: `POST`
 - **路径**: `/api/faucet/claim`
@@ -1426,7 +1517,7 @@ curl -X POST http://localhost:8080/api/faucet/claim \
 
 ---
 
-#### 28. 查询 MIL 余额
+#### 30. 查询 MIL 余额
 
 - **方法**: `GET`
 - **路径**: `/api/faucet/balance/:address`
@@ -1463,7 +1554,7 @@ curl http://localhost:8080/api/faucet/balance/1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
 
 ### 八、工具
 
-#### 29. 从公钥派生地址
+#### 31. 从公钥派生地址
 
 - **方法**: `POST`
 - **路径**: `/api/util/address/derive`
@@ -1502,7 +1593,7 @@ curl -X POST http://localhost:8080/api/util/address/derive \
 
 ---
 
-#### 30. 从私钥派生公钥
+#### 32. 从私钥派生公钥
 
 - **方法**: `POST`
 - **路径**: `/api/util/key/derive-public`
@@ -1541,7 +1632,7 @@ curl -X POST http://localhost:8080/api/util/key/derive-public \
 
 ---
 
-#### 31. 签名消息
+#### 33. 签名消息
 
 - **方法**: `POST`
 - **路径**: `/api/util/sign`
@@ -1600,7 +1691,7 @@ curl -X POST http://localhost:8080/api/util/sign \
 
 ---
 
-#### 32. 验签
+#### 34. 验签
 
 - **方法**: `POST`
 - **路径**: `/api/util/verify`
@@ -1644,7 +1735,7 @@ curl -X POST http://localhost:8080/api/util/verify \
 
 ### 九、IDL 元数据
 
-#### 33. 获取 IDL 元数据
+#### 35. 获取 IDL 元数据
 
 - **方法**: `GET`
 - **路径**: `/api/idl/metadata`
@@ -1789,18 +1880,20 @@ curl http://localhost:8080/api/idl/metadata
 | 18 | POST | `/api/write` | 写入交易 |
 | 19 | POST | `/api/write/multi-agent` | 多方签名写入 |
 | 20 | POST | `/api/write/multisig` | 多签写入 |
-| 21 | POST | `/api/view/single` | 底层单指令视图 |
-| 22 | POST | `/api/view/multi` | 底层多指令视图 |
-| 23 | GET | `/api/rpc/blocks/:height` | 获取区块 |
-| 24 | GET | `/api/rpc/resources/:hash` | 获取资源 |
-| 25 | POST | `/api/rpc/access-value` | 获取访问值 |
-| 26 | GET | `/api/rpc/resource-paths/:hash` | 按哈希查询资源路径 |
-| 27 | POST | `/api/faucet/claim` | 领水 |
-| 28 | GET | `/api/faucet/balance/:address` | 查询 MIL 余额 |
-| 29 | POST | `/api/util/address/derive` | 从公钥派生地址 |
-| 30 | POST | `/api/util/key/derive-public` | 从私钥派生公钥 |
-| 31 | POST | `/api/util/sign` | 签名消息 |
-| 32 | POST | `/api/util/verify` | 验签 |
-| 33 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
+| 21 | POST | `/api/simulate/multi` | 多指令模拟调用（打包） |
+| 22 | POST | `/api/write/multi` | 多指令打包写入 |
+| 23 | POST | `/api/view/single` | 底层单指令视图 |
+| 24 | POST | `/api/view/multi` | 底层多指令视图 |
+| 25 | GET | `/api/rpc/blocks/:height` | 获取区块 |
+| 26 | GET | `/api/rpc/resources/:hash` | 获取资源 |
+| 27 | POST | `/api/rpc/access-value` | 获取访问值 |
+| 28 | GET | `/api/rpc/resource-paths/:hash` | 按哈希查询资源路径 |
+| 29 | POST | `/api/faucet/claim` | 领水 |
+| 30 | GET | `/api/faucet/balance/:address` | 查询 MIL 余额 |
+| 31 | POST | `/api/util/address/derive` | 从公钥派生地址 |
+| 32 | POST | `/api/util/key/derive-public` | 从私钥派生公钥 |
+| 33 | POST | `/api/util/sign` | 签名消息 |
+| 34 | POST | `/api/util/verify` | 验签 |
+| 35 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
 
-**统计**：共 33 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 6、合约 7、RPC 4、水龙头 2、工具 4、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 35 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 6、合约 9、RPC 4、水龙头 2、工具 4、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。

@@ -77,7 +77,9 @@ func main() {
 
 		// Contract (simulate and write)
 		api.POST("/simulate", contractHandler.SimulateContract)
+		api.POST("/simulate/multi", contractHandler.SimulateContractMulti)
 		api.POST("/write", contractHandler.WriteContract)
+		api.POST("/write/multi", contractHandler.WriteContractMulti)
 		api.POST("/write/multi-agent", contractHandler.WriteContractMultiAgent)
 		api.POST("/write/multisig", contractHandler.WriteContractMultisig)
 
@@ -137,7 +139,9 @@ func main() {
 	fmt.Println("    POST /api/read                    - Read contract (view)")
 	fmt.Println("    POST /api/read/multi              - Read contract (multi-view)")
 	fmt.Println("    POST /api/simulate                - Simulate contract")
+	fmt.Println("    POST /api/simulate/multi          - Simulate multi-instruction batch")
 	fmt.Println("    POST /api/write                   - Write contract")
+	fmt.Println("    POST /api/write/multi             - Write multi-instruction batch (pack multiple ix into one tx)")
 	fmt.Println("    POST /api/write/multi-agent       - Write contract (dual sign)")
 	fmt.Println("    POST /api/write/multisig          - Write contract (split)")
 	fmt.Println("    POST /api/transactions/simulate   - Simulate raw transaction")

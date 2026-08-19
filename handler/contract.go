@@ -848,3 +848,450 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		return "", fmt.Errorf("unsupported paymentMode: %s", req.PaymentMode)
 	}
 }
+
+// ==================== 多指令打包（multi-instruction）====================
+// 与单指令 write/simulate 的唯一区别：instructions 是数组，
+// 每条指令分别 Encode 为 PackedInstruction，再一起塞进
+// lib.NewTransactionBuilder，打包成单笔交易原子上链（参考 multi_ix_demo）。
+
+// multiInstructionItem 描述一条待打包的指令（app 方法 + 参数）。
+type multiInstructionItem struct {
+	AppName    string        `json:"appName" binding:"required"`
+	MethodName string        `json:"methodName" binding:"required"`
+	Args       provider.Args `json:"args"`
+}
+
+// multiContractRequest 是 POST /api/write/multi 与 /api/simulate/multi 的请求体。
+type multiContractRequest struct {
+	Instructions []multiInstructionItem `json:"instructions" binding:"required"`
+	PaymentMode  string                 `json:"paymentMode" binding:"required"`
+	// unified_payer_all / unified_payer_only_gas / sponsored：payer 账户
+	PayerPrivateKey string          `json:"payerPrivateKey"`
+	PayerAddress    string          `json:"payerAddress"`
+	SignatureMode   json.RawMessage `json:"signatureMode"`
+	// unified_dual_sign：ix 执行账户（签所有指令）
+	IxAddress       string          `json:"ixAddress"`
+	IxPrivateKey    string          `json:"ixPrivateKey"`
+	IxSignatureMode json.RawMessage `json:"ixSignatureMode"`
+	// split：owner 账户（可选，缺省取 PayerAddress）
+	OwnerPrivateKey string `json:"ownerPrivateKey"`
+	OwnerAddress    string `json:"ownerAddress"`
+	// multi_signer：多个签名账户
+	Signers  []types.SignerEntry `json:"signers"`
+	GasPayer *types.SignerEntry  `json:"gasPayer"`
+}
+
+// encodeMultiInstructions 将多条指令分别编码为 PackedInstruction，下标即指令序号。
+func (h *ContractHandler) encodeMultiInstructions(mc *milon.Client, items []multiInstructionItem) ([]api.PackedInstruction, error) {
+	if len(items) == 0 {
+		return nil, fmt.Errorf("instructions cannot be empty")
+	}
+	wires := make([]api.PackedInstruction, 0, len(items))
+	for i, ix := range items {
+		if ix.Args == nil {
+			ix.Args = provider.Args{}
+		}
+		pd, ok := mc.GetAllPd()[ix.AppName]
+		if !ok {
+			return nil, fmt.Errorf("failed to load IDL: app %q not found (instruction %d)", ix.AppName, i)
+		}
+		wire, err := pd.Encode(ix.MethodName, ix.Args)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode instruction %d (%s.%s): %w", i, ix.AppName, ix.MethodName, err)
+		}
+		wires = append(wires, wire)
+	}
+	return wires, nil
+}
+
+// allIxIndices 返回 [0, 1, ..., n-1]，即全部指令的下标集合，供签名时声明授权范围。
+func allIxIndices(n int) []uint8 {
+	idx := make([]uint8, n)
+	for i := range idx {
+		idx[i] = uint8(i)
+	}
+	return idx
+}
+
+// SimulateContractMulti 处理 POST /api/simulate/multi。
+// 一次请求携带多条指令，打包成单笔交易做链上模拟（dry-run），不消耗 gas。
+func (h *ContractHandler) SimulateContractMulti(c *gin.Context) {
+	var req multiContractRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "SimulateContractMulti", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
+		return
+	}
+
+	mc, _ := h.nm.GetCurrent()
+	requestId := lib.RequestID(time.Now().UnixMilli())
+
+	if err := validatePaymentModeFields(req.PaymentMode, req.Signers, req.PayerAddress, "", false); err != nil {
+		logParamError(c, "SimulateContractMulti", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+
+	result, err := h.dispatchSimulateMulti(mc, &req, requestId)
+	if err != nil {
+		logSDKError(c, "SimulateContractMulti", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to simulate multi contract: "+err.Error(), nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, types.SuccessResponse(result.BodySimulateReceipt, "ok"))
+}
+
+// dispatchSimulateMulti 根据 paymentMode 构建多指令模拟签名交易并执行 simulate。
+func (h *ContractHandler) dispatchSimulateMulti(mc *milon.Client, req *multiContractRequest, requestId lib.RequestID) (*milon.SimulateTxResult, error) {
+	instructions, err := h.encodeMultiInstructions(mc, req.Instructions)
+	if err != nil {
+		return nil, err
+	}
+	allIdx := allIxIndices(len(instructions))
+
+	// 统一入口：Build -> ValidateWire -> SimulateTx
+	build := func(tx *lib.Transaction, err error) (*milon.SimulateTxResult, error) {
+		if err != nil {
+			return nil, err
+		}
+		if err := tx.ValidateWire(); err != nil {
+			return nil, fmt.Errorf("transaction validation failed: %w", err)
+		}
+		return mc.SimulateTx(tx, milon.WithRequestID(requestId))
+	}
+
+	switch req.PaymentMode {
+	case PaymentModeUnifiedPayerAll:
+		// payer 签全部指令 + gas（bit63）
+		payerAddr, mode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
+		if err != nil {
+			return nil, err
+		}
+		return build(lib.NewTransactionBuilder(instructions).
+			WithPayer(&payerAddr).
+			AddSimulateIxesSig(payerAddr, allIdx, true, mode).
+			Build())
+
+	case PaymentModeUnifiedDualSign:
+		// payer 只签 gas，ix 账户签全部指令
+		payerAddr, payerMode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
+		if err != nil {
+			return nil, err
+		}
+		ixAddr, ixMode, err := h.parsePayerAndMode(req.IxAddress, req.IxSignatureMode)
+		if err != nil {
+			return nil, fmt.Errorf("invalid ix fields: %w", err)
+		}
+		return build(lib.NewTransactionBuilder(instructions).
+			WithPayer(&payerAddr).
+			AddSimulatePayerSig(payerAddr, payerMode).
+			AddSimulateIxesSig(ixAddr, allIdx, false, ixMode).
+			Build())
+
+	case PaymentModeUnifiedPayerOnlyGas:
+		// payer 只签 gas（指令无签名要求）
+		payerAddr, mode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
+		if err != nil {
+			return nil, err
+		}
+		return build(lib.NewTransactionBuilder(instructions).
+			WithPayer(&payerAddr).
+			AddSimulatePayerSig(payerAddr, mode).
+			Build())
+
+	case PaymentModeSplit:
+		// owner 签全部指令 + gas
+		ownerAddrStr := req.OwnerAddress
+		if ownerAddrStr == "" {
+			ownerAddrStr = req.PayerAddress
+		}
+		ownerAddr, mode, err := h.parsePayerAndMode(ownerAddrStr, req.SignatureMode)
+		if err != nil {
+			return nil, err
+		}
+		return build(lib.NewTransactionBuilder(instructions).
+			AddSimulateIxesSig(ownerAddr, allIdx, true, mode).
+			Build())
+
+	case PaymentModeMultiSigner:
+		signerAddrs, _, signerModes, err := types.ParseSignerList(req.Signers, false)
+		if err != nil {
+			return nil, fmt.Errorf("invalid signers: %w", err)
+		}
+		builder := lib.NewTransactionBuilder(instructions)
+		if req.GasPayer != nil {
+			gasAddr, gasMode, err := h.parsePayerAndMode(req.GasPayer.Address, req.GasPayer.SignatureMode)
+			if err != nil {
+				return nil, fmt.Errorf("invalid gasPayer: %w", err)
+			}
+			builder.AddSimulatePayerSig(gasAddr, gasMode)
+			for i := range signerAddrs {
+				builder.AddSimulateIxesSig(signerAddrs[i], allIdx, false, signerModes[i])
+			}
+		} else {
+			// 无 gasPayer：signers[0] 签全部指令 + gas，其余签全部指令
+			builder.AddSimulateIxesSig(signerAddrs[0], allIdx, true, signerModes[0])
+			for i := 1; i < len(signerAddrs); i++ {
+				builder.AddSimulateIxesSig(signerAddrs[i], allIdx, false, signerModes[i])
+			}
+		}
+		return build(builder.Build())
+
+	case PaymentModeSponsored:
+		// payer 只签 gas，全部指令由 sponsor 池代付
+		if req.PayerAddress == "" {
+			return nil, fmt.Errorf("payer is required for sponsored mode")
+		}
+		payerAddr, mode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
+		if err != nil {
+			return nil, err
+		}
+		tx, err := lib.NewTransactionBuilder(instructions).
+			WithPayer(&payerAddr).
+			AddSimulatePayerSig(payerAddr, mode).
+			Build()
+		if err != nil {
+			return nil, err
+		}
+		if err := tx.ValidateWireWith(allIdx); err != nil {
+			return nil, fmt.Errorf("transaction validation failed: %w", err)
+		}
+		return mc.SimulateTx(tx, milon.WithRequestID(requestId))
+
+	default:
+		return nil, fmt.Errorf("unsupported paymentMode: %s", req.PaymentMode)
+	}
+}
+
+// WriteContractMulti 处理 POST /api/write/multi。
+// 一次请求携带多条指令，打包成单笔交易签名后提交上链（原子执行，全部成功或全部失败）。
+func (h *ContractHandler) WriteContractMulti(c *gin.Context) {
+	var req multiContractRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "WriteContractMulti", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
+		return
+	}
+
+	mc, _ := h.nm.GetCurrent()
+	requestId := lib.RequestID(time.Now().UnixMilli())
+
+	if err := validatePaymentModeFields(req.PaymentMode, req.Signers, req.PayerAddress, req.PayerPrivateKey, true); err != nil {
+		logParamError(c, "WriteContractMulti", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+
+	txHash, err := h.dispatchSubmitMulti(mc, &req, requestId)
+	if err != nil {
+		logSDKError(c, "WriteContractMulti", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write multi contract: "+err.Error(), nil))
+		return
+	}
+
+	logBusinessInfo(c, "WriteContractMulti", "txHash", txHash, "instructionCount", len(req.Instructions))
+	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": txHash}, "ok"))
+}
+
+// dispatchSubmitMulti 构建多指令签名交易并提交上链，返回交易哈希。
+func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContractRequest, requestId lib.RequestID) (string, error) {
+	instructions, err := h.encodeMultiInstructions(mc, req.Instructions)
+	if err != nil {
+		return "", err
+	}
+	allIdx := allIxIndices(len(instructions))
+
+	buildTx := func(build func() (*lib.Transaction, error)) (*lib.Transaction, error) {
+		tx, err := build()
+		if err != nil {
+			return nil, err
+		}
+		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+			return nil, err
+		}
+		return tx, nil
+	}
+
+	switch req.PaymentMode {
+	case PaymentModeUnifiedPayerAll:
+		// payer 签全部指令 + gas（bit63）
+		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
+		if err != nil {
+			return "", fmt.Errorf("invalid payerPrivateKey: %w", err)
+		}
+		payerAddr, mode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
+		if err != nil {
+			return "", err
+		}
+		tx, err := buildTx(func() (*lib.Transaction, error) {
+			return lib.NewTransactionBuilder(instructions).
+				WithPayer(&payerAddr).
+				AddIxesSig(payerAddr, payerSk, allIdx, true, mode).
+				Build()
+		})
+		if err != nil {
+			return "", err
+		}
+		return txHashHex(tx), nil
+
+	case PaymentModeUnifiedDualSign:
+		// payer 只签 gas，ix 账户签全部指令
+		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
+		if err != nil {
+			return "", fmt.Errorf("invalid payerPrivateKey: %w", err)
+		}
+		payerAddr, payerMode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
+		if err != nil {
+			return "", err
+		}
+		ixSk, err := types.ParseSecretKey(req.IxPrivateKey)
+		if err != nil {
+			return "", fmt.Errorf("invalid ixPrivateKey: %w", err)
+		}
+		ixAddr, ixMode, err := h.parsePayerAndMode(req.IxAddress, req.IxSignatureMode)
+		if err != nil {
+			return "", fmt.Errorf("invalid ix fields: %w", err)
+		}
+		tx, err := buildTx(func() (*lib.Transaction, error) {
+			return lib.NewTransactionBuilder(instructions).
+				WithPayer(&payerAddr).
+				AddPayerSig(payerAddr, payerSk, payerMode).
+				AddIxesSig(ixAddr, ixSk, allIdx, false, ixMode).
+				Build()
+		})
+		if err != nil {
+			return "", err
+		}
+		return txHashHex(tx), nil
+
+	case PaymentModeUnifiedPayerOnlyGas:
+		// payer 只签 gas
+		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
+		if err != nil {
+			return "", fmt.Errorf("invalid payerPrivateKey: %w", err)
+		}
+		payerAddr, mode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
+		if err != nil {
+			return "", err
+		}
+		tx, err := buildTx(func() (*lib.Transaction, error) {
+			return lib.NewTransactionBuilder(instructions).
+				WithPayer(&payerAddr).
+				AddPayerSig(payerAddr, payerSk, mode).
+				Build()
+		})
+		if err != nil {
+			return "", err
+		}
+		return txHashHex(tx), nil
+
+	case PaymentModeSplit:
+		// owner 签全部指令 + gas
+		ownerSkStr := req.OwnerPrivateKey
+		if ownerSkStr == "" {
+			ownerSkStr = req.PayerPrivateKey
+		}
+		ownerSk, err := types.ParseSecretKey(ownerSkStr)
+		if err != nil {
+			return "", fmt.Errorf("invalid ownerPrivateKey: %w", err)
+		}
+		ownerAddrStr := req.OwnerAddress
+		if ownerAddrStr == "" {
+			ownerAddrStr = req.PayerAddress
+		}
+		ownerAddr, mode, err := h.parsePayerAndMode(ownerAddrStr, req.SignatureMode)
+		if err != nil {
+			return "", err
+		}
+		tx, err := buildTx(func() (*lib.Transaction, error) {
+			return lib.NewTransactionBuilder(instructions).
+				AddIxesSig(ownerAddr, ownerSk, allIdx, true, mode).
+				Build()
+		})
+		if err != nil {
+			return "", err
+		}
+		return txHashHex(tx), nil
+
+	case PaymentModeMultiSigner:
+		signerAddrs, signerSks, signerModes, err := types.ParseSignerList(req.Signers, true)
+		if err != nil {
+			return "", fmt.Errorf("invalid signers: %w", err)
+		}
+
+		var gasPayerAddr *crypto.Address
+		var gasPayerSk crypto.SecretKeyer
+		var gasPayerMode lib.AccountSignatureMode
+		if req.GasPayer != nil {
+			addr, mode, err := h.parsePayerAndMode(req.GasPayer.Address, req.GasPayer.SignatureMode)
+			if err != nil {
+				return "", fmt.Errorf("invalid gasPayer: %w", err)
+			}
+			sk, err := types.ParseSecretKey(req.GasPayer.PrivateKey)
+			if err != nil {
+				return "", fmt.Errorf("invalid gasPayer privateKey: %w", err)
+			}
+			gasPayerAddr = &addr
+			gasPayerSk = sk
+			gasPayerMode = mode
+		}
+
+		builder := lib.NewTransactionBuilder(instructions)
+		if gasPayerAddr != nil {
+			builder.AddPayerSig(*gasPayerAddr, gasPayerSk, gasPayerMode)
+			for i := range signerAddrs {
+				builder.AddIxesSig(signerAddrs[i], signerSks[i], allIdx, false, signerModes[i])
+			}
+		} else {
+			builder.AddIxesSig(signerAddrs[0], signerSks[0], allIdx, true, signerModes[0])
+			for i := 1; i < len(signerAddrs); i++ {
+				builder.AddIxesSig(signerAddrs[i], signerSks[i], allIdx, false, signerModes[i])
+			}
+		}
+
+		tx, err := builder.Build()
+		if err != nil {
+			return "", fmt.Errorf("failed to create tx: %w", err)
+		}
+		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+			return "", err
+		}
+		return txHashHex(tx), nil
+
+	case PaymentModeSponsored:
+		// payer 只签 gas，全部指令由 sponsor 池代付
+		if req.PayerAddress == "" {
+			return "", fmt.Errorf("payer is required for sponsored mode")
+		}
+		if req.PayerPrivateKey == "" {
+			return "", fmt.Errorf("payerPrivateKey is required for sponsored mode")
+		}
+		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
+		if err != nil {
+			return "", fmt.Errorf("invalid payerPrivateKey: %w", err)
+		}
+		payerAddr, mode, err := h.parsePayerAndMode(req.PayerAddress, req.SignatureMode)
+		if err != nil {
+			return "", err
+		}
+
+		builder := lib.NewTransactionBuilder(instructions).
+			WithPayer(&payerAddr).
+			AddPayerSig(payerAddr, payerSk, mode)
+		tx, err := builder.Build()
+		if err != nil {
+			return "", fmt.Errorf("failed to create tx: %w", err)
+		}
+		if err := tx.ValidateWireWith(allIdx); err != nil {
+			return "", fmt.Errorf("transaction validation failed: %w", err)
+		}
+		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+			return "", err
+		}
+		return txHashHex(tx), nil
+
+	default:
+		return "", fmt.Errorf("unsupported paymentMode: %s", req.PaymentMode)
+	}
+}

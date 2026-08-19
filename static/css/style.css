@@ -3085,3 +3085,128 @@ body::before {
   margin-top: 12px;
 }
 
+
+/* ==================== IDL 批量打包模式 ==================== */
+.idl-batch-toggle {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(124, 92, 255, 0.15);
+  background: var(--bg-secondary);
+}
+
+.batch-mode-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid rgba(124, 92, 255, 0.25);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary, #8a94a6);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.batch-mode-btn:hover {
+  border-color: var(--accent-purple);
+  color: var(--text-primary);
+}
+
+.batch-mode-btn.active {
+  background: var(--accent-gradient-soft, rgba(124, 92, 255, 0.15));
+  border-color: var(--accent-purple);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(124, 92, 255, 0.25);
+}
+
+.idl-batch-card {
+  margin: 10px 0;
+  border: 1px solid rgba(124, 92, 255, 0.25);
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.idl-batch-card:hover {
+  border-color: rgba(124, 92, 255, 0.55);
+}
+
+.idl-batch-card.flash {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.35);
+}
+
+.idl-batch-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.16), rgba(34, 211, 238, 0.10));
+  border-bottom: 1px solid rgba(124, 92, 255, 0.2);
+}
+
+.idl-batch-idx {
+  flex-shrink: 0;
+  min-width: 26px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--accent-gradient-soft, rgba(124, 92, 255, 0.2));
+  color: var(--accent-cyan);
+  font-family: var(--mono-font);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.idl-batch-title {
+  flex: 1;
+  color: var(--text-primary);
+  font-family: var(--mono-font);
+  font-size: 13px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.idl-batch-tools {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.idl-batch-tools .btn-sm {
+  min-width: 26px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.idl-batch-tools .danger {
+  color: #ff6b81;
+  border-color: rgba(255, 107, 129, 0.4);
+}
+
+.idl-batch-tools .danger:hover {
+  background: rgba(255, 107, 129, 0.15);
+  border-color: #ff6b81;
+}
+
+.idl-batch-args {
+  padding: 4px 14px 10px;
+}
+
+.idl-batch-args .param-row {
+  margin-top: 8px;
+}
+
+.idl-batch-noargs {
+  padding: 8px 0;
+  color: var(--text-secondary, #8a94a6);
+  font-size: 12px;
+}
+
+.idl-batch-card .param-label {
+  font-size: 12px;
+}

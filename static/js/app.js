@@ -360,6 +360,8 @@ const state = {
   currentIdlApp: null,
   currentIdlMethod: null,
   idlExecMode: 'simulate', // entry 方法：simulate | submit
+  idlBatchMode: false,     // IDL 批量打包模式（多指令打包成单笔交易）
+  idlBatchItems: [],       // 批次指令列表 [{appName, methodName}]
   idlActiveRespTab: 'idl-json',
   idlLastResponse: null,
   idlCollapsedApps: {}, // appName -> true 表示折叠；默认全部折叠
@@ -3638,6 +3640,11 @@ function selectIDLMethod(appName, methodName) {
   if (!app) return;
   var ix = app.instructions.find(function (i) { return i.name === methodName; });
   if (!ix) return;
+  // 批量打包模式：点选方法即加入批次，不切换右侧单方法表单
+  if (state.idlBatchMode) {
+    addIDLBatchItem(appName, methodName);
+    return;
+  }
   state.currentIdlApp = appName;
   state.currentIdlMethod = ix;
   // 选中方法时自动展开对应 app
@@ -3738,6 +3745,134 @@ function renderIDLForm(ix) {
 
   // 默认执行模式
   state.idlExecMode = 'simulate';
+}
+
+// ==================== IDL 批量打包模式（多指令打包成单笔交易）====================
+
+// 切换 IDL 面板模式：single | batch
+function setIDLBatchMode(mode) {
+  state.idlBatchMode = (mode === 'batch');
+  $('idlModeSingle').classList.toggle('active', !state.idlBatchMode);
+  $('idlModeBatch').classList.toggle('active', state.idlBatchMode);
+  // 清空右侧响应区，避免残留上一次的结果
+  var body = $('idlEditorBody');
+  body.innerHTML = '';
+  var badge = $('idlKindBadge');
+  badge.textContent = state.idlBatchMode ? 'batch' : '—';
+  badge.className = 'method-badge idl-kind-badge' + (state.idlBatchMode ? ' batch' : '');
+  $('idlMethodTitle').textContent = state.idlBatchMode ? '批量打包（多指令）' : '请选择 IDL 方法';
+  $('idlAppLabel').textContent = state.idlBatchMode ? 'multi' : 'app';
+  $('idlMethodPath').textContent = state.idlBatchMode ? ':: 打包为单笔交易' : '::method';
+  resetIDLResponseArea();
+  if (state.idlBatchMode) {
+    renderIDLBatchForm();
+  } else if (state.currentIdlMethod) {
+    renderIDLForm(state.currentIdlMethod);
+  }
+}
+
+// 向批次追加一个方法（已存在则聚焦对应卡片）
+function addIDLBatchItem(appName, methodName) {
+  var idx = state.idlBatchItems.findIndex(function (it) {
+    return it.appName === appName && it.methodName === methodName;
+  });
+  if (idx >= 0) {
+    renderIDLBatchForm(idx);
+    return;
+  }
+  state.idlBatchItems.push({ appName: appName, methodName: methodName });
+  renderIDLBatchForm(state.idlBatchItems.length - 1);
+  if (window.innerWidth <= 768) $('idlSidebar').classList.remove('open');
+}
+
+function removeIDLBatchItem(i) {
+  state.idlBatchItems.splice(i, 1);
+  renderIDLBatchForm();
+}
+
+function moveIDLBatchItem(i, dir) {
+  var j = i + dir;
+  if (j < 0 || j >= state.idlBatchItems.length) return;
+  var t = state.idlBatchItems[i];
+  state.idlBatchItems[i] = state.idlBatchItems[j];
+  state.idlBatchItems[j] = t;
+  renderIDLBatchForm(j);
+}
+
+// 渲染批量打包表单：指令卡片列表 + 共享执行配置
+function renderIDLBatchForm(focusIdx) {
+  var body = $('idlEditorBody');
+  body.innerHTML = '';
+
+  if (!state.idlBatchItems.length) {
+    var empty = el('div', { class: 'empty-state' },
+      el('div', { class: 'empty-icon-wrapper' },
+        el('div', { class: 'empty-glow' }),
+        el('span', { class: 'empty-icon', text: '🧩' })
+      ),
+      el('h3', { text: '批量打包模式' }),
+      el('p', { text: '在左侧按 app 分组点击方法，可逐个加入批次，\n最终打包成单笔交易原子执行（全部成功或全部失败）' }),
+      el('div', { class: 'empty-hint' },
+        el('span', { text: '提示' }),
+        el('span', { text: '指令按顺序执行，卡片上的 ↑↓ 可调整顺序' })
+      )
+    );
+    body.appendChild(empty);
+    return;
+  }
+
+  // 指令卡片区
+  state.idlBatchItems.forEach(function (item, i) {
+    body.appendChild(buildIDLBatchCard(item, i));
+  });
+
+  // 共享执行配置（paymentMode / payer / 签名等，与单指令一致）
+  body.appendChild(buildIDLPaymentSection());
+  state.idlExecMode = 'simulate';
+
+  if (focusIdx !== undefined && focusIdx >= 0 && focusIdx < state.idlBatchItems.length) {
+    var card = body.querySelector('[data-batchix="' + focusIdx + '"]');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      card.classList.add('flash');
+      setTimeout(function () { card.classList.remove('flash'); }, 900);
+    }
+  }
+}
+
+// 渲染单张指令卡片（参数表单复用 buildIDLArgInput）
+function buildIDLBatchCard(item, i) {
+  var app = state.idlMetadata.find(function (a) { return a.name === item.appName; });
+  var ix = app && app.instructions.find(function (x) { return x.name === item.methodName; });
+
+  var card = el('div', { class: 'idl-batch-card', 'data-batchix': String(i) });
+  var header = el('div', { class: 'idl-batch-card-header' },
+    el('span', { class: 'idl-batch-idx', text: '#' + (i + 1) }),
+    el('span', { class: 'idl-batch-title', text: item.appName + '::' + item.methodName }),
+    el('span', { class: 'idl-batch-tools' },
+      el('button', { type: 'button', class: 'btn btn-ghost btn-sm', title: '上移', onclick: function () { moveIDLBatchItem(i, -1); } }, '↑'),
+      el('button', { type: 'button', class: 'btn btn-ghost btn-sm', title: '下移', onclick: function () { moveIDLBatchItem(i, 1); } }, '↓'),
+      el('button', { type: 'button', class: 'btn btn-ghost btn-sm danger', title: '移除', onclick: function () { removeIDLBatchItem(i); } }, '✕')
+    )
+  );
+  card.appendChild(header);
+
+  if (!ix) {
+    card.appendChild(el('div', { class: 'empty-state small', text: '方法不存在，请移除后重新添加' }));
+    return card;
+  }
+
+  var inputArgs = ix.args.filter(function (a) {
+    return a.role === 'input' || a.role === 'signer' || a.role === 'any_signer';
+  });
+  var argSec = el('div', { class: 'idl-batch-args' });
+  if (inputArgs.length) {
+    inputArgs.forEach(function (a) { argSec.appendChild(buildIDLArgInput(a, item.appName, ix.name)); });
+  } else {
+    argSec.appendChild(el('div', { class: 'idl-batch-noargs', text: '（无参数）' }));
+  }
+  card.appendChild(argSec);
+  return card;
 }
 
 function buildIDLArgInput(arg, appName, methodName) {
@@ -4252,6 +4387,10 @@ function buildIDLFieldRow(name, label, value, inputType, attrKey, attrVal) {
 }
 
 function buildIDLRequest() {
+  // 批量打包模式：构建多指令请求（/api/write/multi 或 /api/simulate/multi）
+  if (state.idlBatchMode) {
+    return buildIDLBatchRequest();
+  }
   var ix = state.currentIdlMethod;
   if (!ix) return null;
   var appName = state.currentIdlApp;
@@ -4338,6 +4477,17 @@ function buildIDLRequest() {
   var pm = $('idlPaymentMode') ? $('idlPaymentMode').value : 'unified_payer_all';
   var isSubmit = state.idlExecMode === 'submit';
   var payload = { appName: appName, methodName: ix.name, args: args, paymentMode: pm };
+  fillIDLPaymentPayload(payload);
+
+  var url = isSubmit ? '/api/write' : '/api/simulate';
+  return { method: 'POST', url: url, body: JSON.stringify(payload, null, 2) };
+}
+
+// 收集执行配置（paymentMode 已写入 payload）：payer/owner/ix/signers/signatureMode 等。
+// 单指令与批量打包共用，保证两者请求体结构一致。
+function fillIDLPaymentPayload(payload) {
+  var pm = payload.paymentMode;
+  var isSubmit = state.idlExecMode === 'submit';
 
   function readField(field) {
     var node = document.querySelector('#idlPaymentFields [' + 'data-field' + '="' + field + '"]');
@@ -4411,13 +4561,72 @@ function buildIDLRequest() {
       throw new Error('signatureMode JSON 解析失败: ' + e.message);
     }
   }
+}
 
-  var url = isSubmit ? '/api/write' : '/api/simulate';
+// 收集批次中第 batchIdx 张卡片的参数（类型转换规则与单指令一致）
+function collectBatchArgs(batchIdx, ix) {
+  var args = {};
+  var inputs = document.querySelectorAll('#idlEditorBody .idl-batch-card[data-batchix="' + batchIdx + '"] [data-argname]');
+  inputs.forEach(function (inp) {
+    var name = inp.getAttribute('data-argname');
+    var raw = inp.value.trim();
+    if (raw === '') return;
+    var typeStr = '';
+    if (ix.args) {
+      var def = ix.args.find(function (a) { return a.name === name; });
+      if (def) typeStr = def.type;
+    }
+    if (idlIsScalarType(typeStr)) {
+      if (typeStr === 'bool' || typeStr === 'boolean') {
+        args[name] = raw === 'true' || raw === '1';
+      } else {
+        args[name] = raw;
+      }
+    } else {
+      try { args[name] = JSON.parse(raw); }
+      catch (e) {
+        throw new Error('指令 #' + (batchIdx + 1) + ' 参数 ' + name + ' 的 JSON 解析失败：' + e.message + '（请检查语法，特别是字符串是否带引号）');
+      }
+    }
+  });
+  return args;
+}
+
+// 构建多指令请求体：{ instructions: [{appName, methodName, args}...], paymentMode, ... }
+function buildIDLBatchRequest() {
+  if (!state.idlBatchItems.length) {
+    throw new Error('批次为空，请先在左侧选择方法加入批次');
+  }
+  var instructions = [];
+  for (var i = 0; i < state.idlBatchItems.length; i++) {
+    var item = state.idlBatchItems[i];
+    var app = state.idlMetadata.find(function (a) { return a.name === item.appName; });
+    var ix = app && app.instructions.find(function (x) { return x.name === item.methodName; });
+    if (!ix) {
+      throw new Error('指令 #' + (i + 1) + ' (' + item.appName + '::' + item.methodName + ') 不存在');
+    }
+    instructions.push({
+      appName: item.appName,
+      methodName: item.methodName,
+      args: collectBatchArgs(i, ix),
+    });
+  }
+  var pm = $('idlPaymentMode') ? $('idlPaymentMode').value : 'unified_payer_all';
+  var isSubmit = state.idlExecMode === 'submit';
+  var payload = { instructions: instructions, paymentMode: pm };
+  fillIDLPaymentPayload(payload);
+
+  var url = isSubmit ? '/api/write/multi' : '/api/simulate/multi';
   return { method: 'POST', url: url, body: JSON.stringify(payload, null, 2) };
 }
 
 async function sendIDLRequest() {
-  if (!state.currentIdlMethod) {
+  if (state.idlBatchMode) {
+    if (!state.idlBatchItems.length) {
+      showToast('批次为空，请先在左侧选择方法加入批次', 'error');
+      return;
+    }
+  } else if (!state.currentIdlMethod) {
     showToast('请先选择 IDL 方法', 'error');
     return;
   }
@@ -4551,6 +4760,24 @@ function displayIDLError(err, duration) {
   $('tab-idl-curl').innerHTML = '<div class="empty-state small"><p>无 cURL</p></div>';
 }
 
+// 重置 IDL 响应区（模式切换时调用）
+function resetIDLResponseArea() {
+  var sc = $('idlStatusBadge');
+  sc.className = 'status-badge idle';
+  sc.textContent = '待发送';
+  $('idlRespTime').textContent = '--';
+  $('idlRespSize').textContent = '--';
+  $('tab-idl-json').innerHTML = '';
+  $('tab-idl-json').appendChild(el('div', { class: 'empty-state small' },
+    el('div', { class: 'empty-icon-wrapper small' }, el('span', { class: 'empty-icon', text: '📡' })),
+    el('h4', { text: '等待请求' }),
+    el('p', { text: '发送请求后响应结果将在此展示' })
+  ));
+  $('tab-idl-headers').innerHTML = '<div class="empty-state small"><p>暂无响应头数据</p></div>';
+  $('tab-idl-curl').innerHTML = '<div class="empty-state small"><p>发送请求后可查看 cURL 命令</p></div>';
+  state.idlLastResponse = null;
+}
+
 function switchIDLRespTab(name) {
   state.idlActiveRespTab = name;
   // 仅在 IDL 视图内切换
@@ -4564,7 +4791,9 @@ function switchIDLRespTab(name) {
 }
 
 function copyIDLCurl() {
-  if (!state.currentIdlMethod) { showToast('请先选择方法', 'error'); return; }
+  if (state.idlBatchMode) {
+    if (!state.idlBatchItems.length) { showToast('批次为空，请先选择方法', 'error'); return; }
+  } else if (!state.currentIdlMethod) { showToast('请先选择方法', 'error'); return; }
   var req = buildIDLRequest();
   if (!req) return;
   copyToClipboard(buildCurl(req), function () { showToast('cURL 命令已复制', 'success'); }, function () { showToast('复制失败', 'error'); });
@@ -4594,6 +4823,11 @@ function downloadIDLResponse() {
 }
 
 function resetIDLForm() {
+  if (state.idlBatchMode) {
+    renderIDLBatchForm();
+    showToast('参数已重置', 'success');
+    return;
+  }
   if (state.currentIdlMethod) {
     renderIDLForm(state.currentIdlMethod);
     showToast('参数已重置', 'success');
@@ -4604,10 +4838,17 @@ function resetIDLForm() {
 function addIDLToHistory(req, statusCode, duration, data) {
   var ix = state.currentIdlMethod;
   var appName = state.currentIdlApp;
-  var epId = 'idl:' + appName + ':' + ix.name;
+  var epId, summary;
+  if (state.idlBatchMode) {
+    epId = 'idl-batch';
+    summary = '批量打包(' + state.idlBatchItems.length + ' 条指令) ' + state.idlBatchItems.map(function (it) { return it.appName; }).filter(function (v, i, arr) { return arr.indexOf(v) === i; }).join(',');
+  } else {
+    epId = 'idl:' + appName + ':' + ix.name;
+    summary = appName + '::' + ix.name;
+  }
   state.history.unshift({
     id: Date.now(),
-    endpoint: { id: epId, method: req.method, path: req.url, summary: appName + '::' + ix.name },
+    endpoint: { id: epId, method: req.method, path: req.url, summary: summary },
     req: req,
     statusCode: statusCode,
     duration: duration,
@@ -4760,6 +5001,8 @@ function initApp() {
   $('idlSearch').addEventListener('input', function (e) {
     renderIDLAppList(e.target.value);
   });
+  $('idlModeSingle').addEventListener('click', function () { setIDLBatchMode('single'); });
+  $('idlModeBatch').addEventListener('click', function () { setIDLBatchMode('batch'); });
   $('idlSendBtn').addEventListener('click', sendIDLRequest);
   $('idlResetBtn').addEventListener('click', resetIDLForm);
   $('idlCopyCurlBtn').addEventListener('click', copyIDLCurl);
