@@ -3174,7 +3174,7 @@ var IDL_EXAMPLE_ARGS = {
 
   // ==================== identity 模块（app_id=4，39 个方法）====================
   'identity.Create': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     doc: {
       subject_type: 'Personal',
       keys: [{ public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: null }],
@@ -3183,7 +3183,7 @@ var IDL_EXAMPLE_ARGS = {
     }
   },
   'identity.CreateWithAlias': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     doc: {
       subject_type: 'Personal',
       keys: [{ public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: null }],
@@ -3193,44 +3193,44 @@ var IDL_EXAMPLE_ARGS = {
     name: { alias: 'newuser3847', suffix: 2002 }
   },
   'identity.AddKey': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     input: { public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: 'test-key-1' }
   },
   'identity.UpdateKey': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     id: 1,
     input: { public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819', label: 'test-key-1-updated' }
   },
-  'identity.RemoveKey': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', id: 1 },
+  'identity.RemoveKey': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', id: 1 },
   'identity.AddService': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     input: { label: 'service-1', service_endpoint: 'https://milon.test/service/hub' }
   },
   'identity.UpdateService': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     id: 0,
     input: { label: 'service-1-updated', service_endpoint: 'https://milon.test/service/vault' }
   },
-  'identity.RemoveService': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', id: 0 },
-  'identity.SetAvatarUri': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', avatar_uri: 'https://milon.test/avatar-v2.png' },
-  'identity.Deactivate': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.RemoveService': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', id: 0 },
+  'identity.SetAvatarUri': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', avatar_uri: 'https://milon.test/avatar-v2.png' },
+  'identity.Deactivate': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
   'identity.SetAlias': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     name: { alias: 'testuser3847', suffix: 1001 }
   },
   'identity.RegisterOrganization': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     roles: ['VcIssuer'],
     credential_schemas: ['OrgSchemaV1']
   },
   'identity.UpdateOrganizationCapabilities': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     roles: ['VcIssuer', 'KycProvider'],
     credential_schemas: ['OrgSchemaV1', 'OrgSchemaV2']
   },
-  'identity.DeactivateOrganization': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.DeactivateOrganization': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
   'identity.DiscloseVcAttestation': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
     issuer_key_id: 0,
     credential_schema: 'TestSchemaV1',
@@ -3239,47 +3239,47 @@ var IDL_EXAMPLE_ARGS = {
     issuer_signature: '0x9a8b7c6d5e4f30291a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f7081a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091'
   },
   'identity.RemoveVcDisclosure': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
     credential_schema: 'TestSchemaV1'
   },
   'identity.RevokeVcAttestation': {
     issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     credential_schema: 'TestSchemaV1'
   },
-  'identity.Core': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.Document': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.KeyIndex': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.Keys': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.Key': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', id: 1 },
-  'identity.ServiceIndex': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.Services': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.Service': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', id: 0 },
-  'identity.Alias': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.Avatar': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.UpdatedAt': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.Deactivated': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
+  'identity.Core': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.Document': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.KeyIndex': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.Keys': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.Key': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', id: 1 },
+  'identity.ServiceIndex': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.Services': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.Service': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', id: 0 },
+  'identity.Alias': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.Avatar': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.UpdatedAt': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.Deactivated': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
   'identity.NameBinding': { name: { alias: 'testuser', suffix: 1001 } },
   'identity.CredentialDefinition': { credential_id: 'TestSchemaV1' },
-  'identity.OrganizationCapabilities': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.OrganizationStatus': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.OrganizationUpdatedAt': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz' },
-  'identity.AcceptedVcIssuerIndexMeta': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', credential_schema: 'TestSchemaV1' },
-  'identity.AcceptedVcIssuers': { subject: '2cb9FUuEobGuwF9wukU59ytKNdjz', credential_schema: 'TestSchemaV1' },
+  'identity.OrganizationCapabilities': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.OrganizationStatus': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.OrganizationUpdatedAt': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
+  'identity.AcceptedVcIssuerIndexMeta': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', credential_schema: 'TestSchemaV1' },
+  'identity.AcceptedVcIssuers': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', credential_schema: 'TestSchemaV1' },
   'identity.HasValidVcFromIssuer': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
     credential_schema: 'TestSchemaV1',
     now_ms: 1723382400000
   },
   'identity.VcAttestationCore': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     credential_schema: 'TestSchemaV1',
     issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'
   },
   'identity.VcAttestationLifecycle': {
-    subject: '2cb9FUuEobGuwF9wukU59ytKNdjz',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     credential_schema: 'TestSchemaV1',
     issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'
   },
@@ -3775,6 +3775,10 @@ function buildIDLArgInput(arg, appName, methodName) {
       // 地址类参数：优先填活跃账户地址；无活跃账户时退回示例值。
       // 注意：不要盲目用示例值覆盖（示例值可能是假数据或固定合约地址，会导致链端报 requires signer）。
       val = activeAddr || (hasExample ? String(exampleVal) : defaultVal);
+    } else if (arg.type === 'PublicKey') {
+      // 公钥类参数：优先填活跃账户公钥（避免示例假公钥导致链端 invalid base58 string）
+      var activePk = (activeAcc && activeAcc.publicKey) ? activeAcc.publicKey : '';
+      val = activePk || (hasExample ? String(exampleVal) : defaultVal);
     } else {
       // 非地址类：优先常量默认值 -> 示例值 -> 类型默认
       var constVal = idlConstantForArg(appName, arg);
@@ -3913,6 +3917,8 @@ function buildIDLStructInput(arg, appName, methodName, typeDef) {
   if (Object.keys(initial).length === 0) {
     typeDef.fields.forEach(function (f) { initial[f.name] = idlDefaultForType(appName, f.type); });
   }
+  // struct 子表单同样注入当前活跃账户的真实公钥，替换示例里的假/占位公钥
+  initial = idlInjectAccountPublicKey(initial, getCurrentAccount());
 
   // 隐藏 textarea 承载完整 JSON，供 buildIDLRequest 统一收集
   var hidden = el('textarea', {
@@ -3967,11 +3973,14 @@ function buildIDLStructInput(arg, appName, methodName, typeDef) {
     } else if (idlIsScalarType(f.type)) {
       var inp = el('input', { class: 'param-input', type: 'text' });
       var fVal = initial[f.name];
-      // 地址类字段：示例/默认为空时预填活跃账户地址
+      // 地址/公钥类字段：示例/默认为空时预填活跃账户的地址或公钥
       if ((fVal === undefined || fVal === null || fVal === '') &&
           (f.type === 'Address' || f.type === 'PublicKey' || f.type === 'Signer' || f.type === 'AnySigner')) {
         var act = getCurrentAccount();
-        if (act && act.address) { fVal = act.address; initial[f.name] = act.address; sync(); }
+        if (act) {
+          var fill = (f.type === 'PublicKey') ? (act.publicKey || '') : (act.address || '');
+          if (fill) { fVal = fill; initial[f.name] = fill; sync(); }
+        }
       }
       inp.value = (fVal === undefined || fVal === null) ? '' : String(fVal);
       inp.addEventListener('input', function () {
@@ -4361,9 +4370,22 @@ function buildIDLRequest() {
   var modeDef = IDL_PAYMENT_MODES.find(function (m) { return m.value === pm; });
   if (pm === 'multi_signer') {
     var signersRaw = readField('signers');
-    if (signersRaw) { try { payload.signers = JSON.parse(signersRaw); } catch (e) {} }
+    if (!signersRaw) {
+      throw new Error('multi_signer 模式需要填写 signers（JSON 数组）');
+    }
+    try {
+      payload.signers = JSON.parse(signersRaw);
+    } catch (e) {
+      throw new Error('signers JSON 解析失败: ' + e.message);
+    }
     var gasPayerRaw = readField('gasPayer');
-    if (gasPayerRaw) { try { payload.gasPayer = JSON.parse(gasPayerRaw); } catch (e) {} }
+    if (gasPayerRaw) {
+      try {
+        payload.gasPayer = JSON.parse(gasPayerRaw);
+      } catch (e) {
+        throw new Error('gasPayer JSON 解析失败: ' + e.message);
+      }
+    }
   }
   if (modeDef && modeDef.needIx) {
     payload.ixAddress = readField('ixAddress');
@@ -4372,11 +4394,23 @@ function buildIDLRequest() {
       if (ixSk) payload.ixPrivateKey = ixSk;
     }
     var ixSig = readField('ixSignatureMode');
-    if (ixSig) { try { payload.ixSignatureMode = JSON.parse(ixSig); } catch (e) {} }
+    if (ixSig) {
+      try {
+        payload.ixSignatureMode = JSON.parse(ixSig);
+      } catch (e) {
+        throw new Error('ixSignatureMode JSON 解析失败: ' + e.message);
+      }
+    }
   }
 
   var sigMode = readField('signatureMode');
-  if (sigMode) { try { payload.signatureMode = JSON.parse(sigMode); } catch (e) {} }
+  if (sigMode) {
+    try {
+      payload.signatureMode = JSON.parse(sigMode);
+    } catch (e) {
+      throw new Error('signatureMode JSON 解析失败: ' + e.message);
+    }
+  }
 
   var url = isSubmit ? '/api/write' : '/api/simulate';
   return { method: 'POST', url: url, body: JSON.stringify(payload, null, 2) };
@@ -4387,7 +4421,13 @@ async function sendIDLRequest() {
     showToast('请先选择 IDL 方法', 'error');
     return;
   }
-  var req = buildIDLRequest();
+  var req;
+  try {
+    req = buildIDLRequest();
+  } catch (e) {
+    showToast(e.message, 'error');
+    return;
+  }
   if (!req) return;
   state.loading = true;
   setIDLSendLoading(true);
@@ -4614,7 +4654,7 @@ function reloadIDLHistory(h) {
           renderIDLPaymentFields();
           // 延迟填充动态生成的字段
           setTimeout(function () {
-            ['payerAddress', 'payerPrivateKey', 'ownerPrivateKey', 'ixAddress', 'ixPrivateKey', 'signatureMode', 'ixSignatureMode'].forEach(function (f) {
+            ['payerAddress', 'payerPrivateKey', 'ownerPrivateKey', 'ixAddress', 'ixPrivateKey', 'signatureMode', 'ixSignatureMode', 'signers', 'gasPayer'].forEach(function (f) {
               if (payload[f] !== undefined) {
                 var node = document.querySelector('#idlPaymentFields [data-field="' + f + '"]');
                 if (node) node.value = typeof payload[f] === 'string' ? payload[f] : JSON.stringify(payload[f], null, 2);
