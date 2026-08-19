@@ -3907,9 +3907,28 @@ function buildIDLArgInput(arg, appName, methodName) {
     var hasExample = exampleVal !== undefined;
     var val;
     if (arg.type === 'Address' || arg.type === 'Signer' || arg.type === 'AnySigner') {
-      // 地址类参数：优先填活跃账户地址；无活跃账户时退回示例值。
-      // 注意：不要盲目用示例值覆盖（示例值可能是假数据或固定合约地址，会导致链端报 requires signer）。
-      val = activeAddr || (hasExample ? String(exampleVal) : defaultVal);
+      // 地址类参数分两类：
+      // 1) 签名者/账户类参数（role=signer 或参数名像 from/owner/holder/claimer/account 等）：
+      //    预填活跃账户地址，避免示例假地址导致链端报 requires signer。
+      // 2) 资源地址类参数（如 token 等代币/合约资源地址）：优先示例值（如 MIL token 地址），
+      //    绝不预填账户地址——否则 BalanceOf.token 会被填成账户自己，链端报"账户不存在"。
+      var isSignerLike = arg.role === 'signer' || arg.role === 'any_signer'
+        || /^(from|owner|holder|claimer|sender|payer|spender|subject|admin|freezer|to|recipient|account)$/i.test(arg.name);
+      if (isSignerLike) {
+        val = activeAddr || (hasExample ? String(exampleVal) : defaultVal);
+      } else {
+        var constAddr = idlConstantForArg(appName, arg);
+        if (hasExample) {
+          val = String(exampleVal);
+        } else if (constAddr !== undefined) {
+          val = String(constAddr);
+        } else if (/^token$/i.test(arg.name)) {
+          // token 资源地址兜底：默认填 MIL token 地址（M11on + 27 个 1），可手动改
+          val = 'M11on1111111111111111111111';
+        } else {
+          val = defaultVal;
+        }
+      }
     } else if (arg.type === 'PublicKey') {
       // 公钥类参数：优先填活跃账户公钥（避免示例假公钥导致链端 invalid base58 string）
       var activePk = (activeAcc && activeAcc.publicKey) ? activeAcc.publicKey : '';
