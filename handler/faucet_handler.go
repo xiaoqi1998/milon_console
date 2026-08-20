@@ -66,7 +66,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 
 	mc, _ := h.nm.GetCurrent()
 
-	// Build a split-mode ClaimFaucet transaction manually (SDK's BuildAndSubmitSingleIxSplit was removed).
+	// Build a unified-payer ClaimFaucet transaction manually (SDK's BuildAndSubmitSingleIxSplit was removed).
 	pd, ok := mc.GetAllPd()["token"]
 	if !ok {
 		logSDKError(c, "ClaimFaucet", fmt.Errorf("token IDL not found"))
@@ -82,6 +82,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 
 	requestId := lib.RequestID(time.Now().UnixMilli())
 	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(&addr).
 		AddIxAndPayerSig(addr, sk, 0, mode).
 		Build()
 	if err != nil {

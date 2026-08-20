@@ -253,12 +253,13 @@ func (c *rpcClientV1) ClaimFaucet(accountSk crypto.SecretKeyer, account *crypto.
 		return fmt.Errorf("failed to encode instruction: %w", err)
 	}
 
-	// 2. SplitPayerSelfPay mode: no payer; each executor signs its own ix bit(s) and gas bit (bit63).
+	// 2. UnifiedPayer mode: account is the payer; it signs the ix bit (bit0) and the gas bit (bit63).
 	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
-		AddIxesSig(*account, accountSk, []uint8{0}, false, mode).
+		WithPayer(account).
+		AddIxAndPayerSig(*account, accountSk, 0, mode).
 		Build()
 	if err != nil {
-		return fmt.Errorf("failed to build split transaction: %w", err)
+		return fmt.Errorf("failed to build unified payer transaction: %w", err)
 	}
 
 	// 3. Submit the transaction to the chain
