@@ -993,6 +993,47 @@ function displayResponse(data, statusCode, duration, headers, rawText, size) {
     pre.innerHTML = formatJSON(data);
     jp.appendChild(pre);
   }
+  // rawTx panel: toggle to view raw transaction structure
+  // data is the full response envelope {success, data:{...}, message, code}; rawTx lives under data.data.rawTx.
+  // Also support data.rawTx for endpoints that return rawTx at the top level.
+  var rawTxData = null;
+  if (data && typeof data === 'object') {
+    if (data.data && data.data.rawTx) rawTxData = data.data.rawTx;
+    else if (data.rawTx) rawTxData = data.rawTx;
+  }
+  if (rawTxData) {
+    var rawTxBanner = el('div', {
+      class: 'rawtx-banner',
+      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-top:12px;border-radius:8px;background:rgba(124,92,255,0.10);border:1px solid rgba(124,92,255,0.35);color:#a78bfa;font-weight:600;font-size:14px;cursor:pointer;user-select:none;'
+    },
+      el('span', { text: '📦' }),
+      el('span', { text: '查看原始交易体 (rawTx)' }),
+      el('span', { style: 'margin-left:auto;color:#9aa3b2;font-size:12px;', text: '▶ 点击展开' })
+    );
+    var rawTxContent = el('div', {
+      class: 'rawtx-content',
+      style: 'display:none;margin-top:8px;border-radius:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(124,92,255,0.25);padding:12px;'
+    });
+    var toggleRawTx = function () {
+      var expanded = rawTxContent.style.display !== 'none';
+      rawTxContent.style.display = expanded ? 'none' : 'block';
+      rawTxBanner.querySelector('span:last-child').textContent = expanded ? '▶ 点击展开' : '▼ 点击折叠';
+    };
+    rawTxBanner.onclick = toggleRawTx;
+    // Build a structured view of rawTx
+    var rawTxPre = el('pre', { class: 'json-viewer', style: 'max-height:480px;overflow:auto;' });
+    rawTxPre.innerHTML = formatJSON(rawTxData);
+    rawTxContent.appendChild(rawTxPre);
+    // AuthBit legend
+    var legend = el('div', { style: 'margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;font-size:12px;color:#9aa3b2;line-height:1.6;' },
+      el('div', { style: 'color:#a78bfa;font-weight:600;margin-bottom:4px;', text: 'AuthBit 位含义' }),
+      el('div', { text: 'bit0~bit61 = 签第 N 个 ix, bit63 = 付 gas (payer)' }),
+      el('div', { text: '0x8000000000000000 = 只付 gas | 0x0000000000000001 = 只签 ix0 | 0x8000000000000001 = 付 gas + 签 ix0' })
+    );
+    rawTxContent.appendChild(legend);
+    jp.appendChild(rawTxBanner);
+    jp.appendChild(rawTxContent);
+  }
   var hp = $('tab-headers');
   hp.innerHTML = '';
   if (headers) {
@@ -4730,6 +4771,43 @@ function displayIDLResponse(data, statusCode, duration, headers, rawText, size) 
     var pre = el('pre', { class: 'json-viewer' });
     pre.innerHTML = formatJSON(data);
     jp.appendChild(pre);
+  }
+  // rawTx panel: toggle to view raw transaction structure
+  var rawTxData = null;
+  if (data && typeof data === 'object') {
+    if (data.data && data.data.rawTx) rawTxData = data.data.rawTx;
+    else if (data.rawTx) rawTxData = data.rawTx;
+  }
+  if (rawTxData) {
+    var rawTxBanner = el('div', {
+      class: 'rawtx-banner',
+      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-top:12px;border-radius:8px;background:rgba(124,92,255,0.10);border:1px solid rgba(124,92,255,0.35);color:#a78bfa;font-weight:600;font-size:14px;cursor:pointer;user-select:none;'
+    },
+      el('span', { text: '📦' }),
+      el('span', { text: '查看原始交易体 (rawTx)' }),
+      el('span', { style: 'margin-left:auto;color:#9aa3b2;font-size:12px;', text: '▶ 点击展开' })
+    );
+    var rawTxContent = el('div', {
+      class: 'rawtx-content',
+      style: 'display:none;margin-top:8px;border-radius:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(124,92,255,0.25);padding:12px;'
+    });
+    var toggleRawTx = function () {
+      var expanded = rawTxContent.style.display !== 'none';
+      rawTxContent.style.display = expanded ? 'none' : 'block';
+      rawTxBanner.querySelector('span:last-child').textContent = expanded ? '▶ 点击展开' : '▼ 点击折叠';
+    };
+    rawTxBanner.onclick = toggleRawTx;
+    var rawTxPre = el('pre', { class: 'json-viewer', style: 'max-height:480px;overflow:auto;' });
+    rawTxPre.innerHTML = formatJSON(rawTxData);
+    rawTxContent.appendChild(rawTxPre);
+    var legend = el('div', { style: 'margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;font-size:12px;color:#9aa3b2;line-height:1.6;' },
+      el('div', { style: 'color:#a78bfa;font-weight:600;margin-bottom:4px;', text: 'AuthBit 位含义' }),
+      el('div', { text: 'bit0~bit61 = 签第 N 个 ix, bit63 = 付 gas (payer)' }),
+      el('div', { text: '0x8000000000000000 = 只付 gas | 0x0000000000000001 = 只签 ix0 | 0x8000000000000001 = 付 gas + 签 ix0' })
+    );
+    rawTxContent.appendChild(legend);
+    jp.appendChild(rawTxBanner);
+    jp.appendChild(rawTxContent);
   }
 
   // Headers

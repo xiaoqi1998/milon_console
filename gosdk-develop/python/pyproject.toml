@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "milon-sdk"
+version = "0.1.0"
+description = "Milon blockchain Python SDK (port of milon-go-sdk)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "blake3",
+    "base58",
+    "cryptography",
+    "coincurve",
+]
+
+[project.optional-dependencies]
+bls = ["blst"]
+fndsa = ["tectonic-bedrock-python"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["milon_sdk*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
