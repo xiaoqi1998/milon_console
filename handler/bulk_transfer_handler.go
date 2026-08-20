@@ -237,6 +237,7 @@ func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *cryp
 	}
 
 	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(account).
 		AddIxAndPayerSig(*account, sk, 0, mode).
 		Build()
 	if err != nil {

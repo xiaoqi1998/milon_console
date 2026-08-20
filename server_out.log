@@ -1,0 +1,95 @@
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /static/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] HEAD   /static/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] GET    /                         --> main.main.func1 (4 handlers)
+[GIN-debug] GET    /api/network/list         --> milon-api-server/handler.(*NetworkHandler).ListNetworks-fm (4 handlers)
+[GIN-debug] GET    /api/network/current      --> milon-api-server/handler.(*NetworkHandler).GetCurrentNetwork-fm (4 handlers)
+[GIN-debug] POST   /api/network/switch       --> milon-api-server/handler.(*NetworkHandler).SwitchNetwork-fm (4 handlers)
+[GIN-debug] GET    /api/health               --> milon-api-server/handler.(*SystemHandler).Health-fm (4 handlers)
+[GIN-debug] GET    /api/chain-head           --> milon-api-server/handler.(*SystemHandler).GetChainHead-fm (4 handlers)
+[GIN-debug] POST   /api/accounts/generate    --> milon-api-server/handler.(*AccountHandler).GenerateAccount-fm (4 handlers)
+[GIN-debug] GET    /api/accounts/:address    --> milon-api-server/handler.(*AccountHandler).GetAccount-fm (4 handlers)
+[GIN-debug] GET    /api/accounts/:address/resources --> milon-api-server/handler.(*AccountHandler).GetAccountResources-fm (4 handlers)
+[GIN-debug] GET    /api/transactions/:hash   --> milon-api-server/handler.(*TransactionHandler).GetTransactionByHash-fm (4 handlers)
+[GIN-debug] GET    /api/transactions/:hash/events --> milon-api-server/handler.(*TransactionHandler).GetTransactionEvents-fm (4 handlers)
+[GIN-debug] GET    /api/transactions/:hash/wait --> milon-api-server/handler.(*TransactionHandler).WaitForTransaction-fm (4 handlers)
+[GIN-debug] GET    /api/rpc/blocks/:height   --> milon-api-server/handler.(*RpcHandler).GetBlock-fm (4 handlers)
+[GIN-debug] GET    /api/rpc/resources/:hash  --> milon-api-server/handler.(*RpcHandler).GetResource-fm (4 handlers)
+[GIN-debug] POST   /api/rpc/access-value     --> milon-api-server/handler.(*RpcHandler).GetAccessValue-fm (4 handlers)
+[GIN-debug] POST   /api/read                 --> milon-api-server/handler.(*ContractHandler).ReadContract-fm (4 handlers)
+[GIN-debug] POST   /api/read/multi           --> milon-api-server/handler.(*ContractHandler).ReadContractMulti-fm (4 handlers)
+[GIN-debug] POST   /api/simulate             --> milon-api-server/handler.(*ContractHandler).SimulateContract-fm (4 handlers)
+[GIN-debug] POST   /api/simulate/multi       --> milon-api-server/handler.(*ContractHandler).SimulateContractMulti-fm (4 handlers)
+[GIN-debug] POST   /api/write                --> milon-api-server/handler.(*ContractHandler).WriteContract-fm (4 handlers)
+[GIN-debug] POST   /api/write/multi          --> milon-api-server/handler.(*ContractHandler).WriteContractMulti-fm (4 handlers)
+[GIN-debug] POST   /api/write/multi-agent    --> milon-api-server/handler.(*ContractHandler).WriteContractMultiAgent-fm (4 handlers)
+[GIN-debug] POST   /api/write/multisig       --> milon-api-server/handler.(*ContractHandler).WriteContractMultisig-fm (4 handlers)
+[GIN-debug] POST   /api/transactions/simulate --> milon-api-server/handler.(*TransactionHandler).SimulateTransaction-fm (4 handlers)
+[GIN-debug] POST   /api/transactions/submit  --> milon-api-server/handler.(*TransactionHandler).SubmitTransaction-fm (4 handlers)
+[GIN-debug] POST   /api/transactions/inspect --> milon-api-server/handler.(*TransactionHandler).InspectTransaction-fm (4 handlers)
+[GIN-debug] POST   /api/util/address/derive  --> milon-api-server/handler.(*UtilHandler).DeriveAddress-fm (4 handlers)
+[GIN-debug] POST   /api/util/key/derive-public --> milon-api-server/handler.(*UtilHandler).DerivePublicKey-fm (4 handlers)
+[GIN-debug] POST   /api/util/sign            --> milon-api-server/handler.(*UtilHandler).SignMessage-fm (4 handlers)
+[GIN-debug] POST   /api/util/verify          --> milon-api-server/handler.(*UtilHandler).VerifySignature-fm (4 handlers)
+[GIN-debug] POST   /api/faucet/claim         --> milon-api-server/handler.(*FaucetHandler).ClaimFaucet-fm (4 handlers)
+[GIN-debug] GET    /api/faucet/balance/:address --> milon-api-server/handler.(*FaucetHandler).GetBalance-fm (4 handlers)
+[GIN-debug] POST   /api/view/single          --> milon-api-server/handler.(*ViewSingleHandler).ViewSingle-fm (4 handlers)
+[GIN-debug] POST   /api/view/multi           --> milon-api-server/handler.(*ViewSingleHandler).ViewMulti-fm (4 handlers)
+[GIN-debug] GET    /api/rpc/resource-paths/:hash --> milon-api-server/handler.(*ResourcePathHandler).GetResourcePathByHash-fm (4 handlers)
+[GIN-debug] GET    /api/idl/metadata         --> milon-api-server/handler.(*IDLHandler).GetIDLMetadata-fm (4 handlers)
+[GIN-debug] POST   /api/tool/bulk-transfer   --> milon-api-server/handler.(*BulkTransferHandler).BulkTransfer-fm (4 handlers)
+[GIN-debug] GET    /api/tool/bulk-transfer/:id --> milon-api-server/handler.(*BulkTransferHandler).GetBulkTransferStatus-fm (4 handlers)
+========================================
+  Milon API Server
+========================================
+  Listening on:  http://localhost:8080
+  Default network: devNet
+  Enable util sign: false
+  Enable body log: false
+  Endpoints:
+    GET  /api/health                  - Health check
+    GET  /api/chain-head              - Get chain head
+    GET  /api/network/list            - List all networks
+    GET  /api/network/current         - Get current network
+    POST /api/network/switch          - Switch network
+    GET  /api/accounts/:address       - Get account info
+    GET  /api/accounts/:address/resources - List account resources
+    POST /api/accounts/generate       - Generate new account
+    GET  /api/transactions/:hash      - Get transaction by hash
+    GET  /api/transactions/:hash/events - Get transaction events
+    GET  /api/transactions/:hash/wait - Wait for transaction
+    GET  /api/rpc/blocks/:height      - Get block by height
+    GET  /api/rpc/resources/:hash     - Get resource by hash
+    POST /api/rpc/access-value        - Get access value
+    POST /api/read                    - Read contract (view)
+    POST /api/read/multi              - Read contract (multi-view)
+    POST /api/simulate                - Simulate contract
+    POST /api/simulate/multi          - Simulate multi-instruction batch
+    POST /api/write                   - Write contract
+    POST /api/write/multi             - Write multi-instruction batch (pack multiple ix into one tx)
+    POST /api/write/multi-agent       - Write contract (dual sign)
+    POST /api/write/multisig          - Write contract (split)
+    POST /api/transactions/simulate   - Simulate raw transaction
+    POST /api/transactions/submit     - Submit raw transaction
+    POST /api/transactions/inspect    - Inspect raw transaction
+    POST /api/util/address/derive     - Derive address from public key
+    POST /api/util/key/derive-public  - Derive public key from private key
+    POST /api/util/sign               - Sign message (requires ENABLE_UTIL_SIGN)
+    POST /api/util/verify             - Verify signature
+    POST /api/faucet/claim            - Claim faucet tokens
+    GET  /api/faucet/balance/:address - Get MIL balance
+    POST /api/view/single             - Low-level single view
+    POST /api/view/multi              - Low-level multi view
+    GET  /api/rpc/resource-paths/:hash- Get resource path by hash
+    GET  /api/idl/metadata            - IDL 方法元数据（app/方法/参数 schema）
+    POST /api/tool/bulk-transfer      - 批量生成账户并归集 MIL（异步任务）
+    GET  /api/tool/bulk-transfer/:id  - 查询批量归集任务进度
+    GET  /                            - Web console
+    GET  /static/*                    - Static files
+========================================
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
