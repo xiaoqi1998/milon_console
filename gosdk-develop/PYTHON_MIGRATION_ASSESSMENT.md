@@ -198,7 +198,7 @@ Python 侧需用 `bytes` + 游标偏移复刻整个 Serializer/Deserializer。**
 - **人力**：1–2 名 Python 工程师 + 0.2 名密码学顾问（评审 FnDSA/BLS）。
 - **Python 依赖**：`blake3`、`base58`、`coincurve`（或 `eth_keys`）、`blst`（或 `py_ecc`）、`tectonic-bedrock-python`（FnDSA）、`httpx`（异步 HTTP，含重试）/`requests`、`pytest`。
 - **环境**：Python ≥3.10、venv、CI（GitHub Actions + pytest）。
-- **验证基座**：现有 Go SDK + DevNet RPC（`149.104.26.82:6280/milon/v1`）用于 parity 与链上集成测试。
+- **验证基座**：现有 Go SDK + DevNet RPC（`https://devnet.milonlabs.com/milon/v1`）用于 parity 与链上集成测试。
 
 ---
 

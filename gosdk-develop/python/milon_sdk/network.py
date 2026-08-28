@@ -31,5 +31,5 @@ LocalNet = Network(
 DevNet = Network(
     name="devNet",
     chain_id=900_000_001,
-    rpc_url="http://47.84.39.153:6280/milon/v1",
+    rpc_url="https://devnet.milonlabs.com/milon/v1",
 )

@@ -26,14 +26,19 @@ type NetworkManager struct {
 
 // NewNetworkManager creates a NetworkManager with localNet and devNet pre-configured,
 // then creates a client for the default network.
-func NewNetworkManager(defaultNetwork string) *NetworkManager {
+// If rpcUrl is non-empty, it overrides the devNet RPC endpoint (from MILON_RPC_URL).
+func NewNetworkManager(defaultNetwork string, rpcUrl string) *NetworkManager {
 	nm := &NetworkManager{
 		networks: make(map[string]milon.Network),
 		clients:  make(map[string]*milon.Client),
 	}
 
 	nm.networks[milon.LocalNet.Name] = milon.LocalNet
-	nm.networks[milon.DevNet.Name] = milon.DevNet
+	devNet := milon.DevNet
+	if rpcUrl != "" {
+		devNet.RpcUrl = rpcUrl
+	}
+	nm.networks[devNet.Name] = devNet
 
 	if _, ok := nm.networks[defaultNetwork]; !ok {
 		defaultNetwork = milon.DevNet.Name

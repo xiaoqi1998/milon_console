@@ -15,7 +15,7 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 
-	nm := client.NewNetworkManager(cfg.DefaultNetwork)
+	nm := client.NewNetworkManager(cfg.DefaultNetwork, cfg.RpcUrl)
 
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -119,6 +119,13 @@ func main() {
 	fmt.Println("========================================")
 	fmt.Printf("  Listening on:  http://localhost:%s\n", cfg.ServerPort)
 	fmt.Println("  Default network:", cfg.DefaultNetwork)
+	if cfg.RpcUrl != "" {
+		fmt.Println("  RPC URL (env): ", cfg.RpcUrl)
+	} else {
+		nmClient, netCfg := nm.GetCurrent()
+		_ = nmClient
+		fmt.Println("  RPC URL:       ", netCfg.RpcUrl)
+	}
 	fmt.Println("  Enable util sign:", cfg.EnableUtilSign)
 	fmt.Println("  Enable body log:", cfg.EnableBodyLog)
 	fmt.Println("  Endpoints:")

@@ -16,7 +16,7 @@ services:
       - ALLOWED_ORIGINS=*
       - ENABLE_UTIL_SIGN=true # 启用工具签名功能
       # - SIGNER_PRIVATE_KEY=your_private_key_here
-      # - MILON_RPC_URL=http://your-node:6280/milon/v1
+      - MILON_RPC_URL=https://devnet.milonlabs.com/milon/v1
     volumes:
       - /etc/localtime:/etc/localtime:ro
     networks:

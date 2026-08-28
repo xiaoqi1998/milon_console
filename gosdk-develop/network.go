@@ -16,5 +16,5 @@ var LocalNet = Network{
 var DevNet = Network{
 	Name:    "devNet",
 	ChainId: 900_000_001,
-	RpcUrl:  "http://47.84.39.153:6280/milon/v1",
+	RpcUrl:  "https://devnet.milonlabs.com/milon/v1",
 }

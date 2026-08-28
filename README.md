@@ -75,7 +75,7 @@ ALLOWED_ORIGINS=https://your-domain.com
 ENABLE_UTIL_SIGN=false
 # ENABLE_BODY_LOG=true   # 开启请求/响应体日志（敏感字段自动脱敏）
 # SIGNER_PRIVATE_KEY=base58_or_hex_private_key
-# MILON_RPC_URL=http://your-node:6280/milon/v1
+# MILON_RPC_URL=https://devnet.milonlabs.com/milon/v1
 # MILON_CHAIN_ID=2
 ```
 
