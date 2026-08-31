@@ -1785,37 +1785,35 @@ curl -X POST http://localhost:8080/api/util/vc-attestation \
 
 **响应示例**
 
+成功响应为**裸 JSON 文档**（无 `success/code/data` 包装），结构与 `milon-vc-disclosure` 产物文件完全一致，可将响应体直接保存为 `.json` 文件使用：
+
 ```json
 {
-  "success": true,
-  "code": 0,
-  "message": "ok",
-  "data": {
-    "format": "milon-vc-disclosure",
-    "version": 1,
-    "credential": {
-      "name": "KycLevel Credential",
-      "description": "A mock KYC credential for testing the DID web upload flow.",
-      "issued_at": "2026-08-31T00:00:00.000Z",
-      "valid_until": "2027-08-24T00:00:00.000Z"
-    },
-    "disclosure": {
-      "app": "Identity",
-      "method": "DiscloseVcAttestation",
-      "args": {
-        "subject": "48QWpGsZpXJV3rdRvsiQb4iGzBW",
-        "issuer": "3pHqrfVpw4ziiWZ2S6graADk8sXu",
-        "issuer_key_id": 0,
-        "credential_schema": "KycLevelCredential",
-        "credential_hash": [207, 192, 54, 52, 222, 3, 142, 255, 94, 254, 101, 124, 255, 7, 166, 9, 151, 50, 145, 56, 67, 0, 99, 177, 66, 93, 145, 212, 221, 53, 128, 127],
-        "valid_until_ms": 1819065600000,
-        "issuer_signature": "ce58f196aece3c8a1fcca9a553f7cfed8f00414d23d9607856acf4015d064085372629b6f71bd2d08f3461eb8cb3aa0ee05e5a3058ce40d3fa252d46c7f8ff08"
-      }
-    }
+  "format": "milon-vc-disclosure",
+  "version": 1,
+  "credential": {
+    "name": "asdasd Credential",
+    "description": "A mock asdasd credential for testing the DID web upload flow.",
+    "issued_at": "2026-08-24T00:00:00.000Z",
+    "valid_until": "2027-08-24T00:00:00.000Z"
   },
-  "timestamp": "2026-08-31T10:00:00+08:00"
+  "disclosure": {
+    "app": "Identity",
+    "method": "DiscloseVcAttestation",
+    "args": {
+      "subject": "yCinBpqBNjzNtpcdzh9WApHYne6",
+      "issuer": "3pbWorV6iS7Mv8iCs36JUi18RfFy",
+      "issuer_key_id": 0,
+      "credential_schema": "asdasd",
+      "credential_hash": [207, 192, 54, 52, 222, 3, 142, 255, 94, 254, 101, 124, 255, 7, 166, 9, 151, 50, 145, 56, 67, 0, 99, 177, 66, 93, 145, 212, 221, 53, 128, 127],
+      "valid_until_ms": 1819065600000,
+      "issuer_signature": "a33e6bdc66a19dbc822adb39104ce21480ef934130856ada56fbe76ed02fc4b8bde810db0cb4bf1b89931328b35c6e94f692bcf30ba7d28c739d1d5a6980650e"
+    }
+  }
 }
 ```
+
+> 注：`valid_until` / `valid_until_ms` 为 `null` 表示凭证永不过期（请求传 `validUntilMs: 0` 时）。错误响应仍为统一的 `success/code/message` 包装结构。
 
 ---
 

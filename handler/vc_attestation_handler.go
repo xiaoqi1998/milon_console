@@ -51,12 +51,39 @@ type generateVcAttestationRequest struct {
 	IssuedAt           string `json:"issuedAt"`                     // 签发时间 ISO8601；缺省取当前 UTC
 }
 
-// generateVcAttestationResponse 是 GenerateVcAttestation 的响应体。
+// vcCredentialMeta 对应 milon-vc-disclosure 的 credential 段。
+type vcCredentialMeta struct {
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	IssuedAt    string  `json:"issued_at"`
+	ValidUntil  *string `json:"valid_until"` // null 表示不过期
+}
+
+// vcDisclosureArgs 对应 disclosure.args，字段顺序与 vc_attestation_custom.json 一致。
+type vcDisclosureArgs struct {
+	Subject          string `json:"subject"`
+	Issuer           string `json:"issuer"`
+	IssuerKeyID      int    `json:"issuer_key_id"`
+	CredentialSchema string `json:"credential_schema"`
+	CredentialHash   []int  `json:"credential_hash"`
+	ValidUntilMs     *int64 `json:"valid_until_ms"` // null 表示不过期
+	IssuerSignature  string `json:"issuer_signature"`
+}
+
+// vcDisclosureBody 对应 disclosure 段。
+type vcDisclosureBody struct {
+	App    string           `json:"app"`
+	Method string           `json:"method"`
+	Args   vcDisclosureArgs `json:"args"`
+}
+
+// generateVcAttestationResponse 即最终输出的裸 JSON 文档（milon-vc-disclosure），
+// 与 Python 脚本 / TS 参考实现的输出文件字节级同构（字段顺序一致）。
 type generateVcAttestationResponse struct {
-	Format     string         `json:"format"`
-	Version    int            `json:"version"`
-	Credential map[string]any `json:"credential"`
-	Disclosure map[string]any `json:"disclosure"`
+	Format     string           `json:"format"`
+	Version    int              `json:"version"`
+	Credential vcCredentialMeta `json:"credential"`
+	Disclosure vcDisclosureBody `json:"disclosure"`
 }
 
 // GenerateVcAttestation handles POST /api/util/vc-attestation
@@ -80,21 +107,25 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 		return
 	}
 
-	// ---- 有效期：显式 validUntilMs > validUntil(ISO 推导) > 默认 1.9e12 ms ----
-	validUntilMs := req.ValidUntilMs
-	if validUntilMs == nil {
-		if req.ValidUntil != "" {
-			ms, err := isoToMs(req.ValidUntil)
-			if err != nil {
-				logParamError(c, "GenerateVcAttestation", err)
-				c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid validUntil: "+err.Error(), nil))
-				return
-			}
-			validUntilMs = &ms
-		} else {
-			def := int64(1_900_000_000_000)
-			validUntilMs = &def
+	// ---- 有效期：显式 validUntilMs（0 = 不过期）> validUntil(ISO 推导) > 默认 1.9e12 ms ----
+	validUntilValue := int64(1_900_000_000_000)
+	if req.ValidUntilMs != nil {
+		validUntilValue = *req.ValidUntilMs
+	} else if strings.TrimSpace(req.ValidUntil) != "" {
+		ms, err := isoToMs(req.ValidUntil)
+		if err != nil {
+			logParamError(c, "GenerateVcAttestation", err)
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid validUntil: "+err.Error(), nil))
+			return
 		}
+		validUntilValue = ms
+	}
+
+	// 与 Python 脚本语义一致：0 表示不过期（签名摘要取 0，输出 null）
+	var validUntilForSign *int64 // 传给摘要构造：nil 表示不过期
+	if validUntilValue != 0 {
+		v := validUntilValue
+		validUntilForSign = &v
 	}
 
 	chainID := defaultChainID
@@ -187,7 +218,7 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 		issuerKeyID,
 		credentialSchema,
 		credentialHash[:],
-		validUntilMs,
+		validUntilForSign,
 	)
 
 	// ---- issuer ed25519 签名（raw R||S, 64 字节） ----
@@ -201,11 +232,14 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 		return
 	}
 
-	// ---- 组装 milon-vc-disclosure 包装格式 ----
+	// ---- 组装 milon-vc-disclosure 裸文档（字段顺序与 vc_attestation_custom.json 一致） ----
 	var validUntilISO *string
-	if validUntilMs != nil {
-		s := msToIso(*validUntilMs)
+	var validUntilMsOut *int64
+	if validUntilValue != 0 {
+		s := msToIso(validUntilValue)
 		validUntilISO = &s
+		v := validUntilValue
+		validUntilMsOut = &v
 	}
 
 	credentialHashList := make([]int, len(credentialHash))
@@ -213,33 +247,32 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 		credentialHashList[i] = int(b)
 	}
 
-	discloseArgs := map[string]any{
-		"subject":           subjectAddr.ToBase58(),
-		"issuer":            issuerAddr.ToBase58(),
-		"issuer_key_id":     issuerKeyID,
-		"credential_schema": credentialSchema,
-		"credential_hash":   credentialHashList,
-		"valid_until_ms":    validUntilMs,
-		"issuer_signature":  issuerSignature,
-	}
-
 	resp := generateVcAttestationResponse{
 		Format:  "milon-vc-disclosure",
 		Version: 1,
-		Credential: map[string]any{
-			"name":        credentialName,
-			"description": credentialDesc,
-			"issued_at":   issuedAt,
-			"valid_until": validUntilISO,
+		Credential: vcCredentialMeta{
+			Name:        credentialName,
+			Description: credentialDesc,
+			IssuedAt:    issuedAt,
+			ValidUntil:  validUntilISO,
 		},
-		Disclosure: map[string]any{
-			"app":    "Identity",
-			"method": "DiscloseVcAttestation",
-			"args":   discloseArgs,
+		Disclosure: vcDisclosureBody{
+			App:    "Identity",
+			Method: "DiscloseVcAttestation",
+			Args: vcDisclosureArgs{
+				Subject:          subjectAddr.ToBase58(),
+				Issuer:           issuerAddr.ToBase58(),
+				IssuerKeyID:      issuerKeyID,
+				CredentialSchema: credentialSchema,
+				CredentialHash:   credentialHashList,
+				ValidUntilMs:     validUntilMsOut,
+				IssuerSignature:  issuerSignature,
+			},
 		},
 	}
 
-	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
+	// 直接输出裸 JSON 文档（无 success/code/data 包装），与脚本产物文件结构完全一致
+	c.JSON(http.StatusOK, resp)
 }
 
 // vcAttestationDigest 构造 DiscloseVcAttestation 签名摘要。
