@@ -1817,9 +1817,75 @@ curl -X POST http://localhost:8080/api/util/vc-attestation \
 
 ---
 
+#### 36. 设置 Mock 返回内容
+
+- **方法**: `POST`
+- **路径**: `/api/util/mock/set`
+- **说明**: 测试用接口。请求体携带任意合法 JSON，服务端**字节级原样保存**（字段顺序、数字格式、缩进均保留），成功后返回一个**专属链接**（路径携带唯一 `id`），访问该链接即可原样获取本次设置的 JSON。内容保存在进程内存中，服务重启后失效。
+
+**请求参数**
+
+请求体为任意合法 JSON（对象、数组、字符串、数字、布尔、`null` 均可），无固定字段。
+
+**请求示例**
+
+```bash
+curl -X POST http://localhost:8080/api/util/mock/set \
+  -H "Content-Type: application/json" \
+  -d '{"anyKey":"任意JSON，原样返回","nested":{"a":1}}'
+```
+
+**响应示例**
+
+```json
+{
+  "id": "1f2a3b4c5d6e7f8090a1b2c3d4e5f6070",
+  "url": "http://localhost:8080/api/util/mock/1f2a3b4c5d6e7f8090a1b2c3d4e5f6070"
+}
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 本次设置的唯一标识（32 位 hex） |
+| `url` | string | 专属访问链接，GET 该链接原样返回本次设置的 JSON |
+
+> 错误响应（如请求体为空或非法 JSON）仍为统一的 `success/code/message` 包装结构。
+
+---
+
+#### 37. 获取 Mock 返回内容
+
+- **方法**: `GET`
+- **路径**: `/api/util/mock/:id`
+- **说明**: 测试用接口。通过 `POST /api/util/mock/set` 返回的专属链接（或 `id`）获取对应的内容，**字节级原样返回**（与设置时一致，无 `success/code/data` 包装）。
+
+**路径参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `id` | string | 是 | `POST /api/util/mock/set` 返回的唯一标识 |
+
+**请求示例**
+
+```bash
+curl http://localhost:8080/api/util/mock/1f2a3b4c5d6e7f8090a1b2c3d4e5f6070
+```
+
+**响应示例**
+
+即对应 id 设置的原始 JSON，例如：
+
+```json
+{"anyKey":"任意JSON，原样返回","nested":{"a":1}}
+```
+
+> 若 `id` 不存在，返回 `404`，响应为 `{"success":false,"code":404,"message":"mock response \"xxx\" not found: call POST /api/util/mock/set first"}`。
+
+---
+
 ### 九、IDL 元数据
 
-#### 36. 获取 IDL 元数据
+#### 38. 获取 IDL 元数据
 
 - **方法**: `GET`
 - **路径**: `/api/idl/metadata`
@@ -1979,6 +2045,8 @@ curl http://localhost:8080/api/idl/metadata
 | 33 | POST | `/api/util/sign` | 签名消息 |
 | 34 | POST | `/api/util/verify` | 验签 |
 | 35 | POST | `/api/util/vc-attestation` | 生成 VC 凭证参数（DiscloseVcAttestation） |
-| 36 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
+| 36 | POST | `/api/util/mock/set` | 设置 Mock 返回内容，返回专属链接（测试用） |
+| 37 | GET | `/api/util/mock/:id` | 按 ID 返回 Mock 内容（原样返回） |
+| 38 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
 
-**统计**：共 36 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 6、合约 9、RPC 4、水龙头 2、工具 5、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 38 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 6、合约 9、RPC 4、水龙头 2、工具 7、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。

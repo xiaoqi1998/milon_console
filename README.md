@@ -268,6 +268,8 @@ curl http://localhost:8080/api/idl/metadata
 | `POST` | `/api/util/sign` | 服务端签名，需启用 `ENABLE_UTIL_SIGN=true` |
 | `POST` | `/api/util/verify` | 验证签名 |
 | `POST` | `/api/util/vc-attestation` | 生成 VC 凭证参数（DiscloseVcAttestation） |
+| `POST` | `/api/util/mock/set` | 设置 Mock 返回内容，返回专属链接（测试用，任意 JSON） |
+| `GET` | `/api/util/mock/:id` | 按 ID 返回 Mock 内容（原样返回） |
 
 ### IDL
 

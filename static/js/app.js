@@ -62,6 +62,10 @@ const ENDPOINTS = [
       credentialName: 'KycLevel Credential',
       credentialDesc: 'A mock KYC credential for testing the DID web upload flow.'
     }, null, 2) },
+  { id: 'mock-set', method: 'POST', path: '/api/util/mock/set', summary: '设置Mock返回内容,返回专属链接', group: '工具',
+    bodyTemplate: JSON.stringify({ anyKey: '任意JSON，原样返回' }, null, 2) },
+  { id: 'mock-get', method: 'GET', path: '/api/util/mock/:id', summary: '按ID获取Mock返回内容(原样返回)', group: '工具',
+    pathParams: [{ name: 'id', ph: 'set 返回的 mock id' }] },
   { id: 'faucet-claim', method: 'POST', path: '/api/faucet/claim', summary: '领取水龙头代币', group: '水龙头',
     bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址', signatureMode: { type: 'pubkey', publicKey: 'base58公钥' } }, null, 2) },
   { id: 'faucet-balance', method: 'GET', path: '/api/faucet/balance/:address', summary: '查询MIL余额', group: '水龙头',
