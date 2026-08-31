@@ -51,6 +51,17 @@ const ENDPOINTS = [
     bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', message: 'hex编码或明文', keyType: 'secp256k1' }, null, 2) },
   { id: 'verify', method: 'POST', path: '/api/util/verify', summary: '验签', group: '工具',
     bodyTemplate: JSON.stringify({ publicKey: 'base58公钥', message: 'hex编码或明文', signature: 'hex签名', keyType: 'secp256k1' }, null, 2) },
+  { id: 'vc-attestation', method: 'POST', path: '/api/util/vc-attestation', summary: '生成VC凭证参数(DiscloseVcAttestation)', group: '工具',
+    bodyTemplate: JSON.stringify({
+      issuerPrivateKey: 'hex或base58私钥',
+      subjectPrivateKey: 'hex私钥(与subjectAddress二选一)',
+      subjectAddress: 'base58地址(与subjectPrivateKey二选一)',
+      credentialSchema: 'KycLevelCredential',
+      credentialJson: '{"credentialSubject":{"id":"did:milon:subject","kycLevel":2},"id":"urn:uuid:12345678-1234-5678-1234-567812345678","issuer":"did:milon:issuer","type":["VerifiableCredential","KycLevelCredential"]}',
+      validUntil: '2027-08-24T00:00:00.000Z',
+      credentialName: 'KycLevel Credential',
+      credentialDesc: 'A mock KYC credential for testing the DID web upload flow.'
+    }, null, 2) },
   { id: 'faucet-claim', method: 'POST', path: '/api/faucet/claim', summary: '领取水龙头代币', group: '水龙头',
     bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址', signatureMode: { type: 'pubkey', publicKey: 'base58公钥' } }, null, 2) },
   { id: 'faucet-balance', method: 'GET', path: '/api/faucet/balance/:address', summary: '查询MIL余额', group: '水龙头',

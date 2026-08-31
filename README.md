@@ -267,6 +267,7 @@ curl http://localhost:8080/api/idl/metadata
 | `POST` | `/api/util/key/derive-public` | 从私钥派生公钥 |
 | `POST` | `/api/util/sign` | 服务端签名，需启用 `ENABLE_UTIL_SIGN=true` |
 | `POST` | `/api/util/verify` | 验证签名 |
+| `POST` | `/api/util/vc-attestation` | 生成 VC 凭证参数（DiscloseVcAttestation） |
 
 ### IDL
 

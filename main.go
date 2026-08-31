@@ -36,6 +36,7 @@ func main() {
 	rpcHandler := handler.NewRpcHandler(nm)
 	contractHandler := handler.NewContractHandler(nm)
 	utilHandler := handler.NewUtilHandler(cfg.EnableUtilSign)
+	vcAttestationHandler := handler.NewVcAttestationHandler()
 	faucetHandler := handler.NewFaucetHandler(nm)
 	viewHandler := handler.NewViewSingleHandler(nm)
 	resourcePathHandler := handler.NewResourcePathHandler(nm)
@@ -93,6 +94,9 @@ func main() {
 		api.POST("/util/key/derive-public", utilHandler.DerivePublicKey)
 		api.POST("/util/sign", utilHandler.SignMessage)
 		api.POST("/util/verify", utilHandler.VerifySignature)
+
+		// VC attestation (generate DiscloseVcAttestation credential args)
+		api.POST("/util/vc-attestation", vcAttestationHandler.GenerateVcAttestation)
 
 		// Faucet (gas claim and balance)
 		api.POST("/faucet/claim", faucetHandler.ClaimFaucet)
@@ -158,6 +162,7 @@ func main() {
 	fmt.Println("    POST /api/util/key/derive-public  - Derive public key from private key")
 	fmt.Println("    POST /api/util/sign               - Sign message (requires ENABLE_UTIL_SIGN)")
 	fmt.Println("    POST /api/util/verify             - Verify signature")
+	fmt.Println("    POST /api/util/vc-attestation     - Generate DiscloseVcAttestation credential args")
 	fmt.Println("    POST /api/faucet/claim            - Claim faucet tokens")
 	fmt.Println("    GET  /api/faucet/balance/:address - Get MIL balance")
 	fmt.Println("    POST /api/view/single             - Low-level single view")

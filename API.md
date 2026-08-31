@@ -1733,9 +1733,95 @@ curl -X POST http://localhost:8080/api/util/verify \
 
 ---
 
+#### 35. 生成 VC 凭证参数（DiscloseVcAttestation）
+
+- **方法**: `POST`
+- **路径**: `/api/util/vc-attestation`
+- **说明**: 生成 Milon KYC 认证凭证（DiscloseVcAttestation）参数。算法与 TS 参考实现（`examples/identity/disclose_vc_attestation.ts`）及 `scripts/generate_vc_attestation.py` 严格一致，可直接用于构造链上 `/api/write` 的凭证上传参数。返回 `milon-vc-disclosure` 包装格式。
+
+**请求参数**
+
+| 字段 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `issuerPrivateKey` | string | 是 | issuer 私钥（hex，32 字节） |
+| `subjectPrivateKey` | string | 条件必填 | subject 私钥（hex），与 `subjectAddress` 二选一 |
+| `subjectAddress` | string | 条件必填 | subject 地址（base58，20 字节），与 `subjectPrivateKey` 二选一 |
+| `chainId` | number | 否 | 链 ID，缺省 `900000001` |
+| `issuerKeyId` | number | 否 | issuer 密钥索引，缺省 `0` |
+| `credentialSchema` | string | 否 | 凭证 schema，缺省 `KycLevelCredential` |
+| `credentialJson` | string | 否 | 凭证规范化 JSON 字符串（对其做 sha256 得到 `credential_hash`），缺省为内置 KYC 测试凭证 |
+| `validUntilMs` | number | 否 | 有效期毫秒时间戳；显式传入时优先于 `validUntil`（传 `0` 表示不过期） |
+| `validUntil` | string | 否 | 有效期 ISO8601（如 `2027-08-24T00:00:00.000Z`），与 `validUntilMs` 二选一，缺省 `1900000000000` ms |
+| `credentialName` | string | 否 | 凭证展示名称（写入 `credential.name`） |
+| `credentialDesc` | string | 否 | 凭证描述（写入 `credential.description`） |
+| `issuedAt` | string | 否 | 签发时间 ISO8601，缺省取当前 UTC |
+
+**请求示例（私钥模式）**
+
+```bash
+curl -X POST http://localhost:8080/api/util/vc-attestation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "issuerPrivateKey":"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "subjectPrivateKey":"202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
+    "credentialSchema":"KycLevelCredential",
+    "validUntil":"2027-08-24T00:00:00.000Z",
+    "credentialName":"KycLevel Credential",
+    "credentialDesc":"A mock KYC credential for testing the DID web upload flow."
+  }'
+```
+
+**请求示例（地址模式）**
+
+```bash
+curl -X POST http://localhost:8080/api/util/vc-attestation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "issuerPrivateKey":"b8df85948dbd37335d137f6772b3c90bf1868d5e3288ce2242f3357624422555",
+    "subjectAddress":"48QWpGsZpXJV3rdRvsiQb4iGzBW",
+    "credentialSchema":"asdasd"
+  }'
+```
+
+**响应示例**
+
+```json
+{
+  "success": true,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "format": "milon-vc-disclosure",
+    "version": 1,
+    "credential": {
+      "name": "KycLevel Credential",
+      "description": "A mock KYC credential for testing the DID web upload flow.",
+      "issued_at": "2026-08-31T00:00:00.000Z",
+      "valid_until": "2027-08-24T00:00:00.000Z"
+    },
+    "disclosure": {
+      "app": "Identity",
+      "method": "DiscloseVcAttestation",
+      "args": {
+        "subject": "48QWpGsZpXJV3rdRvsiQb4iGzBW",
+        "issuer": "3pHqrfVpw4ziiWZ2S6graADk8sXu",
+        "issuer_key_id": 0,
+        "credential_schema": "KycLevelCredential",
+        "credential_hash": [207, 192, 54, 52, 222, 3, 142, 255, 94, 254, 101, 124, 255, 7, 166, 9, 151, 50, 145, 56, 67, 0, 99, 177, 66, 93, 145, 212, 221, 53, 128, 127],
+        "valid_until_ms": 1819065600000,
+        "issuer_signature": "ce58f196aece3c8a1fcca9a553f7cfed8f00414d23d9607856acf4015d064085372629b6f71bd2d08f3461eb8cb3aa0ee05e5a3058ce40d3fa252d46c7f8ff08"
+      }
+    }
+  },
+  "timestamp": "2026-08-31T10:00:00+08:00"
+}
+```
+
+---
+
 ### 九、IDL 元数据
 
-#### 35. 获取 IDL 元数据
+#### 36. 获取 IDL 元数据
 
 - **方法**: `GET`
 - **路径**: `/api/idl/metadata`
@@ -1894,6 +1980,7 @@ curl http://localhost:8080/api/idl/metadata
 | 32 | POST | `/api/util/key/derive-public` | 从私钥派生公钥 |
 | 33 | POST | `/api/util/sign` | 签名消息 |
 | 34 | POST | `/api/util/verify` | 验签 |
-| 35 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
+| 35 | POST | `/api/util/vc-attestation` | 生成 VC 凭证参数（DiscloseVcAttestation） |
+| 36 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
 
-**统计**：共 35 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 6、合约 9、RPC 4、水龙头 2、工具 4、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 36 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 6、合约 9、RPC 4、水龙头 2、工具 5、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
