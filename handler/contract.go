@@ -151,7 +151,7 @@ func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, types.SuccessResponse(result.HTTPResponseBody, "ok"))
+	c.JSON(http.StatusOK, types.SuccessResponse(hexEncodeRaw(result.HTTPResponseBody), "ok"))
 }
 
 // simulateContractRequest is the request body for POST /api/simulate.

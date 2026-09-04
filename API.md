@@ -878,17 +878,14 @@ curl -X POST http://localhost:8080/api/read/multi \
 
 **响应示例**
 
+`data` 为 `0x` 前缀的 hex 字符串，内容是 postcard 编码的原始返回值（可用 IDL 工具离线解码）。
+
 ```json
 {
   "success": true,
   "code": 0,
   "message": "ok",
-  "data": {
-    "results": [
-      {"value": "1000000000"},
-      {"value": "100000000000"}
-    ]
-  },
+  "data": "0x0100000002000000a0860100...",
   "timestamp": "2026-07-23T10:00:00+08:00"
 }
 ```
@@ -1235,14 +1232,14 @@ curl -X POST http://localhost:8080/api/view/single \
 
 **响应示例**
 
+`data` 为 `0x` 前缀的 hex 字符串，内容是 postcard 编码的原始返回值。
+
 ```json
 {
   "success": true,
   "code": 0,
   "message": "ok",
-  "data": {
-    "value": "1000000000"
-  },
+  "data": "0x0100000002000000a0860100...",
   "timestamp": "2026-07-23T10:00:00+08:00"
 }
 ```
@@ -1271,17 +1268,14 @@ curl -X POST http://localhost:8080/api/view/multi \
 
 **响应示例**
 
+`data` 为 `0x` 前缀的 hex 字符串，内容是 postcard 编码的原始返回值（多条指令的结果按序拼接）。
+
 ```json
 {
   "success": true,
   "code": 0,
   "message": "ok",
-  "data": {
-    "results": [
-      {"value": "1000000000"},
-      {"value": "100000000000"}
-    ]
-  },
+  "data": "0x0100000002000000a0860100...",
   "timestamp": "2026-07-23T10:00:00+08:00"
 }
 ```

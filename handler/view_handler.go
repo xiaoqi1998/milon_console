@@ -83,7 +83,8 @@ func (h *ViewSingleHandler) ViewSingle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, types.SuccessResponse(result.HTTPResponseBody, "ok"))
+	// View 的响应体是 postcard 二进制，hex 编码返回（直接放 []byte 会被 JSON 编成 base64）。
+	c.JSON(http.StatusOK, types.SuccessResponse(hexEncodeRaw(result.HTTPResponseBody), "ok"))
 }
 
 // ViewMulti handles POST /api/view/multi
@@ -120,5 +121,5 @@ func (h *ViewSingleHandler) ViewMulti(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, types.SuccessResponse(result.HTTPResponseBody, "ok"))
+	c.JSON(http.StatusOK, types.SuccessResponse(hexEncodeRaw(result.HTTPResponseBody), "ok"))
 }

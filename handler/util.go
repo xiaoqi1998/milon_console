@@ -290,6 +290,13 @@ func decodeMessageFlexible(s string) []byte {
 	return []byte(s)
 }
 
+// hexEncodeRaw encodes raw postcard response bytes as a 0x-prefixed hex string.
+// Returning []byte directly would JSON-marshal as opaque base64; hex keeps the
+// binary decodable by IDL tooling.
+func hexEncodeRaw(b []byte) string {
+	return "0x" + hex.EncodeToString(b)
+}
+
 // derivePublicKeyByType derives the public key from a secret key based on keyType.
 func derivePublicKeyByType(sk crypto.SecretKeyer, keyType string) (*crypto.PublicKey, error) {
 	switch keyType {
