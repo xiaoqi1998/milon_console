@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -66,23 +65,15 @@ func (h *ResourcePathHandler) GetResourcePathByHash(c *gin.Context) {
 		return
 	}
 
-	// The SDK returns raw HTTP body bytes; parse as a single-element list.
-	var rawList [][]any
-	if err := json.Unmarshal(result.HTTPResponseBody, &rawList); err != nil {
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to parse resource path response: "+err.Error(), nil))
-		return
-	}
-
-	list, err := api.UnmarshalListResourcePathListFromRawList(rawList)
-	if err != nil || len(list) == 0 {
+	// The SDK parses the body (a bare JSON string) into result.Path.
+	if result.Path == "" {
 		c.JSON(http.StatusNotFound, types.ErrorResponse(types.ERR_NOT_FOUND, "resource path not found for hash: "+hashStr, nil))
 		return
 	}
 
-	item := list[0]
 	resp := getResourcePathResponse{
-		RsHash: hex.EncodeToString(item.RsHash[:]),
-		Path:   item.Path,
+		RsHash: hex.EncodeToString(rsHash[:]),
+		Path:   result.Path,
 	}
 
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
