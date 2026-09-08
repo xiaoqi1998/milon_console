@@ -584,9 +584,17 @@ func (h *SavedInstructionHandler) buildSimulateTx(item *SavedInstruction, instru
 		if err != nil {
 			return nil, err
 		}
-		return lib.NewTransactionBuilder(instructions).
-			AddSimulateIxesSig(addr, []uint8{0}, true, mode).
+		tx, err := lib.NewTransactionBuilder(instructions).
+			WithPayer(&addr).
+			AddSimulateIxAndPayerSig(addr, 0, mode).
 			Build()
+		if err != nil {
+			return nil, err
+		}
+		if err := tx.ValidateWire(); err != nil {
+			return nil, fmt.Errorf("transaction validation failed: %w", err)
+		}
+		return tx, nil
 
 	default:
 		return nil, fmt.Errorf("unsupported paymentMode for simulate: %s", item.PaymentMode)
@@ -664,12 +672,13 @@ func (h *SavedInstructionHandler) buildSignedTx(item *SavedInstruction, instruct
 			return nil, fmt.Errorf("invalid ownerPrivateKey: %w", err)
 		}
 		tx, err := lib.NewTransactionBuilder(instructions).
-			AddIxesSig(addr, sk, []uint8{0}, true, mode).
+			WithPayer(&addr).
+			AddIxAndPayerSig(addr, sk, 0, mode).
 			Build()
 		if err != nil {
 			return nil, err
 		}
-		if err := tx.ValidateWireWith([]uint8{0}); err != nil {
+		if err := tx.ValidateWire(); err != nil {
 			return nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
 		return tx, nil

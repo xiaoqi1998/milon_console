@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
+	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/provider"
 )
@@ -66,36 +67,13 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 
 	mc, _ := h.nm.GetCurrent()
 
-	// Build a SplitPayerSelfPay ClaimFaucet transaction (aligned with SDK rpcClientV1.ClaimFaucet):
-	// no payer; the claimer signs its own ix bit (bit0) and gas bit (bit63).
-	pd, ok := mc.GetAllPd()["token"]
-	if !ok {
-		logSDKError(c, "ClaimFaucet", fmt.Errorf("token IDL not found"))
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to load token IDL", nil))
-		return
-	}
-	wire, err := pd.Encode("ClaimFaucet", provider.Args{"claimer": addr})
+	tx, err := buildClaimFaucetTx(mc, addr, sk, mode)
 	if err != nil {
 		logSDKError(c, "ClaimFaucet", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to encode ClaimFaucet: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, err.Error(), nil))
 		return
 	}
-
-	requestId := lib.RequestID(time.Now().UnixMilli())
-	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
-		AddIxesSig(addr, sk, []uint8{0}, false, mode).
-		Build()
-	if err != nil {
-		logSDKError(c, "ClaimFaucet", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to create tx: "+err.Error(), nil))
-		return
-	}
-	if err := tx.ValidateWire(); err != nil {
-		logSDKError(c, "ClaimFaucet", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "transaction validation failed: "+err.Error(), nil))
-		return
-	}
-	if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+	if err := submitClaimFaucetTx(mc, tx); err != nil {
 		logSDKError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to claim faucet: "+err.Error(), nil))
 		return
@@ -122,6 +100,41 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 		"claimed": true,
 		"txHash":  txHash,
 	}, "ok"))
+}
+
+// buildClaimFaucetTx builds the sponsored ClaimFaucet transaction the way the SDK
+// intends: SplitPayerSelfPay with no gas signer (the claimer signs only ix bit0),
+// because claim_faucet is sponsor=true in the IDL and the devNet node honors it
+// (verified by probe: split tx + SubmitTxWithSponsorIxes([0]) confirms on-chain).
+//
+// NOTE: SDK rpcClientV1.ClaimFaucet builds this same tx but submits it via
+// SubmitTx, whose internal ValidateWire (non-sponsored) rejects the gas-signer-less
+// form with "gas signer required for ix 0". Use submitClaimFaucetTx instead.
+func buildClaimFaucetTx(mc *milon.Client, addr crypto.Address, sk crypto.SecretKeyer, mode lib.AccountSignatureMode) (*lib.Transaction, error) {
+	pd, ok := mc.GetAllPd()["token"]
+	if !ok {
+		return nil, fmt.Errorf("token IDL not found")
+	}
+	wire, err := pd.Encode("ClaimFaucet", provider.Args{"claimer": addr})
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode ClaimFaucet: %w", err)
+	}
+
+	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		AddIxesSig(addr, sk, []uint8{0}, false, mode).
+		Build()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tx: %w", err)
+	}
+	if err := tx.ValidateWireWith([]uint8{0}); err != nil {
+		return nil, fmt.Errorf("transaction validation failed: %w", err)
+	}
+	return tx, nil
+}
+
+// submitClaimFaucetTx submits a sponsored ClaimFaucet tx with ix0 marked sponsored.
+func submitClaimFaucetTx(mc *milon.Client, tx *lib.Transaction) error {
+	return mc.SubmitTxWithSponsorIxes(tx, []uint8{0}, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli())))
 }
 
 // GetBalance handles GET /api/faucet/balance/:address

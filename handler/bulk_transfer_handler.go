@@ -223,9 +223,18 @@ func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *cryp
 
 	mode := lib.PubKeySignatureMode{PublicKey: *pk}
 
-	// 1. 领水（claim_faucet 为 sponsor 交易，固定发放 10000 MIL）
-	if err := mc.ClaimFaucet(sk, account, mode); err != nil {
+	// 1. 领水（统一 payer 模式构建；SDK 新版 ClaimFaucet 的无 gas 签名形式当前 devNet 不接受）
+	claimTx, err := buildClaimFaucetTx(mc, *account, sk, mode)
+	if err != nil {
 		res.Error = "claim faucet: " + err.Error()
+		return res
+	}
+	if err := submitClaimFaucetTx(mc, claimTx); err != nil {
+		res.Error = "claim faucet submit: " + err.Error()
+		return res
+	}
+	if _, err := mc.WaitForTransaction(txHashHex(claimTx), milon.WithWaitRequestID(lib.RequestID(1))); err != nil {
+		res.Error = "claim faucet wait: " + err.Error()
 		return res
 	}
 
