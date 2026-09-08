@@ -213,6 +213,8 @@ func decodePostcardBody[T any](body []byte, name string, resolver postcard.TypeR
 		return nil, fmt.Errorf("%T does not implement postcard.Unmarshaler", &value)
 	}, false, resolver)
 	if err != nil {
+		fmt.Printf("body %v: \n", body)
+
 		return nil, fmt.Errorf("failed to deserialize %s: %w", name, err)
 	}
 	return decoded, nil
@@ -253,13 +255,12 @@ func (c *rpcClientV1) ClaimFaucet(accountSk crypto.SecretKeyer, account *crypto.
 		return fmt.Errorf("failed to encode instruction: %w", err)
 	}
 
-	// 2. UnifiedPayer mode: account is the payer; it signs the ix bit (bit0) and the gas bit (bit63).
+	// 2. SplitPayerSelfPay mode: no payer; each executor signs its own ix bit(s) and gas bit (bit63).
 	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
-		WithPayer(account).
-		AddIxAndPayerSig(*account, accountSk, 0, mode).
+		AddIxesSig(*account, accountSk, []uint8{0}, false, mode).
 		Build()
 	if err != nil {
-		return fmt.Errorf("failed to build unified payer transaction: %w", err)
+		return fmt.Errorf("failed to build split transaction: %w", err)
 	}
 
 	// 3. Submit the transaction to the chain
@@ -313,7 +314,7 @@ func (c *rpcClientV1) CreateAccount(accountSk crypto.SecretKeyer, pk *crypto.Pub
 	return nil
 }
 
-func (c *rpcClientV1) BalanceOf(account *crypto.Address) (uint64, error) {
+func (c *rpcClientV1) BalanceOf(account *crypto.Address, token ...any) (uint64, error) {
 	wire, err := gen.Token.BalanceOf.Args(api.MILToken, account).Encode()
 	if err != nil {
 		return 0, fmt.Errorf("failed to encode BalanceOf instruction: %w", err)
@@ -373,6 +374,20 @@ func (c *rpcClientV1) AccountSignerBit(account *crypto.Address) (types.Bitmap64,
 		return types.NewBitmap64(0), fmt.Errorf("account %v bitmap %#x has multiple signer slots; use multisig signing instead", account, bm)
 	}
 	return types.NewBitmap64(lowest), nil
+}
+
+func (c *rpcClientV1) TokenMetadata(token *crypto.Address) (gen.TokenMetadata, error) {
+	wire, err := gen.Token.Metadata.Args(token).Encode()
+	if err != nil {
+		return gen.TokenMetadata{}, fmt.Errorf("failed to encode TokenMetadata instruction: %w", err)
+	}
+
+	viewTxResult, err := c.View([]api.PackedInstruction{wire})
+	if err != nil {
+		return gen.TokenMetadata{}, fmt.Errorf("failed to view TokenMetadata: %w", err)
+	}
+
+	return gen.Token.Metadata.DecodeView(viewTxResult.HTTPResponseBody)
 }
 
 func (c *rpcClientV1) GetChainHead(opts ...RequestOption) (*ChainHeadResult, error) {

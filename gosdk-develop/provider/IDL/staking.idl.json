@@ -87,6 +87,24 @@
     {
       "args": [
         {
+          "name": "operator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 62003,
+      "handler": "declare_validator_availability",
+      "kind": "entry",
+      "name": "DeclareValidatorAvailability"
+    },
+    {
+      "args": [
+        {
           "name": "funder",
           "role": "signer",
           "type": "Signer"
@@ -305,58 +323,6 @@
           "type": "u64"
         }
       ],
-      "discriminator": 54522,
-      "handler": "active_set_snapshot",
-      "kind": "view",
-      "name": "ActiveSetSnapshot",
-      "returns": {
-        "type": "ActiveSetSnapshot"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "epoch",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 41226,
-      "handler": "active_set_hash",
-      "kind": "view",
-      "name": "ActiveSetHash",
-      "returns": {
-        "type": "B256"
-      }
-    },
-    {
-      "args": [],
-      "discriminator": 44040,
-      "handler": "current_active_set_snapshot",
-      "kind": "view",
-      "name": "CurrentActiveSetSnapshot",
-      "returns": {
-        "type": "ActiveSetSnapshot"
-      }
-    },
-    {
-      "args": [],
-      "discriminator": 58924,
-      "handler": "current_active_set_hash",
-      "kind": "view",
-      "name": "CurrentActiveSetHash",
-      "returns": {
-        "type": "B256"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "epoch",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
       "discriminator": 24093,
       "handler": "epoch_transition",
       "kind": "view",
@@ -419,122 +385,12 @@
           "type": "u64"
         }
       ],
-      "discriminator": 13587,
-      "handler": "epoch_transition_attempt",
+      "discriminator": 13153,
+      "handler": "list_declared_validators_for_epoch",
       "kind": "view",
-      "name": "EpochTransitionAttempt",
+      "name": "ListDeclaredValidatorsForEpoch",
       "returns": {
-        "type": "EpochTransitionAttempt"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "epoch",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 54057,
-      "handler": "consensus_active_set",
-      "kind": "view",
-      "name": "ConsensusActiveSet",
-      "returns": {
-        "type": "ConsensusActiveSet"
-      }
-    },
-    {
-      "args": [],
-      "discriminator": 45423,
-      "handler": "current_consensus_active_set",
-      "kind": "view",
-      "name": "CurrentConsensusActiveSet",
-      "returns": {
-        "type": "ConsensusActiveSet"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "epoch",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "index",
-          "role": "input",
-          "type": "u16"
-        }
-      ],
-      "discriminator": 41871,
-      "handler": "consensus_active_validator",
-      "kind": "view",
-      "name": "ConsensusActiveValidator",
-      "returns": {
-        "type": "option<ConsensusActiveValidator>"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "epoch",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "validator",
-          "role": "input",
-          "type": "Address"
-        }
-      ],
-      "discriminator": 1580,
-      "handler": "consensus_active_validator_index",
-      "kind": "view",
-      "name": "ConsensusActiveValidatorIndex",
-      "returns": {
-        "type": "option<u16>"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "epoch",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "consensus_pubkey",
-          "role": "input",
-          "type": "bytes"
-        }
-      ],
-      "discriminator": 45763,
-      "handler": "consensus_active_validator_index_by_pubkey",
-      "kind": "view",
-      "name": "ConsensusActiveValidatorIndexByPubkey",
-      "returns": {
-        "type": "option<u16>"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "epoch",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "bitmap",
-          "role": "input",
-          "type": "Bitmap64"
-        }
-      ],
-      "discriminator": 60094,
-      "handler": "consensus_active_validators_by_bitmap",
-      "kind": "view",
-      "name": "ConsensusActiveValidatorsByBitmap",
-      "returns": {
-        "type": "vec<ConsensusActiveValidator>"
+        "type": "vec<Address>"
       }
     }
   ],
@@ -579,22 +435,6 @@
         {
           "name": "status",
           "type": "ValidatorStatus"
-        },
-        {
-          "name": "consensus_account",
-          "type": "Address"
-        },
-        {
-          "name": "consensus_pubkey",
-          "type": "bytes"
-        },
-        {
-          "name": "bls_pubkey",
-          "type": "bytes"
-        },
-        {
-          "name": "network_address",
-          "type": "bytes"
         },
         {
           "name": "commission_rate_bps",
@@ -771,6 +611,25 @@
     {
       "fields": [
         {
+          "name": "target_epoch",
+          "type": "u64"
+        },
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "operator",
+          "type": "Address"
+        }
+      ],
+      "kind": "struct",
+      "name": "ValidatorAvailabilityDeclaration",
+      "typeTag": 14461394089017771297
+    },
+    {
+      "fields": [
+        {
           "name": "owner",
           "type": "Address"
         },
@@ -870,27 +729,11 @@
         {
           "name": "validator",
           "type": "Address"
-        },
-        {
-          "name": "consensus_account",
-          "type": "Address"
-        },
-        {
-          "name": "consensus_pubkey",
-          "type": "bytes"
-        },
-        {
-          "name": "bls_pubkey",
-          "type": "bytes"
-        },
-        {
-          "name": "network_address",
-          "type": "bytes"
         }
       ],
       "kind": "struct",
-      "name": "ActiveValidator",
-      "typeTag": 1878336348468831574
+      "name": "EligibleValidator",
+      "typeTag": 18331887239788035103
     },
     {
       "fields": [
@@ -899,100 +742,7 @@
           "type": "u64"
         },
         {
-          "name": "validators",
-          "type": "vec<ActiveValidator>"
-        },
-        {
-          "name": "active_set_hash",
-          "type": "B256"
-        }
-      ],
-      "kind": "struct",
-      "name": "ActiveSetSnapshot",
-      "typeTag": 16680710260753693740
-    },
-    {
-      "fields": [
-        {
-          "name": "index",
-          "type": "u16"
-        },
-        {
-          "name": "validator",
-          "type": "Address"
-        },
-        {
-          "name": "consensus_account",
-          "type": "Address"
-        },
-        {
-          "name": "consensus_pubkey",
-          "type": "bytes"
-        },
-        {
-          "name": "bls_pubkey",
-          "type": "bytes"
-        },
-        {
-          "name": "network_address",
-          "type": "bytes"
-        }
-      ],
-      "kind": "struct",
-      "name": "ConsensusActiveValidator",
-      "typeTag": 13639300653826832831
-    },
-    {
-      "fields": [
-        {
-          "name": "epoch",
-          "type": "u64"
-        },
-        {
-          "name": "active_set_hash",
-          "type": "B256"
-        },
-        {
-          "name": "validator_count",
-          "type": "u16"
-        },
-        {
-          "name": "membership_bitmap",
-          "type": "Bitmap64"
-        },
-        {
-          "name": "validators",
-          "type": "vec<ConsensusActiveValidator>"
-        }
-      ],
-      "kind": "struct",
-      "name": "ConsensusActiveSet",
-      "typeTag": 2524037227760361881
-    },
-    {
-      "fields": [
-        {
-          "name": "epoch",
-          "type": "u64"
-        },
-        {
-          "name": "seed",
-          "type": "B256"
-        },
-        {
-          "name": "active_set_hash",
-          "type": "B256"
-        },
-        {
-          "name": "requested_active_validator_count",
-          "type": "u64"
-        },
-        {
-          "name": "selected_validators",
-          "type": "vec<Address>"
-        },
-        {
-          "name": "reward_per_active_validator",
+          "name": "reward_per_validator",
           "type": "u64"
         },
         {
@@ -1031,11 +781,7 @@
     {
       "fields": [
         {
-          "name": "max_active_validators",
-          "type": "u64"
-        },
-        {
-          "name": "reward_per_active_validator",
+          "name": "reward_per_validator",
           "type": "u64"
         }
       ],
@@ -1046,44 +792,13 @@
     {
       "fields": [
         {
-          "name": "current_epoch",
+          "name": "last_settled_epoch",
           "type": "u64"
-        },
-        {
-          "name": "last_transition_epoch",
-          "type": "option<u64>"
-        },
-        {
-          "name": "last_transition_seed",
-          "type": "option<B256>"
         }
       ],
       "kind": "struct",
       "name": "EpochState",
       "typeTag": 10464001984863153512
-    },
-    {
-      "fields": [
-        {
-          "name": "target_epoch",
-          "type": "u64"
-        },
-        {
-          "name": "selection_seed",
-          "type": "B256"
-        },
-        {
-          "name": "source_block_id",
-          "type": "u64"
-        },
-        {
-          "name": "source_chain_head_hash",
-          "type": "B256"
-        }
-      ],
-      "kind": "struct",
-      "name": "EpochTransitionAttempt",
-      "typeTag": 13704740057455383377
     },
     {
       "fields": [
@@ -1117,22 +832,6 @@
         {
           "name": "operator",
           "type": "Address"
-        },
-        {
-          "name": "consensus_account",
-          "type": "Address"
-        },
-        {
-          "name": "consensus_pubkey",
-          "type": "bytes"
-        },
-        {
-          "name": "bls_pubkey",
-          "type": "bytes"
-        },
-        {
-          "name": "network_address",
-          "type": "bytes"
         },
         {
           "name": "commission_rate_bps",
@@ -1192,24 +891,28 @@
     {
       "fields": [
         {
-          "name": "validators",
+          "name": "addresses",
           "type": "vec<Address>"
         }
       ],
       "kind": "struct",
-      "name": "IntentValidatorList",
-      "typeTag": 11852014671960702106
+      "name": "AddressList",
+      "typeTag": 14016723206793154190
     },
     {
       "fields": [
         {
-          "name": "owners",
-          "type": "vec<Address>"
+          "name": "initialized",
+          "type": "bool"
+        },
+        {
+          "name": "config",
+          "type": "EpochConfig"
         }
       ],
       "kind": "struct",
-      "name": "IntentPositionList",
-      "typeTag": 6096666708170842091
+      "name": "StoredEpochConfig",
+      "typeTag": 6676851746566294408
     },
     {
       "kind": "builtin",
@@ -1218,8 +921,8 @@
     },
     {
       "kind": "builtin",
-      "name": "Bitmap64",
-      "typeTag": 6259351211094536142
+      "name": "bool",
+      "typeTag": 14785269867199075517
     },
     {
       "kind": "builtin",
@@ -1230,11 +933,6 @@
       "kind": "builtin",
       "name": "u128",
       "typeTag": 10698497612269247729
-    },
-    {
-      "kind": "builtin",
-      "name": "u16",
-      "typeTag": 5558799945458185151
     },
     {
       "kind": "builtin",
@@ -1252,11 +950,6 @@
       "name": "MAX_COMMISSION_RATE_BPS",
       "type": "u64",
       "value": 10000
-    },
-    {
-      "name": "MAX_CONSENSUS_ACTIVE_VALIDATORS",
-      "type": "u64",
-      "value": 48
     },
     {
       "name": "MIN_CANDIDATE_POOL_STAKE",
@@ -1342,115 +1035,105 @@
     },
     {
       "code": 782,
-      "message": "Active set not found for epoch: {0}",
-      "name": "ActiveSetNotFound"
-    },
-    {
-      "code": 783,
       "message": "Invalid validator status for {0:?}: {1}",
       "name": "InvalidValidatorStatus"
     },
     {
-      "code": 784,
+      "code": 783,
       "message": "Staking position not found: owner {0:?}, validator {1:?}",
       "name": "PositionNotFound"
     },
     {
-      "code": 785,
+      "code": 784,
       "message": "Operator mismatch: signer {0:?}, expected {1:?}",
       "name": "OperatorMismatch"
     },
     {
-      "code": 786,
+      "code": 785,
       "message": "Candidate pool stake too low: validator {0:?}, pool stake {1}, required {2}",
       "name": "CandidatePoolStakeTooLow"
     },
     {
-      "code": 787,
+      "code": 786,
       "message": "Pending candidate intent already exists for validator: {0:?}",
       "name": "CandidateIntentAlreadyExists"
     },
     {
-      "code": 788,
+      "code": 787,
       "message": "Pending stake intent not found: owner {0:?}, validator {1:?}",
       "name": "StakeIntentNotFound"
     },
     {
-      "code": 789,
+      "code": 788,
       "message": "Insufficient pending stake: owner {0:?}, validator {1:?}, available {2}, required {3}",
       "name": "InsufficientPendingStake"
     },
     {
-      "code": 790,
+      "code": 789,
       "message": "Pending stake remaining below minimum: owner {0:?}, validator {1:?}, remaining {2}, minimum {3}",
       "name": "PendingStakeRemainingBelowMinimum"
     },
     {
-      "code": 791,
+      "code": 790,
       "message": "Insufficient shares: owner {0:?}, validator {1:?}, available {2}, required {3}",
       "name": "InsufficientShares"
     },
     {
-      "code": 792,
+      "code": 791,
       "message": "Unstake remaining below minimum: owner {0:?}, validator {1:?}, remaining {2}, minimum {3}",
       "name": "UnstakeRemainingBelowMinimum"
     },
     {
-      "code": 793,
+      "code": 792,
       "message": "Insufficient reward treasury available balance: available {0}, required {1}",
       "name": "InsufficientRewardTreasuryAvailable"
     },
     {
-      "code": 794,
+      "code": 793,
       "message": "Insufficient reward treasury reserved balance: reserved {0}, required {1}",
       "name": "InsufficientRewardTreasuryReserved"
     },
     {
-      "code": 795,
+      "code": 794,
       "message": "Reward treasury backing mismatch: liability {0}, backing {1}",
       "name": "RewardTreasuryBackingMismatch"
     },
     {
-      "code": 796,
+      "code": 795,
       "message": "Invalid parameters: {0}",
       "name": "InvalidParameters"
     },
     {
-      "code": 797,
+      "code": 796,
       "message": "Transparent TokenError",
       "name": "TokenError",
       "transparent": true
     },
     {
-      "code": 798,
+      "code": 797,
       "message": "Transparent ContextError",
       "name": "ContextError",
       "transparent": true
     },
     {
-      "code": 799,
+      "code": 798,
       "message": "Epoch transition not found for epoch: {0}",
       "name": "EpochTransitionNotFound"
     },
     {
-      "code": 800,
-      "message": "Epoch attempt not found: {0}",
-      "name": "EpochTransitionAttemptNotFound"
-    },
-    {
-      "code": 801,
+      "code": 799,
       "message": "Epoch transition inputs are frozen for epoch: {0}",
       "name": "EpochTransitionInProgress"
     },
     {
-      "code": 802,
-      "message": "Invalid epoch transition target: expected {0}, received {1}",
-      "name": "InvalidEpochTransitionTarget"
-    },
-    {
-      "code": 803,
+      "code": 800,
       "message": "Staking invariant violation: {0}",
       "name": "InvariantViolation"
+    },
+    {
+      "code": 801,
+      "message": "protocol epoch clock is not initialized",
+      "name": "EpochClockNotReady"
     }
   ]
 }

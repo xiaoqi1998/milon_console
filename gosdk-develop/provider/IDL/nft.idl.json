@@ -695,6 +695,81 @@
       "typeTag": 5563585020063213298
     }
   ],
+  "events": [
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "collection",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "mint",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "to",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "Mint",
+      "typeTag": 10926884981596779464
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "mint",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "from",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "to",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "Transfer",
+      "typeTag": 2798529235826269715
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "mint",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "Burn",
+      "typeTag": 9353914444262636941
+    }
+  ],
   "errors": [
     {
       "code": 1280,

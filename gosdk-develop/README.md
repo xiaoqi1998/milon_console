@@ -275,19 +275,20 @@ Provider 基于 IDL JSON 实现合约方法的序列化与反序列化，支持�
 ## RPC 方法
 
 | 方法 | MethodType | 说明 |
-|------|-----------|------|
-| `ChainHead` | 1 | 查询链头 |
-| `SubmitTx` | 2 | 提交交易 |
-| `SimulateTx` | 3 | 模拟执行 |
-| `View` | 4 | 只读查询 |
-| `GetResource` | 5 | 查询资源 |
-| `GetBlockByHeight` | 6 | 按高度查询区块 |
-| `GetTxByHash` | 7 | 按哈希查询交易 |
-| `GetAccount` | 8 | 查询账户 |
-| `EventsByTxHash` | 9 | 查询交易事件 |
-| `GetResourcePathByHash` | 11 | 按哈希查询资源路径 |
-| `GetAccessValue` | 12 | 查询外部访问值 |
-| `BatchGetResourcePathByHash` | 13 | 批量查询资源路径 |
+|------|------------|------|
+| `ChainHead` | 1          | 查询链头 |
+| `SubmitTx` | 5          | 提交交易 |
+| `SimulateTx` | 10         | 模拟执行 |
+| `View` | 15         | 只读查询 |
+| `GetAccount` | 20         | 查询账户 |
+| `EventsByTxHash` | 25         | 查询交易事件 |
+| `GetBlockByHeight` | 50         | 按高度查询区块 |
+| `GetTxByHash` | 55         | 按哈希查询交易 |
+| `GetTxHistoryProof` | 60         | 查询交易历史证明 |
+| `GetResource` | 150        | 查询资源 |
+| `GetResourcePathByHash` | 155        | 按哈希查询资源路径 |
+| `BatchGetResourcePathByHash` | 160        | 批量查询资源路径 |
+| `GetAccessValue` | 165        | 查询外部访问值 |
 
 ### Client 封装方法（可直接调用）
 
@@ -307,6 +308,7 @@ Provider 基于 IDL JSON 实现合约方法的序列化与反序列化，支持�
 | 链 | `GetChainHead(opts...)` | 查询链头 |
 | | `GetBlockByHeight(height, opts...)` | 按高度查询区块 |
 | | `GetTxByHash(txHash, opts...)` | 按哈希查询交易 |
+| | `GetTxHistoryProof(txHashOrTxId, opts...)` | 查询交易历史证明 |
 | | `GetAccount(address, opts...)` | 查询账户详情 |
 | | `EventsByTxHash(txHash, typeTagFilter, opts...)` | 查询交易事件（可按 type_tag 过滤） |
 | 资源 | `GetResource(rsHash, opts...)` | 查询资源 |

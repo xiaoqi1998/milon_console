@@ -271,6 +271,8 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 		return serializeAddress(serializer, value)
 	case "PublicKey":
 		return serializePublicKey(serializer, value)
+	case "Signature":
+		return serializeSignature(serializer, value)
 	case "String", "string":
 		return serializer.SerializeStr(fmt.Sprint(value))
 	case "bool", "boolean":
@@ -662,6 +664,40 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		}
 
 		return pk, nil
+	case "Signature":
+		// Signature: [variant(varint)] + [fixed-length data]
+		variantRaw, err := decodeViewVarUint(body, offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read Signature variant: %w", err)
+		}
+
+		var expectedLen int
+		switch crypto.SignatureType(uint32(variantRaw)) {
+		case crypto.SignatureTypeSecp256k1:
+			expectedLen = crypto.SignatureSecp256k1Size // 65
+		case crypto.SignatureTypeEd25519:
+			expectedLen = crypto.SignatureEd25519Size // 64
+		case crypto.SignatureTypeBLS12381:
+			expectedLen = crypto.SignatureBLS12381Size // 96
+		case crypto.SignatureTypeFnDsa512:
+			expectedLen = crypto.SignatureFnDsa512Size // 666
+		default:
+			return nil, fmt.Errorf("unknown signature variant: %d", variantRaw)
+		}
+
+		if *offset+expectedLen > len(body) {
+			return nil, fmt.Errorf("insufficient data for Signature bytes: expected %d, got %d", expectedLen, len(body)-*offset)
+		}
+		sigBytes := make([]byte, expectedLen)
+		copy(sigBytes, body[*offset:*offset+expectedLen])
+		*offset += expectedLen
+
+		sig, err := crypto.NewSignatureFromBytes(sigBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Signature from bytes: %w", err)
+		}
+
+		return sig, nil
 	case "String", "string":
 		// String: [len(varint)] + UTF-8 bytes
 		length, err := decodeViewVarUint(body, offset)
@@ -684,8 +720,12 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		*offset++
 		return val, nil
 	case "u8":
-		val, err := decodeViewVarUint(body, offset)
-		return uint8(val), err
+		if *offset >= len(body) {
+			return nil, fmt.Errorf("insufficient data for u8")
+		}
+		val := body[*offset]
+		*offset++
+		return val, nil
 	case "u16":
 		val, err := decodeViewVarUint(body, offset)
 		return uint16(val), err
@@ -1209,6 +1249,46 @@ func serializePublicKey(serializer *postcard.Serializer, value any) error {
 
 	// Then serialize byte data (fixed length, no length prefix)
 	serializer.SerializeFixedBytes(pk.Bytes)
+	return nil
+}
+
+func serializeSignature(serializer *postcard.Serializer, value any) error {
+	var sig *crypto.Signature
+	var err error
+
+	switch v := value.(type) {
+	case crypto.Signature:
+		sig = &v
+	case *crypto.Signature:
+		if v == nil {
+			return fmt.Errorf("nil Signature")
+		}
+		sig = v
+	case string:
+		sig, err = crypto.NewSignatureFromStringRelaxed(v)
+		if err != nil {
+			return fmt.Errorf("failed to parse signature from string: %w", err)
+		}
+	case []byte:
+		sig, err = crypto.NewSignatureFromBytes(v)
+		if err != nil {
+			return fmt.Errorf("failed to create Signature from bytes: %w", err)
+		}
+	default:
+		return fmt.Errorf("invalid type for Signature: %T", value)
+	}
+
+	if sig == nil {
+		return fmt.Errorf("signature is nil after parsing")
+	}
+
+	// First serialize Variant
+	if err = serializer.SerializeU32(uint32(sig.Variant)); err != nil {
+		return fmt.Errorf("failed to serialize signature variant: %w", err)
+	}
+
+	// Then serialize byte data (fixed length, no length prefix)
+	serializer.SerializeFixedBytes(sig.Bytes)
 	return nil
 }
 

@@ -249,7 +249,7 @@ func TestAccountSignature_AuthMessageForTx(t *testing.T) {
 
 func TestAccountSignature_IsVoteGateOnly(t *testing.T) {
 	t.Run("vote gate only - has ix auth bits", func(t *testing.T) {
-		authBit, err := lib.AuthIx(0)
+		authBit, err := lib.AuthVoteIxes([]uint8{0})
 		assert.NoError(t, err)
 
 		as := lib.Unsigned(authBit)
@@ -257,7 +257,7 @@ func TestAccountSignature_IsVoteGateOnly(t *testing.T) {
 	})
 
 	t.Run("vote gate only - multiple ix auth bits", func(t *testing.T) {
-		authBit, err := lib.AuthIxes([]uint8{0, 1, 2})
+		authBit, err := lib.AuthVoteIxes([]uint8{0, 1, 2})
 		assert.NoError(t, err)
 
 		as := lib.Unsigned(authBit)
@@ -270,8 +270,16 @@ func TestAccountSignature_IsVoteGateOnly(t *testing.T) {
 		assert.False(t, as.IsVoteGateOnly())
 	})
 
-	t.Run("not vote gate - has signatures", func(t *testing.T) {
+	t.Run("not vote gate - ix bits without vote bit", func(t *testing.T) {
 		authBit, err := lib.AuthIx(0)
+		assert.NoError(t, err)
+
+		as := lib.Unsigned(authBit)
+		assert.False(t, as.IsVoteGateOnly())
+	})
+
+	t.Run("not vote gate - has signatures", func(t *testing.T) {
+		authBit, err := lib.AuthVoteIxes([]uint8{0})
 		assert.NoError(t, err)
 
 		as := lib.AccountSignature{
@@ -287,7 +295,7 @@ func TestAccountSignature_IsVoteGateOnly(t *testing.T) {
 		sk := crypto.NewClassicalSecretKey()
 		pubKey := sk.(*crypto.ClassicalSecretKey).Ed25519Public()
 
-		authBit, err := lib.AuthIx(0)
+		authBit, err := lib.AuthVoteIxes([]uint8{0})
 		assert.NoError(t, err)
 
 		as := lib.AccountSignature{
@@ -300,7 +308,7 @@ func TestAccountSignature_IsVoteGateOnly(t *testing.T) {
 	})
 
 	t.Run("not vote gate - has sig_bit", func(t *testing.T) {
-		authBit, err := lib.AuthIx(0)
+		authBit, err := lib.AuthVoteIxes([]uint8{0})
 		assert.NoError(t, err)
 
 		as := lib.AccountSignature{
@@ -318,12 +326,76 @@ func TestAccountSignature_IsVoteGateOnly(t *testing.T) {
 		assert.False(t, as.IsVoteGateOnly())
 	})
 
-	t.Run("vote gate with payer and ix bits - still true", func(t *testing.T) {
-		authBit, err := lib.AuthIxAndPayer(0)
+	t.Run("vote gate only - with payer bit also set", func(t *testing.T) {
+		authBit, err := lib.AuthVoteIxes([]uint8{0})
 		assert.NoError(t, err)
+		authBit |= lib.AuthPayer()
 
 		as := lib.Unsigned(authBit)
 		assert.True(t, as.IsVoteGateOnly())
+	})
+}
+
+func TestAuthVoteIxes(t *testing.T) {
+	t.Run("sets ix bits and vote flag", func(t *testing.T) {
+		authBit, err := lib.AuthVoteIxes([]uint8{0, 3})
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(1)<<0|uint64(1)<<3|uint64(1)<<lib.AuthVoteBit, authBit.Raw())
+	})
+
+	t.Run("rejects reserved index", func(t *testing.T) {
+		_, err := lib.AuthVoteIxes([]uint8{lib.AuthVoteBit})
+		assert.Error(t, err)
+	})
+}
+
+func TestVoteBatchHash(t *testing.T) {
+	hashOf := func(seed byte) api.TxHash {
+		var h api.TxHash
+		for i := range h {
+			h[i] = seed
+		}
+		return h
+	}
+
+	t.Run("binds all ix hashes and auth subset", func(t *testing.T) {
+		h0, h1, h2 := hashOf(0x01), hashOf(0x02), hashOf(0x03)
+
+		auth01, err := lib.AuthIxes([]uint8{0, 1})
+		assert.NoError(t, err)
+		batch := lib.VoteBatchHash(auth01, []api.TxHash{h0, h1})
+		assert.NotEqual(t, api.TxHash{}, batch)
+		// fewer ix hashes -> different intent
+		assert.NotEqual(t, batch, lib.VoteBatchHash(auth01, []api.TxHash{h0}))
+		// extra ix hash -> different intent
+		assert.NotEqual(t, batch, lib.VoteBatchHash(auth01, []api.TxHash{h0, h1, h2}))
+		// different auth subset -> different intent
+		auth0, err := lib.AuthIx(0)
+		assert.NoError(t, err)
+		assert.NotEqual(t, batch, lib.VoteBatchHash(auth0, []api.TxHash{h0, h1}))
+	})
+
+	t.Run("vote flag bit does not change the intent", func(t *testing.T) {
+		h0, h1 := hashOf(0x11), hashOf(0x22)
+
+		authIx, err := lib.AuthIxes([]uint8{0, 1})
+		assert.NoError(t, err)
+		authVote, err := lib.AuthVoteIxes([]uint8{0, 1})
+		assert.NoError(t, err)
+
+		assert.Equal(t, lib.VoteBatchHash(authIx, []api.TxHash{h0, h1}), lib.VoteBatchHash(authVote, []api.TxHash{h0, h1}))
+	})
+
+	t.Run("matches the canonical hashing order", func(t *testing.T) {
+		h0, h1, h2 := hashOf(0xAA), hashOf(0xBB), hashOf(0xCC)
+
+		// auth subset {1,2}: all ix hashes (h0,h1,h2) then the subset (h1,h2)
+		auth12, err := lib.AuthIxes([]uint8{1, 2})
+		assert.NoError(t, err)
+		got := lib.VoteBatchHash(auth12, []api.TxHash{h0, h1, h2})
+
+		want := crypto.Hash32(crypto.VoteBatchHashDomainBytes, h0[:], h1[:], h2[:], h1[:], h2[:])
+		assert.Equal(t, api.TxHash(want), got)
 	})
 }
 

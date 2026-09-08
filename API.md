@@ -2,7 +2,7 @@
 
 ## 概述
 
-Milon API Server 将 Milon Go SDK 封装为一组 RESTful HTTP 接口，提供网络管理、账户管理、交易查询与提交、合约读写、RPC 访问、水龙头领水、密钥工具以及 IDL 元数据发现等能力，共计 **33** 个端点。
+Milon API Server 将 Milon Go SDK 封装为一组 RESTful HTTP 接口，提供网络管理、账户管理、交易查询与提交、合约读写、RPC 访问、水龙头领水、密钥工具以及 IDL 元数据发现等能力，共计 **39** 个端点。
 
 - **Base URL**: `http://localhost:8080`
 - **默认端口**: `8080`（可通过环境变量 `SERVER_PORT` 修改）
@@ -590,7 +590,118 @@ curl http://localhost:8080/api/transactions/a1b2c3d4e5f6...
 
 ---
 
-#### 10. 获取交易事件
+#### 10. 解析交易输出（IDL 解码）
+
+- **方法**: `GET`
+- **路径**: `/api/transactions/:hash/parse`
+- **说明**: 按哈希查询交易，并复刻 SDK `helper.DisplayTxHistory` 的解析逻辑，返回人类可读的解码结果：指令（instruction）按 IDL 解码为方法名与参数、访问记录快照按 `typeTag` 解码为 IDL 类型值、事件按 `typeTag` 解码。解码失败不会导致整包失败，单项通过 `decodeError` 字段报告。`?remote=true` 时会额外调用 RPC 获取每个 inline 写入资源的当前链上值（`current`）与 external blob 值（`accessValue`）并解码。
+
+**请求参数**
+
+| 字段 | 位置 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- | --- |
+| `hash` | path | string | 是 | 交易哈希（hex 或 base58 编码） |
+| `remote` | query | bool | 否 | 是否拉取链上当前值并解码，默认 `false` |
+
+**请求示例**
+
+```bash
+curl "http://localhost:8080/api/transactions/a1b2c3d4e5f6.../parse?remote=true"
+```
+
+**响应示例**
+
+```json
+{
+  "success": true,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "tx": {
+      "stamp": 1753230000,
+      "payer": 1,
+      "signatures": [],
+      "instructions": ["a1b2c3..."],
+      "receipt": {
+        "txId": "a1b2c3d4e5f6...",
+        "txHash": "a1b2c3d4e5f6...",
+        "state": 2,
+        "access": [],
+        "events": [],
+        "error": null,
+        "gasCharged": 1000
+      }
+    },
+    "instructions": [
+      {
+        "index": 0,
+        "hex": "0201a1b2c3...",
+        "decoded": {
+          "app_id": 2,
+          "app_name": "demo",
+          "instruction_name": "transfer",
+          "discriminator": 1,
+          "args": { "to": "Base58地址", "amount": "1000000" }
+        },
+        "formatted": "[demo] transfer\nStruct { ... }"
+      }
+    ],
+    "access": [
+      {
+        "index": 0,
+        "resourceId": "a1b2c3d4e5f6...",
+        "firstSnapshot": null,
+        "lastWritten": {
+          "variant": 0,
+          "variantName": "inline",
+          "typeTag": 1001,
+          "idlType": "Counter",
+          "dataHex": "deadbeef",
+          "decoded": { "value": "42" },
+          "current": {
+            "typeTag": 1001,
+            "dataHex": "deadbeef",
+            "idlType": "Counter",
+            "decoded": { "value": "43" }
+          }
+        }
+      }
+    ],
+    "events": [
+      {
+        "index": 0,
+        "typeTag": 2001,
+        "valueHex": "deadbeef",
+        "decoded": {
+          "app_id": 2,
+          "app_name": "demo",
+          "event_name": "Transferred",
+          "data": { "from": "Base58地址", "to": "Base58地址", "amount": "1000000" }
+        },
+        "formatted": "[demo] Transferred\nStruct { ... }"
+      }
+    ]
+  },
+  "timestamp": "2026-07-23T10:00:00+08:00"
+}
+```
+
+**响应字段说明**
+
+| 字段 | 说明 |
+| --- | --- |
+| `tx` | 原始交易历史，结构与 `/api/transactions/:hash` 的 `data` 相同 |
+| `instructions[].decoded` | 解码后的指令：`app_id`/`app_name`/`instruction_name`/`discriminator`/`args` |
+| `instructions[].formatted` | 与 SDK `FormatDecodedInstruction` 输出一致的格式化文本 |
+| `access[].firstSnapshot` / `lastWritten` | 快照解码结果；`variantName` 为 `inline` 或 `external`，`decoded` 为按 IDL 类型解码后的值（`u128`/`big.Int` 转十进制字符串，`Address`/`PublicKey` 转 base58，字节转 hex） |
+| `lastWritten.current` | 仅 `remote=true`：该资源当前链上值及其解码结果 |
+| `lastWritten.accessValue` | 仅 `remote=true`：external blob 的取回值及其解码结果 |
+| `events[].decoded` | 解码后的事件：`app_id`/`app_name`/`event_name`/`data` |
+| `*.decodeError` | 单项解码失败原因（如未加载对应 IDL、数据损坏），不影响其他字段 |
+
+---
+
+#### 11. 获取交易事件
 
 - **方法**: `GET`
 - **路径**: `/api/transactions/:hash/events`
@@ -636,7 +747,7 @@ curl "http://localhost:8080/api/transactions/a1b2c3d4e5f6.../events?typeTag=1"
 
 ---
 
-#### 11. 等待交易确认
+#### 12. 等待交易确认
 
 - **方法**: `GET`
 - **路径**: `/api/transactions/:hash/wait`
@@ -683,7 +794,7 @@ curl "http://localhost:8080/api/transactions/a1b2c3d4e5f6.../wait?timeoutSecs=30
 
 ---
 
-#### 12. 模拟交易（底层）
+#### 13. 模拟交易（底层）
 
 - **方法**: `POST`
 - **路径**: `/api/transactions/simulate`
@@ -720,7 +831,7 @@ curl -X POST http://localhost:8080/api/transactions/simulate \
 
 ---
 
-#### 13. 提交交易（底层）
+#### 14. 提交交易（底层）
 
 - **方法**: `POST`
 - **路径**: `/api/transactions/submit`
@@ -756,7 +867,7 @@ curl -X POST http://localhost:8080/api/transactions/submit \
 
 ---
 
-#### 14. 检测交易
+#### 15. 检测交易
 
 - **方法**: `POST`
 - **路径**: `/api/transactions/inspect`
@@ -797,7 +908,7 @@ curl -X POST http://localhost:8080/api/transactions/inspect \
 
 ### 五、合约
 
-#### 15. 读取视图函数（单返回值）
+#### 16. 读取视图函数（单返回值）
 
 - **方法**: `POST`
 - **路径**: `/api/read`
@@ -839,9 +950,39 @@ curl -X POST http://localhost:8080/api/read \
 }
 ```
 
+**说明：链上载荷与 IDL 返回类型不匹配时的降级响应**
+
+当链上部署的程序版本旧于 IDL（Ok 载荷实际形状与 `returns.type` 声明不一致）时，
+`/api/read` 不再返回 500，而是返回结构化降级数据，便于调用方诊断版本漂移：
+
+```json
+{
+  "success": true,
+  "code": 0,
+  "message": "ok (raw fallback: view payload does not match IDL return type)",
+  "data": {
+    "raw": "0x01000100",
+    "decodeError": "failed to decode result[0]: failed to deserialize Ok value: unexpected end of input"
+  },
+  "timestamp": "2026-09-04T14:00:00+08:00"
+}
+```
+
+典型场景：devNet `staking.EpochState`（部署程序按旧签名返回单字节 Epoch，IDL 声明 3 字段结构）。
+
+**说明：bytes / B96 / B144 / B160 / B256 / Signature 类型参数的 JSON 传法**
+
+args 中的字节类参数支持三种 JSON 形态（服务端自动编码为 postcard 线格式）：
+
+| IDL 类型 | JSON 写法 | 示例 |
+| --- | --- | --- |
+| `bytes` | 数字数组 或 hex 字符串 | `[1,2,255]` / `"0x0102ff"` |
+| `B96`/`B144`/`B160`/`B256` | hex 字符串（可带 `0x`） | `"0xab.."`（32 字节） |
+| `Signature` | hex 签名字节（按长度自动识别方案：64B=Ed25519, 65B=Secp256k1, 96B=BLS12-381, 666B=FnDsa-512），线格式为 `varint(variant) + 原始字节` | `"0x..."` |
+
 ---
 
-#### 16. 多指令视图查询
+#### 17. 多指令视图查询
 
 - **方法**: `POST`
 - **路径**: `/api/read/multi`
@@ -892,7 +1033,7 @@ curl -X POST http://localhost:8080/api/read/multi \
 
 ---
 
-#### 17. 模拟合约调用
+#### 18. 模拟合约调用
 
 - **方法**: `POST`
 - **路径**: `/api/simulate`
@@ -949,7 +1090,7 @@ curl -X POST http://localhost:8080/api/simulate \
 
 ---
 
-#### 18. 写入交易
+#### 19. 写入交易
 
 - **方法**: `POST`
 - **路径**: `/api/write`
@@ -1009,7 +1150,7 @@ curl -X POST http://localhost:8080/api/write \
 
 ---
 
-#### 19. 多方签名写入
+#### 20. 多方签名写入
 
 - **方法**: `POST`
 - **路径**: `/api/write/multi-agent`
@@ -1065,7 +1206,7 @@ curl -X POST http://localhost:8080/api/write/multi-agent \
 
 ---
 
-#### 20. 多签写入
+#### 21. 多签写入
 
 - **方法**: `POST`
 - **路径**: `/api/write/multisig`
@@ -1119,7 +1260,7 @@ curl -X POST http://localhost:8080/api/write/multisig \
 
 ---
 
-#### 21. 多指令模拟调用（打包）
+#### 22. 多指令模拟调用（打包）
 
 - **方法**: `POST`
 - **路径**: `/api/simulate/multi`
@@ -1163,7 +1304,7 @@ curl -X POST http://localhost:8080/api/simulate/multi \
 
 ---
 
-#### 22. 多指令打包写入
+#### 23. 多指令打包写入
 
 - **方法**: `POST`
 - **路径**: `/api/write/multi`
@@ -1210,7 +1351,7 @@ curl -X POST http://localhost:8080/api/write/multi \
 
 ---
 
-#### 23. 底层单指令视图
+#### 24. 底层单指令视图
 
 - **方法**: `POST`
 - **路径**: `/api/view/single`
@@ -1246,7 +1387,7 @@ curl -X POST http://localhost:8080/api/view/single \
 
 ---
 
-#### 24. 底层多指令视图
+#### 25. 底层多指令视图
 
 - **方法**: `POST`
 - **路径**: `/api/view/multi`
@@ -1284,7 +1425,7 @@ curl -X POST http://localhost:8080/api/view/multi \
 
 ### 六、RPC
 
-#### 25. 获取区块
+#### 26. 获取区块
 
 - **方法**: `GET`
 - **路径**: `/api/rpc/blocks/:height`
@@ -1324,7 +1465,7 @@ curl http://localhost:8080/api/rpc/blocks/12345
 
 ---
 
-#### 26. 获取资源
+#### 27. 获取资源
 
 - **方法**: `GET`
 - **路径**: `/api/rpc/resources/:hash`
@@ -1359,7 +1500,7 @@ curl http://localhost:8080/api/rpc/resources/a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f
 
 ---
 
-#### 27. 获取访问值
+#### 28. 获取访问值
 
 - **方法**: `POST`
 - **路径**: `/api/rpc/access-value`
@@ -1410,7 +1551,7 @@ curl -X POST http://localhost:8080/api/rpc/access-value \
 
 ---
 
-#### 28. 按哈希查询资源路径
+#### 29. 按哈希查询资源路径
 
 - **方法**: `GET`
 - **路径**: `/api/rpc/resource-paths/:hash`
@@ -1447,7 +1588,7 @@ curl http://localhost:8080/api/rpc/resource-paths/a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3
 
 ### 七、水龙头
 
-#### 29. 领水
+#### 30. 领水
 
 - **方法**: `POST`
 - **路径**: `/api/faucet/claim`
@@ -1511,7 +1652,7 @@ curl -X POST http://localhost:8080/api/faucet/claim \
 
 ---
 
-#### 30. 查询 MIL 余额
+#### 31. 查询 MIL 余额
 
 - **方法**: `GET`
 - **路径**: `/api/faucet/balance/:address`
@@ -1548,7 +1689,7 @@ curl http://localhost:8080/api/faucet/balance/1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
 
 ### 八、工具
 
-#### 31. 从公钥派生地址
+#### 32. 从公钥派生地址
 
 - **方法**: `POST`
 - **路径**: `/api/util/address/derive`
@@ -1587,7 +1728,7 @@ curl -X POST http://localhost:8080/api/util/address/derive \
 
 ---
 
-#### 32. 从私钥派生公钥
+#### 33. 从私钥派生公钥
 
 - **方法**: `POST`
 - **路径**: `/api/util/key/derive-public`
@@ -1626,7 +1767,7 @@ curl -X POST http://localhost:8080/api/util/key/derive-public \
 
 ---
 
-#### 33. 签名消息
+#### 34. 签名消息
 
 - **方法**: `POST`
 - **路径**: `/api/util/sign`
@@ -1685,7 +1826,7 @@ curl -X POST http://localhost:8080/api/util/sign \
 
 ---
 
-#### 34. 验签
+#### 35. 验签
 
 - **方法**: `POST`
 - **路径**: `/api/util/verify`
@@ -1727,7 +1868,7 @@ curl -X POST http://localhost:8080/api/util/verify \
 
 ---
 
-#### 35. 生成 VC 凭证参数（DiscloseVcAttestation）
+#### 36. 生成 VC 凭证参数（DiscloseVcAttestation）
 
 - **方法**: `POST`
 - **路径**: `/api/util/vc-attestation`
@@ -1811,7 +1952,7 @@ curl -X POST http://localhost:8080/api/util/vc-attestation \
 
 ---
 
-#### 36. 设置 Mock 返回内容
+#### 37. 设置 Mock 返回内容
 
 - **方法**: `POST`
 - **路径**: `/api/util/mock/set`
@@ -1847,7 +1988,7 @@ curl -X POST http://localhost:8080/api/util/mock/set \
 
 ---
 
-#### 37. 获取 Mock 返回内容
+#### 38. 获取 Mock 返回内容
 
 - **方法**: `GET`
 - **路径**: `/api/util/mock/:id`
@@ -1879,7 +2020,7 @@ curl http://localhost:8080/api/util/mock/1f2a3b4c5d6e7f8090a1b2c3d4e5f6070
 
 ### 九、IDL 元数据
 
-#### 38. 获取 IDL 元数据
+#### 39. 获取 IDL 元数据
 
 - **方法**: `GET`
 - **路径**: `/api/idl/metadata`
@@ -2013,34 +2154,35 @@ curl http://localhost:8080/api/idl/metadata
 | 7 | GET | `/api/accounts/:address/resources` | 获取账户资源列表 |
 | 8 | POST | `/api/accounts/generate` | 生成账户 |
 | 9 | GET | `/api/transactions/:hash` | 按哈希查询交易 |
-| 10 | GET | `/api/transactions/:hash/events` | 获取交易事件 |
-| 11 | GET | `/api/transactions/:hash/wait` | 等待交易确认 |
-| 12 | POST | `/api/transactions/simulate` | 模拟交易（底层） |
-| 13 | POST | `/api/transactions/submit` | 提交交易（底层） |
-| 14 | POST | `/api/transactions/inspect` | 检测交易 |
-| 15 | POST | `/api/read` | 读取视图函数 |
-| 16 | POST | `/api/read/multi` | 多指令视图查询 |
-| 17 | POST | `/api/simulate` | 模拟合约调用 |
-| 18 | POST | `/api/write` | 写入交易 |
-| 19 | POST | `/api/write/multi-agent` | 多方签名写入 |
-| 20 | POST | `/api/write/multisig` | 多签写入 |
-| 21 | POST | `/api/simulate/multi` | 多指令模拟调用（打包） |
-| 22 | POST | `/api/write/multi` | 多指令打包写入 |
-| 23 | POST | `/api/view/single` | 底层单指令视图 |
-| 24 | POST | `/api/view/multi` | 底层多指令视图 |
-| 25 | GET | `/api/rpc/blocks/:height` | 获取区块 |
-| 26 | GET | `/api/rpc/resources/:hash` | 获取资源 |
-| 27 | POST | `/api/rpc/access-value` | 获取访问值 |
-| 28 | GET | `/api/rpc/resource-paths/:hash` | 按哈希查询资源路径 |
-| 29 | POST | `/api/faucet/claim` | 领水 |
-| 30 | GET | `/api/faucet/balance/:address` | 查询 MIL 余额 |
-| 31 | POST | `/api/util/address/derive` | 从公钥派生地址 |
-| 32 | POST | `/api/util/key/derive-public` | 从私钥派生公钥 |
-| 33 | POST | `/api/util/sign` | 签名消息 |
-| 34 | POST | `/api/util/verify` | 验签 |
-| 35 | POST | `/api/util/vc-attestation` | 生成 VC 凭证参数（DiscloseVcAttestation） |
-| 36 | POST | `/api/util/mock/set` | 设置 Mock 返回内容，返回专属链接（测试用） |
-| 37 | GET | `/api/util/mock/:id` | 按 ID 返回 Mock 内容（原样返回） |
-| 38 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
+| 10 | GET | `/api/transactions/:hash/parse` | 解析交易输出（IDL 解码） |
+| 11 | GET | `/api/transactions/:hash/events` | 获取交易事件 |
+| 12 | GET | `/api/transactions/:hash/wait` | 等待交易确认 |
+| 13 | POST | `/api/transactions/simulate` | 模拟交易（底层） |
+| 14 | POST | `/api/transactions/submit` | 提交交易（底层） |
+| 15 | POST | `/api/transactions/inspect` | 检测交易 |
+| 16 | POST | `/api/read` | 读取视图函数 |
+| 17 | POST | `/api/read/multi` | 多指令视图查询 |
+| 18 | POST | `/api/simulate` | 模拟合约调用 |
+| 19 | POST | `/api/write` | 写入交易 |
+| 20 | POST | `/api/write/multi-agent` | 多方签名写入 |
+| 21 | POST | `/api/write/multisig` | 多签写入 |
+| 22 | POST | `/api/simulate/multi` | 多指令模拟调用（打包） |
+| 23 | POST | `/api/write/multi` | 多指令打包写入 |
+| 24 | POST | `/api/view/single` | 底层单指令视图 |
+| 25 | POST | `/api/view/multi` | 底层多指令视图 |
+| 26 | GET | `/api/rpc/blocks/:height` | 获取区块 |
+| 27 | GET | `/api/rpc/resources/:hash` | 获取资源 |
+| 28 | POST | `/api/rpc/access-value` | 获取访问值 |
+| 29 | GET | `/api/rpc/resource-paths/:hash` | 按哈希查询资源路径 |
+| 30 | POST | `/api/faucet/claim` | 领水 |
+| 31 | GET | `/api/faucet/balance/:address` | 查询 MIL 余额 |
+| 32 | POST | `/api/util/address/derive` | 从公钥派生地址 |
+| 33 | POST | `/api/util/key/derive-public` | 从私钥派生公钥 |
+| 34 | POST | `/api/util/sign` | 签名消息 |
+| 35 | POST | `/api/util/verify` | 验签 |
+| 36 | POST | `/api/util/vc-attestation` | 生成 VC 凭证参数（DiscloseVcAttestation） |
+| 37 | POST | `/api/util/mock/set` | 设置 Mock 返回内容，返回专属链接（测试用） |
+| 38 | GET | `/api/util/mock/:id` | 按 ID 返回 Mock 内容（原样返回） |
+| 39 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
 
-**统计**：共 38 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 6、合约 9、RPC 4、水龙头 2、工具 7、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 39 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 7、合约 9、RPC 4、水龙头 2、工具 7、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。

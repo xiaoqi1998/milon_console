@@ -1,32 +1,24 @@
-package test
+package test_test
 
 import (
-	"github.com/milon-labs/milon-go-sdk/api"
 	"testing"
 
-	"github.com/milon-labs/milon-go-sdk/crypto"
+	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/postcard"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBlock_MarshalPostcard(t *testing.T) {
 	t.Run("round trip with all fields populated", func(t *testing.T) {
-		var witnessSig [crypto.SignatureFnDsa512Size]byte
-		for i := 0; i < len(witnessSig); i++ {
-			witnessSig[i] = byte(i % 256)
-		}
-
 		original := api.Block{
 			Number:    1234567890,
+			Epoch:     42,
 			Hash:      api.TxHash{1, 2, 3, 4, 5},
 			PrevHash:  api.TxHash{6, 7, 8, 9, 10},
+			StateHash: api.TxHash{11, 12, 13, 14, 15},
+			TxRoot:    api.TxHash{16, 17, 18, 19, 20},
+			TxCount:   7,
 			Timestamp: 9876543210,
-			TxProofIdentifiers: []api.TxProofIdentifier{
-				{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22},
-				{23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34},
-			},
-			WitnessAddress:   crypto.Address{Bytes: [20]byte{1, 2, 3}},
-			WitnessSignature: witnessSig,
 		}
 
 		data, err := postcard.SerializePostcard(&original)
@@ -40,105 +32,19 @@ func TestBlock_MarshalPostcard(t *testing.T) {
 			return block, nil
 		}, false)
 		assert.NoError(t, err)
-		assert.Equal(t, original.Number, deserialized.Number)
-		assert.Equal(t, original.Hash, deserialized.Hash)
-		assert.Equal(t, original.PrevHash, deserialized.PrevHash)
-		assert.Equal(t, original.Timestamp, deserialized.Timestamp)
-		assert.Equal(t, original.TxProofIdentifiers, deserialized.TxProofIdentifiers)
-		assert.Equal(t, original.WitnessAddress.Bytes, deserialized.WitnessAddress.Bytes)
-		assert.Equal(t, original.WitnessSignature, deserialized.WitnessSignature)
-	})
-
-	t.Run("round trip with empty TxProofIdentifiers", func(t *testing.T) {
-		var witnessSig [crypto.SignatureFnDsa512Size]byte
-		for i := 0; i < len(witnessSig); i++ {
-			witnessSig[i] = byte(i % 256)
-		}
-
-		original := api.Block{
-			Number:             1234567890,
-			Hash:               api.TxHash{1, 2, 3, 4, 5},
-			PrevHash:           api.TxHash{6, 7, 8, 9, 10},
-			Timestamp:          9876543210,
-			TxProofIdentifiers: []api.TxProofIdentifier{},
-			WitnessAddress:     crypto.Address{Bytes: [20]byte{1, 2, 3}},
-			WitnessSignature:   witnessSig,
-		}
-
-		data, err := postcard.SerializePostcard(&original)
-		assert.NoError(t, err)
-
-		deserialized, err := postcard.DeserializePostcard(data, func(d *postcard.Deserializer) (api.Block, error) {
-			var block api.Block
-			if err = block.UnmarshalPostcard(d); err != nil {
-				return block, err
-			}
-			return block, nil
-		}, false)
-		assert.NoError(t, err)
-		assert.Equal(t, original.Number, deserialized.Number)
-		assert.Equal(t, original.Hash, deserialized.Hash)
-		assert.Equal(t, original.PrevHash, deserialized.PrevHash)
-		assert.Equal(t, original.Timestamp, deserialized.Timestamp)
-		assert.Equal(t, original.TxProofIdentifiers, deserialized.TxProofIdentifiers)
-		assert.Equal(t, original.WitnessAddress.Bytes, deserialized.WitnessAddress.Bytes)
-		assert.Equal(t, original.WitnessSignature, deserialized.WitnessSignature)
-	})
-
-	t.Run("round trip with single TxProofIdentifier", func(t *testing.T) {
-		var witnessSig [crypto.SignatureFnDsa512Size]byte
-		for i := 0; i < len(witnessSig); i++ {
-			witnessSig[i] = byte(i % 256)
-		}
-
-		original := api.Block{
-			Number:    1234567890,
-			Hash:      api.TxHash{1, 2, 3, 4, 5},
-			PrevHash:  api.TxHash{6, 7, 8, 9, 10},
-			Timestamp: 9876543210,
-			TxProofIdentifiers: []api.TxProofIdentifier{
-				{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22},
-			},
-			WitnessAddress:   crypto.Address{Bytes: [20]byte{1, 2, 3}},
-			WitnessSignature: witnessSig,
-		}
-
-		data, err := postcard.SerializePostcard(&original)
-		assert.NoError(t, err)
-
-		deserialized, err := postcard.DeserializePostcard(data, func(d *postcard.Deserializer) (api.Block, error) {
-			var block api.Block
-			if err = block.UnmarshalPostcard(d); err != nil {
-				return block, err
-			}
-			return block, nil
-		}, false)
-		assert.NoError(t, err)
-		assert.Equal(t, original.Number, deserialized.Number)
-		assert.Equal(t, original.Hash, deserialized.Hash)
-		assert.Equal(t, original.PrevHash, deserialized.PrevHash)
-		assert.Equal(t, original.Timestamp, deserialized.Timestamp)
-		assert.Equal(t, original.TxProofIdentifiers, deserialized.TxProofIdentifiers)
-		assert.Equal(t, original.WitnessAddress.Bytes, deserialized.WitnessAddress.Bytes)
-		assert.Equal(t, original.WitnessSignature, deserialized.WitnessSignature)
+		assert.Equal(t, original, deserialized)
 	})
 
 	t.Run("max uint64 values", func(t *testing.T) {
-		var witnessSig [crypto.SignatureFnDsa512Size]byte
-		for i := 0; i < len(witnessSig); i++ {
-			witnessSig[i] = byte(i % 256)
-		}
-
 		original := api.Block{
 			Number:    18446744073709551615,
+			Epoch:     18446744073709551615,
 			Hash:      api.TxHash{1, 2, 3, 4, 5},
 			PrevHash:  api.TxHash{6, 7, 8, 9, 10},
+			StateHash: api.TxHash{11, 12, 13, 14, 15},
+			TxRoot:    api.TxHash{16, 17, 18, 19, 20},
+			TxCount:   4294967295,
 			Timestamp: 18446744073709551615,
-			TxProofIdentifiers: []api.TxProofIdentifier{
-				{11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22},
-			},
-			WitnessAddress:   crypto.Address{Bytes: [20]byte{1, 2, 3}},
-			WitnessSignature: witnessSig,
 		}
 
 		data, err := postcard.SerializePostcard(&original)
@@ -152,43 +58,30 @@ func TestBlock_MarshalPostcard(t *testing.T) {
 			return block, nil
 		}, false)
 		assert.NoError(t, err)
-		assert.Equal(t, original.Number, deserialized.Number)
-		assert.Equal(t, original.Hash, deserialized.Hash)
-		assert.Equal(t, original.PrevHash, deserialized.PrevHash)
-		assert.Equal(t, original.Timestamp, deserialized.Timestamp)
-		assert.Equal(t, original.TxProofIdentifiers, deserialized.TxProofIdentifiers)
-		assert.Equal(t, original.WitnessAddress.Bytes, deserialized.WitnessAddress.Bytes)
-		assert.Equal(t, original.WitnessSignature, deserialized.WitnessSignature)
+		assert.Equal(t, original, deserialized)
 	})
 
 	t.Run("serialized data is deterministic", func(t *testing.T) {
-		var witnessSig [crypto.SignatureFnDsa512Size]byte
-		for i := 0; i < len(witnessSig); i++ {
-			witnessSig[i] = byte(i % 256)
-		}
-
 		block1 := api.Block{
 			Number:    999,
+			Epoch:     1,
 			Hash:      api.TxHash{1, 2, 3},
 			PrevHash:  api.TxHash{4, 5, 6},
+			StateHash: api.TxHash{7, 8, 9},
+			TxRoot:    api.TxHash{10, 11, 12},
+			TxCount:   3,
 			Timestamp: 888,
-			TxProofIdentifiers: []api.TxProofIdentifier{
-				{7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18},
-			},
-			WitnessAddress:   crypto.Address{Bytes: [20]byte{19, 20, 21}},
-			WitnessSignature: witnessSig,
 		}
 
 		block2 := api.Block{
 			Number:    999,
+			Epoch:     1,
 			Hash:      api.TxHash{1, 2, 3},
 			PrevHash:  api.TxHash{4, 5, 6},
+			StateHash: api.TxHash{7, 8, 9},
+			TxRoot:    api.TxHash{10, 11, 12},
+			TxCount:   3,
 			Timestamp: 888,
-			TxProofIdentifiers: []api.TxProofIdentifier{
-				{7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18},
-			},
-			WitnessAddress:   crypto.Address{Bytes: [20]byte{19, 20, 21}},
-			WitnessSignature: witnessSig,
 		}
 
 		data1, err := postcard.SerializePostcard(&block1)
@@ -199,7 +92,6 @@ func TestBlock_MarshalPostcard(t *testing.T) {
 
 		assert.Equal(t, data1, data2)
 	})
-
 }
 
 func TestBlock_DeserializeErrors(t *testing.T) {
@@ -215,7 +107,7 @@ func TestBlock_DeserializeErrors(t *testing.T) {
 	})
 
 	t.Run("truncated data - only number", func(t *testing.T) {
-		// number=1 → 0x01
+		// number=1 → 0x01, missing Epoch and the rest
 		_, err := postcard.DeserializePostcard([]byte{0x01}, func(d *postcard.Deserializer) (api.Block, error) {
 			var block api.Block
 			if err := block.UnmarshalPostcard(d); err != nil {
@@ -227,19 +119,15 @@ func TestBlock_DeserializeErrors(t *testing.T) {
 	})
 
 	t.Run("trailing bytes not allowed", func(t *testing.T) {
-		var witnessSig [crypto.SignatureFnDsa512Size]byte
-		for i := 0; i < len(witnessSig); i++ {
-			witnessSig[i] = byte(i % 256)
-		}
-
 		original := api.Block{
-			Number:             1234567890,
-			Hash:               api.TxHash{1, 2, 3},
-			PrevHash:           api.TxHash{4, 5, 6},
-			Timestamp:          9876543210,
-			TxProofIdentifiers: []api.TxProofIdentifier{},
-			WitnessAddress:     crypto.Address{Bytes: [20]byte{1, 2, 3}},
-			WitnessSignature:   witnessSig,
+			Number:    1234567890,
+			Epoch:     42,
+			Hash:      api.TxHash{1, 2, 3},
+			PrevHash:  api.TxHash{4, 5, 6},
+			StateHash: api.TxHash{7, 8, 9},
+			TxRoot:    api.TxHash{10, 11, 12},
+			TxCount:   3,
+			Timestamp: 9876543210,
 		}
 
 		data, err := postcard.SerializePostcard(&original)
@@ -258,19 +146,15 @@ func TestBlock_DeserializeErrors(t *testing.T) {
 	})
 
 	t.Run("trailing bytes allowed", func(t *testing.T) {
-		var witnessSig [crypto.SignatureFnDsa512Size]byte
-		for i := 0; i < len(witnessSig); i++ {
-			witnessSig[i] = byte(i % 256)
-		}
-
 		original := api.Block{
-			Number:             1234567890,
-			Hash:               api.TxHash{1, 2, 3},
-			PrevHash:           api.TxHash{4, 5, 6},
-			Timestamp:          9876543210,
-			TxProofIdentifiers: []api.TxProofIdentifier{},
-			WitnessAddress:     crypto.Address{Bytes: [20]byte{1, 2, 3}},
-			WitnessSignature:   witnessSig,
+			Number:    1234567890,
+			Epoch:     42,
+			Hash:      api.TxHash{1, 2, 3},
+			PrevHash:  api.TxHash{4, 5, 6},
+			StateHash: api.TxHash{7, 8, 9},
+			TxRoot:    api.TxHash{10, 11, 12},
+			TxCount:   3,
+			Timestamp: 9876543210,
 		}
 
 		data, err := postcard.SerializePostcard(&original)

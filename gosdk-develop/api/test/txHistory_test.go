@@ -15,6 +15,9 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 	pd, err := provider.LoadProviderFromFile("../../provider/IDL/demo.idl.json")
 	assert.NoError(t, err)
 
+	accountPD, err := provider.LoadProviderFromFile("../../provider/IDL/account.idl.json")
+	assert.NoError(t, err)
+
 	// 2. Build event data for EventCreditApplied (typeTag: 7407037194950745602)
 	// Fields: pool(Address, 20B), recipient(Address, 20B), amount(u64)
 	pool := make([]byte, 20)
@@ -61,6 +64,22 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 						ExternalHash: [32]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
 					},
 				},
+				{
+					ResourceID: api.RsHash{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19},
+					LastWritten: api.PersistedValue{
+						Variant:    0, // Inline(AnySerializeOwned), no length prefix
+						TypeTag:    5563585020063213298, // u64
+						InlineData: amountBytes, // varint-encoded u64 (42)
+					},
+				},
+				{
+					ResourceID: api.RsHash{3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+					LastWritten: api.PersistedValue{
+						Variant:    0,                   // Inline(AnySerializeOwned), no length prefix
+						TypeTag:    17390915333023917609, // Account (account.idl.json)
+						InlineData: []byte{1, 255, 255}, // bitmap=1 (u64 varint), weight=255 (u8), threshold=255 (u8)
+					},
+				},
 			},
 			Events: []api.TypeTagWithData{
 				{TypeTag: 7407037194950745602, Value: eventValue},
@@ -81,7 +100,7 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 		}
 		return h, nil
 	}, false, &provider.IDLTypeResolver{
-		Providers: map[string]*provider.Provider{"demo": pd},
+		Providers: map[string]*provider.Provider{"demo": pd, "account": accountPD},
 	})
 	assert.NoError(t, err)
 

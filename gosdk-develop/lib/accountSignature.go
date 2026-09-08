@@ -11,7 +11,12 @@ import (
 )
 
 const AuthPayerBit = 63
-const AuthReservedBit = 62 // reserved, intentionally unused
+
+// AuthReservedBit is bit62: the vote gate flag (MIP-25). It is never used as an ix index, so it doubles as the ix range ceiling (ix 0..61).
+const AuthReservedBit = 62
+
+// AuthVoteBit is the vote gate flag bit in auth_bit (bit62, MIP-25).
+const AuthVoteBit = AuthReservedBit
 
 // AccountSignatureMode is the interface for account signature modes.
 type AccountSignatureMode interface {
@@ -65,6 +70,11 @@ func (as *AccountSignature) AuthorizesIx(ix uint8) bool {
 	return as.AuthBit.Test(ix)
 }
 
+// AuthorizesVote reports whether the vote gate flag (bit62) is set.
+func (as *AccountSignature) AuthorizesVote() bool {
+	return as.AuthBit.Test(AuthVoteBit)
+}
+
 // AuthorizesPayer reports whether the payer (bit63) is authorized.
 func (as *AccountSignature) AuthorizesPayer() bool {
 	return as.AuthBit.Test(AuthPayerBit)
@@ -112,11 +122,12 @@ func (as *AccountSignature) AuthMessageForTx(account crypto.Address, txHash api.
 	return as.AuthMessage(account, txHash, ixPart)
 }
 
-// IsVoteGateOnly reports whether the signature authorizes ix bits (bit0-61) but
-// carries no actual signatures: no pubkey, no sig bits, no signature entries.
-// The payer bit (bit63) is ignored. Used for vote gate scenarios.
+// IsVoteGateOnly reports whether the signature is a vote-gated auth-bit-only
+// ticket (MIP-25): bit62 set, carries no pubkey/sig_bit/signatures, and
+// authorizes at least one ix (bit0-61). The payer bit (bit63) is ignored.
 func (as *AccountSignature) IsVoteGateOnly() bool {
-	return as.PubKey == nil &&
+	return as.AuthorizesVote() &&
+		as.PubKey == nil &&
 		len(as.Signatures) == 0 &&
 		as.SigBit.Raw() == 0 &&
 		(as.AuthBit.Raw()&((uint64(1)<<AuthReservedBit)-1)) != 0
@@ -223,6 +234,16 @@ func AuthIxAndPayer(ix uint8) (types.Bitmap64, error) {
 		return types.NewBitmap64(0), fmt.Errorf("ix index %d out of range (max %d)", ix, AuthReservedBit-1)
 	}
 	return types.NewBitmap64(uint64(1<<ix) | (1 << AuthPayerBit)), nil
+}
+
+// AuthVoteIxes creates the ix authorization bits plus the vote gate flag
+// (bit62, MIP-25) for a vote-gated execute signature.
+func AuthVoteIxes(indices []uint8) (types.Bitmap64, error) {
+	ixBits, err := AuthIxes(indices)
+	if err != nil {
+		return types.NewBitmap64(0), err
+	}
+	return types.NewBitmap64(ixBits.Raw() | (uint64(1) << AuthVoteBit)), nil
 }
 
 // Unsigned creates an unsigned AccountSignature with only the auth_bit set.
@@ -342,5 +363,29 @@ func CollectIxHashes(authBit types.Bitmap64, ixHashes []api.TxHash) []IxHashItem
 			out = append(out, IxHashItem{Index: i, Hash: ixHashes[i]})
 		}
 	}
+	return out
+}
+
+// VoteBatchHash computes the MIP-25 vote intent hash:
+// Blake3(MILON_ROOT || VOTE_BATCH_HASH_DOMAIN || all_ix_hashes... || auth_subset_ix_hashes...).
+// All execute-tx ix hashes are fed in index order first, then the hashes of the
+// auth_bit ix subset (ascending index, bit62/63 skipped). It must match the
+// on-chain vote_batch_hash of the execute transaction.
+func VoteBatchHash(authBit types.Bitmap64, allIxHashes []api.TxHash) api.TxHash {
+	hasher := crypto.Hasher(crypto.VoteBatchHashDomainBytes)
+	for _, h := range allIxHashes {
+		hasher.Write(h[:])
+	}
+	for i := uint8(0); i < 64; i++ {
+		if i == AuthPayerBit || i == AuthVoteBit || !authBit.Test(i) {
+			continue
+		}
+		if int(i) >= len(allIxHashes) {
+			continue
+		}
+		hasher.Write(allIxHashes[i][:])
+	}
+	var out api.TxHash
+	hasher.Sum(out[:0])
 	return out
 }

@@ -32,12 +32,12 @@ const (
 	MethodTypeGetAccount     MethodType = 20
 	MethodTypeEventsByTxHash MethodType = 25
 
-	// --- Query block / tx (50-149, step 5) -----------------------------
+	// --- Query block / tx (50-149, step 5)
 	MethodTypeGetBlockByHeight  MethodType = 50
 	MethodTypeGetTxByHash       MethodType = 55
 	MethodTypeGetTxHistoryProof MethodType = 60
 
-	// --- Resource raw / batch (150-199, step 5) ------------------------
+	// --- Resource raw / batch (150-199, step 5)
 	MethodTypeGetResource                MethodType = 150
 	MethodTypeGetResourcePathByHash      MethodType = 155
 	MethodTypeBatchGetResourcePathByHash MethodType = 160

@@ -467,6 +467,48 @@
           "name": "subject",
           "role": "input",
           "type": "Address"
+        }
+      ],
+      "discriminator": 48906,
+      "handler": "disclosed_vc_schemas",
+      "kind": "view",
+      "name": "DisclosedVcSchemas",
+      "returns": {
+        "type": "vec<String>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "offset",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "limit",
+          "role": "input",
+          "type": "u16"
+        }
+      ],
+      "discriminator": 27262,
+      "handler": "disclosed_vcs",
+      "kind": "view",
+      "name": "DisclosedVcs",
+      "returns": {
+        "type": "vec<DisclosedVcSummary>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
         },
         {
           "name": "issuer",
@@ -477,11 +519,6 @@
           "name": "credential_schema",
           "role": "input",
           "type": "String"
-        },
-        {
-          "name": "now_ms",
-          "role": "input",
-          "type": "u64"
         }
       ],
       "discriminator": 18655,
@@ -841,6 +878,37 @@
       "kind": "struct",
       "name": "AcceptedVcIssuer",
       "typeTag": 16581567360265979532
+    },
+    {
+      "fields": [
+        {
+          "name": "credential_schema",
+          "type": "String"
+        },
+        {
+          "name": "issuer",
+          "type": "Address"
+        },
+        {
+          "name": "credential_hash",
+          "type": "B256"
+        },
+        {
+          "name": "valid_until_ms",
+          "type": "option<u64>"
+        },
+        {
+          "name": "status",
+          "type": "VcStatus"
+        },
+        {
+          "name": "is_valid",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "DisclosedVcSummary",
+      "typeTag": 9995445207742309256
     },
     {
       "kind": "enum",
@@ -1205,6 +1273,11 @@
     },
     {
       "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
       "name": "u32",
       "typeTag": 5560783464435099345
     },
@@ -1432,36 +1505,41 @@
     },
     {
       "code": 1066,
+      "message": "Disclosed VC schema count exceeds the limit",
+      "name": "TooManyDisclosedVcSchemas"
+    },
+    {
+      "code": 1067,
       "message": "Only a currently valid VC attestation can be accepted",
       "name": "VcAttestationNotCurrentlyValid"
     },
     {
-      "code": 1067,
+      "code": 1068,
       "message": "VC acceptance index does not exist for subject",
       "name": "VcAcceptanceIndexNotFound"
     },
     {
-      "code": 1068,
+      "code": 1069,
       "message": "VC issuer is not in the subject acceptance index",
       "name": "VcIssuerNotAccepted"
     },
     {
-      "code": 1069,
+      "code": 1070,
       "message": "VC attestation issuer signature is invalid",
       "name": "InvalidVcIssuerSignature"
     },
     {
-      "code": 1070,
+      "code": 1071,
       "message": "VC issuer DID key was not found: issuer={0:?}, key_id={1}",
       "name": "VcIssuerKeyNotFound"
     },
     {
-      "code": 1071,
+      "code": 1072,
       "message": "VC attestation already exists with different immutable content",
       "name": "VcAttestationAlreadyExists"
     },
     {
-      "code": 1072,
+      "code": 1073,
       "message": "VC attestation has been permanently revoked",
       "name": "VcAttestationRevoked"
     }

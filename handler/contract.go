@@ -68,7 +68,7 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q", req.AppName), nil))
 		return
 	}
-	wire, err := pd.Encode(req.MethodName, req.Args)
+	wire, err := encodeWithCoercion(pd, req.MethodName, req.Args)
 	if err != nil {
 		logParamError(c, "ReadContract", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to encode instruction: %s", err.Error()), nil))
@@ -84,8 +84,14 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 
 	bodyValues, err := pd.DecodeViewData(req.MethodName, result.HTTPResponseBody)
 	if err != nil {
+		// Ok 载荷按 IDL 返回类型解码失败（典型场景：链上部署的程序版本旧于 IDL，
+		// 实际返回形状与 IDL 声明不一致）。返回结构化降级而非 500，
+		// 让调用方拿到链上原始字节与解码错误，便于诊断版本漂移。
 		logSDKError(c, "ReadContract", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to decode view values: "+err.Error(), nil))
+		c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
+			"raw":         hexEncodeRaw(result.HTTPResponseBody),
+			"decodeError": err.Error(),
+		}, "ok (raw fallback: view payload does not match IDL return type)"))
 		return
 	}
 
@@ -135,7 +141,7 @@ func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q (instruction %d)", ix.AppName, i), nil))
 			return
 		}
-		wire, err := pd.Encode(ix.MethodName, ix.Args)
+		wire, err := encodeWithCoercion(pd, ix.MethodName, ix.Args)
 		if err != nil {
 			logParamError(c, "ReadContractMulti", err)
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to encode instruction %d (%s.%s): %s", i, ix.AppName, ix.MethodName, err.Error()), nil))
@@ -343,7 +349,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 	if !ok {
 		return nil, nil, fmt.Errorf("failed to load IDL: app %q not found", req.AppName)
 	}
-	wire, err := pd.Encode(req.MethodName, req.Args)
+	wire, err := encodeWithCoercion(pd, req.MethodName, req.Args)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
@@ -497,7 +503,7 @@ func (h *ContractHandler) buildMultiSignerTransaction(mc *milon.Client, appName,
 		return nil, fmt.Errorf("failed to load IDL: app %q not found", appName)
 	}
 
-	wire, err := pd.Encode(methodName, args)
+	wire, err := encodeWithCoercion(pd, methodName, args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
@@ -541,7 +547,7 @@ func (h *ContractHandler) buildMultiSignerSimulateTransaction(mc *milon.Client, 
 		return nil, fmt.Errorf("failed to load IDL: app %q not found", appName)
 	}
 
-	wire, err := pd.Encode(methodName, args)
+	wire, err := encodeWithCoercion(pd, methodName, args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
@@ -582,7 +588,7 @@ func (h *ContractHandler) buildSponsoredTransaction(mc *milon.Client, appName, m
 		return nil, fmt.Errorf("failed to load IDL: app %q not found", appName)
 	}
 
-	wire, err := pd.Encode(methodName, args)
+	wire, err := encodeWithCoercion(pd, methodName, args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
@@ -610,7 +616,7 @@ func (h *ContractHandler) buildSponsoredSimulateTransaction(mc *milon.Client, ap
 		return nil, fmt.Errorf("failed to load IDL: app %q not found", appName)
 	}
 
-	wire, err := pd.Encode(methodName, args)
+	wire, err := encodeWithCoercion(pd, methodName, args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
@@ -764,7 +770,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 	if !ok {
 		return "", nil, fmt.Errorf("failed to load IDL: app %q not found", req.AppName)
 	}
-	wire, err := pd.Encode(req.MethodName, req.Args)
+	wire, err := encodeWithCoercion(pd, req.MethodName, req.Args)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to encode instruction: %w", err)
 	}
@@ -1005,7 +1011,7 @@ func (h *ContractHandler) encodeMultiInstructions(mc *milon.Client, items []mult
 		if !ok {
 			return nil, fmt.Errorf("failed to load IDL: app %q not found (instruction %d)", ix.AppName, i)
 		}
-		wire, err := pd.Encode(ix.MethodName, ix.Args)
+		wire, err := encodeWithCoercion(pd, ix.MethodName, ix.Args)
 		if err != nil {
 			return nil, fmt.Errorf("failed to encode instruction %d (%s.%s): %w", i, ix.AppName, ix.MethodName, err)
 		}

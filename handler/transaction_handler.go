@@ -3,6 +3,8 @@ package handler
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
+	"math/big"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,8 +15,10 @@ import (
 	"github.com/gin-gonic/gin"
 	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
+	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/postcard"
+	"github.com/milon-labs/milon-go-sdk/provider"
 )
 
 // TransactionHandler exposes transaction query endpoints (read-only).
@@ -455,4 +459,287 @@ func (h *TransactionHandler) InspectTransaction(c *gin.Context) {
 		"payer":    payer,
 		"valid":    valid,
 	}, "ok"))
+}
+
+// --- Parsed (human-readable) TxHistory, mirroring helper.DisplayTxHistory ---
+
+type parsedInstructionResponse struct {
+	Index       int            `json:"index"`
+	Hex         string         `json:"hex"`
+	Decoded     map[string]any `json:"decoded,omitempty"`
+	Formatted   string         `json:"formatted,omitempty"`
+	DecodeError string         `json:"decodeError,omitempty"`
+}
+
+type remoteValueResponse struct {
+	TypeTag     uint64 `json:"typeTag,omitempty"`
+	DataHex     string `json:"dataHex,omitempty"`
+	IDLType     string `json:"idlType,omitempty"`
+	Decoded     any    `json:"decoded,omitempty"`
+	DecodeError string `json:"decodeError,omitempty"`
+}
+
+type parsedSnapshotResponse struct {
+	Variant      uint32               `json:"variant"`
+	VariantName  string               `json:"variantName"`
+	TypeTag      uint64               `json:"typeTag,omitempty"`
+	IDLType      string               `json:"idlType,omitempty"`
+	DataHex      string               `json:"dataHex,omitempty"`
+	ExternalHash string               `json:"externalHash,omitempty"`
+	Decoded      any                  `json:"decoded,omitempty"`
+	DecodeError  string               `json:"decodeError,omitempty"`
+	Current      *remoteValueResponse `json:"current,omitempty"`
+	AccessValue  *remoteValueResponse `json:"accessValue,omitempty"`
+}
+
+type parsedAccessRecordResponse struct {
+	Index         int                     `json:"index"`
+	ResourceID    string                  `json:"resourceId"`
+	FirstSnapshot *parsedSnapshotResponse `json:"firstSnapshot"`
+	LastWritten   *parsedSnapshotResponse `json:"lastWritten"`
+}
+
+type parsedEventResponse struct {
+	Index       int            `json:"index"`
+	TypeTag     uint64         `json:"typeTag"`
+	ValueHex    string         `json:"valueHex"`
+	Decoded     map[string]any `json:"decoded,omitempty"`
+	Formatted   string         `json:"formatted,omitempty"`
+	DecodeError string         `json:"decodeError,omitempty"`
+}
+
+type parsedTxHistoryResponse struct {
+	Tx           txHistoryResponse            `json:"tx"`
+	Instructions []parsedInstructionResponse  `json:"instructions"`
+	Access       []parsedAccessRecordResponse `json:"access"`
+	Events       []parsedEventResponse        `json:"events"`
+}
+
+// jsonDecodedValue converts SDK-decoded values into JSON-friendly ones:
+// Address/PublicKey become base58 strings, byte slices and fixed-size byte
+// arrays become hex strings, big.Int becomes a decimal string, and map keys
+// are stringified. Slices and maps are converted recursively.
+func jsonDecodedValue(v any) any {
+	switch t := v.(type) {
+	case nil:
+		return nil
+	case crypto.Address:
+		return t.ToBase58()
+	case *crypto.Address:
+		if t == nil {
+			return nil
+		}
+		return t.ToBase58()
+	case crypto.PublicKey:
+		return t.ToBase58()
+	case *crypto.PublicKey:
+		if t == nil {
+			return nil
+		}
+		return t.ToBase58()
+	case *big.Int:
+		return t.String()
+	case []byte:
+		return hex.EncodeToString(t)
+	case provider.B96:
+		return hex.EncodeToString(t[:])
+	case provider.B144:
+		return hex.EncodeToString(t[:])
+	case provider.B160:
+		return hex.EncodeToString(t[:])
+	case provider.B256:
+		return hex.EncodeToString(t[:])
+	case map[string]any:
+		out := make(map[string]any, len(t))
+		for k, val := range t {
+			out[k] = jsonDecodedValue(val)
+		}
+		return out
+	case map[any]any:
+		out := make(map[string]any, len(t))
+		for k, val := range t {
+			out[fmt.Sprintf("%v", jsonDecodedValue(k))] = jsonDecodedValue(val)
+		}
+		return out
+	case []any:
+		out := make([]any, len(t))
+		for i, val := range t {
+			out[i] = jsonDecodedValue(val)
+		}
+		return out
+	default:
+		return v
+	}
+}
+
+// findIDLTypeByTypeTag resolves the provider and IDL type registered for a
+// resource typeTag across all loaded IDLs.
+func findIDLTypeByTypeTag(mc *milon.Client, typeTag uint64) (*provider.Provider, *provider.IDLType) {
+	for _, pd := range mc.GetAllPd() {
+		if idlType, ok := pd.GetIDLTypeByTypeTag(typeTag); ok {
+			return pd, idlType
+		}
+	}
+	return nil, nil
+}
+
+// decodeTypedValue decodes data by the IDL type bound to typeTag, returning a
+// JSON-friendly value; failures are reported as a string instead of an error
+// so a single undecodable field never fails the whole request.
+func decodeTypedValue(mc *milon.Client, typeTag uint64, data []byte) (decoded any, idlTypeName string, decodeErr string) {
+	pd, idlType := findIDLTypeByTypeTag(mc, typeTag)
+	if pd == nil {
+		return nil, "", fmt.Sprintf("unknown type_tag %d (no matching IDL loaded)", typeTag)
+	}
+	value, err := pd.DecodeDataByIDLTypeName(idlType.Name, data)
+	if err != nil {
+		return nil, idlType.Name, err.Error()
+	}
+	return jsonDecodedValue(value), idlType.Name, ""
+}
+
+// fetchResourceValue reads the current on-chain value of an inline-written
+// resource via GetResource (the remote enrichment for LastWritten).
+func fetchResourceValue(mc *milon.Client, rsHash api.RsHash, requestId lib.RequestID) *remoteValueResponse {
+	result, err := mc.GetResource(rsHash, milon.WithRequestID(requestId))
+	if err != nil {
+		return &remoteValueResponse{DecodeError: err.Error()}
+	}
+	data := result.BodyGetResource.Data
+	resp := &remoteValueResponse{
+		TypeTag: data.TypeTag,
+		DataHex: hex.EncodeToString(data.Value),
+	}
+	resp.Decoded, resp.IDLType, resp.DecodeError = decodeTypedValue(mc, data.TypeTag, data.Value)
+	return resp
+}
+
+// fetchAccessValue reads the off-chain blob value referenced by an
+// external-written resource via GetAccessValue.
+func fetchAccessValue(mc *milon.Client, blobHash [32]byte, requestId lib.RequestID) *remoteValueResponse {
+	bh := api.BlobHash(blobHash)
+	result, err := mc.GetAccessValue([]api.BlobHash{bh}, milon.WithRequestID(requestId))
+	if err != nil {
+		return &remoteValueResponse{DecodeError: err.Error()}
+	}
+	for _, item := range result.BodyGetAccessValues {
+		if item.Data == nil {
+			continue
+		}
+		resp := &remoteValueResponse{
+			TypeTag: item.Data.TypeTag,
+			DataHex: hex.EncodeToString(item.Data.Value),
+		}
+		resp.Decoded, resp.IDLType, resp.DecodeError = decodeTypedValue(mc, item.Data.TypeTag, item.Data.Value)
+		return resp
+	}
+	return &remoteValueResponse{DecodeError: "no access value returned for blob"}
+}
+
+// parsePersistedValue decodes a snapshot (inline value by its typeTag, or
+// external blob hash). fetchCurrent enables the GetResource remote enrichment
+// for inline LastWritten; fetchRemote gates the GetAccessValue call for
+// external values.
+func parsePersistedValue(mc *milon.Client, pv *api.PersistedValue, rsHash api.RsHash, fetchCurrent bool, remote bool, requestId lib.RequestID) *parsedSnapshotResponse {
+	if pv == nil {
+		return nil
+	}
+	resp := &parsedSnapshotResponse{Variant: pv.Variant}
+	switch pv.Variant {
+	case 0: // inline
+		resp.VariantName = "inline"
+		resp.TypeTag = pv.TypeTag
+		resp.DataHex = hex.EncodeToString(pv.InlineData)
+		resp.Decoded, resp.IDLType, resp.DecodeError = decodeTypedValue(mc, pv.TypeTag, pv.InlineData)
+		if fetchCurrent {
+			resp.Current = fetchResourceValue(mc, rsHash, requestId)
+		}
+	case 1: // external
+		resp.VariantName = "external"
+		resp.ExternalHash = hex.EncodeToString(pv.ExternalHash[:])
+		if remote {
+			resp.AccessValue = fetchAccessValue(mc, pv.ExternalHash, requestId)
+		}
+	default:
+		resp.DecodeError = fmt.Sprintf("unknown variant %d", pv.Variant)
+	}
+	return resp
+}
+
+// GetTransactionByHashParsed handles GET /api/transactions/:hash/parse
+// Returns the raw tx history together with an IDL-decoded, human-readable
+// breakdown (instructions, access-record snapshots, events), mirroring the
+// SDK helper DisplayTxHistory. With ?remote=true the current on-chain value
+// of each inline-written resource (and external blob values) is fetched and
+// decoded as well.
+func (h *TransactionHandler) GetTransactionByHashParsed(c *gin.Context) {
+	hash := c.Param("hash")
+	if hash == "" {
+		logParamError(c, "GetTransactionByHashParsed", paramError("hash is required"))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "hash is required", nil))
+		return
+	}
+	remote := c.Query("remote") == "true" || c.Query("remote") == "1"
+
+	mc, _ := h.nm.GetCurrent()
+	requestId := lib.RequestID(time.Now().UnixMilli())
+
+	result, err := mc.GetTxByHash(hash, milon.WithRequestID(requestId))
+	if err != nil {
+		logSDKError(c, "GetTransactionByHashParsed", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get transaction: "+err.Error(), nil))
+		return
+	}
+	th := result.BodyTxHistory
+
+	registry := mc.GetProviderManager()
+
+	instructions := make([]parsedInstructionResponse, 0, len(th.Instructions))
+	for i, instr := range th.Instructions {
+		item := parsedInstructionResponse{Index: i, Hex: hex.EncodeToString(instr)}
+		decoded, err := registry.DecodeInstruction(instr)
+		if err != nil {
+			item.DecodeError = err.Error()
+		} else {
+			item.Formatted = registry.FormatDecodedInstruction(decoded)
+			if sanitized, ok := jsonDecodedValue(decoded).(map[string]any); ok {
+				item.Decoded = sanitized
+			}
+		}
+		instructions = append(instructions, item)
+	}
+
+	access := make([]parsedAccessRecordResponse, 0, len(th.Receipt.Access))
+	for i, rec := range th.Receipt.Access {
+		record := parsedAccessRecordResponse{
+			Index:         i,
+			ResourceID:    hex.EncodeToString(rec.ResourceID[:]),
+			FirstSnapshot: parsePersistedValue(mc, rec.FirstSnapshot, rec.ResourceID, false, remote, requestId),
+			LastWritten:   parsePersistedValue(mc, &rec.LastWritten, rec.ResourceID, remote, remote, requestId),
+		}
+		access = append(access, record)
+	}
+
+	events := make([]parsedEventResponse, 0, len(th.Receipt.Events))
+	for i, ev := range th.Receipt.Events {
+		item := parsedEventResponse{Index: i, TypeTag: ev.TypeTag, ValueHex: hex.EncodeToString(ev.Value)}
+		decoded, err := registry.DecodeEventDataByTag(ev.TypeTag, ev.Value)
+		if err != nil {
+			item.DecodeError = err.Error()
+		} else {
+			item.Formatted = registry.FormatDecodedEvent(decoded)
+			if sanitized, ok := jsonDecodedValue(decoded).(map[string]any); ok {
+				item.Decoded = sanitized
+			}
+		}
+		events = append(events, item)
+	}
+
+	resp := parsedTxHistoryResponse{
+		Tx:           toTxHistoryResponse(th),
+		Instructions: instructions,
+		Access:       access,
+		Events:       events,
+	}
+	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
 }

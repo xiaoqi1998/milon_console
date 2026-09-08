@@ -66,7 +66,8 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 
 	mc, _ := h.nm.GetCurrent()
 
-	// Build a unified-payer ClaimFaucet transaction manually (SDK's BuildAndSubmitSingleIxSplit was removed).
+	// Build a SplitPayerSelfPay ClaimFaucet transaction (aligned with SDK rpcClientV1.ClaimFaucet):
+	// no payer; the claimer signs its own ix bit (bit0) and gas bit (bit63).
 	pd, ok := mc.GetAllPd()["token"]
 	if !ok {
 		logSDKError(c, "ClaimFaucet", fmt.Errorf("token IDL not found"))
@@ -82,8 +83,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 
 	requestId := lib.RequestID(time.Now().UnixMilli())
 	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
-		WithPayer(&addr).
-		AddIxAndPayerSig(addr, sk, 0, mode).
+		AddIxesSig(addr, sk, []uint8{0}, false, mode).
 		Build()
 	if err != nil {
 		logSDKError(c, "ClaimFaucet", err)

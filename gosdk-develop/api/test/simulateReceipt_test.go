@@ -15,10 +15,12 @@ func TestSimulateReceipt_WithRealProvider_EventCreditApplied(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 2. Build event data for EventCreditApplied (typeTag: 7407037194950745602)
+	// Fields: pool(Address, 20B), recipient(Address, 20B), amount(u64)
 	pool := make([]byte, 20)
 	for i := 0; i < 20; i++ {
 		pool[i] = byte(i + 1)
 	}
+
 	recipient := make([]byte, 20)
 	for i := 0; i < 20; i++ {
 		recipient[i] = byte(i + 101)
@@ -42,10 +44,18 @@ func TestSimulateReceipt_WithRealProvider_EventCreditApplied(t *testing.T) {
 		Access: []api.AccessRecord{
 			{
 				ResourceID:    api.RsHash{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18},
-				FirstSnapshot: nil,
+				FirstSnapshot: nil, // None
 				LastWritten: api.PersistedValue{
-					Variant:      1,
+					Variant:      1, // External(BlobHash)
 					ExternalHash: [32]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32},
+				},
+			},
+			{
+				ResourceID: api.RsHash{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19},
+				LastWritten: api.PersistedValue{
+					Variant:    0,                   // Inline(FramedDynamicValue), length-prefixed body
+					TypeTag:    5563585020063213298, // u64
+					InlineData: amountBytes,         // varint-encoded u64 (42)
 				},
 			},
 		},

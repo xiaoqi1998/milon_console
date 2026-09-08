@@ -15,6 +15,180 @@
     {
       "args": [
         {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_account",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "consensus_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "network_address",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "ed25519_pubkey",
+          "role": "input",
+          "type": "bytes"
+        }
+      ],
+      "discriminator": 16918,
+      "handler": "register_validator_identity",
+      "kind": "entry",
+      "name": "RegisterValidatorIdentity"
+    },
+    {
+      "args": [
+        {
+          "name": "target_epoch",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "validator_set_seed",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 55212,
+      "handler": "prepare_validator_set",
+      "kind": "entry",
+      "name": "PrepareValidatorSet"
+    },
+    {
+      "args": [],
+      "discriminator": 61700,
+      "handler": "settle_staking_epoch",
+      "kind": "entry",
+      "name": "SettleStakingEpoch"
+    },
+    {
+      "args": [],
+      "discriminator": 59552,
+      "handler": "commit_validator_set",
+      "kind": "entry",
+      "name": "CommitValidatorSet"
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 31505,
+      "handler": "configure_staking_token",
+      "kind": "entry",
+      "name": "ConfigureStakingToken"
+    },
+    {
+      "args": [
+        {
+          "name": "reward_per_validator",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 59536,
+      "handler": "initialize_staking_epoch_config",
+      "kind": "entry",
+      "name": "InitializeStakingEpochConfig"
+    },
+    {
+      "args": [
+        {
+          "name": "funder",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 32864,
+      "handler": "fund_staking_reward_treasury",
+      "kind": "entry",
+      "name": "FundStakingRewardTreasury"
+    },
+    {
+      "args": [
+        {
+          "name": "operator",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_account",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "network_address",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "ed25519_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "commission_rate_bps",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "operator_stake",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 43888,
+      "handler": "bootstrap_staking_validator",
+      "kind": "entry",
+      "name": "BootstrapStakingValidator"
+    },
+    {
+      "args": [],
+      "discriminator": 15870,
+      "handler": "bootstrap_staking_epoch_zero",
+      "kind": "entry",
+      "name": "BootstrapStakingEpochZero"
+    },
+    {
+      "args": [
+        {
           "name": "parent_block_hash",
           "role": "input",
           "type": "B256"
@@ -29,44 +203,50 @@
       "handler": "publish_local_block_beacon",
       "kind": "entry",
       "name": "PublishLocalBlockBeacon"
-    },
-    {
-      "args": [
-        {
-          "name": "target_epoch",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "selection_seed",
-          "role": "input",
-          "type": "B256"
-        },
-        {
-          "name": "source_block_id",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "source_chain_head_hash",
-          "role": "input",
-          "type": "B256"
-        }
-      ],
-      "discriminator": 42334,
-      "handler": "prepare_staking_epoch",
-      "kind": "entry",
-      "name": "PrepareStakingEpoch"
-    },
-    {
-      "args": [],
-      "discriminator": 10079,
-      "handler": "advance_staking_epoch",
-      "kind": "entry",
-      "name": "AdvanceStakingEpoch"
     }
   ],
   "types": [
+    {
+      "fields": [
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_account",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "network_address",
+          "type": "bytes"
+        },
+        {
+          "name": "ed25519_pubkey",
+          "type": "bytes"
+        }
+      ],
+      "kind": "struct",
+      "name": "ConsensusValidatorIdentity",
+      "typeTag": 16798500351373647328
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "bytes",
+      "typeTag": 10405529814227927951
+    },
     {
       "kind": "builtin",
       "name": "u64",
@@ -83,6 +263,16 @@
       "code": 1,
       "message": "System staking action failed: {0}",
       "name": "StakingFailure"
+    },
+    {
+      "code": 2,
+      "message": "Epoch clock action failed: {0}",
+      "name": "EpochClockFailure"
+    },
+    {
+      "code": 3,
+      "message": "ValidatorSet action failed: {0}",
+      "name": "ValidatorSetFailure"
     }
   ]
 }

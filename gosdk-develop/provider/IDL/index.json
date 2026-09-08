@@ -31,9 +31,24 @@
       "name": "nft"
     },
     {
+      "app_id": 6,
+      "idl": "./dex.idl.json",
+      "name": "dex"
+    },
+    {
       "app_id": 7,
       "idl": "./randomness.idl.json",
       "name": "randomness"
+    },
+    {
+      "app_id": 8,
+      "idl": "./keyless.idl.json",
+      "name": "keyless"
+    },
+    {
+      "app_id": 9,
+      "idl": "./lucky_box.idl.json",
+      "name": "lucky_box"
     },
     {
       "app_id": 255,

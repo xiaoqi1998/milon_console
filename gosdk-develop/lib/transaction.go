@@ -148,7 +148,7 @@ func (tx *Transaction) ValidateWireWith(sponsorIx []uint8) error {
 
 		for i := uint8(0); i < 64; i++ {
 			if sig.AccountSignature.AuthBit.Test(i) {
-				if i != AuthPayerBit && int(i) >= len(tx.Instructions) {
+				if i != AuthPayerBit && i != AuthVoteBit && int(i) >= len(tx.Instructions) {
 					return fmt.Errorf("auth ix index %d out of range", i)
 				}
 			}

@@ -27,6 +27,7 @@ func example(networkConfig milon.Network) {
 	recipientPk := recipientSk.Ed25519Public()
 	recipient, _ := crypto.NewAddressFromPublicKey(recipientPk)
 
+	fmt.Printf("senderSk = %v \n", senderSk.ToBase58())
 	fmt.Printf("sender = %v \n", sender)
 	fmt.Printf("recipient = %v \n\n", recipient)
 

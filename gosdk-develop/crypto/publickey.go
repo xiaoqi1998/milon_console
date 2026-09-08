@@ -71,17 +71,11 @@ func NewPublicKeyFromBytes(raw []byte) (*PublicKey, error) {
 func NewPublicKeyFromStringRelaxed(s string) (*PublicKey, error) {
 	s = strings.TrimSpace(s)
 
-	pk, hexErr := newPublicKeyFromHex(s)
-	if hexErr == nil {
+	if pk, err := newPublicKeyFromHex(s); err == nil {
 		return pk, nil
 	}
 
-	pk, b58Err := newPublicKeyFromBase58(s)
-	if b58Err == nil {
-		return pk, nil
-	}
-
-	return nil, fmt.Errorf("failed to parse public key %q as hex: %v; as base58: %v", s, hexErr, b58Err)
+	return newPublicKeyFromBase58(s)
 }
 func newPublicKeyFromHex(s string) (*PublicKey, error) {
 	s = strings.TrimSpace(s)

@@ -138,50 +138,79 @@ func NewTxHashOrTxIdFromRelaxed(input any) ([]byte, error) {
 	}
 }
 
+// UnmarshalRsHashFromJSONArray parses an RsHash from a JSON number array ([]interface{}).
+// Each element is a float64 (JSON number → Go json.Decoder default) converted to byte.
+func UnmarshalRsHashFromJSONArray(raw []interface{}) (RsHash, error) {
+	var rsHash RsHash
+	for i, b := range raw {
+		if i >= RsHashLen {
+			return rsHash, fmt.Errorf("rsHash byte array length exceeds %d", RsHashLen)
+		}
+		if val, ok := b.(float64); ok {
+			rsHash[i] = byte(val)
+		}
+	}
+	return rsHash, nil
+
+}
+
 // TypeTagWithData contains type_tag and value bytes
 type TypeTagWithData struct {
 	TypeTag uint64
 	Value   []byte // raw value bytes (without type_tag)
 }
 
-// DeserializeEventEntry deserializes an event entry (type_tag + value) from postcard format
+// DeserializeEventEntry deserializes an event entry (type_tag + value) from postcard format. Used by SimulateReceipt.
 func DeserializeEventEntry(d *postcard.Deserializer) (TypeTagWithData, error) {
 	typeTag, err := d.DeserializeU64()
 	if err != nil {
 		return TypeTagWithData{}, fmt.Errorf("failed to deserialize event type_tag: %w", err)
 	}
 
-	data, err := readEventValue(d, typeTag)
+	// body: Vec<u8>: length prefix + payload bytes
+	raw, err := d.DeserializeBytes()
 	if err != nil {
-		return TypeTagWithData{}, fmt.Errorf("failed to read event value (type_tag=%d): %w", typeTag, err)
+		return TypeTagWithData{}, fmt.Errorf("failed to read event body (type_tag=%d): %w", typeTag, err)
 	}
 
-	return TypeTagWithData{
-		TypeTag: typeTag,
-		Value:   data,
-	}, nil
+	if resolver := d.TypeResolver(); resolver != nil {
+		eventBytes, _, err := resolver.DecodeEvent(typeTag, raw)
+		if err != nil {
+			return TypeTagWithData{}, fmt.Errorf("TypeResolver.DecodeEvent failed (type_tag=%d): %w", typeTag, err)
+		}
+		return TypeTagWithData{TypeTag: typeTag, Value: eventBytes}, nil
+	}
+
+	return TypeTagWithData{TypeTag: typeTag, Value: raw}, nil
 }
-func readEventValue(d *postcard.Deserializer, typeTag uint64) ([]byte, error) {
+
+// DeserializeEventEntryNoLen deserializes an event entry (type_tag + value,
+// value WITHOUT length prefix) from postcard format. Used by TxHistory.
+func DeserializeEventEntryNoLen(d *postcard.Deserializer) (TypeTagWithData, error) {
+	typeTag, err := d.DeserializeU64()
+	if err != nil {
+		return TypeTagWithData{}, fmt.Errorf("failed to deserialize event type_tag: %w", err)
+	}
+
 	if resolver := d.TypeResolver(); resolver != nil {
 		remaining := d.Buffer()[d.Offset():]
 		eventBytes, rest, err := resolver.DecodeEvent(typeTag, remaining)
 		if err != nil {
-			return nil, fmt.Errorf("TypeResolver.DecodeEvent failed (type_tag=%d): %w", typeTag, err)
+			return TypeTagWithData{}, fmt.Errorf("TypeResolver.DecodeEvent failed (type_tag=%d): %w", typeTag, err)
 		}
 
 		consumed := len(remaining) - len(rest)
 		if err = d.Advance(consumed); err != nil {
-			return nil, fmt.Errorf("Advance failed after DecodeEvent: %w", err)
+			return TypeTagWithData{}, fmt.Errorf("advance failed after DecodeEvent: %w", err)
 		}
-		return eventBytes, nil
+		return TypeTagWithData{TypeTag: typeTag, Value: eventBytes}, nil
 	}
 
-	// fallback
 	val, err := d.DeserializeBytes()
 	if err != nil {
-		return nil, fmt.Errorf("unknown event type_tag %d (no TypeResolver), fallback DeserializeBytes failed: %w", typeTag, err)
+		return TypeTagWithData{}, fmt.Errorf("unknown event type_tag %d (no TypeResolver), fallback DeserializeBytes failed: %w", typeTag, err)
 	}
-	return val, nil
+	return TypeTagWithData{TypeTag: typeTag, Value: val}, nil
 }
 
 type AccessRecord struct {
@@ -196,7 +225,55 @@ type PersistedValue struct {
 	ExternalHash [32]byte // External BlobHash (only valid when Variant==1)
 }
 
-// DeserializeAccessRecord deserializes an AccessRecord from postcard format
+// SerializePersistedValue serializes a PersistedValue; Inline values carry a
+// length prefix (FramedSimulateReceipt/FramedPersistedValue wire format). Used by SimulateReceipt.
+func SerializePersistedValue(serializer *postcard.Serializer, pv PersistedValue) error {
+	if err := serializer.SerializeU32(pv.Variant); err != nil {
+		return fmt.Errorf("failed to serialize variant: %w", err)
+	}
+
+	switch pv.Variant {
+	case 0:
+		// Inline(FramedDynamicValue): type_tag + body(Vec<u8>, length-prefixed)
+		if err := serializer.SerializeU64(pv.TypeTag); err != nil {
+			return fmt.Errorf("failed to serialize type_tag: %w", err)
+		}
+		if err := serializer.SerializeBytes(pv.InlineData); err != nil {
+			return fmt.Errorf("failed to serialize Inline body: %w", err)
+		}
+	case 1:
+		// External(BlobHash)
+		serializer.SerializeFixedBytes(pv.ExternalHash[:])
+	default:
+		return fmt.Errorf("unknown PersistedValue variant: %d", pv.Variant)
+	}
+	return nil
+}
+
+// SerializePersistedValueNoLen serializes a PersistedValue; Inline values carry
+// no length prefix (TxHistory/PersistedValue::Inline(AnySerializeOwned) wire format). Used by TxHistory.
+func SerializePersistedValueNoLen(serializer *postcard.Serializer, pv PersistedValue) error {
+	if err := serializer.SerializeU32(pv.Variant); err != nil {
+		return fmt.Errorf("failed to serialize variant: %w", err)
+	}
+
+	switch pv.Variant {
+	case 0:
+		// Inline(AnySerializeOwned): type_tag + value (no length prefix)
+		if err := serializer.SerializeU64(pv.TypeTag); err != nil {
+			return fmt.Errorf("failed to serialize type_tag: %w", err)
+		}
+		serializer.SerializeFixedBytes(pv.InlineData)
+	case 1:
+		// External(BlobHash)
+		serializer.SerializeFixedBytes(pv.ExternalHash[:])
+	default:
+		return fmt.Errorf("unknown PersistedValue variant: %d", pv.Variant)
+	}
+	return nil
+}
+
+// DeserializeAccessRecord deserializes an AccessRecord from postcard format. Used by SimulateReceipt.
 func DeserializeAccessRecord(d *postcard.Deserializer) (AccessRecord, error) {
 	var rec AccessRecord
 
@@ -231,21 +308,120 @@ func deserializePersistedValue(d *postcard.Deserializer) (PersistedValue, error)
 
 	switch variant {
 	case 0:
-		// Inline(AnySerializeOwned)
+		// Inline(FramedDynamicValue): type_tag + body(Vec<u8>, length-prefixed)
 		typeTag, err := d.DeserializeU64()
 		if err != nil {
 			return PersistedValue{}, fmt.Errorf("failed to read type_tag: %w", err)
 		}
 
-		valueBytes, err := ReadAnySerializeValueWithTypeTag(d, typeTag)
+		// body: Vec<u8>: length prefix + payload bytes
+		raw, err := d.DeserializeBytes()
 		if err != nil {
-			return PersistedValue{}, fmt.Errorf("failed to read Inline value (type_tag=%d): %w", typeTag, err)
+			return PersistedValue{}, fmt.Errorf("failed to read Inline body (type_tag=%d): %w", typeTag, err)
+		}
+
+		var inlineData []byte
+		if resolver := d.TypeResolver(); resolver != nil {
+			valueBytes, _, err := resolver.DecodeResource(typeTag, raw)
+			if err != nil {
+				return PersistedValue{}, fmt.Errorf("TypeTagWithDataResolver.DecodeResource failed (type_tag=%d): %w", typeTag, err)
+			}
+			inlineData = valueBytes
+		} else {
+			inlineData = raw
 		}
 
 		return PersistedValue{
 			Variant:    variant,
 			TypeTag:    typeTag,
-			InlineData: valueBytes,
+			InlineData: inlineData,
+		}, nil
+	case 1:
+		// External(BlobHash)
+		hash, err := d.DeserializeFixedBytes(BlobHashLen)
+		if err != nil {
+			return PersistedValue{}, fmt.Errorf("failed to read External BlobHash: %w", err)
+		}
+
+		var extHash [BlobHashLen]byte
+		copy(extHash[:], hash)
+
+		return PersistedValue{
+			Variant:      variant,
+			ExternalHash: extHash,
+		}, nil
+	default:
+		return PersistedValue{}, fmt.Errorf("unknown PersistedValue variant: %d", variant)
+	}
+}
+
+// DeserializeAccessRecordNoLen deserializes an AccessRecord whose Inline/Event
+// values carry NO length prefix (TxHistory/TxReceipt wire format). Used by TxHistory.
+func DeserializeAccessRecordNoLen(d *postcard.Deserializer) (AccessRecord, error) {
+	var rec AccessRecord
+
+	// ResourceID (18 bytes)
+	rid, err := d.DeserializeFixedBytes(RsHashLen)
+	if err != nil {
+		return rec, fmt.Errorf("failed to deserialize ResourceID: %w", err)
+	}
+	copy(rec.ResourceID[:], rid)
+
+	// FirstSnapshot: Option<PersistedValue>
+	firstSnapshot, err := postcard.DeserializeOption(d, deserializePersistedValueNoLen)
+	if err != nil {
+		return rec, fmt.Errorf("failed to deserialize FirstSnapshot: %w", err)
+	}
+	rec.FirstSnapshot = firstSnapshot
+
+	// LastWritten: PersistedValue (non-Option)
+	lastWritten, err := deserializePersistedValueNoLen(d)
+	if err != nil {
+		return rec, fmt.Errorf("failed to deserialize LastWritten: %w", err)
+	}
+	rec.LastWritten = lastWritten
+
+	return rec, nil
+}
+func deserializePersistedValueNoLen(d *postcard.Deserializer) (PersistedValue, error) {
+	variant, err := d.DeserializeU32()
+	if err != nil {
+		return PersistedValue{}, fmt.Errorf("failed to read variant: %w", err)
+	}
+
+	switch variant {
+	case 0:
+		// Inline(AnySerializeOwned): type_tag + value (no length prefix)
+		typeTag, err := d.DeserializeU64()
+		if err != nil {
+			return PersistedValue{}, fmt.Errorf("failed to read type_tag: %w", err)
+		}
+
+		var inlineData []byte
+		if resolver := d.TypeResolver(); resolver != nil {
+			remaining := d.Buffer()[d.Offset():]
+			valueBytes, rest, err := resolver.DecodeResource(typeTag, remaining)
+			if err != nil {
+				return PersistedValue{}, fmt.Errorf("TypeTagWithDataResolver.DecodeResource failed (type_tag=%d): %w", typeTag, err)
+			}
+
+			consumed := len(remaining) - len(rest)
+			if err = d.Advance(consumed); err != nil {
+				return PersistedValue{}, fmt.Errorf("Advance failed after DecodeResource: %w", err)
+			}
+			inlineData = valueBytes
+		} else {
+			val, err := d.DeserializeBytes()
+			if err != nil {
+				return PersistedValue{}, fmt.Errorf("unknown type_tag %d (no TypeResolver), fallback DeserializeBytes failed: %w", typeTag, err)
+			}
+			inlineData = val
+		}
+
+		return PersistedValue{
+			Variant:    variant,
+			TypeTag:    typeTag,
+			InlineData: inlineData,
 		}, nil
 	case 1:
 		// External(BlobHash)
@@ -271,46 +447,4 @@ func deserializePersistedValue(d *postcard.Deserializer) (PersistedValue, error)
 type TypeTagWithDataResolver interface {
 	DecodeResource(typeTag uint64, bytes []byte) (valueBytes []byte, remaining []byte, err error)
 	DecodeEvent(typeTag uint64, bytes []byte) (eventBytes []byte, remaining []byte, err error)
-}
-
-// ReadAnySerializeValueWithTypeTag reads value bytes by type_tag
-func ReadAnySerializeValueWithTypeTag(d *postcard.Deserializer, typeTag uint64) ([]byte, error) {
-	if resolver := d.TypeResolver(); resolver != nil {
-		remaining := d.Buffer()[d.Offset():]
-		valueBytes, rest, err := resolver.DecodeResource(typeTag, remaining)
-		if err != nil {
-			return nil, fmt.Errorf("TypeTagWithDataResolver.DecodeResource failed (type_tag=%d): %w", typeTag, err)
-		}
-
-		// manually advance deserializer offset
-		consumed := len(remaining) - len(rest)
-		if err = d.Advance(consumed); err != nil {
-			return nil, fmt.Errorf("Advance failed after DecodeResource: %w", err)
-		}
-		return valueBytes, nil
-	}
-
-	// todo----fallback: only works for Vec<u8>/String
-	val, err := d.DeserializeBytes()
-	if err != nil {
-		return nil, fmt.Errorf("unknown type_tag %d (no TypeResolver), fallback DeserializeBytes failed: %w", typeTag, err)
-	}
-
-	return val, nil
-}
-
-// UnmarshalRsHashFromJSONArray parses an RsHash from a JSON number array ([]interface{}).
-// Each element is a float64 (JSON number → Go json.Decoder default) converted to byte.
-func UnmarshalRsHashFromJSONArray(raw []interface{}) (RsHash, error) {
-	var rsHash RsHash
-	for i, b := range raw {
-		if i >= RsHashLen {
-			return rsHash, fmt.Errorf("rsHash byte array length exceeds %d", RsHashLen)
-		}
-		if val, ok := b.(float64); ok {
-			rsHash[i] = byte(val)
-		}
-	}
-	return rsHash, nil
-
 }

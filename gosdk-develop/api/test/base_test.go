@@ -7,6 +7,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/milon-labs/milon-go-sdk/postcard"
+	"github.com/milon-labs/milon-go-sdk/provider"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -80,7 +81,7 @@ func TestDeserializeAccessRecord_ExternalWithFirstSnapshot(t *testing.T) {
 	assert.Equal(t, [api.BlobHashLen]byte{}, rec.LastWritten.ExternalHash)
 }
 
-func TestPersistedValueSerializeRoundTrip(t *testing.T) {
+func TestSerializePersistedValueRoundTrip(t *testing.T) {
 	t.Run("inline variant serialized format", func(t *testing.T) {
 		pv := api.PersistedValue{Variant: 0, TypeTag: 7, InlineData: []byte{9, 8, 7}}
 		ser := postcard.NewSerializer()
@@ -95,7 +96,12 @@ func TestPersistedValueSerializeRoundTrip(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, uint64(7), typeTag)
 
-		assert.Equal(t, []byte{9, 8, 7}, d.Buffer()[d.Offset():])
+		// Inline values are length-prefixed (FramedPersistedValue wire format)
+		assert.Equal(t, []byte{3, 9, 8, 7}, d.Buffer()[d.Offset():])
+
+		buf, err := d.DeserializeBytes()
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{9, 8, 7}, buf)
 	})
 
 	t.Run("external variant round trip", func(t *testing.T) {
@@ -109,6 +115,28 @@ func TestPersistedValueSerializeRoundTrip(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pv, rec.LastWritten)
 	})
+
+	t.Run("inline variant no length prefix", func(t *testing.T) {
+		pv := api.PersistedValue{Variant: 0, TypeTag: 7, InlineData: []byte{9, 8, 7}}
+		ser := postcard.NewSerializer()
+		assert.NoError(t, api.SerializePersistedValueNoLen(ser, pv))
+
+		d := postcard.NewDeserializer(ser.Bytes())
+		variant, err := d.DeserializeU32()
+		assert.NoError(t, err)
+		assert.Equal(t, uint32(0), variant)
+
+		typeTag, err := d.DeserializeU64()
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(7), typeTag)
+
+		// Inline values carry no length prefix (AnySerializeOwned wire format)
+		assert.Equal(t, []byte{9, 8, 7}, d.Buffer()[d.Offset():])
+
+		buf, err := d.DeserializeFixedBytes(3)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{9, 8, 7}, buf)
+	})
 }
 
 func TestPersistedValueUnknownVariant(t *testing.T) {
@@ -121,20 +149,100 @@ func TestPersistedValueUnknownVariant(t *testing.T) {
 	t.Run("deserialize unknown variant", func(t *testing.T) {
 		ser := postcard.NewSerializer()
 		ser.SerializeFixedBytes(make([]byte, api.RsHashLen))
-		ser.SerializeBool(false)
-		ser.SerializeU32(2) // unknown variant
+		ser.SerializeBool(false) // FirstSnapshot: None
+		ser.SerializeU32(2)      // unknown variant
 		_, err := api.DeserializeAccessRecord(postcard.NewDeserializer(ser.Bytes()))
 		assert.Error(t, err)
 	})
 }
 
-func TestDeserializeEventEntryFallback(t *testing.T) {
-	ser := postcard.NewSerializer()
-	ser.SerializeU64(99)             // type_tag
-	ser.SerializeBytes([]byte{1, 2}) // event value (Vec<u8>)
-
-	entry, err := api.DeserializeEventEntry(postcard.NewDeserializer(ser.Bytes()))
+func TestDeserializeAccessRecordNoLen_InlinePersistedValue(t *testing.T) {
+	pd, err := provider.LoadProviderFromFile("../../provider/IDL/system.idl.json")
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(99), entry.TypeTag)
-	assert.Equal(t, []byte{1, 2}, entry.Value)
+
+	ser := postcard.NewSerializer()
+	ser.SerializeFixedBytes(make([]byte, api.RsHashLen)) // ResourceID
+	ser.SerializeBool(false)                             // FirstSnapshot: None
+	ser.SerializeU32(0)                                  // LastWritten variant: Inline
+	ser.SerializeU64(5563585020063213298)                // type_tag: u64 (system builtin)
+	ser.SerializeFixedBytes([]byte{42})                  // u64 value, NO length prefix
+
+	rec, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.AccessRecord, error) {
+		return api.DeserializeAccessRecordNoLen(d)
+	}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"system": pd}})
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(0), rec.LastWritten.Variant)
+	assert.Equal(t, uint64(5563585020063213298), rec.LastWritten.TypeTag)
+	assert.Equal(t, []byte{42}, rec.LastWritten.InlineData)
+}
+
+func TestDeserializeEventEntry(t *testing.T) {
+	t.Run("with resolver, has length prefix", func(t *testing.T) {
+		pd, err := provider.LoadProviderFromFile("../../provider/IDL/demo.idl.json")
+		assert.NoError(t, err)
+
+		pool := make([]byte, 20)
+		for i := range pool {
+			pool[i] = byte(i + 1)
+		}
+		recipient := make([]byte, 20)
+		for i := range recipient {
+			recipient[i] = byte(i + 101)
+		}
+
+		body := append(append(pool, recipient...), 42) // EventCreditApplied payload: pool + recipient + amount
+
+		ser := postcard.NewSerializer()
+		ser.SerializeU64(7407037194950745602) // type_tag: EventCreditApplied (demo event)
+		ser.SerializeBytes(body)              // body: Vec<u8>, WITH length prefix
+
+		entry, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.TypeTagWithData, error) {
+			return api.DeserializeEventEntry(d)
+		}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"demo": pd}})
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(7407037194950745602), entry.TypeTag)
+		assert.Equal(t, body, entry.Value)
+	})
+}
+
+func TestDeserializeEventEntryNoLen(t *testing.T) {
+	t.Run("fallback without resolver", func(t *testing.T) {
+		ser := postcard.NewSerializer()
+		ser.SerializeU64(99)             // type_tag
+		ser.SerializeBytes([]byte{1, 2}) // value as Vec<u8> (length-prefixed)
+
+		entry, err := api.DeserializeEventEntryNoLen(postcard.NewDeserializer(ser.Bytes()))
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(99), entry.TypeTag)
+		assert.Equal(t, []byte{1, 2}, entry.Value)
+	})
+
+	t.Run("with resolver, no length prefix", func(t *testing.T) {
+		pd, err := provider.LoadProviderFromFile("../../provider/IDL/demo.idl.json")
+		assert.NoError(t, err)
+
+		pool := make([]byte, 20)
+		for i := range pool {
+			pool[i] = byte(i + 1)
+		}
+		recipient := make([]byte, 20)
+		for i := range recipient {
+			recipient[i] = byte(i + 101)
+		}
+
+		ser := postcard.NewSerializer()
+		ser.SerializeU64(7407037194950745602) // type_tag: EventCreditApplied (demo event)
+		ser.SerializeFixedBytes(pool)         // pool (Address, 20B)
+		ser.SerializeFixedBytes(recipient)    // recipient (Address, 20B)
+		ser.SerializeFixedBytes([]byte{42})   // amount (u64 = 42, varint), NO length prefix
+
+		entry, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.TypeTagWithData, error) {
+			return api.DeserializeEventEntryNoLen(d)
+		}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"demo": pd}})
+		assert.NoError(t, err)
+		assert.Equal(t, uint64(7407037194950745602), entry.TypeTag)
+
+		want := append(append(pool, recipient...), 42)
+		assert.Equal(t, want, entry.Value)
+	})
 }

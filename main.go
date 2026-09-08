@@ -43,6 +43,10 @@ func main() {
 	resourcePathHandler := handler.NewResourcePathHandler(nm)
 	idlHandler := handler.NewIDLHandler(nm)
 	bulkTransferHandler := handler.NewBulkTransferHandler(nm)
+	savedInstructionHandler, err := handler.NewSavedInstructionHandler(nm, "./data")
+	if err != nil {
+		log.Fatalf("failed to init saved instruction store: %v", err)
+	}
 
 	api := r.Group("/api")
 	{
@@ -65,6 +69,7 @@ func main() {
 
 		// Transaction
 		api.GET("/transactions/:hash", transactionHandler.GetTransactionByHash)
+		api.GET("/transactions/:hash/parse", transactionHandler.GetTransactionByHashParsed)
 		api.GET("/transactions/:hash/events", transactionHandler.GetTransactionEvents)
 		api.GET("/transactions/:hash/wait", transactionHandler.WaitForTransaction)
 
@@ -120,6 +125,17 @@ func main() {
 		// Bulk transfer (generate accounts, claim faucet, consolidate MIL)
 		api.POST("/tool/bulk-transfer", bulkTransferHandler.BulkTransfer)
 		api.GET("/tool/bulk-transfer/:id", bulkTransferHandler.GetBulkTransferStatus)
+
+		// Saved instructions (store & replay IDL method calls)
+		savedGroup := api.Group("/saved-instructions")
+		{
+			savedGroup.POST("", savedInstructionHandler.CreateSavedInstruction)
+			savedGroup.GET("", savedInstructionHandler.ListSavedInstructions)
+			savedGroup.GET("/:id", savedInstructionHandler.GetSavedInstruction)
+			savedGroup.PUT("/:id", savedInstructionHandler.UpdateSavedInstruction)
+			savedGroup.DELETE("/:id", savedInstructionHandler.DeleteSavedInstruction)
+			savedGroup.POST("/:id/execute", savedInstructionHandler.ExecuteSavedInstruction)
+		}
 	}
 
 	// Print startup banner
@@ -147,6 +163,7 @@ func main() {
 	fmt.Println("    GET  /api/accounts/:address/resources - List account resources")
 	fmt.Println("    POST /api/accounts/generate       - Generate new account")
 	fmt.Println("    GET  /api/transactions/:hash      - Get transaction by hash")
+	fmt.Println("    GET  /api/transactions/:hash/parse - Get transaction with IDL-decoded output")
 	fmt.Println("    GET  /api/transactions/:hash/events - Get transaction events")
 	fmt.Println("    GET  /api/transactions/:hash/wait - Wait for transaction")
 	fmt.Println("    GET  /api/rpc/blocks/:height      - Get block by height")

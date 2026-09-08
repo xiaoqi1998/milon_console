@@ -1,0 +1,483 @@
+{
+  "metadata": {
+    "app_id": 9,
+    "name": "lucky_box",
+    "description": "Milon lucky_box app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "box_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "total_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "claim_count",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "rules",
+          "role": "input",
+          "type": "option<BoxRules>"
+        }
+      ],
+      "discriminator": 51385,
+      "handler": "create_equal",
+      "kind": "entry",
+      "name": "CreateEqual",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "box_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "total_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "claim_count",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "rules",
+          "role": "input",
+          "type": "option<BoxRules>"
+        }
+      ],
+      "discriminator": 12885,
+      "handler": "create_lucky",
+      "kind": "entry",
+      "name": "CreateLucky",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "box_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "mint",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "total_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "claim_count",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "rules",
+          "role": "input",
+          "type": "option<BoxRules>"
+        }
+      ],
+      "discriminator": 13669,
+      "handler": "create_nft",
+      "kind": "entry",
+      "name": "CreateNft",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "claimant",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "box_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 62102,
+      "handler": "claim",
+      "kind": "entry",
+      "name": "Claim",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "box_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 9120,
+      "handler": "refund",
+      "kind": "entry",
+      "name": "Refund"
+    },
+    {
+      "args": [
+        {
+          "name": "box_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 58937,
+      "handler": "box_view",
+      "kind": "view",
+      "name": "BoxView",
+      "returns": {
+        "type": "BoxState"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "box_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 45729,
+      "handler": "asset_pool",
+      "kind": "view",
+      "name": "AssetPool",
+      "returns": {
+        "type": "AssetPoolState"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "AllocationMode",
+      "typeTag": 18037983695646367593,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Equal"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Lucky"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "AssetId",
+      "typeTag": 6638531511556987569,
+      "variants": [
+        {
+          "fields": [
+            {
+              "name": "token",
+              "type": "Address"
+            }
+          ],
+          "kind": "struct",
+          "name": "Token"
+        },
+        {
+          "fields": [
+            {
+              "name": "mint",
+              "type": "Address"
+            }
+          ],
+          "kind": "struct",
+          "name": "Nft"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "bits",
+          "type": "bytes"
+        },
+        {
+          "name": "item_count",
+          "type": "u32"
+        }
+      ],
+      "kind": "struct",
+      "name": "EligibilityBloom",
+      "typeTag": 12069729471053596772
+    },
+    {
+      "fields": [
+        {
+          "name": "bits",
+          "type": "bytes"
+        }
+      ],
+      "kind": "struct",
+      "name": "ClaimedBloom",
+      "typeTag": 96439039821236184
+    },
+    {
+      "fields": [
+        {
+          "name": "eligibility_bloom",
+          "type": "EligibilityBloom"
+        },
+        {
+          "name": "expires_at_ms",
+          "type": "option<u64>"
+        }
+      ],
+      "kind": "struct",
+      "name": "BoxRules",
+      "typeTag": 15948098985062132184
+    },
+    {
+      "fields": [
+        {
+          "name": "creator",
+          "type": "Address"
+        },
+        {
+          "name": "box_id",
+          "type": "u64"
+        },
+        {
+          "name": "status",
+          "type": "u8"
+        },
+        {
+          "name": "claim_count",
+          "type": "u64"
+        },
+        {
+          "name": "claimed_count",
+          "type": "u64"
+        },
+        {
+          "name": "expires_at_ms",
+          "type": "u64"
+        },
+        {
+          "name": "randomness_version",
+          "type": "u8"
+        }
+      ],
+      "kind": "struct",
+      "name": "BoxState",
+      "typeTag": 5257330722607027646
+    },
+    {
+      "fields": [
+        {
+          "name": "asset",
+          "type": "AssetId"
+        },
+        {
+          "name": "total_amount",
+          "type": "u64"
+        },
+        {
+          "name": "remaining_amount",
+          "type": "u64"
+        },
+        {
+          "name": "allocation",
+          "type": "AllocationMode"
+        }
+      ],
+      "kind": "struct",
+      "name": "AssetPoolState",
+      "typeTag": 3332345046324256743
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "bytes",
+      "typeTag": 10405529814227927951
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "u8",
+      "typeTag": 631772817358541784
+    }
+  ],
+  "constants": [
+    {
+      "name": "MAX_CLAIMS_PER_BOX",
+      "type": "u64",
+      "value": 10000
+    },
+    {
+      "name": "MIN_BLOOM_BYTES",
+      "type": "usize",
+      "value": 32
+    },
+    {
+      "name": "MAX_BLOOM_BYTES",
+      "type": "usize",
+      "value": "32 * 1_024"
+    },
+    {
+      "name": "BLOOM_HASH_COUNT",
+      "type": "usize",
+      "value": 18
+    },
+    {
+      "name": "DEFAULT_EXPIRATION_MS",
+      "type": "u64",
+      "value": "24 * 60 * 60 * 1_000"
+    }
+  ],
+  "errors": [
+    {
+      "code": 2304,
+      "message": "lucky box not found: {0:?}",
+      "name": "BoxNotFound"
+    },
+    {
+      "code": 2305,
+      "message": "lucky box already exists: {0:?}",
+      "name": "BoxAlreadyExists"
+    },
+    {
+      "code": 2306,
+      "message": "lucky box is not active: {0:?}",
+      "name": "BoxNotActive"
+    },
+    {
+      "code": 2307,
+      "message": "lucky box expired: {0:?}",
+      "name": "BoxExpired"
+    },
+    {
+      "code": 2308,
+      "message": "lucky box is not expired: {0:?}",
+      "name": "BoxNotExpired"
+    },
+    {
+      "code": 2309,
+      "message": "lucky box has no remaining claims: {0:?}",
+      "name": "BoxExhausted"
+    },
+    {
+      "code": 2310,
+      "message": "invalid lucky box definition: {0}",
+      "name": "InvalidDefinition"
+    },
+    {
+      "code": 2311,
+      "message": "lucky box collection exceeds protocol limit: {0}",
+      "name": "TooManyItems"
+    },
+    {
+      "code": 2312,
+      "message": "claimant is not eligible: {0:?}",
+      "name": "NotEligible"
+    },
+    {
+      "code": 2313,
+      "message": "claim quota exceeded: {0:?}",
+      "name": "QuotaExceeded"
+    },
+    {
+      "code": 2314,
+      "message": "secure randomness unavailable: {0}",
+      "name": "SecureRandomnessUnavailable"
+    },
+    {
+      "code": 2315,
+      "message": "arithmetic overflow",
+      "name": "Overflow"
+    },
+    {
+      "code": 2316,
+      "message": "creator nonce exhausted: {0:?}",
+      "name": "CreatorNonceExhausted"
+    },
+    {
+      "code": 2317,
+      "message": "escrow invariant violated: {0:?}",
+      "name": "EscrowInvariantViolation"
+    },
+    {
+      "code": 2318,
+      "message": "Transparent TokenError",
+      "name": "TokenError",
+      "transparent": true
+    },
+    {
+      "code": 2319,
+      "message": "Transparent NftError",
+      "name": "NftError",
+      "transparent": true
+    },
+    {
+      "code": 2320,
+      "message": "Transparent ContextError",
+      "name": "ContextError",
+      "transparent": true
+    }
+  ]
+}

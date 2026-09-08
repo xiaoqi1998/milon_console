@@ -1,0 +1,778 @@
+{
+  "metadata": {
+    "app_id": 8,
+    "name": "keyless",
+    "description": "Milon keyless app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "new_admin",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 44485,
+      "handler": "set_admin",
+      "kind": "entry",
+      "name": "SetAdmin"
+    },
+    {
+      "args": [
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "aud",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "name",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 61476,
+      "handler": "register_issuer",
+      "kind": "entry",
+      "name": "RegisterIssuer"
+    },
+    {
+      "args": [
+        {
+          "name": "issuer_hash_raw",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "aud_hash_raw",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "enabled",
+          "role": "input",
+          "type": "bool"
+        }
+      ],
+      "discriminator": 43155,
+      "handler": "set_issuer_enabled",
+      "kind": "entry",
+      "name": "SetIssuerEnabled"
+    },
+    {
+      "args": [
+        {
+          "name": "max_session_ttl_ms",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "bind_activation_delay_ms",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 11932,
+      "handler": "set_params",
+      "kind": "entry",
+      "name": "SetParams"
+    },
+    {
+      "args": [
+        {
+          "name": "jwt",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "ephemeral_pk",
+          "role": "input",
+          "type": "PublicKey"
+        }
+      ],
+      "discriminator": 21310,
+      "handler": "authenticate",
+      "kind": "entry",
+      "name": "Authenticate",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "jwt",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "ephemeral_pk",
+          "role": "input",
+          "type": "PublicKey"
+        },
+        {
+          "name": "ephemeral_sig",
+          "role": "input",
+          "type": "Signature"
+        },
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 59392,
+      "handler": "bind",
+      "kind": "entry",
+      "name": "Bind"
+    },
+    {
+      "args": [
+        {
+          "name": "keyless_addr",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 57503,
+      "handler": "unbind",
+      "kind": "entry",
+      "name": "Unbind"
+    },
+    {
+      "args": [
+        {
+          "name": "session_id",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 15722,
+      "handler": "revoke_session",
+      "kind": "entry",
+      "name": "RevokeSession"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 58087,
+      "handler": "get_sessions",
+      "kind": "view",
+      "name": "GetSessions",
+      "returns": {
+        "type": "vec<SessionEntry>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "keyless_addr",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 4855,
+      "handler": "get_binding",
+      "kind": "view",
+      "name": "GetBinding",
+      "returns": {
+        "type": "option<KeylessBinding>"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 50872,
+      "handler": "list_issuers",
+      "kind": "view",
+      "name": "ListIssuers",
+      "returns": {
+        "type": "vec<IssuerInfo>"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 12312,
+      "handler": "get_params",
+      "kind": "view",
+      "name": "GetParams",
+      "returns": {
+        "type": "KeylessParams"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 33494,
+      "handler": "is_keyless_account",
+      "kind": "view",
+      "name": "IsKeylessAccount",
+      "returns": {
+        "type": "bool"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "StringOrArray",
+      "typeTag": 563464638590666036,
+      "variants": [
+        {
+          "fields": [
+            {
+              "name": "0",
+              "type": "String"
+            }
+          ],
+          "kind": "tuple",
+          "name": "Single"
+        },
+        {
+          "fields": [
+            {
+              "name": "0",
+              "type": "vec<String>"
+            }
+          ],
+          "kind": "tuple",
+          "name": "Array"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "session_id",
+          "type": "B256"
+        },
+        {
+          "name": "session_pubkey",
+          "type": "PublicKey"
+        },
+        {
+          "name": "expires_at_ms",
+          "type": "u64"
+        },
+        {
+          "name": "created_at_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "SessionEntry",
+      "typeTag": 9259651745530529271
+    },
+    {
+      "fields": [
+        {
+          "name": "session_id",
+          "type": "B256"
+        },
+        {
+          "name": "valid_until_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "RevokedSession",
+      "typeTag": 7675263165855945229
+    },
+    {
+      "fields": [
+        {
+          "name": "sessions",
+          "type": "vec<SessionEntry>"
+        },
+        {
+          "name": "revoked",
+          "type": "vec<RevokedSession>"
+        }
+      ],
+      "kind": "struct",
+      "name": "SessionsState",
+      "typeTag": 3961147753519811779
+    },
+    {
+      "fields": [
+        {
+          "name": "max_session_ttl_ms",
+          "type": "u64"
+        },
+        {
+          "name": "bind_activation_delay_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "KeylessParams",
+      "typeTag": 725874807982920445
+    },
+    {
+      "fields": [
+        {
+          "name": "issuer",
+          "type": "String"
+        },
+        {
+          "name": "aud",
+          "type": "String"
+        },
+        {
+          "name": "name",
+          "type": "String"
+        },
+        {
+          "name": "enabled",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "IssuerEntry",
+      "typeTag": 16698501604422221736
+    },
+    {
+      "fields": [
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "slot_index",
+          "type": "u8"
+        },
+        {
+          "name": "bound_at_ms",
+          "type": "u64"
+        },
+        {
+          "name": "active_at_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "KeylessBinding",
+      "typeTag": 14670956490051724736
+    },
+    {
+      "fields": [
+        {
+          "name": "issuer_hash",
+          "type": "B256"
+        },
+        {
+          "name": "bound_at_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "KeylessMarker",
+      "typeTag": 17054723070852806189
+    },
+    {
+      "fields": [
+        {
+          "name": "entries",
+          "type": "vec<tuple<B256,B256>>"
+        }
+      ],
+      "kind": "struct",
+      "name": "IssuerIndex",
+      "typeTag": 4564553489632741216
+    },
+    {
+      "fields": [
+        {
+          "name": "issuer",
+          "type": "String"
+        },
+        {
+          "name": "aud",
+          "type": "String"
+        },
+        {
+          "name": "issuer_hash",
+          "type": "B256"
+        },
+        {
+          "name": "aud_hash",
+          "type": "B256"
+        },
+        {
+          "name": "name",
+          "type": "String"
+        },
+        {
+          "name": "enabled",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "IssuerInfo",
+      "typeTag": 17512480152592181711
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "PublicKey",
+      "typeTag": 12784977254987571496
+    },
+    {
+      "kind": "builtin",
+      "name": "Signature",
+      "typeTag": 9480777115032900864
+    },
+    {
+      "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "bytes",
+      "typeTag": 10405529814227927951
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "u8",
+      "typeTag": 631772817358541784
+    }
+  ],
+  "constants": [
+    {
+      "name": "KEYLESS_SPONSOR_SEED",
+      "type": "u16",
+      "value": 0
+    },
+    {
+      "name": "KEYLESS_SPONSOR_MINT",
+      "type": "u64",
+      "value": "1_000_000 * 1_000_000"
+    },
+    {
+      "name": "DEFAULT_MAX_SESSION_TTL_MS",
+      "type": "u64",
+      "value": 86400000
+    },
+    {
+      "name": "DEFAULT_BIND_ACTIVATION_DELAY_MS",
+      "type": "u64",
+      "value": 86400000
+    },
+    {
+      "name": "SESSION_TTL_CEILING_MS",
+      "type": "u64",
+      "value": 604800000
+    },
+    {
+      "name": "BIND_DELAY_FLOOR_MS",
+      "type": "u64",
+      "value": 3600000
+    }
+  ],
+  "errors": [
+    {
+      "code": 2048,
+      "message": "JWT is not valid UTF-8",
+      "name": "JwtInvalidUtf8"
+    },
+    {
+      "code": 2049,
+      "message": "JWT must have 3 dot-separated parts",
+      "name": "JwtInvalidFormat"
+    },
+    {
+      "code": 2050,
+      "message": "JWT base64 decode failed",
+      "name": "JwtBase64Decode"
+    },
+    {
+      "code": 2051,
+      "message": "JWT header parse failed",
+      "name": "JwtHeaderParse"
+    },
+    {
+      "code": 2052,
+      "message": "JWT payload parse failed",
+      "name": "JwtPayloadParse"
+    },
+    {
+      "code": 2053,
+      "message": "JWT missing required field: iss",
+      "name": "JwtMissingIss"
+    },
+    {
+      "code": 2054,
+      "message": "JWT missing required field: sub",
+      "name": "JwtMissingSub"
+    },
+    {
+      "code": 2055,
+      "message": "JWT missing required field: exp",
+      "name": "JwtMissingExp"
+    },
+    {
+      "code": 2056,
+      "message": "JWT missing required field: nonce",
+      "name": "JwtMissingNonce"
+    },
+    {
+      "code": 2057,
+      "message": "JWT missing required field: kid in header",
+      "name": "JwtMissingKid"
+    },
+    {
+      "code": 2058,
+      "message": "JWT expired: exp={0} ms",
+      "name": "JwtExpired"
+    },
+    {
+      "code": 2059,
+      "message": "JWT algorithm not supported: {0}",
+      "name": "JwtAlgorithmUnsupported"
+    },
+    {
+      "code": 2060,
+      "message": "JWT signature verification failed",
+      "name": "JwtSignatureInvalid"
+    },
+    {
+      "code": 2061,
+      "message": "nonce must start with 'milon-keyless:'",
+      "name": "NoncePrefixInvalid"
+    },
+    {
+      "code": 2062,
+      "message": "nonce format invalid (expected 'milon-keyless:<hex_commitment>:<expiry_ms>')",
+      "name": "NonceFormatInvalid"
+    },
+    {
+      "code": 2063,
+      "message": "nonce commitment must be 64 hex characters (32 bytes)",
+      "name": "NonceCommitmentLength"
+    },
+    {
+      "code": 2064,
+      "message": "nonce commitment hex decode failed",
+      "name": "NonceCommitmentHex"
+    },
+    {
+      "code": 2065,
+      "message": "nonce expiry parse failed",
+      "name": "NonceExpiryParse"
+    },
+    {
+      "code": 2066,
+      "message": "nonce commitment mismatch (ephemeral_pk does not match JWT nonce)",
+      "name": "NonceCommitmentMismatch"
+    },
+    {
+      "code": 2067,
+      "message": "nonce expired: expiry={0} ms",
+      "name": "NonceExpired"
+    },
+    {
+      "code": 2068,
+      "message": "JWK not found: issuer={0}, kid={1}",
+      "name": "JwkNotFound"
+    },
+    {
+      "code": 2069,
+      "message": "JWK disabled: issuer={0}, kid={1}",
+      "name": "JwkDisabled"
+    },
+    {
+      "code": 2070,
+      "message": "JWK parse failed",
+      "name": "JwkParse"
+    },
+    {
+      "code": 2071,
+      "message": "JWK key type mismatch: expected {0}, got {1}",
+      "name": "JwkKeyTypeMismatch"
+    },
+    {
+      "code": 2072,
+      "message": "JWK missing required field: {0}",
+      "name": "JwkMissingField"
+    },
+    {
+      "code": 2073,
+      "message": "JWK base64 decode failed",
+      "name": "JwkBase64Decode"
+    },
+    {
+      "code": 2074,
+      "message": "JWK invalid RSA key",
+      "name": "JwkInvalidRsaKey"
+    },
+    {
+      "code": 2075,
+      "message": "JWK invalid EC key",
+      "name": "JwkInvalidEcKey"
+    },
+    {
+      "code": 2076,
+      "message": "JWK curve mismatch: alg={0}, crv={1}",
+      "name": "JwkCurveMismatch"
+    },
+    {
+      "code": 2077,
+      "message": "ephemeral signature invalid",
+      "name": "EphemeralSignatureInvalid"
+    },
+    {
+      "code": 2078,
+      "message": "timestamp skew too large: {0} ms exceeds limit",
+      "name": "TimestampSkewTooLarge"
+    },
+    {
+      "code": 2079,
+      "message": "session expire out of range: {0}",
+      "name": "SessionExpireOutOfRange"
+    },
+    {
+      "code": 2080,
+      "message": "mock verifier rejects non-empty proof bytes (ZK phase not enabled)",
+      "name": "MockProofNotEmpty"
+    },
+    {
+      "code": 2081,
+      "message": "session pubkey must be a real signature key",
+      "name": "InvalidSessionPubkey"
+    },
+    {
+      "code": 2082,
+      "message": "session is revoked: {0:?}",
+      "name": "SessionRevoked"
+    },
+    {
+      "code": 2083,
+      "message": "issuer not registered: issuer_hash={0:?}, aud_hash={1:?}",
+      "name": "IssuerNotRegistered"
+    },
+    {
+      "code": 2084,
+      "message": "issuer disabled: issuer_hash={0:?}, aud_hash={1:?}",
+      "name": "IssuerDisabled"
+    },
+    {
+      "code": 2085,
+      "message": "issuer already registered: issuer_hash={0:?}, aud_hash={1:?}",
+      "name": "IssuerAlreadyRegistered"
+    },
+    {
+      "code": 2086,
+      "message": "issuer URL must start with https://",
+      "name": "IssuerUrlInvalid"
+    },
+    {
+      "code": 2087,
+      "message": "audience must be non-empty",
+      "name": "AudienceEmpty"
+    },
+    {
+      "code": 2088,
+      "message": "issuer name must be non-empty and at most 64 bytes",
+      "name": "IssuerNameInvalid"
+    },
+    {
+      "code": 2089,
+      "message": "duplicate jwk entries in key set",
+      "name": "DuplicateJwk"
+    },
+    {
+      "code": 2090,
+      "message": "session not found: {0:?}",
+      "name": "SessionNotFound"
+    },
+    {
+      "code": 2091,
+      "message": "keyless identity already bound: {0:?}",
+      "name": "AlreadyBound"
+    },
+    {
+      "code": 2092,
+      "message": "keyless binding not found: {0:?}",
+      "name": "BindingNotFound"
+    },
+    {
+      "code": 2093,
+      "message": "keyless binding owner mismatch: binding={0:?}, signer={1:?}",
+      "name": "BindingOwnerMismatch"
+    },
+    {
+      "code": 2094,
+      "message": "keyless signer slot not found in owner account",
+      "name": "KeylessSlotNotFound"
+    },
+    {
+      "code": 2095,
+      "message": "keyless admin not set (genesis or set_admin required)",
+      "name": "AdminNotSet"
+    },
+    {
+      "code": 2096,
+      "message": "address not signed in current transaction: {0:?}",
+      "name": "AddressNotSignatured"
+    },
+    {
+      "code": 2097,
+      "message": "max_session_ttl_ms must be in 1..={0}",
+      "name": "SessionTtlOutOfRange"
+    },
+    {
+      "code": 2098,
+      "message": "bind_activation_delay_ms must be in {0}..={1}",
+      "name": "BindDelayOutOfRange"
+    },
+    {
+      "code": 2099,
+      "message": "Transparent AccountError",
+      "name": "AccountError",
+      "transparent": true
+    },
+    {
+      "code": 2100,
+      "message": "Transparent TokenError",
+      "name": "TokenError",
+      "transparent": true
+    }
+  ]
+}

@@ -622,6 +622,12 @@ func TestDeserializeValue_Integer(t *testing.T) {
 		roundTrip(t, "i8", int8(0))
 		roundTrip(t, "i8", int8(127))
 	})
+	t.Run("u8", func(t *testing.T) {
+		roundTrip(t, "u8", uint8(0))
+		roundTrip(t, "u8", uint8(127))
+		roundTrip(t, "u8", uint8(128))
+		roundTrip(t, "u8", uint8(255))
+	})
 	t.Run("i16", func(t *testing.T) {
 		roundTrip(t, "i16", int16(-32768))
 		roundTrip(t, "i16", int16(-1))

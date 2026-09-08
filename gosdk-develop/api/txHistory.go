@@ -135,13 +135,13 @@ func (r *TxReceipt) MarshalPostcard(serializer *postcard.Serializer) error {
 
 		// FirstSnapshot: Option<PersistedValue>
 		if err := postcard.SerializeOption(s, rec.FirstSnapshot, func(ss *postcard.Serializer, pv PersistedValue) error {
-			return SerializePersistedValue(ss, pv)
+			return SerializePersistedValueNoLen(ss, pv)
 		}); err != nil {
 			return fmt.Errorf("failed to serialize FirstSnapshot: %w", err)
 		}
 
 		// LastWritten: PersistedValue
-		if err := SerializePersistedValue(s, rec.LastWritten); err != nil {
+		if err := SerializePersistedValueNoLen(s, rec.LastWritten); err != nil {
 			return fmt.Errorf("failed to serialize LastWritten: %w", err)
 		}
 		return nil
@@ -149,12 +149,11 @@ func (r *TxReceipt) MarshalPostcard(serializer *postcard.Serializer) error {
 		return fmt.Errorf("failed to serialize Access records: %w", err)
 	}
 
-	// 5. Events (Vec<AnySerializeOwned>)
+	// 5. Events (Vec<AnySerializeOwned>) — value has no length prefix
 	if err := postcard.SerializeSeq(serializer, r.Events, func(s *postcard.Serializer, event TypeTagWithData) error {
 		if err := s.SerializeU64(event.TypeTag); err != nil {
 			return fmt.Errorf("failed to serialize event TypeTag: %w", err)
 		}
-		// AnySerializeOwned: value has no length prefix, write it directly
 		s.SerializeFixedBytes(event.Value)
 		return nil
 	}); err != nil {
@@ -173,27 +172,6 @@ func (r *TxReceipt) MarshalPostcard(serializer *postcard.Serializer) error {
 		return fmt.Errorf("failed to serialize GasCharged: %w", err)
 	}
 
-	return nil
-}
-
-func SerializePersistedValue(serializer *postcard.Serializer, pv PersistedValue) error {
-	if err := serializer.SerializeU32(pv.Variant); err != nil {
-		return fmt.Errorf("failed to serialize variant: %w", err)
-	}
-
-	switch pv.Variant {
-	case 0:
-		// Inline(AnySerializeOwned)
-		if err := serializer.SerializeU64(pv.TypeTag); err != nil {
-			return fmt.Errorf("failed to serialize type_tag: %w", err)
-		}
-		serializer.SerializeFixedBytes(pv.InlineData)
-	case 1:
-		// External(BlobHash)
-		serializer.SerializeFixedBytes(pv.ExternalHash[:])
-	default:
-		return fmt.Errorf("unknown PersistedValue variant: %d", pv.Variant)
-	}
 	return nil
 }
 
@@ -299,14 +277,14 @@ func (r *TxReceipt) UnmarshalPostcard(deserializer *postcard.Deserializer) error
 	r.State = state
 
 	// 4. Access records (Vec<AccessRecord>)
-	accessRecords, err := postcard.DeserializeSeq(deserializer, DeserializeAccessRecord)
+	accessRecords, err := postcard.DeserializeSeq(deserializer, DeserializeAccessRecordNoLen)
 	if err != nil {
 		return fmt.Errorf("failed to deserialize Access records: %w", err)
 	}
 	r.Access = accessRecords
 
 	// 5. Events (Vec<AnySerializeOwned>)
-	events, err := postcard.DeserializeSeq(deserializer, DeserializeEventEntry)
+	events, err := postcard.DeserializeSeq(deserializer, DeserializeEventEntryNoLen)
 	if err != nil {
 		return fmt.Errorf("failed to deserialize Events: %w", err)
 	}

@@ -134,6 +134,7 @@ func generate(apps []appInfo, pkg string) (string, error) {
 
 	b.WriteString("import (\n")
 	b.WriteString("\t\"fmt\"\n")
+	b.WriteString("\t\"reflect\"\n")
 	if imp.big {
 		b.WriteString("\t\"math/big\"\n")
 	}
@@ -436,7 +437,7 @@ func writeToValueStruct(b *strings.Builder, goName string, t provider.IDLType, a
 	var counter int
 	for _, f := range t.Fields {
 		fmt.Fprintf(b, "\t// %s: %s\n", f.Name, f.Type)
-		writeToStmt(b, fmt.Sprintf("out[%q]", f.Name), "v."+pascal(f.Name), f.Type, "\t", appName, types, &counter)
+		writeToStmt(b, fmt.Sprintf("out[%q]", f.Name), "v."+pascal(f.Name), f.Type, "\t", appName, types, &counter, false)
 	}
 	fmt.Fprintf(b, "\treturn out, nil\n}\n\n")
 }
@@ -463,7 +464,7 @@ func writeToValueEnum(b *strings.Builder, goName string, t provider.IDLType, app
 				tmp := fmt.Sprintf("v%d", counter)
 				counter++
 				fmt.Fprintf(b, "\t\tvar %s any\n", tmp)
-				writeToStmt(b, tmp, fmt.Sprintf("v.Fields[%d]", i), f.Type, "\t\t", appName, types, &counter)
+				writeToStmt(b, tmp, fmt.Sprintf("v.Fields[%d]", i), f.Type, "\t\t", appName, types, &counter, true)
 				fields = append(fields, tmp)
 			}
 			fmt.Fprintf(b, "\t\treturn map[string]any{\"variant\": %q, \"fields\": []any{%s}}, nil\n", variant.Name, strings.Join(fields, ", "))
@@ -473,7 +474,7 @@ func writeToValueEnum(b *strings.Builder, goName string, t provider.IDLType, app
 			var counter int
 			for i, f := range variant.Fields {
 				fmt.Fprintf(b, "\t\t// %s: %s\n", f.Name, f.Type)
-				writeToStmt(b, fmt.Sprintf("record[%q]", f.Name), fmt.Sprintf("v.Fields[%d]", i), f.Type, "\t\t", appName, types, &counter)
+				writeToStmt(b, fmt.Sprintf("record[%q]", f.Name), fmt.Sprintf("v.Fields[%d]", i), f.Type, "\t\t", appName, types, &counter, true)
 			}
 			fmt.Fprintf(b, "\t\treturn map[string]any{\"variant\": %q, \"fields\": record}, nil\n", variant.Name)
 		}
@@ -576,16 +577,32 @@ func writeConvStmt(b *strings.Builder, outVar, vExpr, idlType, indent, appName s
 	}
 
 	helper := map[string]string{
-		"Address": "toAddress", "Signer": "toAddress", "AnySigner": "toAddress",
+		"Address":   "toAddress",
+		"Signer":    "toAddress",
+		"AnySigner": "toAddress",
 		"PublicKey": "toPublicKey",
-		"String":    "toString", "string": "toString",
-		"bool": "toBool", "boolean": "toBool",
-		"u8": "toUint8", "u16": "toUint16", "u32": "toUint32",
-		"u64": "toUint64", "Bitmap64": "toUint64", "Amount": "toUint64", "Epoch": "toUint64",
-		"u128": "toBigInt",
-		"i8":   "toInt8", "i16": "toInt16", "i32": "toInt32", "i64": "toInt64",
-		"bytes": "toBytes",
-		"B96":   "toFixed12", "B144": "toFixed18", "B160": "toFixed20", "B256": "toFixed32",
+		"Signature": "toSignature",
+		"String":    "toString",
+		"string":    "toString",
+		"bool":      "toBool",
+		"boolean":   "toBool",
+		"u8":        "toUint8",
+		"u16":       "toUint16",
+		"u32":       "toUint32",
+		"u64":       "toUint64",
+		"Bitmap64":  "toUint64",
+		"Amount":    "toUint64",
+		"Epoch":     "toUint64",
+		"u128":      "toBigInt",
+		"i8":        "toInt8",
+		"i16":       "toInt16",
+		"i32":       "toInt32",
+		"i64":       "toInt64",
+		"bytes":     "toBytes",
+		"B96":       "toFixed12",
+		"B144":      "toFixed18",
+		"B160":      "toFixed20",
+		"B256":      "toFixed32",
 	}[t]
 	if helper != "" {
 		tmp := next()
@@ -604,7 +621,12 @@ func writeConvStmt(b *strings.Builder, outVar, vExpr, idlType, indent, appName s
 // assigning it to outVar. outVar must already be assignable (a map element or
 // a declared variable). Generated code relies on an enclosing function whose
 // error result can be returned with "return nil, err".
-func writeToStmt(b *strings.Builder, outVar, vExpr, idlType, indent, appName string, types map[string]provider.IDLType, counter *int) {
+//
+// When needAssert is true, vExpr has static type any (an enum variant field
+// read from Fields []any); the generated code first asserts it to the concrete
+// container type before len/range/index, and the recursion keeps asserting
+// since container elements of an any-typed source are any as well.
+func writeToStmt(b *strings.Builder, outVar, vExpr, idlType, indent, appName string, types map[string]provider.IDLType, counter *int, needAssert bool) {
 	t := strings.TrimSpace(idlType)
 	next := func() string {
 		v := fmt.Sprintf("v%d", *counter)
@@ -613,11 +635,18 @@ func writeToStmt(b *strings.Builder, outVar, vExpr, idlType, indent, appName str
 	}
 
 	if inner, ok := wrappedInner(t, "vec"); ok {
+		src := vExpr
+		if needAssert {
+			tmp := next()
+			fmt.Fprintf(b, "%s%s, ok := %s.([]any)\n", indent, tmp, vExpr)
+			fmt.Fprintf(b, "%sif !ok {\n%s\treturn nil, fmt.Errorf(\"expected []any, got %%T\", %s)\n%s}\n", indent, indent, vExpr, indent)
+			src = tmp
+		}
 		tmp := next()
-		fmt.Fprintf(b, "%s%s := make([]any, len(%s))\n", indent, tmp, vExpr)
+		fmt.Fprintf(b, "%s%s := make([]any, len(%s))\n", indent, tmp, src)
 		idx, elem := next(), next()
-		fmt.Fprintf(b, "%sfor %s, %s := range %s {\n", indent, idx, elem, vExpr)
-		writeToStmt(b, tmp+"["+idx+"]", elem, inner, indent+"\t", appName, types, counter)
+		fmt.Fprintf(b, "%sfor %s, %s := range %s {\n", indent, idx, elem, src)
+		writeToStmt(b, tmp+"["+idx+"]", elem, inner, indent+"\t", appName, types, counter, needAssert)
 		fmt.Fprintf(b, "%s}\n", indent)
 		fmt.Fprintf(b, "%s%s = %s\n", indent, outVar, tmp)
 		return
@@ -627,7 +656,16 @@ func writeToStmt(b *strings.Builder, outVar, vExpr, idlType, indent, appName str
 		fmt.Fprintf(b, "%sif %s == nil {\n", indent, vExpr)
 		fmt.Fprintf(b, "%s\t%s = nil\n", indent, outVar)
 		fmt.Fprintf(b, "%s} else {\n", indent)
-		writeToStmt(b, outVar, "*"+vExpr, inner, indent+"\t", appName, types, counter)
+		src := vExpr
+		if needAssert {
+			tmp := next()
+			fmt.Fprintf(b, "%s\t%s, err := derefAny(%s)\n", indent, tmp, vExpr)
+			fmt.Fprintf(b, "%s\tif err != nil {\n%s\t\treturn nil, err\n%s\t}\n", indent, indent, indent)
+			src = tmp
+		} else {
+			src = "*" + vExpr
+		}
+		writeToStmt(b, outVar, src, inner, indent+"\t", appName, types, counter, needAssert)
 		fmt.Fprintf(b, "%s}\n", indent)
 		return
 	}
@@ -635,15 +673,22 @@ func writeToStmt(b *strings.Builder, outVar, vExpr, idlType, indent, appName str
 	if strings.HasPrefix(t, "map<") && strings.HasSuffix(t, ">") {
 		parts := splitTopLevel(t[4 : len(t)-1])
 		if len(parts) == 2 {
+			src := vExpr
+			if needAssert {
+				tmp := next()
+				fmt.Fprintf(b, "%s%s, ok := %s.(map[any]any)\n", indent, tmp, vExpr)
+				fmt.Fprintf(b, "%sif !ok {\n%s\treturn nil, fmt.Errorf(\"expected map[any]any, got %%T\", %s)\n%s}\n", indent, indent, vExpr, indent)
+				src = tmp
+			}
 			tmp := next()
-			fmt.Fprintf(b, "%s%s := make(map[any]any, len(%s))\n", indent, tmp, vExpr)
+			fmt.Fprintf(b, "%s%s := make(map[any]any, len(%s))\n", indent, tmp, src)
 			kk, ee := next(), next()
-			fmt.Fprintf(b, "%sfor %s, %s := range %s {\n", indent, kk, ee, vExpr)
+			fmt.Fprintf(b, "%sfor %s, %s := range %s {\n", indent, kk, ee, src)
 			ck, cv := next(), next()
 			fmt.Fprintf(b, "%s\tvar %s any\n", indent, ck)
 			fmt.Fprintf(b, "%s\tvar %s any\n", indent, cv)
-			writeToStmt(b, ck, kk, parts[0], indent+"\t", appName, types, counter)
-			writeToStmt(b, cv, ee, parts[1], indent+"\t", appName, types, counter)
+			writeToStmt(b, ck, kk, parts[0], indent+"\t", appName, types, counter, needAssert)
+			writeToStmt(b, cv, ee, parts[1], indent+"\t", appName, types, counter, needAssert)
 			fmt.Fprintf(b, "%s\t%s[%s] = %s\n", indent, tmp, ck, cv)
 			fmt.Fprintf(b, "%s}\n", indent)
 			fmt.Fprintf(b, "%s%s = %s\n", indent, outVar, tmp)
@@ -653,10 +698,18 @@ func writeToStmt(b *strings.Builder, outVar, vExpr, idlType, indent, appName str
 
 	if strings.HasPrefix(t, "tuple<") && strings.HasSuffix(t, ">") {
 		parts := splitTopLevel(t[4 : len(t)-1])
+		src := vExpr
+		if needAssert {
+			tmp := next()
+			fmt.Fprintf(b, "%s%s, ok := %s.([]any)\n", indent, tmp, vExpr)
+			fmt.Fprintf(b, "%sif !ok {\n%s\treturn nil, fmt.Errorf(\"expected []any, got %%T\", %s)\n%s}\n", indent, indent, vExpr, indent)
+			src = tmp
+		}
 		tmp := next()
 		fmt.Fprintf(b, "%s%s := make([]any, %d)\n", indent, tmp, len(parts))
 		for i, pt := range parts {
-			writeToStmt(b, fmt.Sprintf("%s[%d]", tmp, i), fmt.Sprintf("%s[%d]", vExpr, i), pt, indent, appName, types, counter)
+			// src[i] is any ([]any indexing), so nested containers need asserting.
+			writeToStmt(b, fmt.Sprintf("%s[%d]", tmp, i), fmt.Sprintf("%s[%d]", src, i), pt, indent, appName, types, counter, true)
 		}
 		fmt.Fprintf(b, "%s%s = %s\n", indent, outVar, tmp)
 		return
@@ -745,7 +798,7 @@ func generateIx(b *strings.Builder, app appInfo, ix provider.Instruction, imp *i
 	var counter int
 	for _, arg := range ix.Args {
 		fmt.Fprintf(b, "\t// %s: %s\n", arg.Name, arg.Type)
-		writeToStmt(b, fmt.Sprintf("args[%q]", arg.Name), "a."+goParamName(arg.Name), arg.Type, "\t", app.name, typeByName, &counter)
+		writeToStmt(b, fmt.Sprintf("args[%q]", arg.Name), "a."+goParamName(arg.Name), arg.Type, "\t", app.name, typeByName, &counter, false)
 	}
 	fmt.Fprintf(b, "\twire, err := a.pd.Encode(%q, args)\n", ix.Name)
 	fmt.Fprintf(b, "\tif err != nil {\n\t\treturn nil, err\n\t}\n")
@@ -928,6 +981,13 @@ func toPublicKey(v any) (*crypto.PublicKey, error) {
 	return nil, fmt.Errorf("expected *crypto.PublicKey, got %T", v)
 }
 
+func toSignature(v any) (*crypto.Signature, error) {
+	if x, ok := v.(*crypto.Signature); ok {
+		return x, nil
+	}
+	return nil, fmt.Errorf("expected *crypto.Signature, got %T", v)
+}
+
 func toBigInt(v any) (*big.Int, error) {
 	switch n := v.(type) {
 	case *big.Int:
@@ -997,6 +1057,17 @@ func toFixed32(v any) ([32]byte, error) {
 	}
 	return [32]byte{}, fmt.Errorf("expected [32]byte, got %T", v)
 }
+
+func derefAny(v any) (any, error) {
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Pointer {
+		return nil, fmt.Errorf("expected pointer, got %T", v)
+	}
+	if rv.IsNil() {
+		return nil, fmt.Errorf("expected non-nil pointer")
+	}
+	return rv.Elem().Interface(), nil
+}
 `)
 }
 
@@ -1026,6 +1097,9 @@ func goType(idlType string, imp *importSet) string {
 	case "PublicKey":
 		imp.crypto = true
 		return "*crypto.PublicKey"
+	case "Signature":
+		imp.crypto = true
+		return "*crypto.Signature"
 	case "String", "string":
 		return "string"
 	case "bool", "boolean":

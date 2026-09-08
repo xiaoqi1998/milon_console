@@ -20,9 +20,10 @@ type RpcClientImpl interface {
 	ClaimFaucet(accountSk crypto.SecretKeyer, account *crypto.Address, mode lib.AccountSignatureMode) error
 	CreateAccount(accountSk crypto.SecretKeyer, pk *crypto.PublicKey) error
 
-	BalanceOf(account *crypto.Address) (uint64, error)
+	BalanceOf(account *crypto.Address, token ...any) (uint64, error)
 	ListAccountSigners(account *crypto.Address) ([]any, error)
 	AccountSignerBit(account *crypto.Address) (types.Bitmap64, error)
+	TokenMetadata(token *crypto.Address) (gen.TokenMetadata, error)
 
 	GetChainHead(opts ...RequestOption) (*ChainHeadResult, error)
 	SubmitTx(transaction *lib.Transaction, opts ...RequestOption) error
@@ -233,14 +234,18 @@ func (client *Client) CreateAccount(accountSk crypto.SecretKeyer, pk *crypto.Pub
 	return client.RpcClient.CreateAccount(accountSk, pk)
 }
 
-func (client *Client) BalanceOf(account *crypto.Address) (uint64, error) {
-	return client.RpcClient.BalanceOf(account)
+func (client *Client) BalanceOf(account *crypto.Address, token ...any) (uint64, error) {
+	return client.RpcClient.BalanceOf(account, token...)
 }
 func (client *Client) ListAccountSigners(account *crypto.Address) ([]any, error) {
 	return client.RpcClient.ListAccountSigners(account)
 }
 func (client *Client) AccountSignerBit(account *crypto.Address) (types.Bitmap64, error) {
 	return client.RpcClient.AccountSignerBit(account)
+}
+
+func (client *Client) TokenMetadata(token *crypto.Address) (gen.TokenMetadata, error) {
+	return client.RpcClient.TokenMetadata(token)
 }
 
 func (client *Client) GetChainHead(opts ...RequestOption) (*ChainHeadResult, error) {

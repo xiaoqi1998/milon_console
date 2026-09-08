@@ -1,0 +1,1629 @@
+{
+  "metadata": {
+    "app_id": 6,
+    "name": "dex",
+    "description": "Milon dex app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "authority",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "base_token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "quote_token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "base_lot_atoms",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "quote_atoms_per_lot_tick",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "min_tick",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "max_tick",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "max_order_lots",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "max_fills_per_action",
+          "role": "input",
+          "type": "u16"
+        }
+      ],
+      "discriminator": 122,
+      "handler": "create_market",
+      "kind": "entry",
+      "name": "CreateMarket",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "authority",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "doc",
+          "role": "input",
+          "type": "DidDocumentInput"
+        }
+      ],
+      "discriminator": 27598,
+      "handler": "initialize_market_did",
+      "kind": "entry",
+      "name": "InitializeMarketDid"
+    },
+    {
+      "args": [
+        {
+          "name": "authority",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "issuer_key_id",
+          "role": "input",
+          "type": "u8"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "credential_hash",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "valid_until_ms",
+          "role": "input",
+          "type": "option<u64>"
+        },
+        {
+          "name": "issuer_signature",
+          "role": "input",
+          "type": "Signature"
+        }
+      ],
+      "discriminator": 47697,
+      "handler": "disclose_market_vc_attestation",
+      "kind": "entry",
+      "name": "DiscloseMarketVcAttestation"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "client_order_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "side",
+          "role": "input",
+          "type": "OrderSide"
+        },
+        {
+          "name": "price_tick",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "base_lots",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "time_in_force",
+          "role": "input",
+          "type": "OrderTimeInForce"
+        },
+        {
+          "name": "self_trade_policy",
+          "role": "input",
+          "type": "OrderSelfTradePolicy"
+        },
+        {
+          "name": "max_fills",
+          "role": "input",
+          "type": "u16"
+        },
+        {
+          "name": "channel",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 24195,
+      "handler": "place_limit_order",
+      "kind": "entry",
+      "name": "PlaceLimitOrder",
+      "returns": {
+        "type": "PlaceOrderResult"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 54560,
+      "handler": "cancel_order",
+      "kind": "entry",
+      "name": "CancelOrder",
+      "returns": {
+        "type": "OrderInfo"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "client_order_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 16334,
+      "handler": "cancel_by_client_order_id",
+      "kind": "entry",
+      "name": "CancelByClientOrderId",
+      "returns": {
+        "type": "OrderInfo"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "order_ids",
+          "role": "input",
+          "type": "vec<u64>"
+        }
+      ],
+      "discriminator": 55242,
+      "handler": "batch_cancel",
+      "kind": "entry",
+      "name": "BatchCancel",
+      "returns": {
+        "type": "vec<OrderInfo>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "authority",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "status",
+          "role": "input",
+          "type": "MarketStatus"
+        }
+      ],
+      "discriminator": 48095,
+      "handler": "set_market_status",
+      "kind": "entry",
+      "name": "SetMarketStatus"
+    },
+    {
+      "args": [
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 2326,
+      "handler": "market_info",
+      "kind": "view",
+      "name": "MarketInfo",
+      "returns": {
+        "type": "Market"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 23456,
+      "handler": "order_info_view",
+      "kind": "view",
+      "name": "OrderInfoView",
+      "returns": {
+        "type": "OrderInfo"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 12137,
+      "handler": "best_bid_ask",
+      "kind": "view",
+      "name": "BestBidAsk",
+      "returns": {
+        "type": "BestBidAsk"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "depth",
+          "role": "input",
+          "type": "u16"
+        }
+      ],
+      "discriminator": 46884,
+      "handler": "orderbook_depth",
+      "kind": "view",
+      "name": "OrderbookDepth",
+      "returns": {
+        "type": "OrderbookDepth"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "side",
+          "role": "input",
+          "type": "OrderSide"
+        },
+        {
+          "name": "tick",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "cursor_order_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "limit",
+          "role": "input",
+          "type": "u16"
+        }
+      ],
+      "discriminator": 24461,
+      "handler": "orders_at_level",
+      "kind": "view",
+      "name": "OrdersAtLevel",
+      "returns": {
+        "type": "LevelOrderPage"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 6759,
+      "handler": "vault_liability",
+      "kind": "view",
+      "name": "VaultLiability",
+      "returns": {
+        "type": "u64"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "MarketStatus",
+      "typeTag": 16951893849801157528,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Active"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "CancelOnly"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Paused"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "OrderSide",
+      "typeTag": 13972451060350856701,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Bid"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Ask"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "OrderTimeInForce",
+      "typeTag": 6464719643566272127,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "GoodTilCancel"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "ImmediateOrCancel"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "AddLiquidityOnly"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "OrderSelfTradePolicy",
+      "typeTag": 7007226021324580664,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "CancelTaker"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "CancelMaker"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "CancelBoth"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "base_token",
+          "type": "Address"
+        },
+        {
+          "name": "quote_token",
+          "type": "Address"
+        },
+        {
+          "name": "vault_seed",
+          "type": "u16"
+        },
+        {
+          "name": "base_lot_atoms",
+          "type": "u64"
+        },
+        {
+          "name": "quote_atoms_per_lot_tick",
+          "type": "u64"
+        },
+        {
+          "name": "min_tick",
+          "type": "u32"
+        },
+        {
+          "name": "max_tick",
+          "type": "u32"
+        },
+        {
+          "name": "max_order_lots",
+          "type": "u64"
+        },
+        {
+          "name": "max_fills_per_action",
+          "type": "u16"
+        },
+        {
+          "name": "maker_fee_ppm",
+          "type": "u32"
+        },
+        {
+          "name": "taker_fee_ppm",
+          "type": "u32"
+        },
+        {
+          "name": "authority",
+          "type": "Address"
+        },
+        {
+          "name": "status",
+          "type": "MarketStatus"
+        }
+      ],
+      "kind": "struct",
+      "name": "Market",
+      "typeTag": 14379241867177925174
+    },
+    {
+      "fields": [
+        {
+          "name": "order_id",
+          "type": "u64"
+        },
+        {
+          "name": "status",
+          "type": "u8"
+        },
+        {
+          "name": "filled_lots",
+          "type": "u64"
+        },
+        {
+          "name": "remaining_lots",
+          "type": "u64"
+        },
+        {
+          "name": "fill_count",
+          "type": "u16"
+        },
+        {
+          "name": "rested",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "PlaceOrderResult",
+      "typeTag": 2935855982233369986
+    },
+    {
+      "fields": [
+        {
+          "name": "order_id",
+          "type": "u64"
+        },
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "client_order_id",
+          "type": "u64"
+        },
+        {
+          "name": "side",
+          "type": "u8"
+        },
+        {
+          "name": "limit_tick",
+          "type": "u32"
+        },
+        {
+          "name": "original_lots",
+          "type": "u64"
+        },
+        {
+          "name": "remaining_lots",
+          "type": "u64"
+        },
+        {
+          "name": "reserved_amount",
+          "type": "u64"
+        },
+        {
+          "name": "status",
+          "type": "u8"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrderInfo",
+      "typeTag": 14941930351407067118
+    },
+    {
+      "fields": [
+        {
+          "name": "tick",
+          "type": "u32"
+        },
+        {
+          "name": "order_count",
+          "type": "u32"
+        },
+        {
+          "name": "total_base_lots",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "BookLevel",
+      "typeTag": 14458181887817329403
+    },
+    {
+      "fields": [
+        {
+          "name": "bid",
+          "type": "option<BookLevel>"
+        },
+        {
+          "name": "ask",
+          "type": "option<BookLevel>"
+        }
+      ],
+      "kind": "struct",
+      "name": "BestBidAsk",
+      "typeTag": 10798078011748760512
+    },
+    {
+      "fields": [
+        {
+          "name": "bids",
+          "type": "vec<BookLevel>"
+        },
+        {
+          "name": "asks",
+          "type": "vec<BookLevel>"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrderbookDepth",
+      "typeTag": 3436467991477045676
+    },
+    {
+      "fields": [
+        {
+          "name": "orders",
+          "type": "vec<OrderInfo>"
+        },
+        {
+          "name": "next_order_id",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "LevelOrderPage",
+      "typeTag": 11648156999977740375
+    },
+    {
+      "fields": [
+        {
+          "name": "best_tick_plus_one",
+          "type": "u64"
+        },
+        {
+          "name": "level_count",
+          "type": "u32"
+        },
+        {
+          "name": "order_count",
+          "type": "u64"
+        },
+        {
+          "name": "total_base_lots",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "BookRootState",
+      "typeTag": 11909102844735751704
+    },
+    {
+      "fields": [
+        {
+          "name": "prev_tick_plus_one",
+          "type": "u64"
+        },
+        {
+          "name": "next_tick_plus_one",
+          "type": "u64"
+        },
+        {
+          "name": "head_order_id",
+          "type": "u64"
+        },
+        {
+          "name": "tail_order_id",
+          "type": "u64"
+        },
+        {
+          "name": "order_count",
+          "type": "u32"
+        },
+        {
+          "name": "total_remaining_lots",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "PriceLevelState",
+      "typeTag": 17278780363699941720
+    },
+    {
+      "fields": [
+        {
+          "name": "base_token",
+          "type": "Address"
+        },
+        {
+          "name": "quote_token",
+          "type": "Address"
+        },
+        {
+          "name": "vault_seed",
+          "type": "u16"
+        }
+      ],
+      "kind": "struct",
+      "name": "MarketTokensState",
+      "typeTag": 5654559684954199973
+    },
+    {
+      "fields": [
+        {
+          "name": "base_lot_atoms",
+          "type": "u64"
+        },
+        {
+          "name": "quote_atoms_per_lot_tick",
+          "type": "u64"
+        },
+        {
+          "name": "min_tick",
+          "type": "u32"
+        },
+        {
+          "name": "max_tick",
+          "type": "u32"
+        },
+        {
+          "name": "max_order_lots",
+          "type": "u64"
+        },
+        {
+          "name": "max_fills_per_action",
+          "type": "u16"
+        },
+        {
+          "name": "maker_fee_ppm",
+          "type": "u32"
+        },
+        {
+          "name": "taker_fee_ppm",
+          "type": "u32"
+        }
+      ],
+      "kind": "struct",
+      "name": "MarketRulesState",
+      "typeTag": 11123398268661740058
+    },
+    {
+      "fields": [
+        {
+          "name": "level_count",
+          "type": "u32"
+        },
+        {
+          "name": "order_count",
+          "type": "u64"
+        },
+        {
+          "name": "total_base_lots",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "BookTotalsState",
+      "typeTag": 16631658590519238925
+    },
+    {
+      "fields": [
+        {
+          "name": "prev_tick_plus_one",
+          "type": "u64"
+        },
+        {
+          "name": "next_tick_plus_one",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "PriceLevelLinkState",
+      "typeTag": 15822207962510117388
+    },
+    {
+      "fields": [
+        {
+          "name": "head_order_id",
+          "type": "u64"
+        },
+        {
+          "name": "tail_order_id",
+          "type": "u64"
+        },
+        {
+          "name": "order_count",
+          "type": "u32"
+        },
+        {
+          "name": "total_remaining_lots",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "PriceLevelQueueState",
+      "typeTag": 11467908556707130883
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "type": "u64"
+        },
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "client_order_id",
+          "type": "u64"
+        },
+        {
+          "name": "side",
+          "type": "u8"
+        },
+        {
+          "name": "limit_tick",
+          "type": "u32"
+        },
+        {
+          "name": "original_lots",
+          "type": "u64"
+        },
+        {
+          "name": "time_in_force",
+          "type": "u8"
+        },
+        {
+          "name": "self_trade_policy",
+          "type": "u8"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrderStaticState",
+      "typeTag": 17960764635315497153
+    },
+    {
+      "fields": [
+        {
+          "name": "remaining_lots",
+          "type": "u64"
+        },
+        {
+          "name": "reserved_amount",
+          "type": "u64"
+        },
+        {
+          "name": "status",
+          "type": "u8"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrderMutableState",
+      "typeTag": 9595926857480671517
+    },
+    {
+      "fields": [
+        {
+          "name": "prev_order_id",
+          "type": "u64"
+        },
+        {
+          "name": "next_order_id",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrderLinkState",
+      "typeTag": 17455953695198391291
+    },
+    {
+      "fields": [
+        {
+          "name": "subject_type",
+          "type": "DidSubjectType"
+        },
+        {
+          "name": "keys",
+          "type": "vec<DidKeyInput>"
+        },
+        {
+          "name": "services",
+          "type": "vec<DidServiceInput>"
+        },
+        {
+          "name": "avatar_uri",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidDocumentInput",
+      "typeTag": 16587227066181147487
+    },
+    {
+      "fields": [
+        {
+          "name": "public_key",
+          "type": "PublicKey"
+        },
+        {
+          "name": "label",
+          "type": "option<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidKeyInput",
+      "typeTag": 18437325469875962493
+    },
+    {
+      "fields": [
+        {
+          "name": "label",
+          "type": "String"
+        },
+        {
+          "name": "service_endpoint",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "DidServiceInput",
+      "typeTag": 7956246246609137121
+    },
+    {
+      "kind": "enum",
+      "name": "DidSubjectType",
+      "typeTag": 2309684872828421392,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Personal"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Organization"
+        }
+      ]
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "PublicKey",
+      "typeTag": 12784977254987571496
+    },
+    {
+      "kind": "builtin",
+      "name": "Signature",
+      "typeTag": 9480777115032900864
+    },
+    {
+      "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "u8",
+      "typeTag": 631772817358541784
+    }
+  ],
+  "constants": [
+    {
+      "name": "MAKER_FEE_PPM",
+      "type": "u32",
+      "value": 3000
+    },
+    {
+      "name": "TAKER_FEE_PPM",
+      "type": "u32",
+      "value": 5000
+    },
+    {
+      "name": "CHANNEL_FEE_PPM",
+      "type": "u32",
+      "value": 500000
+    },
+    {
+      "name": "PLATFORM_FEE_ADDRESS",
+      "type": "Address",
+      "value": "Address { digest : [0 ; 20] }"
+    },
+    {
+      "name": "MAX_BATCH_CANCEL_ORDERS",
+      "type": "u16",
+      "value": 32
+    },
+    {
+      "name": "MAX_BOOK_DEPTH",
+      "type": "u16",
+      "value": 50
+    },
+    {
+      "name": "MAX_LEVEL_ORDERS",
+      "type": "u16",
+      "value": 100
+    }
+  ],
+  "events": [
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "base_token",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "quote_token",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "authority",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "vault_seed",
+          "type": "u16"
+        },
+        {
+          "indexed": false,
+          "name": "maker_fee_ppm",
+          "type": "u32"
+        },
+        {
+          "indexed": false,
+          "name": "taker_fee_ppm",
+          "type": "u32"
+        },
+        {
+          "indexed": false,
+          "name": "base_lot_atoms",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "quote_atoms_per_lot_tick",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "min_tick",
+          "type": "u32"
+        },
+        {
+          "indexed": false,
+          "name": "max_tick",
+          "type": "u32"
+        }
+      ],
+      "name": "EventMarketCreated",
+      "typeTag": 5964668819498663630
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "authority",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "old_status",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "new_status",
+          "type": "u8"
+        }
+      ],
+      "name": "EventMarketStatusChanged",
+      "typeTag": 11067723932439739904
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "authority",
+          "type": "Address"
+        }
+      ],
+      "name": "EventMarketDidInitialized",
+      "typeTag": 7059747331868676939
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "authority",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "issuer",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "issuer_key_id",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "credential_schema",
+          "type": "String"
+        },
+        {
+          "indexed": false,
+          "name": "credential_hash",
+          "type": "B256"
+        },
+        {
+          "indexed": false,
+          "name": "valid_until_ms",
+          "type": "option<u64>"
+        }
+      ],
+      "name": "EventMarketVcAttestationDisclosed",
+      "typeTag": 949979366553590319
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "order_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "client_order_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "side",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "limit_tick",
+          "type": "u32"
+        },
+        {
+          "indexed": false,
+          "name": "original_lots",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "remaining_lots",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "filled_lots",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "status",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "rested",
+          "type": "bool"
+        }
+      ],
+      "name": "EventOrderPlaced",
+      "typeTag": 13071246516272651571
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "order_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "side",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "limit_tick",
+          "type": "u32"
+        },
+        {
+          "indexed": false,
+          "name": "remaining_lots",
+          "type": "u64"
+        }
+      ],
+      "name": "EventOrderRested",
+      "typeTag": 14283557354538227929
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "maker",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "taker",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "maker_order_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "taker_order_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "channel",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "taker_side",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "price_tick",
+          "type": "u32"
+        },
+        {
+          "indexed": false,
+          "name": "fill_lots",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "base_atoms",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "quote_atoms",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "fee_atoms",
+          "type": "u64"
+        }
+      ],
+      "name": "EventOrderFilled",
+      "typeTag": 6139633433842553158
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "order_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "reason",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "cancelled_lots",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "released_amount",
+          "type": "u64"
+        }
+      ],
+      "name": "EventOrderCancelled",
+      "typeTag": 16269317253269013757
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "side",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "tick",
+          "type": "u32"
+        }
+      ],
+      "name": "EventPriceLevelOpened",
+      "typeTag": 10557899254584470782
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "side",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "tick",
+          "type": "u32"
+        }
+      ],
+      "name": "EventPriceLevelClosed",
+      "typeTag": 2783597273965581783
+    }
+  ],
+  "errors": [
+    {
+      "code": 1536,
+      "message": "base token and quote token must differ",
+      "name": "SameTokenPair"
+    },
+    {
+      "code": 1537,
+      "message": "market parameters must be non-zero",
+      "name": "ZeroMarketParameter"
+    },
+    {
+      "code": 1538,
+      "message": "market numeric bounds overflow",
+      "name": "MarketBoundsOverflow"
+    },
+    {
+      "code": 1539,
+      "message": "market seed space exhausted",
+      "name": "MarketSeedExhausted"
+    },
+    {
+      "code": 1540,
+      "message": "market seed already allocated: {0}",
+      "name": "MarketSeedAlreadyAllocated"
+    },
+    {
+      "code": 1541,
+      "message": "market already exists: {0:?}",
+      "name": "MarketAlreadyExists"
+    },
+    {
+      "code": 1542,
+      "message": "market not found: {0:?}",
+      "name": "MarketNotFound"
+    },
+    {
+      "code": 1543,
+      "message": "market is not active: {0:?}",
+      "name": "MarketNotActive"
+    },
+    {
+      "code": 1544,
+      "message": "market derived address does not match its seed: {0:?}",
+      "name": "MarketAddressMismatch"
+    },
+    {
+      "code": 1545,
+      "message": "market state is corrupted: {0:?}",
+      "name": "MarketStateCorrupted"
+    },
+    {
+      "code": 1546,
+      "message": "market authority mismatch",
+      "name": "MarketAuthorityMismatch"
+    },
+    {
+      "code": 1547,
+      "message": "order not found: market {0:?}, order {1}",
+      "name": "OrderNotFound"
+    },
+    {
+      "code": 1548,
+      "message": "client order not found: market {0:?}, owner {1:?}, client order {2}",
+      "name": "ClientOrderNotFound"
+    },
+    {
+      "code": 1549,
+      "message": "batch cancel order list must not be empty",
+      "name": "EmptyBatchCancel"
+    },
+    {
+      "code": 1550,
+      "message": "batch cancel size {0} exceeds maximum {1}",
+      "name": "BatchCancelLimitExceeded"
+    },
+    {
+      "code": 1551,
+      "message": "batch cancel contains duplicate order: {0}",
+      "name": "DuplicateBatchOrder"
+    },
+    {
+      "code": 1552,
+      "message": "view limit {0} is outside 1..={1}",
+      "name": "InvalidViewLimit"
+    },
+    {
+      "code": 1553,
+      "message": "requested price level does not exist: market {0:?}, side {1}, tick {2}",
+      "name": "PriceLevelNotFound"
+    },
+    {
+      "code": 1554,
+      "message": "order cursor does not belong to requested price level: {0}",
+      "name": "InvalidOrderCursor"
+    },
+    {
+      "code": 1555,
+      "message": "token operation failed with token error code {0}",
+      "name": "TokenFailure"
+    },
+    {
+      "code": 1556,
+      "message": "orderbook failed with core error code {0}",
+      "name": "OrderbookFailure"
+    },
+    {
+      "code": 1557,
+      "message": "address did not sign the current instruction: {0:?}",
+      "name": "AddressNotSignatured"
+    },
+    {
+      "code": 1558,
+      "message": "execution context is not bound",
+      "name": "ContextNotBound"
+    },
+    {
+      "code": 1559,
+      "message": "direct public-key signer context is not bound: {0:?}",
+      "name": "DirectPubkeySignerContextNotBound"
+    },
+    {
+      "code": 1560,
+      "message": "direct public-key signer does not match: {0:?}",
+      "name": "DirectPubkeySignerMismatch"
+    },
+    {
+      "code": 1561,
+      "message": "identity operation failed with identity error code {0}",
+      "name": "IdentityFailure"
+    },
+    {
+      "code": 1562,
+      "message": "market DID must use the organization subject type",
+      "name": "MarketDidMustBeOrganization"
+    }
+  ]
+}

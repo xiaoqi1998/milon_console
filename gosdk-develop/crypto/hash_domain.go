@@ -11,14 +11,18 @@ const MilonTxHistoryDomainContext = "milon.tx-history.v1"
 const MilonTxBatchHashDomainContext = "milon.tx-batch.v1"
 const MilonPkAddressDomainContext = "milon.address.pk.v1"
 
+// MilonVoteBatchHashDomainContext is the domain of the MIP-25 vote intent hash (vote_batch_hash: all ix hashes + the owner's gated ix subset).
+const MilonVoteBatchHashDomainContext = "milon.ix-auth.batch.v1"
+
 // Pre-allocated domain bytes to avoid per-call string->[]byte allocations in
 // hot hash paths. Do not modify.
 var (
-	rootDomainBytes      = []byte(MilonRootDomainContext)
-	IxHashDomainBytes    = []byte(MilonIxHashDomainContext)
-	TxHashDomainBytes    = []byte(MilonTxHashDomainContext)
-	TxAuthDomainBytes    = []byte(MilonTxAuthDomainContext)
-	PkAddressDomainBytes = []byte(MilonPkAddressDomainContext)
+	rootDomainBytes          = []byte(MilonRootDomainContext)
+	IxHashDomainBytes        = []byte(MilonIxHashDomainContext)
+	TxHashDomainBytes        = []byte(MilonTxHashDomainContext)
+	TxAuthDomainBytes        = []byte(MilonTxAuthDomainContext)
+	PkAddressDomainBytes     = []byte(MilonPkAddressDomainContext)
+	VoteBatchHashDomainBytes = []byte(MilonVoteBatchHashDomainContext)
 )
 
 // Hasher creates a Blake3 hasher pre-seeded with MILON_ROOT_DOMAIN and the domain, for incremental update use.
