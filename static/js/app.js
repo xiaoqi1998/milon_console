@@ -527,6 +527,9 @@ function renderEndpoints(filter) {
     });
     tree.appendChild(gw);
   });
+  if (typeof appendSavedGroupToConsole === 'function') {
+    count += appendSavedGroupToConsole(tree, keyword) || 0;
+  }
   $('endpointCount').textContent = String(count);
 }
 
@@ -615,7 +618,14 @@ function renderParams(ep) {
           'div',
           { class: 'body-actions' },
           el('button', { class: 'body-format-btn', text: '格式化', onclick: formatBody }),
-          el('button', { class: 'body-format-btn', text: '清空', onclick: clearBody })
+          el('button', { class: 'body-format-btn', text: '清空', onclick: clearBody }),
+          (typeof SAVED_CONSOLE_ENDPOINTS !== 'undefined' && SAVED_CONSOLE_ENDPOINTS.indexOf(ep.id) >= 0
+            ? el('button', {
+                class: 'body-format-btn saved-save-btn',
+                text: '存为指令',
+                onclick: function () { saveConsoleBodyAsInstruction(ep); },
+              })
+            : null)
         )
       )
     );
@@ -3682,6 +3692,7 @@ function buildIDLMethodItem(app, ix) {
       onclick: function () { selectIDLMethod(app.name, ix.name); },
     },
     el('span', { class: 'idl-kind-badge ' + ix.kind, text: ix.kind }),
+    (typeof savedBadgeFor === 'function' ? savedBadgeFor(app.name, ix.name) : null),
     el(
       'div',
       { class: 'endpoint-text' },
@@ -3724,6 +3735,9 @@ function renderIDLHeader(app, ix) {
 function renderIDLForm(ix) {
   var body = $('idlEditorBody');
   body.innerHTML = '';
+
+  // 保存的指令区（saved-instructions.js 提供）：同一方法可挂多条指令
+  if (typeof renderSavedSectionForIDL === 'function') renderSavedSectionForIDL(body, ix);
 
   // 中文备注区（来自 IDL 数据里的 description）
   if (ix.description) {
@@ -5120,6 +5134,8 @@ function initApp() {
   $('idlCopyCurlBtn').addEventListener('click', copyIDLCurl);
   $('idlCopyRespBtn').addEventListener('click', copyIDLResponse);
   $('idlDownloadRespBtn').addEventListener('click', downloadIDLResponse);
+  // 保存指令层初始化（saved-instructions.js）
+  if (typeof initSavedInstructions === 'function') initSavedInstructions();
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();

@@ -102,14 +102,15 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 	}, "ok"))
 }
 
-// buildClaimFaucetTx builds the sponsored ClaimFaucet transaction the way the SDK
-// intends: SplitPayerSelfPay with no gas signer (the claimer signs only ix bit0),
-// because claim_faucet is sponsor=true in the IDL and the devNet node honors it
-// (verified by probe: split tx + SubmitTxWithSponsorIxes([0]) confirms on-chain).
+// buildClaimFaucetTx builds the sponsored ClaimFaucet transaction, mirroring SDK
+// rpcClientV1.ClaimFaucet: SplitPayerSelfPay with no gas signer (the claimer signs
+// only ix bit0), because claim_faucet is sponsor=true in the IDL and the node
+// honors it.
 //
-// NOTE: SDK rpcClientV1.ClaimFaucet builds this same tx but submits it via
-// SubmitTx, whose internal ValidateWire (non-sponsored) rejects the gas-signer-less
-// form with "gas signer required for ix 0". Use submitClaimFaucetTx instead.
+// Rule: a sponsored-form tx (no gas signer) must go through the sponsored-aware
+// paths — ValidateWireWith(sponsorIxes) and SubmitTxWithSponsorIxes(tx, sponsorIxes).
+// The non-sponsored paths (ValidateWire / SubmitTx) self-reject it with
+// "gas signer required for ix 0".
 func buildClaimFaucetTx(mc *milon.Client, addr crypto.Address, sk crypto.SecretKeyer, mode lib.AccountSignatureMode) (*lib.Transaction, error) {
 	pd, ok := mc.GetAllPd()["token"]
 	if !ok {

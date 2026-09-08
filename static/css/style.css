@@ -3210,3 +3210,188 @@ body::before {
 .idl-batch-card .param-label {
   font-size: 12px;
 }
+
+/* ==================== Saved Instructions (保存指令) ==================== */
+
+.saved-count-badge {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 193, 7, 0.18);
+  color: #ffc107;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.saved-section {
+  border: 1px solid rgba(255, 193, 7, 0.25);
+  border-radius: 8px;
+  background: rgba(255, 193, 7, 0.04);
+}
+
+.saved-card {
+  border: 1px solid var(--border, #2a3040);
+  border-radius: 8px;
+  background: var(--bg-elevated, #161b26);
+  padding: 8px 10px;
+  margin: 6px 0;
+}
+
+.saved-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.saved-card-name {
+  font-weight: 600;
+  color: var(--text-primary, #e6e9ef);
+}
+
+.saved-badge {
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.saved-badge.pm {
+  background: rgba(99, 102, 241, 0.18);
+  color: #818cf8;
+}
+
+.saved-badge.time {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-secondary, #8a94a6);
+}
+
+.saved-card-desc {
+  margin-top: 4px;
+  color: var(--text-secondary, #8a94a6);
+  font-size: 12px;
+}
+
+.saved-card-args {
+  margin-top: 4px;
+  color: var(--text-secondary, #8a94a6);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  word-break: break-all;
+  max-height: 60px;
+  overflow: auto;
+}
+
+.saved-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-small {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.saved-save-btn {
+  color: #ffc107;
+}
+
+/* Modal */
+.si-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+}
+
+.si-modal {
+  width: min(560px, 92vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated, #161b26);
+  border: 1px solid var(--border, #2a3040);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.si-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #2a3040);
+}
+
+.si-modal-title {
+  font-weight: 600;
+}
+
+.si-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #8a94a6);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.si-modal-body {
+  padding: 14px 16px;
+  overflow: auto;
+}
+
+.si-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border, #2a3040);
+}
+
+.si-modal-row {
+  margin-bottom: 10px;
+}
+
+.si-modal-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-secondary, #8a94a6);
+  font-size: 12px;
+}
+
+.si-modal-ta {
+  width: 100%;
+  min-height: 60px;
+  background: var(--bg-input, #0d1117);
+  color: var(--text-primary, #e6e9ef);
+  border: 1px solid var(--border, #2a3040);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  resize: vertical;
+}
+
+.si-modal-desc {
+  color: var(--text-secondary, #8a94a6);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.si-modal-desc.args {
+  font-family: var(--font-mono, monospace);
+  word-break: break-all;
+  max-height: 90px;
+  overflow: auto;
+}
+
+.si-modal-hint {
+  margin-top: 6px;
+  color: #ff6b81;
+  font-size: 12px;
+}
