@@ -10,11 +10,11 @@ type Network struct {
 var LocalNet = Network{
 	Name:    "localNet",
 	ChainId: 900_000_001,
-	RpcUrl:  "http://127.0.0.1:6280/milon/v1",
+	RpcUrl:  "http://127.0.0.1:6280/v1/rpc",
 }
 
 var DevNet = Network{
 	Name:    "devNet",
 	ChainId: 900_000_001,
-	RpcUrl:  "https://devnet.milonlabs.com/milon/v1",
+	RpcUrl:  "https://devnet.milonlabs.com/v1/rpc",
 }

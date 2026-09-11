@@ -213,8 +213,6 @@ func decodePostcardBody[T any](body []byte, name string, resolver postcard.TypeR
 		return nil, fmt.Errorf("%T does not implement postcard.Unmarshaler", &value)
 	}, false, resolver)
 	if err != nil {
-		fmt.Printf("body %v: \n", body)
-
 		return nil, fmt.Errorf("failed to deserialize %s: %w", name, err)
 	}
 	return decoded, nil

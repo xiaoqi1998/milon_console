@@ -256,39 +256,6 @@
         {
           "name": "to",
           "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "amount",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "tag",
-          "role": "input",
-          "type": "u32"
-        }
-      ],
-      "discriminator": 25012,
-      "handler": "transfer_with_tag",
-      "kind": "entry",
-      "name": "TransferWithTag"
-    },
-    {
-      "args": [
-        {
-          "name": "from",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "token",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "to",
-          "role": "input",
           "type": "vec<Address>"
         },
         {
@@ -818,11 +785,6 @@
     },
     {
       "kind": "builtin",
-      "name": "u32",
-      "typeTag": 5560783464435099345
-    },
-    {
-      "kind": "builtin",
       "name": "u64",
       "typeTag": 5563585020063213298
     },
@@ -928,11 +890,6 @@
           "indexed": false,
           "name": "amount",
           "type": "u64"
-        },
-        {
-          "indexed": false,
-          "name": "tag",
-          "type": "u32"
         }
       ],
       "name": "Transfer",

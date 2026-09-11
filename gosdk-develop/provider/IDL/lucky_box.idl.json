@@ -100,9 +100,14 @@
           "type": "u64"
         },
         {
-          "name": "mint",
+          "name": "collection",
           "role": "input",
           "type": "Address"
+        },
+        {
+          "name": "seed",
+          "role": "input",
+          "type": "u64"
         },
         {
           "name": "total_amount",
@@ -229,8 +234,12 @@
         {
           "fields": [
             {
-              "name": "mint",
+              "name": "collection",
               "type": "Address"
+            },
+            {
+              "name": "seed",
+              "type": "u64"
             }
           ],
           "kind": "struct",

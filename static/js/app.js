@@ -3133,7 +3133,7 @@ var IDL_PAYMENT_MODES = [
 // IDL 方法实例参数映射表：键为 appName.MethodName，值为该方法的 args 示例对象
 // 数据来源：D:\pprojiect\Auto_test_new\test_cases\milon\ 下 6 个模块的测试用例
 var IDL_EXAMPLE_ARGS = {
-  // ==================== token 模块（app_id=2，30 个方法）====================
+  // ==================== token 模块（app_id=2，29 个方法：22 entry + 7 view）====================
   'token.Create': {
     token: 'M11on1111111111111111111111',
     owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
@@ -3151,7 +3151,6 @@ var IDL_EXAMPLE_ARGS = {
   },
   'token.Burn': { holder: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token: 'M11on1111111111111111111111', amount: 1000000 },
   'token.Transfer': { from: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token: 'M11on1111111111111111111111', to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 500000000 },
-  'token.TransferWithTag': { from: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token: 'M11on1111111111111111111111', to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 500000000, _tag: 1001 },
   'token.TransferBatch': {
     from: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     token: 'M11on1111111111111111111111',
@@ -3214,7 +3213,7 @@ var IDL_EXAMPLE_ARGS = {
   'account.GetVote': { owner: '0x1234567890abcdef1234567890abcdef12345678', intent_hash: '0x0000000000000000000000000000000000000000000000000000000000000001' },
   'account.ListActiveVotes': { owner: '0x1234567890abcdef1234567890abcdef12345678' },
 
-  // ==================== demo 模块（app_id=255，18 个方法：10 entry + 8 view）====================
+  // ==================== demo 模块（app_id=255，21 个方法：12 entry + 9 view）====================
   'demo.OpenOrder': { operator: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19', order_id: 'order-a1b2c3d4e5f6' },
   'demo.PayOrder': { payer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19', order_id: 'order-a1b2c3d4e5f6', token: 'M11on1111111111111111111111', amount: 1000 },
   'demo.SettleOrder': { operator: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19', order_id: 'order-a1b2c3d4e5f6', token: 'M11on1111111111111111111111', to: 'SYsZAfKGTthBZBLXrZSXVWvSgLo', amount: 400 },
@@ -3239,8 +3238,20 @@ var IDL_EXAMPLE_ARGS = {
     labels: { alpha: 10, beta: 20 },
     pair: [1, 2]
   },
+  'demo.RequestReveal': {
+    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
+  },
+  'demo.SettleReveal': {
+    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
+  },
+  'demo.Reveal': {
+    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
+  },
 
-  // ==================== identity 模块（app_id=4，39 个方法）====================
+  // ==================== identity 模块（app_id=4，41 个方法：17 entry + 24 view）====================
   'identity.Create': {
     subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     doc: {
@@ -3351,24 +3362,14 @@ var IDL_EXAMPLE_ARGS = {
     credential_schema: 'TestSchemaV1',
     issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'
   },
+  'identity.DisclosedVcSchemas': {subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA'},
+  'identity.DisclosedVcs': {subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', offset: 0, limit: 10},
 
-  // ==================== nft 模块（app_id=5，20 个方法）====================
+  // ==================== nft 模块（app_id=5，32 个方法：19 entry + 13 view）====================
   'nft.CreateCollection': {
     collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
     metadata: { name: 'TestNFTCollection', symbol: 'TNFT', base_uri: 'https://milon.test/nft/' }
-  },
-  'nft.SetCollectionMetadata': {
-    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    metadata: { name: 'UpdatedCollectionName', symbol: 'UPD', base_uri: 'https://milon.test/nft/v2/' }
-  },
-  'nft.SetMetadata': {
-    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
-    metadata: {
-      name: 'TestNFT #1', symbol: 'TNFT1', uri: 'https://milon.test/nft/v2.json',
-      external_url: 'https://milon.test/nft/1'
-    }
   },
   'nft.SetAttributes': {
     collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
@@ -3402,18 +3403,32 @@ var IDL_EXAMPLE_ARGS = {
   'nft.MintBatch': { collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', to: ['gKzpjpfWVvwgDs26DTCFFA9eRxb'], amounts: [1] },
   'nft.Transfer': { from: 'gKzpjpfWVvwgDs26DTCFFA9eRxb', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', to: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', amount: 1 },
   'nft.Burn': { owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 1 },
-  'nft.SetRoyalty': { collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', royalty: { recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', bps: 1000 } },
   'nft.TransferRoyaltyRecipient': { recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU', mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', new_recipient: 'gKzpjpfWVvwgDs26DTCFFA9eRxb' },
   'nft.CollectionMetadata': { collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx' },
-  'nft.MetadataUri': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
   'nft.Attributes': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
   'nft.Properties': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
-  'nft.MintConfigView': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
   'nft.TotalSupply': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
   'nft.BalanceOf': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', owner: 'gKzpjpfWVvwgDs26DTCFFA9eRxb' },
   'nft.RoyaltyInfo': { mint: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
+  'nft.TransferUpdateAuthor': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', new_author: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+  'nft.TransferFreezeAuthor': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', new_author: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+  'nft.SetCollectionTransferable': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', transferable: true},
+  'nft.TransferCollectionOwner': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', new_owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+  'nft.SetCollectionCoverUri': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', cover_uri: 'https://milon.test/nft/cover.png'},
+  'nft.SetCollectionExternalUrl': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', external_url: 'https://milon.test/nft/1'},
+  'nft.SetMintCoverUri': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', seed: 1, cover_uri: 'https://milon.test/nft/cover.png'},
+  'nft.SetMintExternalUrl': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', seed: 1, external_url: 'https://milon.test/nft/1'},
+  'nft.Freeze': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', seed: 1},
+  'nft.Unfreeze': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', seed: 1},
+  'nft.CollectionUpdateAuthor': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+  'nft.CollectionFreezeAuthor': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+  'nft.CollectionTransferable': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+  'nft.MintCoverUri': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', seed: 1},
+  'nft.IsFrozen': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', seed: 1},
+  'nft.MintDefinition': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', seed: 1},
+  'nft.CurrentMintSeed': {collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
 
-  // ==================== staking 模块（app_id=3，30 个方法）====================
+  // ==================== staking 模块（app_id=3，21 个方法：10 entry + 11 view）====================
   'staking.CreateValidator': {
     operator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
     validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e',
@@ -3436,28 +3451,212 @@ var IDL_EXAMPLE_ARGS = {
   'staking.StakePosition': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
   'staking.PositionSummary': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
   'staking.CandidatePool': {},
-  'staking.ActiveSetSnapshot': { epoch: 0 },
-  'staking.ActiveSetHash': { epoch: 0 },
-  'staking.CurrentActiveSetSnapshot': {},
-  'staking.CurrentActiveSetHash': {},
   'staking.EpochTransition': { epoch: 0 },
   'staking.EpochConfig': {},
   'staking.EpochState': {},
   'staking.RewardTreasury': {},
   'staking.HeldPrincipal': { owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d' },
-  'staking.EpochTransitionAttempt': { epoch: 0 },
-  'staking.ConsensusActiveSet': { epoch: 0 },
-  'staking.CurrentConsensusActiveSet': {},
-  'staking.ConsensusActiveValidator': { epoch: 0, index: 0 },
-  'staking.ConsensusActiveValidatorIndex': { epoch: 0, validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
-  'staking.ConsensusActiveValidatorIndexByPubkey': { epoch: 0, consensus_pubkey: 'fndsa512_public_key_hex_string' },
-  'staking.ConsensusActiveValidatorsByBitmap': { epoch: 0, bitmap: 1 }
+  'staking.DeclareValidatorAvailability': {
+    operator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
+    validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e',
+  },
+  'staking.ListDeclaredValidatorsForEpoch': {epoch: 0},
+
+  // ==================== system 模块（app_id=0，11 个方法：11 entry + 0 view）====================
+  'system.Noop': {},
+  'system.RegisterValidatorIdentity': {
+    validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e',
+    consensus_account: '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
+    consensus_pubkey: '0x0d5c7fd5c67c2e20c43d1fbebe52e3cb92c2c1cc8f3b3eff13ee1ee126b2c699',
+    bls_pubkey: '0xedd27cce7f53b5513c11cf326c41713807465b68d8c9935be6d3e1b75a3ac674',
+    network_address: '3030303030303030303030303030303030303030303030303030303030303030',
+    ed25519_pubkey: '0x45b91b018a92e84093c49ba2758680643250911b5a0a1a2f42fc9c903412eebd',
+  },
+  'system.PrepareValidatorSet': {target_epoch: 0, validator_set_seed: '0x537fe66a118edf5a58af70dd9b7b753271bb096b7eda9a4c896bbcc3c2d589cb'},
+  'system.SettleStakingEpoch': {},
+  'system.CommitValidatorSet': {},
+  'system.ConfigureStakingToken': {token: 'M11on1111111111111111111111'},
+  'system.InitializeStakingEpochConfig': {reward_per_validator: 1000000000},
+  'system.FundStakingRewardTreasury': {funder: '0x9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b', amount: 1000000000},
+  'system.BootstrapStakingValidator': {
+    operator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
+    validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e',
+    consensus_account: '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
+    consensus_pubkey: '0x0d5c7fd5c67c2e20c43d1fbebe52e3cb92c2c1cc8f3b3eff13ee1ee126b2c699',
+    bls_pubkey: '0xedd27cce7f53b5513c11cf326c41713807465b68d8c9935be6d3e1b75a3ac674',
+    network_address: '3030303030303030303030303030303030303030303030303030303030303030',
+    ed25519_pubkey: '0x45b91b018a92e84093c49ba2758680643250911b5a0a1a2f42fc9c903412eebd',
+    commission_rate_bps: 100,
+    operator_stake: 1000000000,
+  },
+  'system.BootstrapStakingEpochZero': {},
+  'system.PublishLocalBlockBeacon': {
+    parent_block_hash: '0x64bac889caa97cafabd4a92112218428c868445922c13f7fe969fff29f775b1e',
+    entropy: '0x248cbcd302e8e58e55ce7563f75cd7aa4c1bbb3de27172b95bc34e73ad3589f6',
+  },
+
+  // ==================== dex 模块（app_id=6，14 个方法：8 entry + 6 view）====================
+  'dex.CreateMarket': {
+    authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    base_token: 'M11on1111111111111111111111',
+    quote_token: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
+    base_lot_atoms: 1000000,
+    quote_atoms_per_lot_tick: 1000,
+    min_tick: 0,
+    max_tick: 1000,
+    max_order_lots: 1000,
+    max_fills_per_action: 4,
+  },
+  'dex.InitializeMarketDid': {
+    authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej',
+    doc: {
+      subject_type: 'Personal',
+      keys: [
+        {
+          public_key: '0x02a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f70819',
+          label: 'milon-test-label',
+        },
+      ],
+      services: [],
+      avatar_uri: 'https://milon.test/avatar.png',
+    },
+  },
+  'dex.DiscloseMarketVcAttestation': {
+    authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej',
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
+    issuer_key_id: 0,
+    credential_schema: 'TestSchemaV1',
+    credential_hash: '0xff28df938225836a641fd7e3e2b0fc5b1d3f601ece678dea3d8e457018f9969c',
+    valid_until_ms: 1893456000000,
+    issuer_signature: '0x9a8b7c6d5e4f30291a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f7081a2b3c4d5e6f7081920a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b4c5d6e7f8091',
+  },
+  'dex.PlaceLimitOrder': {
+    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej',
+    client_order_id: 1001,
+    side: 'Bid',
+    price_tick: 0,
+    base_lots: 100,
+    time_in_force: 'GoodTilCancel',
+    self_trade_policy: 'CancelTaker',
+    max_fills: 2,
+    channel: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
+  },
+  'dex.CancelOrder': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', order_id: 1},
+  'dex.CancelByClientOrderId': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', client_order_id: 1001},
+  'dex.BatchCancel': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', order_ids: [1000]},
+  'dex.SetMarketStatus': {authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', status: 'Active'},
+  'dex.MarketInfo': {market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej'},
+  'dex.OrderInfoView': {market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', order_id: 1},
+  'dex.BestBidAsk': {market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej'},
+  'dex.OrderbookDepth': {market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', depth: 5},
+  'dex.OrdersAtLevel': {market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', side: 'Bid', tick: 0, cursor_order_id: 0, limit: 10},
+  'dex.VaultLiability': {market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', token: 'M11on1111111111111111111111'},
+
+  // ==================== randomness 模块（app_id=7，2 个方法：0 entry + 2 view）====================
+  'randomness.LatestBeacon': {},
+  'randomness.Beacon': {index: 0},
+
+  // ==================== keyless 模块（app_id=8，16 个方法：10 entry + 6 view）====================
+  'keyless.SetAdmin': {new_admin: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b'},
+  'keyless.RegisterProvider': {
+    provider: {
+      provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
+      display_name: 'Test Keyless Provider',
+      issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
+      audiences: ['https://demo.milon.test'],
+      allowed_algs: ['Rs256'],
+      max_id_token_age_ms: 3600000,
+      max_session_ttl_ms: 86400000,
+      activate_at_ms: 0,
+      governance_enabled: true,
+      controller: null,
+      controller_enabled: false,
+    },
+  },
+  'keyless.UpdateProvider': {
+    provider: {
+      provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
+      display_name: 'Test Keyless Provider',
+      issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
+      audiences: ['https://demo.milon.test'],
+      allowed_algs: ['Rs256'],
+      max_id_token_age_ms: 3600000,
+      max_session_ttl_ms: 86400000,
+      activate_at_ms: 0,
+      governance_enabled: true,
+      controller: null,
+      controller_enabled: false,
+    },
+  },
+  'keyless.SetProviderGovernanceEnabled': {provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561', enabled: true},
+  'keyless.ControllerSetProviderEnabled': {
+    provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
+    enabled: true,
+    controller: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+  },
+  'keyless.SetParams': {max_session_ttl_ms: 86400000, bind_activation_delay_ms: 0},
+  'keyless.Authenticate': {
+    provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
+    jwt: '0x637dca1ed85901f74d2634ec978c3e441598b7cc2f86a2b9a004662222009808',
+    ephemeral_pk: '0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e',
+  },
+  'keyless.Bind': {
+    provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
+    jwt: '0x637dca1ed85901f74d2634ec978c3e441598b7cc2f86a2b9a004662222009808',
+    ephemeral_pk: '0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e',
+    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+  },
+  'keyless.Unbind': {keyless_addr: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+  'keyless.RevokeSession': {
+    session_id: '0x4bd3f199091e8bb891c8e5ee702be5c6a2d4b9e27b0b2fd84cca3a9d38dd90a3',
+    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+  },
+  'keyless.GetSessions': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+  'keyless.GetBinding': {keyless_addr: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA'},
+  'keyless.ListProviders': {},
+  'keyless.GetProvider': {provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561'},
+  'keyless.GetParams': {},
+  'keyless.IsKeylessAccount': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+
+  // ==================== lucky_box 模块（app_id=9，7 个方法：5 entry + 2 view）====================
+  'lucky_box.CreateEqual': {
+    creator: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    box_id: 1,
+    token: 'M11on1111111111111111111111',
+    total_amount: 1000000000,
+    claim_count: 10,
+    rules: null,
+  },
+  'lucky_box.CreateLucky': {
+    creator: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    box_id: 1,
+    token: 'M11on1111111111111111111111',
+    total_amount: 1000000000,
+    claim_count: 10,
+    rules: null,
+  },
+  'lucky_box.CreateNft': {
+    creator: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    box_id: 1,
+    collection: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    seed: 1,
+    total_amount: 1000000000,
+    claim_count: 10,
+    rules: null,
+  },
+  'lucky_box.Claim': {claimant: 'gKzpjpfWVvwgDs26DTCFFA9eRxb', box_id: 1},
+  'lucky_box.Refund': {box_id: 1},
+  'lucky_box.BoxView': {box_id: 1},
+  'lucky_box.AssetPool': {box_id: 1},
 };
 
 // IDL Entry 方法支付配置映射表：键为 appName.MethodName
 // paymentMode: 测试用例使用的支付模式；payerRole: 付款角色提示；signerHint: 多签名场景提示
 var IDL_EXAMPLE_PAYMENT = {
-  // token 模块（23 entry）
+  // token 模块（22 entry）
   'token.Create': { paymentMode: 'unified_payer_all', payerRole: 'token' },
   'token.AbandonOwner': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.TransferOwner': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
@@ -3467,7 +3666,6 @@ var IDL_EXAMPLE_PAYMENT = {
   'token.MintBatch': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.Burn': { paymentMode: 'unified_payer_all', payerRole: 'holder' },
   'token.Transfer': { paymentMode: 'unified_payer_all', payerRole: 'from' },
-  'token.TransferWithTag': { paymentMode: 'unified_payer_all', payerRole: 'from' },
   'token.TransferBatch': { paymentMode: 'unified_payer_all', payerRole: 'from' },
   'token.Freeze': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.Unfreeze': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
@@ -3494,7 +3692,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'account.VoteInit': { paymentMode: 'split', payerRole: 'owner（多签账户地址）' },
   'account.Vote': { paymentMode: 'split', payerRole: 'owner（多签账户地址）' },
 
-  // demo 模块（10 entry）
+  // demo 模块（12 entry）
   'demo.OpenOrder': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
   'demo.PayOrder': { paymentMode: 'unified_payer_all', payerRole: 'payer' },
   'demo.SettleOrder': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
@@ -3505,6 +3703,8 @@ var IDL_EXAMPLE_PAYMENT = {
   'demo.SetLabel': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
   'demo.BatchCredit': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
   'demo.SetTierCap': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
+  'demo.RequestReveal': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'demo.SettleReveal': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
 
   // identity 模块（17 entry）
   'identity.Create': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
@@ -3525,10 +3725,8 @@ var IDL_EXAMPLE_PAYMENT = {
   'identity.RemoveVcDisclosure': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
   'identity.RevokeVcAttestation': { paymentMode: 'unified_payer_all', payerRole: 'issuer' },
 
-  // nft 模块（12 entry）
+  // nft 模块（19 entry）
   'nft.CreateCollection': { paymentMode: 'unified_payer_all', payerRole: 'collection' },
-  'nft.SetCollectionMetadata': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
-  'nft.SetMetadata': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'nft.SetAttributes': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'nft.SetProperties': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'nft.CreateUnique': { paymentMode: 'multi_signer', payerRole: 'mint', signerHint: '该方法需 mint + owner 双签 bit0，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用' },
@@ -3536,10 +3734,19 @@ var IDL_EXAMPLE_PAYMENT = {
   'nft.MintBatch': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'nft.Transfer': { paymentMode: 'unified_payer_all', payerRole: 'from' },
   'nft.Burn': { paymentMode: 'unified_payer_all', payerRole: 'owner（NFT 持有者）' },
-  'nft.SetRoyalty': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'nft.TransferRoyaltyRecipient': { paymentMode: 'unified_payer_all', payerRole: 'recipient' },
+  'nft.TransferUpdateAuthor': {paymentMode: 'unified_payer_all', payerRole: 'update_author'},
+  'nft.TransferFreezeAuthor': {paymentMode: 'unified_payer_all', payerRole: 'freeze_author'},
+  'nft.SetCollectionTransferable': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'nft.TransferCollectionOwner': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'nft.SetCollectionCoverUri': {paymentMode: 'unified_payer_all', payerRole: 'update_author'},
+  'nft.SetCollectionExternalUrl': {paymentMode: 'unified_payer_all', payerRole: 'update_author'},
+  'nft.SetMintCoverUri': {paymentMode: 'unified_payer_all', payerRole: 'update_author'},
+  'nft.SetMintExternalUrl': {paymentMode: 'unified_payer_all', payerRole: 'update_author'},
+  'nft.Freeze': {paymentMode: 'unified_payer_all', payerRole: 'freeze_author'},
+  'nft.Unfreeze': {paymentMode: 'unified_payer_all', payerRole: 'freeze_author'},
 
-  // staking 模块（9 entry）
+  // staking 模块（10 entry）
   'staking.CreateValidator': { paymentMode: 'multi_signer', payerRole: 'operator', signerHint: '该方法需 operator + consensus_account 双签，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用。注：consensus_pubkey/bls_pubkey/network_address 为 bytes 类型，JSON REST API 可能无法正确序列化' },
   'staking.JoinCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
   'staking.LeaveCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
@@ -3548,7 +3755,50 @@ var IDL_EXAMPLE_PAYMENT = {
   'staking.CancelPendingStake': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'staking.ClaimRewards': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'staking.ClaimOperatorRewards': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
-  'staking.RequestUnstake': { paymentMode: 'unified_payer_all', payerRole: 'owner' }
+  'staking.RequestUnstake': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'staking.DeclareValidatorAvailability': {paymentMode: 'unified_payer_all', payerRole: 'operator'},
+
+  // system 模块（11 entry）
+  'system.Noop': {paymentMode: 'unified_payer_all'},
+  'system.RegisterValidatorIdentity': {paymentMode: 'unified_payer_all', payerRole: 'consensus_account'},
+  'system.PrepareValidatorSet': {paymentMode: 'unified_payer_all'},
+  'system.SettleStakingEpoch': {paymentMode: 'unified_payer_all'},
+  'system.CommitValidatorSet': {paymentMode: 'unified_payer_all'},
+  'system.ConfigureStakingToken': {paymentMode: 'unified_payer_all'},
+  'system.InitializeStakingEpochConfig': {paymentMode: 'unified_payer_all'},
+  'system.FundStakingRewardTreasury': {paymentMode: 'unified_payer_all'},
+  'system.BootstrapStakingValidator': {paymentMode: 'unified_payer_all'},
+  'system.BootstrapStakingEpochZero': {paymentMode: 'unified_payer_all'},
+  'system.PublishLocalBlockBeacon': {paymentMode: 'unified_payer_all'},
+
+  // dex 模块（8 entry）
+  'dex.CreateMarket': {paymentMode: 'unified_payer_all', payerRole: 'authority'},
+  'dex.InitializeMarketDid': {paymentMode: 'unified_payer_all', payerRole: 'authority'},
+  'dex.DiscloseMarketVcAttestation': {paymentMode: 'unified_payer_all', payerRole: 'authority'},
+  'dex.PlaceLimitOrder': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'dex.CancelOrder': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'dex.CancelByClientOrderId': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'dex.BatchCancel': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'dex.SetMarketStatus': {paymentMode: 'unified_payer_all', payerRole: 'authority'},
+
+  // keyless 模块（10 entry）
+  'keyless.SetAdmin': {paymentMode: 'unified_payer_all', payerRole: 'new_admin'},
+  'keyless.RegisterProvider': {paymentMode: 'unified_payer_all'},
+  'keyless.UpdateProvider': {paymentMode: 'unified_payer_all'},
+  'keyless.SetProviderGovernanceEnabled': {paymentMode: 'unified_payer_all'},
+  'keyless.ControllerSetProviderEnabled': {paymentMode: 'unified_payer_all', payerRole: 'controller'},
+  'keyless.SetParams': {paymentMode: 'unified_payer_all'},
+  'keyless.Authenticate': {paymentMode: 'unified_payer_all'},
+  'keyless.Bind': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'keyless.Unbind': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'keyless.RevokeSession': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+
+  // lucky_box 模块（5 entry）
+  'lucky_box.CreateEqual': {paymentMode: 'unified_payer_all', payerRole: 'creator'},
+  'lucky_box.CreateLucky': {paymentMode: 'unified_payer_all', payerRole: 'creator'},
+  'lucky_box.CreateNft': {paymentMode: 'unified_payer_all', payerRole: 'creator'},
+  'lucky_box.Claim': {paymentMode: 'unified_payer_all', payerRole: 'claimant'},
+  'lucky_box.Refund': {paymentMode: 'unified_payer_all'},
 };
 
 function idlIsScalarType(typeStr) {

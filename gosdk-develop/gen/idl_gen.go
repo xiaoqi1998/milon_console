@@ -1159,39 +1159,6 @@ provider.IDL{
 					provider.Arg{
 						Name: "to",
 						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "amount",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "tag",
-						Role: "input",
-						Type: "u32",
-					},
-				},
-				Discriminator: 25012,
-				Handler: "transfer_with_tag",
-				Kind: "entry",
-				Name: "TransferWithTag",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "from",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "token",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "to",
-						Role: "input",
 						Type: "vec<Address>",
 					},
 					provider.Arg{
@@ -1721,11 +1688,6 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
-				Name: "u32",
-				TypeTag: 5560783464435099345,
-			},
-			provider.IDLType{
-				Kind: "builtin",
 				Name: "u64",
 				TypeTag: 5563585020063213298,
 			},
@@ -1797,10 +1759,6 @@ provider.IDL{
 					provider.EventField{
 						Name: "amount",
 						Type: "u64",
-					},
-					provider.EventField{
-						Name: "tag",
-						Type: "u32",
 					},
 				},
 				TypeTag: 10783566858265554069,
@@ -4610,9 +4568,29 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
+						Name: "update_author",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "freeze_author",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "transferable",
+						Role: "input",
+						Type: "bool",
+					},
+					provider.Arg{
 						Name: "metadata",
 						Role: "input",
-						Type: "CollectionMetadata",
+						Type: "Metadata",
+					},
+					provider.Arg{
+						Name: "royalty",
+						Role: "input",
+						Type: "Royalty",
 					},
 				},
 				Discriminator: 20543,
@@ -4628,15 +4606,69 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "metadata",
+						Name: "new_author",
 						Role: "input",
-						Type: "CollectionMetadata",
+						Type: "Address",
 					},
 				},
-				Discriminator: 58161,
-				Handler: "set_collection_metadata",
+				Discriminator: 57787,
+				Handler: "transfer_update_author",
 				Kind: "entry",
-				Name: "SetCollectionMetadata",
+				Name: "TransferUpdateAuthor",
+				SignerLookups: provider.SignerLookups{
+					"update_author": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "collection",
+							Type: "Address",
+						},
+						Res: 136,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "new_author",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 50377,
+				Handler: "transfer_freeze_author",
+				Kind: "entry",
+				Name: "TransferFreezeAuthor",
+				SignerLookups: provider.SignerLookups{
+					"freeze_author": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "collection",
+							Type: "Address",
+						},
+						Res: 54,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "transferable",
+						Role: "input",
+						Type: "bool",
+					},
+				},
+				Discriminator: 19091,
+				Handler: "set_collection_transferable",
+				Kind: "entry",
+				Name: "SetCollectionTransferable",
 				SignerLookups: provider.SignerLookups{
 					"owner": provider.SignerLookup{
 						Path: provider.LookupPath{
@@ -4655,20 +4687,15 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "mint",
+						Name: "new_owner",
 						Role: "input",
 						Type: "Address",
 					},
-					provider.Arg{
-						Name: "metadata",
-						Role: "input",
-						Type: "Metadata",
-					},
 				},
-				Discriminator: 61094,
-				Handler: "set_metadata",
+				Discriminator: 64238,
+				Handler: "transfer_collection_owner",
 				Kind: "entry",
-				Name: "SetMetadata",
+				Name: "TransferCollectionOwner",
 				SignerLookups: provider.SignerLookups{
 					"owner": provider.SignerLookup{
 						Path: provider.LookupPath{
@@ -4687,9 +4714,127 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "mint",
+						Name: "cover_uri",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 32634,
+				Handler: "set_collection_cover_uri",
+				Kind: "entry",
+				Name: "SetCollectionCoverUri",
+				SignerLookups: provider.SignerLookups{
+					"update_author": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "collection",
+							Type: "Address",
+						},
+						Res: 136,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
+					},
+					provider.Arg{
+						Name: "external_url",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 8749,
+				Handler: "set_collection_external_url",
+				Kind: "entry",
+				Name: "SetCollectionExternalUrl",
+				SignerLookups: provider.SignerLookups{
+					"update_author": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "collection",
+							Type: "Address",
+						},
+						Res: 136,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "cover_uri",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 12898,
+				Handler: "set_mint_cover_uri",
+				Kind: "entry",
+				Name: "SetMintCoverUri",
+				SignerLookups: provider.SignerLookups{
+					"update_author": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "collection",
+							Type: "Address",
+						},
+						Res: 136,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "external_url",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 43141,
+				Handler: "set_mint_external_url",
+				Kind: "entry",
+				Name: "SetMintExternalUrl",
+				SignerLookups: provider.SignerLookups{
+					"update_author": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "collection",
+							Type: "Address",
+						},
+						Res: 136,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
 					},
 					provider.Arg{
 						Name: "attributes",
@@ -4702,12 +4847,12 @@ provider.IDL{
 				Kind: "entry",
 				Name: "SetAttributes",
 				SignerLookups: provider.SignerLookups{
-					"owner": provider.SignerLookup{
+					"update_author": provider.SignerLookup{
 						Path: provider.LookupPath{
 							Arg: "collection",
 							Type: "Address",
 						},
-						Res: 241,
+						Res: 136,
 					},
 				},
 			},
@@ -4719,9 +4864,9 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "mint",
+						Name: "seed",
 						Role: "input",
-						Type: "Address",
+						Type: "u64",
 					},
 					provider.Arg{
 						Name: "properties",
@@ -4734,12 +4879,12 @@ provider.IDL{
 				Kind: "entry",
 				Name: "SetProperties",
 				SignerLookups: provider.SignerLookups{
-					"owner": provider.SignerLookup{
+					"update_author": provider.SignerLookup{
 						Path: provider.LookupPath{
 							Arg: "collection",
 							Type: "Address",
 						},
-						Res: 241,
+						Res: 136,
 					},
 				},
 			},
@@ -4749,11 +4894,6 @@ provider.IDL{
 						Name: "collection",
 						Role: "input",
 						Type: "Address",
-					},
-					provider.Arg{
-						Name: "mint",
-						Role: "signer",
-						Type: "Signer",
 					},
 					provider.Arg{
 						Name: "to",
@@ -4774,11 +4914,6 @@ provider.IDL{
 						Name: "properties",
 						Role: "input",
 						Type: "vec<MetadataProperty>",
-					},
-					provider.Arg{
-						Name: "royalty",
-						Role: "input",
-						Type: "Royalty",
 					},
 				},
 				Discriminator: 33212,
@@ -4803,11 +4938,6 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "mint",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
 						Name: "to",
 						Role: "input",
 						Type: "vec<Address>",
@@ -4816,11 +4946,6 @@ provider.IDL{
 						Name: "amounts",
 						Role: "input",
 						Type: "vec<u64>",
-					},
-					provider.Arg{
-						Name: "max_supply",
-						Role: "input",
-						Type: "u64",
 					},
 					provider.Arg{
 						Name: "metadata",
@@ -4836,11 +4961,6 @@ provider.IDL{
 						Name: "properties",
 						Role: "input",
 						Type: "vec<MetadataProperty>",
-					},
-					provider.Arg{
-						Name: "royalty",
-						Role: "input",
-						Type: "Royalty",
 					},
 				},
 				Discriminator: 43953,
@@ -4865,9 +4985,9 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "mint",
+						Name: "seed",
 						Role: "input",
-						Type: "Address",
+						Type: "u64",
 					},
 					provider.Arg{
 						Name: "to",
@@ -4897,14 +5017,73 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 36565,
+				Handler: "freeze",
+				Kind: "entry",
+				Name: "Freeze",
+				SignerLookups: provider.SignerLookups{
+					"freeze_author": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "collection",
+							Type: "Address",
+						},
+						Res: 54,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 49498,
+				Handler: "unfreeze",
+				Kind: "entry",
+				Name: "Unfreeze",
+				SignerLookups: provider.SignerLookups{
+					"freeze_author": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "collection",
+							Type: "Address",
+						},
+						Res: 54,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "from",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
 					},
 					provider.Arg{
 						Name: "to",
@@ -4930,9 +5109,14 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
 					},
 					provider.Arg{
 						Name: "amount",
@@ -4948,44 +5132,12 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "collection",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "mint",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "royalty",
-						Role: "input",
-						Type: "Royalty",
-					},
-				},
-				Discriminator: 53745,
-				Handler: "set_royalty",
-				Kind: "entry",
-				Name: "SetRoyalty",
-				SignerLookups: provider.SignerLookups{
-					"owner": provider.SignerLookup{
-						Path: provider.LookupPath{
-							Arg: "collection",
-							Type: "Address",
-						},
-						Res: 241,
-					},
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
 						Name: "recipient",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
 					},
@@ -5013,21 +5165,74 @@ provider.IDL{
 				Kind: "view",
 				Name: "CollectionMetadata",
 				Returns: provider.ReturnValue{
-					Type: "CollectionMetadata",
+					Type: "Metadata",
 				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 26166,
-				Handler: "metadata_uri",
+				Discriminator: 23904,
+				Handler: "collection_update_author",
 				Kind: "view",
-				Name: "MetadataUri",
+				Name: "CollectionUpdateAuthor",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 53202,
+				Handler: "collection_freeze_author",
+				Kind: "view",
+				Name: "CollectionFreezeAuthor",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 49000,
+				Handler: "collection_transferable",
+				Kind: "view",
+				Name: "CollectionTransferable",
+				Returns: provider.ReturnValue{
+					Type: "bool",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 13043,
+				Handler: "mint_cover_uri",
+				Kind: "view",
+				Name: "MintCoverUri",
 				Returns: provider.ReturnValue{
 					Type: "String",
 				},
@@ -5035,9 +5240,14 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
 					},
 				},
 				Discriminator: 3323,
@@ -5051,9 +5261,14 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
 					},
 				},
 				Discriminator: 19051,
@@ -5067,25 +5282,56 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
 					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
+					},
 				},
-				Discriminator: 6407,
-				Handler: "mint_config_view",
+				Discriminator: 46041,
+				Handler: "is_frozen",
 				Kind: "view",
-				Name: "MintConfigView",
+				Name: "IsFrozen",
 				Returns: provider.ReturnValue{
-					Type: "MintConfig",
+					Type: "bool",
 				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 62578,
+				Handler: "mint_definition",
+				Kind: "view",
+				Name: "MintDefinition",
+				Returns: provider.ReturnValue{
+					Type: "MintDefinition",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
 					},
 				},
 				Discriminator: 35462,
@@ -5099,9 +5345,14 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
 					},
 					provider.Arg{
 						Name: "owner",
@@ -5120,7 +5371,23 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 50676,
+				Handler: "current_mint_seed",
+				Kind: "view",
+				Name: "CurrentMintSeed",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
 					},
@@ -5155,29 +5422,17 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "collection",
-						Type: "Address",
-					},
-					provider.StructField{
 						Name: "mode",
 						Type: "MintMode",
-					},
-					provider.StructField{
-						Name: "max_supply",
-						Type: "u64",
 					},
 					provider.StructField{
 						Name: "metadata",
 						Type: "Metadata",
 					},
-					provider.StructField{
-						Name: "royalty",
-						Type: "Royalty",
-					},
 				},
 				Kind: "struct",
-				Name: "MintConfig",
-				TypeTag: 16229100535211548774,
+				Name: "MintDefinition",
+				TypeTag: 6732034259444728713,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -5190,26 +5445,7 @@ provider.IDL{
 						Type: "String",
 					},
 					provider.StructField{
-						Name: "base_uri",
-						Type: "String",
-					},
-				},
-				Kind: "struct",
-				Name: "CollectionMetadata",
-				TypeTag: 16686088029351751808,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "name",
-						Type: "String",
-					},
-					provider.StructField{
-						Name: "symbol",
-						Type: "String",
-					},
-					provider.StructField{
-						Name: "uri",
+						Name: "cover_uri",
 						Type: "String",
 					},
 					provider.StructField{
@@ -5278,6 +5514,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "u16",
 				TypeTag: 5558799945458185151,
 			},
@@ -5297,8 +5538,8 @@ provider.IDL{
 						Indexed: true,
 					},
 					provider.EventField{
-						Name: "mint",
-						Type: "Address",
+						Name: "seed",
+						Type: "u64",
 						Indexed: true,
 					},
 					provider.EventField{
@@ -5317,8 +5558,13 @@ provider.IDL{
 				Name: "Transfer",
 				Fields: []provider.EventField{
 					provider.EventField{
-						Name: "mint",
+						Name: "collection",
 						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "seed",
+						Type: "u64",
 						Indexed: true,
 					},
 					provider.EventField{
@@ -5342,8 +5588,13 @@ provider.IDL{
 				Name: "Burn",
 				Fields: []provider.EventField{
 					provider.EventField{
-						Name: "mint",
+						Name: "collection",
 						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "seed",
+						Type: "u64",
 						Indexed: true,
 					},
 					provider.EventField{
@@ -5372,93 +5623,93 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 1282,
-				Message: "Mint not found: {0:?}",
-				Name: "MintNotFound",
+				Message: "Collection owner must not be the zero address",
+				Name: "InvalidCollectionOwner",
 			},
 			provider.ErrorDef{
 				Code: 1283,
-				Message: "Mint already configured: {0:?}",
-				Name: "MintAlreadyConfigured",
+				Message: "NFT transfers are disabled for collection: {0:?}",
+				Name: "TransfersDisabled",
 			},
 			provider.ErrorDef{
 				Code: 1284,
-				Message: "Mint mode mismatch: {0:?}",
-				Name: "MintModeMismatch",
+				Message: "NFT is frozen (collection: {0:?}, seed: {1})",
+				Name: "MintFrozen",
 			},
 			provider.ErrorDef{
 				Code: 1285,
-				Message: "Mint collection mismatch (mint: {0:?}, expected: {1:?}, actual: {2:?})",
-				Name: "MintCollectionMismatch",
+				Message: "Mint not found (collection: {0:?}, seed: {1})",
+				Name: "MintNotFound",
 			},
 			provider.ErrorDef{
 				Code: 1286,
-				Message: "Royalty recipient mismatch (mint: {0:?}, expected: {1:?}, actual: {2:?})",
-				Name: "RoyaltyRecipientMismatch",
+				Message: "Mint already configured (collection: {0:?}, seed: {1})",
+				Name: "MintAlreadyConfigured",
 			},
 			provider.ErrorDef{
 				Code: 1287,
-				Message: "Insufficient balance (mint: {0:?}, owner: {1:?}, available: {2}, required: {3})",
-				Name: "InsufficientBalance",
+				Message: "Mint mode mismatch (collection: {0:?}, seed: {1})",
+				Name: "MintModeMismatch",
 			},
 			provider.ErrorDef{
 				Code: 1288,
-				Message: "Supply cap exceeded (mint: {0:?}, current: {1}, mint_amount: {2}, cap: {3})",
-				Name: "SupplyCapExceeded",
+				Message: "Royalty recipient mismatch (collection: {0:?}, expected: {1:?}, actual: {2:?})",
+				Name: "RoyaltyRecipientMismatch",
 			},
 			provider.ErrorDef{
 				Code: 1289,
+				Message: "Insufficient balance (collection: {0:?}, seed: {1}, owner: {2:?}, available: {3}, required: {4})",
+				Name: "InsufficientBalance",
+			},
+			provider.ErrorDef{
+				Code: 1290,
 				Message: "Overflow in: {0} + {1} > {2}",
 				Name: "Overflow",
 			},
 			provider.ErrorDef{
-				Code: 1290,
+				Code: 1291,
 				Message: "Underflow in: {0} - {1} < {2}",
 				Name: "Underflow",
 			},
 			provider.ErrorDef{
-				Code: 1291,
+				Code: 1292,
 				Message: "Address not signed in current transaction: {0:?}",
 				Name: "AddressNotSignatured",
 			},
 			provider.ErrorDef{
-				Code: 1292,
-				Message: "Unique mint max supply must be one",
-				Name: "InvalidUniqueMaxSupply",
-			},
-			provider.ErrorDef{
 				Code: 1293,
-				Message: "Batch mint max supply must be positive",
-				Name: "InvalidBatchMaxSupply",
-			},
-			provider.ErrorDef{
-				Code: 1294,
 				Message: "Mint amount must be positive",
 				Name: "InvalidMintAmount",
 			},
 			provider.ErrorDef{
-				Code: 1295,
+				Code: 1294,
 				Message: "Mint recipients must not be empty",
 				Name: "EmptyMintRecipients",
 			},
 			provider.ErrorDef{
-				Code: 1296,
+				Code: 1295,
 				Message: "Mint recipients and amounts length mismatch",
 				Name: "MintRecipientAmountLengthMismatch",
 			},
 			provider.ErrorDef{
-				Code: 1297,
+				Code: 1296,
 				Message: "Invalid collection name",
 				Name: "InvalidCollectionName",
 			},
 			provider.ErrorDef{
-				Code: 1298,
+				Code: 1297,
 				Message: "Invalid collection symbol",
 				Name: "InvalidCollectionSymbol",
 			},
 			provider.ErrorDef{
+				Code: 1298,
+				Message: "Invalid collection cover URI",
+				Name: "InvalidCollectionCoverUri",
+			},
+			provider.ErrorDef{
 				Code: 1299,
-				Message: "Invalid collection base URI",
-				Name: "InvalidCollectionBaseUri",
+				Message: "Invalid collection external URL",
+				Name: "InvalidCollectionExternalUrl",
 			},
 			provider.ErrorDef{
 				Code: 1300,
@@ -5472,8 +5723,8 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 1302,
-				Message: "Invalid metadata URI",
-				Name: "InvalidMetadataUri",
+				Message: "Invalid metadata cover URI",
+				Name: "InvalidMetadataCoverUri",
 			},
 			provider.ErrorDef{
 				Code: 1303,
@@ -7282,35 +7533,33 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "issuer",
+						Name: "provider",
 						Role: "input",
-						Type: "String",
-					},
-					provider.Arg{
-						Name: "aud",
-						Role: "input",
-						Type: "String",
-					},
-					provider.Arg{
-						Name: "name",
-						Role: "input",
-						Type: "String",
+						Type: "KeylessProvider",
 					},
 				},
-				Discriminator: 61476,
-				Handler: "register_issuer",
+				Discriminator: 47102,
+				Handler: "register_provider",
 				Kind: "entry",
-				Name: "RegisterIssuer",
+				Name: "RegisterProvider",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "issuer_hash_raw",
+						Name: "provider",
 						Role: "input",
-						Type: "B256",
+						Type: "KeylessProvider",
 					},
+				},
+				Discriminator: 12186,
+				Handler: "update_provider",
+				Kind: "entry",
+				Name: "UpdateProvider",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
 					provider.Arg{
-						Name: "aud_hash_raw",
+						Name: "provider_id",
 						Role: "input",
 						Type: "B256",
 					},
@@ -7320,10 +7569,33 @@ provider.IDL{
 						Type: "bool",
 					},
 				},
-				Discriminator: 43155,
-				Handler: "set_issuer_enabled",
+				Discriminator: 24046,
+				Handler: "set_provider_governance_enabled",
 				Kind: "entry",
-				Name: "SetIssuerEnabled",
+				Name: "SetProviderGovernanceEnabled",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "provider_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "enabled",
+						Role: "input",
+						Type: "bool",
+					},
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+				},
+				Discriminator: 27342,
+				Handler: "controller_set_provider_enabled",
+				Kind: "entry",
+				Name: "ControllerSetProviderEnabled",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -7346,6 +7618,11 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "provider_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
 						Name: "jwt",
 						Role: "input",
 						Type: "bytes",
@@ -7365,6 +7642,11 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "provider_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
 						Name: "jwt",
 						Role: "input",
 						Type: "bytes",
@@ -7373,11 +7655,6 @@ provider.IDL{
 						Name: "ephemeral_pk",
 						Role: "input",
 						Type: "PublicKey",
-					},
-					provider.Arg{
-						Name: "ephemeral_sig",
-						Role: "input",
-						Type: "Signature",
 					},
 					provider.Arg{
 						Name: "owner",
@@ -7460,12 +7737,28 @@ provider.IDL{
 			},
 			provider.Instruction{
 				Args: nil,
-				Discriminator: 50872,
-				Handler: "list_issuers",
+				Discriminator: 12570,
+				Handler: "list_providers",
 				Kind: "view",
-				Name: "ListIssuers",
+				Name: "ListProviders",
 				Returns: provider.ReturnValue{
-					Type: "vec<IssuerInfo>",
+					Type: "vec<KeylessProvider>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "provider_id",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 20071,
+				Handler: "get_provider",
+				Kind: "view",
+				Name: "GetProvider",
+				Returns: provider.ReturnValue{
+					Type: "option<KeylessProvider>",
 				},
 			},
 			provider.Instruction{
@@ -7499,6 +7792,23 @@ provider.IDL{
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
 					provider.EnumVariant{
+						Name: "Rs256",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Es256",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "JwtAlgorithm",
+				TypeTag: 18304619079013862325,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
 						Name: "Single",
 						Kind: "tuple",
 						Fields: []provider.StructField{
@@ -7527,6 +7837,10 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "session_id",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "provider_id",
 						Type: "B256",
 					},
 					provider.StructField{
@@ -7594,25 +7908,53 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
+						Name: "provider_id",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "display_name",
+						Type: "String",
+					},
+					provider.StructField{
 						Name: "issuer",
 						Type: "String",
 					},
 					provider.StructField{
-						Name: "aud",
-						Type: "String",
+						Name: "audiences",
+						Type: "vec<String>",
 					},
 					provider.StructField{
-						Name: "name",
-						Type: "String",
+						Name: "allowed_algs",
+						Type: "vec<JwtAlgorithm>",
 					},
 					provider.StructField{
-						Name: "enabled",
+						Name: "max_id_token_age_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "max_session_ttl_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "activate_at_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "governance_enabled",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "controller",
+						Type: "option<Address>",
+					},
+					provider.StructField{
+						Name: "controller_enabled",
 						Type: "bool",
 					},
 				},
 				Kind: "struct",
-				Name: "IssuerEntry",
-				TypeTag: 16698501604422221736,
+				Name: "KeylessProvider",
+				TypeTag: 10056985480167392574,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7640,7 +7982,7 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "issuer_hash",
+						Name: "provider_id",
 						Type: "B256",
 					},
 					provider.StructField{
@@ -7656,43 +7998,12 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "entries",
-						Type: "vec<tuple<B256,B256>>",
+						Type: "vec<B256>",
 					},
 				},
 				Kind: "struct",
-				Name: "IssuerIndex",
-				TypeTag: 4564553489632741216,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "issuer",
-						Type: "String",
-					},
-					provider.StructField{
-						Name: "aud",
-						Type: "String",
-					},
-					provider.StructField{
-						Name: "issuer_hash",
-						Type: "B256",
-					},
-					provider.StructField{
-						Name: "aud_hash",
-						Type: "B256",
-					},
-					provider.StructField{
-						Name: "name",
-						Type: "String",
-					},
-					provider.StructField{
-						Name: "enabled",
-						Type: "bool",
-					},
-				},
-				Kind: "struct",
-				Name: "IssuerInfo",
-				TypeTag: 17512480152592181711,
+				Name: "ProviderIndex",
+				TypeTag: 2484498175435113698,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -7703,11 +8014,6 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "PublicKey",
 				TypeTag: 12784977254987571496,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "Signature",
-				TypeTag: 9480777115032900864,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -7778,228 +8084,333 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 2056,
+				Message: "JWT missing required field: iat",
+				Name: "JwtMissingIat",
+			},
+			provider.ErrorDef{
+				Code: 2057,
 				Message: "JWT missing required field: nonce",
 				Name: "JwtMissingNonce",
 			},
 			provider.ErrorDef{
-				Code: 2057,
+				Code: 2058,
 				Message: "JWT missing required field: kid in header",
 				Name: "JwtMissingKid",
 			},
 			provider.ErrorDef{
-				Code: 2058,
+				Code: 2059,
 				Message: "JWT expired: exp={0} ms",
 				Name: "JwtExpired",
 			},
 			provider.ErrorDef{
-				Code: 2059,
+				Code: 2060,
+				Message: "JWT issued in the future: iat={0} ms",
+				Name: "JwtIssuedInFuture",
+			},
+			provider.ErrorDef{
+				Code: 2061,
+				Message: "JWT is too old: age={0} ms",
+				Name: "JwtTooOld",
+			},
+			provider.ErrorDef{
+				Code: 2062,
+				Message: "JWT issuer does not match provider: expected={0}, got={1}",
+				Name: "JwtIssuerMismatch",
+			},
+			provider.ErrorDef{
+				Code: 2063,
+				Message: "JWT audience is not allowed by provider",
+				Name: "JwtAudienceNotAllowed",
+			},
+			provider.ErrorDef{
+				Code: 2064,
+				Message: "multi-audience JWT requires a matching azp",
+				Name: "JwtAzpInvalid",
+			},
+			provider.ErrorDef{
+				Code: 2065,
 				Message: "JWT algorithm not supported: {0}",
 				Name: "JwtAlgorithmUnsupported",
 			},
 			provider.ErrorDef{
-				Code: 2060,
+				Code: 2066,
 				Message: "JWT signature verification failed",
 				Name: "JwtSignatureInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2061,
-				Message: "nonce must start with 'milon-keyless:'",
+				Code: 2067,
+				Message: "nonce must start with 'milon-keyless-v1.'",
 				Name: "NoncePrefixInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2062,
-				Message: "nonce format invalid (expected 'milon-keyless:<hex_commitment>:<expiry_ms>')",
+				Code: 2068,
+				Message: "nonce binary envelope is malformed",
 				Name: "NonceFormatInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2063,
+				Code: 2069,
 				Message: "nonce commitment must be 64 hex characters (32 bytes)",
 				Name: "NonceCommitmentLength",
 			},
 			provider.ErrorDef{
-				Code: 2064,
+				Code: 2070,
 				Message: "nonce commitment hex decode failed",
 				Name: "NonceCommitmentHex",
 			},
 			provider.ErrorDef{
-				Code: 2065,
+				Code: 2071,
 				Message: "nonce expiry parse failed",
 				Name: "NonceExpiryParse",
 			},
 			provider.ErrorDef{
-				Code: 2066,
+				Code: 2072,
+				Message: "nonce chain ID mismatch: expected={0}, got={1}",
+				Name: "NonceChainIdMismatch",
+			},
+			provider.ErrorDef{
+				Code: 2073,
+				Message: "nonce provider ID mismatch",
+				Name: "NonceProviderMismatch",
+			},
+			provider.ErrorDef{
+				Code: 2074,
 				Message: "nonce commitment mismatch (ephemeral_pk does not match JWT nonce)",
 				Name: "NonceCommitmentMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2067,
+				Code: 2075,
 				Message: "nonce expired: expiry={0} ms",
 				Name: "NonceExpired",
 			},
 			provider.ErrorDef{
-				Code: 2068,
+				Code: 2076,
 				Message: "JWK not found: issuer={0}, kid={1}",
 				Name: "JwkNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2069,
+				Code: 2077,
 				Message: "JWK disabled: issuer={0}, kid={1}",
 				Name: "JwkDisabled",
 			},
 			provider.ErrorDef{
-				Code: 2070,
+				Code: 2078,
 				Message: "JWK parse failed",
 				Name: "JwkParse",
 			},
 			provider.ErrorDef{
-				Code: 2071,
+				Code: 2079,
 				Message: "JWK key type mismatch: expected {0}, got {1}",
 				Name: "JwkKeyTypeMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2072,
+				Code: 2080,
 				Message: "JWK missing required field: {0}",
 				Name: "JwkMissingField",
 			},
 			provider.ErrorDef{
-				Code: 2073,
+				Code: 2081,
 				Message: "JWK base64 decode failed",
 				Name: "JwkBase64Decode",
 			},
 			provider.ErrorDef{
-				Code: 2074,
+				Code: 2082,
 				Message: "JWK invalid RSA key",
 				Name: "JwkInvalidRsaKey",
 			},
 			provider.ErrorDef{
-				Code: 2075,
+				Code: 2083,
 				Message: "JWK invalid EC key",
 				Name: "JwkInvalidEcKey",
 			},
 			provider.ErrorDef{
-				Code: 2076,
+				Code: 2084,
 				Message: "JWK curve mismatch: alg={0}, crv={1}",
 				Name: "JwkCurveMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2077,
+				Code: 2085,
 				Message: "ephemeral signature invalid",
 				Name: "EphemeralSignatureInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2078,
+				Code: 2086,
 				Message: "timestamp skew too large: {0} ms exceeds limit",
 				Name: "TimestampSkewTooLarge",
 			},
 			provider.ErrorDef{
-				Code: 2079,
+				Code: 2087,
 				Message: "session expire out of range: {0}",
 				Name: "SessionExpireOutOfRange",
 			},
 			provider.ErrorDef{
-				Code: 2080,
+				Code: 2088,
 				Message: "mock verifier rejects non-empty proof bytes (ZK phase not enabled)",
 				Name: "MockProofNotEmpty",
 			},
 			provider.ErrorDef{
-				Code: 2081,
+				Code: 2089,
 				Message: "session pubkey must be a real signature key",
 				Name: "InvalidSessionPubkey",
 			},
 			provider.ErrorDef{
-				Code: 2082,
+				Code: 2090,
 				Message: "session is revoked: {0:?}",
 				Name: "SessionRevoked",
 			},
 			provider.ErrorDef{
-				Code: 2083,
-				Message: "issuer not registered: issuer_hash={0:?}, aud_hash={1:?}",
-				Name: "IssuerNotRegistered",
+				Code: 2091,
+				Message: "public sponsorship already used for session: {0:?}",
+				Name: "SessionSponsorshipAlreadyUsed",
 			},
 			provider.ErrorDef{
-				Code: 2084,
-				Message: "issuer disabled: issuer_hash={0:?}, aud_hash={1:?}",
-				Name: "IssuerDisabled",
+				Code: 2092,
+				Message: "keyless provider not registered: {0:?}",
+				Name: "ProviderNotRegistered",
 			},
 			provider.ErrorDef{
-				Code: 2085,
-				Message: "issuer already registered: issuer_hash={0:?}, aud_hash={1:?}",
-				Name: "IssuerAlreadyRegistered",
+				Code: 2093,
+				Message: "keyless provider already registered: {0:?}",
+				Name: "ProviderAlreadyRegistered",
 			},
 			provider.ErrorDef{
-				Code: 2086,
+				Code: 2094,
+				Message: "keyless provider is disabled or not active: {0:?}",
+				Name: "ProviderDisabled",
+			},
+			provider.ErrorDef{
+				Code: 2095,
+				Message: "keyless provider controller is not set: {0:?}",
+				Name: "ProviderControllerNotSet",
+			},
+			provider.ErrorDef{
+				Code: 2096,
+				Message: "keyless provider controller mismatch: expected={0:?}, got={1:?}",
+				Name: "ProviderControllerMismatch",
+			},
+			provider.ErrorDef{
+				Code: 2097,
+				Message: "keyless provider policy is invalid",
+				Name: "ProviderPolicyInvalid",
+			},
+			provider.ErrorDef{
+				Code: 2098,
 				Message: "issuer URL must start with https://",
 				Name: "IssuerUrlInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2087,
+				Code: 2099,
 				Message: "audience must be non-empty",
 				Name: "AudienceEmpty",
 			},
 			provider.ErrorDef{
-				Code: 2088,
+				Code: 2100,
+				Message: "provider audiences contain duplicates",
+				Name: "DuplicateAudience",
+			},
+			provider.ErrorDef{
+				Code: 2101,
 				Message: "issuer name must be non-empty and at most 64 bytes",
 				Name: "IssuerNameInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2089,
+				Code: 2102,
 				Message: "duplicate jwk entries in key set",
 				Name: "DuplicateJwk",
 			},
 			provider.ErrorDef{
-				Code: 2090,
+				Code: 2103,
 				Message: "session not found: {0:?}",
 				Name: "SessionNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2091,
+				Code: 2104,
 				Message: "keyless identity already bound: {0:?}",
 				Name: "AlreadyBound",
 			},
 			provider.ErrorDef{
-				Code: 2092,
+				Code: 2105,
 				Message: "keyless binding not found: {0:?}",
 				Name: "BindingNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2093,
+				Code: 2106,
 				Message: "keyless binding owner mismatch: binding={0:?}, signer={1:?}",
 				Name: "BindingOwnerMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2094,
+				Code: 2107,
+				Message: "binding signer slot no longer matches keyless identity: {0:?}",
+				Name: "BindingSignerMismatch",
+			},
+			provider.ErrorDef{
+				Code: 2108,
 				Message: "keyless signer slot not found in owner account",
 				Name: "KeylessSlotNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2095,
+				Code: 2109,
 				Message: "keyless admin not set (genesis or set_admin required)",
 				Name: "AdminNotSet",
 			},
 			provider.ErrorDef{
-				Code: 2096,
+				Code: 2110,
 				Message: "address not signed in current transaction: {0:?}",
 				Name: "AddressNotSignatured",
 			},
 			provider.ErrorDef{
-				Code: 2097,
+				Code: 2111,
 				Message: "max_session_ttl_ms must be in 1..={0}",
 				Name: "SessionTtlOutOfRange",
 			},
 			provider.ErrorDef{
-				Code: 2098,
+				Code: 2112,
 				Message: "bind_activation_delay_ms must be in {0}..={1}",
 				Name: "BindDelayOutOfRange",
 			},
 			provider.ErrorDef{
-				Code: 2099,
+				Code: 2113,
+				Message: "JWT base64url encoding is not canonical",
+				Name: "JwtBase64NonCanonical",
+			},
+			provider.ErrorDef{
+				Code: 2114,
+				Message: "JWK snapshot unavailable for provider: {0:?}",
+				Name: "JwkSnapshotUnavailable",
+			},
+			provider.ErrorDef{
+				Code: 2115,
 				Message: "Transparent AccountError",
 				Name: "AccountError",
 			},
 			provider.ErrorDef{
-				Code: 2100,
+				Code: 2116,
 				Message: "Transparent TokenError",
 				Name: "TokenError",
+			},
+			provider.ErrorDef{
+				Code: 2117,
+				Message: "JWT algorithm is supported but not allowed by provider: {0}",
+				Name: "JwtAlgorithmNotAllowed",
+			},
+			provider.ErrorDef{
+				Code: 2118,
+				Message: "JWK algorithm mismatch: expected={0}, got={1}",
+				Name: "JwkAlgorithmMismatch",
+			},
+			provider.ErrorDef{
+				Code: 2119,
+				Message: "JWK use must be 'sig', got={0}",
+				Name: "JwkUseInvalid",
+			},
+			provider.ErrorDef{
+				Code: 2120,
+				Message: "JWK key_ops must contain 'verify'",
+				Name: "JwkKeyOpsInvalid",
+			},
+			provider.ErrorDef{
+				Code: 2121,
+				Message: "provider allowed algorithms contain duplicates",
+				Name: "DuplicateAlgorithm",
 			},
 		},
 		Constants: []provider.Constant{
@@ -8012,6 +8423,26 @@ provider.IDL{
 				Name: "KEYLESS_SPONSOR_MINT",
 				Type: "u64",
 				Value: "1_000_000 * 1_000_000",
+			},
+			provider.Constant{
+				Name: "GOOGLE_PROVIDER_ID",
+				Type: "B256",
+				Value: "* b\"MILON_GOOGLE_OIDC_PROVIDER_V1___\"",
+			},
+			provider.Constant{
+				Name: "GOOGLE_ISSUER",
+				Type: "str",
+				Value: "https://accounts.google.com",
+			},
+			provider.Constant{
+				Name: "GOOGLE_AUDIENCE",
+				Type: "str",
+				Value: "726799636940-c0cbfhdsavn9v5eaq2gufl8q8cu08k51.apps.googleusercontent.com",
+			},
+			provider.Constant{
+				Name: "GOOGLE_MAX_ID_TOKEN_AGE_MS",
+				Type: "u64",
+				Value: 600000,
 			},
 			provider.Constant{
 				Name: "DEFAULT_MAX_SESSION_TTL_MS",
@@ -8137,9 +8568,14 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.Arg{
-						Name: "mint",
+						Name: "collection",
 						Role: "input",
 						Type: "Address",
+					},
+					provider.Arg{
+						Name: "seed",
+						Role: "input",
+						Type: "u64",
 					},
 					provider.Arg{
 						Name: "total_amount",
@@ -8265,8 +8701,12 @@ provider.IDL{
 						Kind: "struct",
 						Fields: []provider.StructField{
 							provider.StructField{
-								Name: "mint",
+								Name: "collection",
 								Type: "Address",
+							},
+							provider.StructField{
+								Name: "seed",
+								Type: "u64",
 							},
 						},
 					},
@@ -10582,59 +11022,27 @@ func (v NftMintMode) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// NftMintConfig matches the IDL struct MintConfig.
-type NftMintConfig struct {
-	Collection *crypto.Address
+// NftMintDefinition matches the IDL struct MintDefinition.
+type NftMintDefinition struct {
 	Mode NftMintMode
-	MaxSupply uint64
 	Metadata NftMetadata
-	Royalty NftRoyalty
 }
 
-// ToValue converts NftMintConfig into the provider wire value (map[string]any).
-func (v NftMintConfig) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 5)
-	// collection: Address
-	out["collection"] = v.Collection
+// ToValue converts NftMintDefinition into the provider wire value (map[string]any).
+func (v NftMintDefinition) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
 	// mode: MintMode
 	v0, err := toNftMintModeValue(v.Mode)
 	if err != nil {
 		return nil, err
 	}
 	out["mode"] = v0
-	// max_supply: u64
-	out["max_supply"] = v.MaxSupply
 	// metadata: Metadata
 	v1, err := toNftMetadataValue(v.Metadata)
 	if err != nil {
 		return nil, err
 	}
 	out["metadata"] = v1
-	// royalty: Royalty
-	v2, err := toNftRoyaltyValue(v.Royalty)
-	if err != nil {
-		return nil, err
-	}
-	out["royalty"] = v2
-	return out, nil
-}
-
-// NftCollectionMetadata matches the IDL struct CollectionMetadata.
-type NftCollectionMetadata struct {
-	Name string
-	Symbol string
-	BaseUri string
-}
-
-// ToValue converts NftCollectionMetadata into the provider wire value (map[string]any).
-func (v NftCollectionMetadata) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 3)
-	// name: String
-	out["name"] = v.Name
-	// symbol: String
-	out["symbol"] = v.Symbol
-	// base_uri: String
-	out["base_uri"] = v.BaseUri
 	return out, nil
 }
 
@@ -10642,7 +11050,7 @@ func (v NftCollectionMetadata) ToValue() (map[string]any, error) {
 type NftMetadata struct {
 	Name string
 	Symbol string
-	Uri string
+	CoverUri string
 	ExternalUrl string
 }
 
@@ -10653,8 +11061,8 @@ func (v NftMetadata) ToValue() (map[string]any, error) {
 	out["name"] = v.Name
 	// symbol: String
 	out["symbol"] = v.Symbol
-	// uri: String
-	out["uri"] = v.Uri
+	// cover_uri: String
+	out["cover_uri"] = v.CoverUri
 	// external_url: String
 	out["external_url"] = v.ExternalUrl
 	return out, nil
@@ -11424,6 +11832,27 @@ func (v RandomnessBeaconRecordV1) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
+// KeylessJwtAlgorithm matches the IDL enum JwtAlgorithm.
+type KeylessJwtAlgorithm struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts KeylessJwtAlgorithm into the provider wire value (map[string]any).
+func (v KeylessJwtAlgorithm) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum JwtAlgorithm: empty variant")
+	}
+	switch v.Variant {
+	case "Rs256":
+		return map[string]any{"variant": "Rs256"}, nil
+	case "Es256":
+		return map[string]any{"variant": "Es256"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
 // KeylessStringOrArray matches the IDL enum StringOrArray.
 type KeylessStringOrArray struct {
 	Variant string // Active variant name
@@ -11466,6 +11895,7 @@ func (v KeylessStringOrArray) ToValue() (map[string]any, error) {
 // KeylessSessionEntry matches the IDL struct SessionEntry.
 type KeylessSessionEntry struct {
 	SessionId [32]byte
+	ProviderId [32]byte
 	SessionPubkey *crypto.PublicKey
 	ExpiresAtMs uint64
 	CreatedAtMs uint64
@@ -11473,9 +11903,11 @@ type KeylessSessionEntry struct {
 
 // ToValue converts KeylessSessionEntry into the provider wire value (map[string]any).
 func (v KeylessSessionEntry) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
+	out := make(map[string]any, 5)
 	// session_id: B256
 	out["session_id"] = v.SessionId
+	// provider_id: B256
+	out["provider_id"] = v.ProviderId
 	// session_pubkey: PublicKey
 	out["session_pubkey"] = v.SessionPubkey
 	// expires_at_ms: u64
@@ -11549,25 +11981,62 @@ func (v KeylessKeylessParams) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// KeylessIssuerEntry matches the IDL struct IssuerEntry.
-type KeylessIssuerEntry struct {
+// KeylessKeylessProvider matches the IDL struct KeylessProvider.
+type KeylessKeylessProvider struct {
+	ProviderId [32]byte
+	DisplayName string
 	Issuer string
-	Aud string
-	Name string
-	Enabled bool
+	Audiences []string
+	AllowedAlgs []KeylessJwtAlgorithm
+	MaxIdTokenAgeMs uint64
+	MaxSessionTtlMs uint64
+	ActivateAtMs uint64
+	GovernanceEnabled bool
+	Controller **crypto.Address
+	ControllerEnabled bool
 }
 
-// ToValue converts KeylessIssuerEntry into the provider wire value (map[string]any).
-func (v KeylessIssuerEntry) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
+// ToValue converts KeylessKeylessProvider into the provider wire value (map[string]any).
+func (v KeylessKeylessProvider) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 11)
+	// provider_id: B256
+	out["provider_id"] = v.ProviderId
+	// display_name: String
+	out["display_name"] = v.DisplayName
 	// issuer: String
 	out["issuer"] = v.Issuer
-	// aud: String
-	out["aud"] = v.Aud
-	// name: String
-	out["name"] = v.Name
-	// enabled: bool
-	out["enabled"] = v.Enabled
+	// audiences: vec<String>
+	v0 := make([]any, len(v.Audiences))
+	for v1, v2 := range v.Audiences {
+		v0[v1] = v2
+	}
+	out["audiences"] = v0
+	// allowed_algs: vec<JwtAlgorithm>
+	v3 := make([]any, len(v.AllowedAlgs))
+	for v4, v5 := range v.AllowedAlgs {
+		v6, err := toKeylessJwtAlgorithmValue(v5)
+		if err != nil {
+			return nil, err
+		}
+		v3[v4] = v6
+	}
+	out["allowed_algs"] = v3
+	// max_id_token_age_ms: u64
+	out["max_id_token_age_ms"] = v.MaxIdTokenAgeMs
+	// max_session_ttl_ms: u64
+	out["max_session_ttl_ms"] = v.MaxSessionTtlMs
+	// activate_at_ms: u64
+	out["activate_at_ms"] = v.ActivateAtMs
+	// governance_enabled: bool
+	out["governance_enabled"] = v.GovernanceEnabled
+	// controller: option<Address>
+	if v.Controller == nil {
+		out["controller"] = nil
+	} else {
+		out["controller"] = *v.Controller
+	}
+	// controller_enabled: bool
+	out["controller_enabled"] = v.ControllerEnabled
 	return out, nil
 }
 
@@ -11595,64 +12064,34 @@ func (v KeylessKeylessBinding) ToValue() (map[string]any, error) {
 
 // KeylessKeylessMarker matches the IDL struct KeylessMarker.
 type KeylessKeylessMarker struct {
-	IssuerHash [32]byte
+	ProviderId [32]byte
 	BoundAtMs uint64
 }
 
 // ToValue converts KeylessKeylessMarker into the provider wire value (map[string]any).
 func (v KeylessKeylessMarker) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 2)
-	// issuer_hash: B256
-	out["issuer_hash"] = v.IssuerHash
+	// provider_id: B256
+	out["provider_id"] = v.ProviderId
 	// bound_at_ms: u64
 	out["bound_at_ms"] = v.BoundAtMs
 	return out, nil
 }
 
-// KeylessIssuerIndex matches the IDL struct IssuerIndex.
-type KeylessIssuerIndex struct {
-	Entries [][]any
+// KeylessProviderIndex matches the IDL struct ProviderIndex.
+type KeylessProviderIndex struct {
+	Entries [][32]byte
 }
 
-// ToValue converts KeylessIssuerIndex into the provider wire value (map[string]any).
-func (v KeylessIssuerIndex) ToValue() (map[string]any, error) {
+// ToValue converts KeylessProviderIndex into the provider wire value (map[string]any).
+func (v KeylessProviderIndex) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 1)
-	// entries: vec<tuple<B256,B256>>
+	// entries: vec<B256>
 	v0 := make([]any, len(v.Entries))
 	for v1, v2 := range v.Entries {
-		v3 := make([]any, 1)
-		v3[0] = v2[0]
-		v0[v1] = v3
+		v0[v1] = v2
 	}
 	out["entries"] = v0
-	return out, nil
-}
-
-// KeylessIssuerInfo matches the IDL struct IssuerInfo.
-type KeylessIssuerInfo struct {
-	Issuer string
-	Aud string
-	IssuerHash [32]byte
-	AudHash [32]byte
-	Name string
-	Enabled bool
-}
-
-// ToValue converts KeylessIssuerInfo into the provider wire value (map[string]any).
-func (v KeylessIssuerInfo) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 6)
-	// issuer: String
-	out["issuer"] = v.Issuer
-	// aud: String
-	out["aud"] = v.Aud
-	// issuer_hash: B256
-	out["issuer_hash"] = v.IssuerHash
-	// aud_hash: B256
-	out["aud_hash"] = v.AudHash
-	// name: String
-	out["name"] = v.Name
-	// enabled: bool
-	out["enabled"] = v.Enabled
 	return out, nil
 }
 
@@ -11699,12 +12138,14 @@ func (v LuckyBoxAssetId) ToValue() (map[string]any, error) {
 		record["token"] = v.Fields[0]
 		return map[string]any{"variant": "Token", "fields": record}, nil
 	case "Nft":
-		if len(v.Fields) != 1 {
+		if len(v.Fields) != 2 {
 			return nil, fmt.Errorf("enum AssetId: variant Nft expects %d fields", len(v.Fields))
 		}
-		record := make(map[string]any, 1)
-		// mint: Address
-		record["mint"] = v.Fields[0]
+		record := make(map[string]any, 2)
+		// collection: Address
+		record["collection"] = v.Fields[0]
+		// seed: u64
+		record["seed"] = v.Fields[1]
 		return map[string]any{"variant": "Nft", "fields": record}, nil
 	}
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
@@ -13954,84 +14395,27 @@ func fromNftMintMode(v any) (out NftMintMode, err error) {
 	return out, nil
 }
 
-// fromNftMintConfig converts a decoded IDL value into NftMintConfig.
-func fromNftMintConfig(v any) (out NftMintConfig, err error) {
+// fromNftMintDefinition converts a decoded IDL value into NftMintDefinition.
+func fromNftMintDefinition(v any) (out NftMintDefinition, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
-	}
-	// collection: Address
-	{
-		v0, err := toAddress(m["collection"])
-		if err != nil {
-			return out, err
-		}
-		out.Collection = v0
 	}
 	// mode: MintMode
 	{
-		v1, err := fromNftMintMode(m["mode"])
+		v0, err := fromNftMintMode(m["mode"])
 		if err != nil {
 			return out, err
 		}
-		out.Mode = v1
-	}
-	// max_supply: u64
-	{
-		v2, err := toUint64(m["max_supply"])
-		if err != nil {
-			return out, err
-		}
-		out.MaxSupply = v2
+		out.Mode = v0
 	}
 	// metadata: Metadata
 	{
-		v3, err := fromNftMetadata(m["metadata"])
+		v1, err := fromNftMetadata(m["metadata"])
 		if err != nil {
 			return out, err
 		}
-		out.Metadata = v3
-	}
-	// royalty: Royalty
-	{
-		v4, err := fromNftRoyalty(m["royalty"])
-		if err != nil {
-			return out, err
-		}
-		out.Royalty = v4
-	}
-	return out, nil
-}
-
-// fromNftCollectionMetadata converts a decoded IDL value into NftCollectionMetadata.
-func fromNftCollectionMetadata(v any) (out NftCollectionMetadata, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// name: String
-	{
-		v0, err := toString(m["name"])
-		if err != nil {
-			return out, err
-		}
-		out.Name = v0
-	}
-	// symbol: String
-	{
-		v1, err := toString(m["symbol"])
-		if err != nil {
-			return out, err
-		}
-		out.Symbol = v1
-	}
-	// base_uri: String
-	{
-		v2, err := toString(m["base_uri"])
-		if err != nil {
-			return out, err
-		}
-		out.BaseUri = v2
+		out.Metadata = v1
 	}
 	return out, nil
 }
@@ -14058,13 +14442,13 @@ func fromNftMetadata(v any) (out NftMetadata, err error) {
 		}
 		out.Symbol = v1
 	}
-	// uri: String
+	// cover_uri: String
 	{
-		v2, err := toString(m["uri"])
+		v2, err := toString(m["cover_uri"])
 		if err != nil {
 			return out, err
 		}
-		out.Uri = v2
+		out.CoverUri = v2
 	}
 	// external_url: String
 	{
@@ -15278,6 +15662,25 @@ func fromRandomnessBeaconRecordV1(v any) (out RandomnessBeaconRecordV1, err erro
 	return out, nil
 }
 
+// fromKeylessJwtAlgorithm converts a decoded IDL value into KeylessJwtAlgorithm.
+func fromKeylessJwtAlgorithm(v any) (out KeylessJwtAlgorithm, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum JwtAlgorithm: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
 // fromKeylessStringOrArray converts a decoded IDL value into KeylessStringOrArray.
 func fromKeylessStringOrArray(v any) (out KeylessStringOrArray, err error) {
 	m, err := toRecord(v)
@@ -15321,29 +15724,37 @@ func fromKeylessSessionEntry(v any) (out KeylessSessionEntry, err error) {
 		}
 		out.SessionId = v0
 	}
-	// session_pubkey: PublicKey
+	// provider_id: B256
 	{
-		v1, err := toPublicKey(m["session_pubkey"])
+		v1, err := toFixed32(m["provider_id"])
 		if err != nil {
 			return out, err
 		}
-		out.SessionPubkey = v1
+		out.ProviderId = v1
+	}
+	// session_pubkey: PublicKey
+	{
+		v2, err := toPublicKey(m["session_pubkey"])
+		if err != nil {
+			return out, err
+		}
+		out.SessionPubkey = v2
 	}
 	// expires_at_ms: u64
 	{
-		v2, err := toUint64(m["expires_at_ms"])
+		v3, err := toUint64(m["expires_at_ms"])
 		if err != nil {
 			return out, err
 		}
-		out.ExpiresAtMs = v2
+		out.ExpiresAtMs = v3
 	}
 	// created_at_ms: u64
 	{
-		v3, err := toUint64(m["created_at_ms"])
+		v4, err := toUint64(m["created_at_ms"])
 		if err != nil {
 			return out, err
 		}
-		out.CreatedAtMs = v3
+		out.CreatedAtMs = v4
 	}
 	return out, nil
 }
@@ -15437,43 +15848,119 @@ func fromKeylessKeylessParams(v any) (out KeylessKeylessParams, err error) {
 	return out, nil
 }
 
-// fromKeylessIssuerEntry converts a decoded IDL value into KeylessIssuerEntry.
-func fromKeylessIssuerEntry(v any) (out KeylessIssuerEntry, err error) {
+// fromKeylessKeylessProvider converts a decoded IDL value into KeylessKeylessProvider.
+func fromKeylessKeylessProvider(v any) (out KeylessKeylessProvider, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
+	// provider_id: B256
+	{
+		v0, err := toFixed32(m["provider_id"])
+		if err != nil {
+			return out, err
+		}
+		out.ProviderId = v0
+	}
+	// display_name: String
+	{
+		v1, err := toString(m["display_name"])
+		if err != nil {
+			return out, err
+		}
+		out.DisplayName = v1
+	}
 	// issuer: String
 	{
-		v0, err := toString(m["issuer"])
+		v2, err := toString(m["issuer"])
 		if err != nil {
 			return out, err
 		}
-		out.Issuer = v0
+		out.Issuer = v2
 	}
-	// aud: String
+	// audiences: vec<String>
 	{
-		v1, err := toString(m["aud"])
+		v3, err := toSlice(m["audiences"])
 		if err != nil {
 			return out, err
 		}
-		out.Aud = v1
+		out.Audiences = make([]string, len(v3))
+		for v4, v5 := range v3 {
+			v6, err := toString(v5)
+			if err != nil {
+				return out, err
+			}
+			out.Audiences[v4] = v6
+		}
 	}
-	// name: String
+	// allowed_algs: vec<JwtAlgorithm>
 	{
-		v2, err := toString(m["name"])
+		v7, err := toSlice(m["allowed_algs"])
 		if err != nil {
 			return out, err
 		}
-		out.Name = v2
+		out.AllowedAlgs = make([]KeylessJwtAlgorithm, len(v7))
+		for v8, v9 := range v7 {
+			v10, err := fromKeylessJwtAlgorithm(v9)
+			if err != nil {
+				return out, err
+			}
+			out.AllowedAlgs[v8] = v10
+		}
 	}
-	// enabled: bool
+	// max_id_token_age_ms: u64
 	{
-		v3, err := toBool(m["enabled"])
+		v11, err := toUint64(m["max_id_token_age_ms"])
 		if err != nil {
 			return out, err
 		}
-		out.Enabled = v3
+		out.MaxIdTokenAgeMs = v11
+	}
+	// max_session_ttl_ms: u64
+	{
+		v12, err := toUint64(m["max_session_ttl_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.MaxSessionTtlMs = v12
+	}
+	// activate_at_ms: u64
+	{
+		v13, err := toUint64(m["activate_at_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.ActivateAtMs = v13
+	}
+	// governance_enabled: bool
+	{
+		v14, err := toBool(m["governance_enabled"])
+		if err != nil {
+			return out, err
+		}
+		out.GovernanceEnabled = v14
+	}
+	// controller: option<Address>
+	{
+		if m["controller"] == nil {
+			out.Controller = nil
+		} else {
+			var v15 *crypto.Address
+			v16, err := toAddress(m["controller"])
+			if err != nil {
+				return out, err
+			}
+			v15 = v16
+			out.Controller = &v15
+		}
+	}
+	// controller_enabled: bool
+	{
+		v17, err := toBool(m["controller_enabled"])
+		if err != nil {
+			return out, err
+		}
+		out.ControllerEnabled = v17
 	}
 	return out, nil
 }
@@ -15525,13 +16012,13 @@ func fromKeylessKeylessMarker(v any) (out KeylessKeylessMarker, err error) {
 	if err != nil {
 		return out, err
 	}
-	// issuer_hash: B256
+	// provider_id: B256
 	{
-		v0, err := toFixed32(m["issuer_hash"])
+		v0, err := toFixed32(m["provider_id"])
 		if err != nil {
 			return out, err
 		}
-		out.IssuerHash = v0
+		out.ProviderId = v0
 	}
 	// bound_at_ms: u64
 	{
@@ -15544,83 +16031,26 @@ func fromKeylessKeylessMarker(v any) (out KeylessKeylessMarker, err error) {
 	return out, nil
 }
 
-// fromKeylessIssuerIndex converts a decoded IDL value into KeylessIssuerIndex.
-func fromKeylessIssuerIndex(v any) (out KeylessIssuerIndex, err error) {
+// fromKeylessProviderIndex converts a decoded IDL value into KeylessProviderIndex.
+func fromKeylessProviderIndex(v any) (out KeylessProviderIndex, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// entries: vec<tuple<B256,B256>>
+	// entries: vec<B256>
 	{
 		v0, err := toSlice(m["entries"])
 		if err != nil {
 			return out, err
 		}
-		out.Entries = make([][]any, len(v0))
+		out.Entries = make([][32]byte, len(v0))
 		for v1, v2 := range v0 {
-			v3, err := toSlice(v2)
+			v3, err := toFixed32(v2)
 			if err != nil {
 				return out, err
 			}
 			out.Entries[v1] = v3
 		}
-	}
-	return out, nil
-}
-
-// fromKeylessIssuerInfo converts a decoded IDL value into KeylessIssuerInfo.
-func fromKeylessIssuerInfo(v any) (out KeylessIssuerInfo, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// issuer: String
-	{
-		v0, err := toString(m["issuer"])
-		if err != nil {
-			return out, err
-		}
-		out.Issuer = v0
-	}
-	// aud: String
-	{
-		v1, err := toString(m["aud"])
-		if err != nil {
-			return out, err
-		}
-		out.Aud = v1
-	}
-	// issuer_hash: B256
-	{
-		v2, err := toFixed32(m["issuer_hash"])
-		if err != nil {
-			return out, err
-		}
-		out.IssuerHash = v2
-	}
-	// aud_hash: B256
-	{
-		v3, err := toFixed32(m["aud_hash"])
-		if err != nil {
-			return out, err
-		}
-		out.AudHash = v3
-	}
-	// name: String
-	{
-		v4, err := toString(m["name"])
-		if err != nil {
-			return out, err
-		}
-		out.Name = v4
-	}
-	// enabled: bool
-	{
-		v5, err := toBool(m["enabled"])
-		if err != nil {
-			return out, err
-		}
-		out.Enabled = v5
 	}
 	return out, nil
 }
@@ -15667,7 +16097,8 @@ func fromLuckyBoxAssetId(v any) (out LuckyBoxAssetId, err error) {
 		}
 	case "Nft":
 		out.Fields = []any{
-			m["mint"],
+			m["collection"],
+			m["seed"],
 		}
 	}
 	return out, nil
@@ -16895,33 +17326,18 @@ func toNftMintModeValue(v any) (map[string]any, error) {
 	}
 }
 
-// toNftMintConfigValue converts any into NftMintConfig for provider serialization.
-func toNftMintConfigValue(v any) (map[string]any, error) {
+// toNftMintDefinitionValue converts any into NftMintDefinition for provider serialization.
+func toNftMintDefinitionValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case NftMintConfig:
+	case NftMintDefinition:
 		return x.ToValue()
-	case *NftMintConfig:
+	case *NftMintDefinition:
 		if x == nil {
-			return nil, fmt.Errorf("nil NftMintConfig")
+			return nil, fmt.Errorf("nil NftMintDefinition")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected NftMintConfig, got %T", v)
-	}
-}
-
-// toNftCollectionMetadataValue converts any into NftCollectionMetadata for provider serialization.
-func toNftCollectionMetadataValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case NftCollectionMetadata:
-		return x.ToValue()
-	case *NftCollectionMetadata:
-		if x == nil {
-			return nil, fmt.Errorf("nil NftCollectionMetadata")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected NftCollectionMetadata, got %T", v)
+		return nil, fmt.Errorf("expected NftMintDefinition, got %T", v)
 	}
 }
 
@@ -17390,6 +17806,21 @@ func toRandomnessBeaconRecordV1Value(v any) (map[string]any, error) {
 	}
 }
 
+// toKeylessJwtAlgorithmValue converts any into KeylessJwtAlgorithm for provider serialization.
+func toKeylessJwtAlgorithmValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessJwtAlgorithm:
+		return x.ToValue()
+	case *KeylessJwtAlgorithm:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessJwtAlgorithm")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessJwtAlgorithm, got %T", v)
+	}
+}
+
 // toKeylessStringOrArrayValue converts any into KeylessStringOrArray for provider serialization.
 func toKeylessStringOrArrayValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -17465,18 +17896,18 @@ func toKeylessKeylessParamsValue(v any) (map[string]any, error) {
 	}
 }
 
-// toKeylessIssuerEntryValue converts any into KeylessIssuerEntry for provider serialization.
-func toKeylessIssuerEntryValue(v any) (map[string]any, error) {
+// toKeylessKeylessProviderValue converts any into KeylessKeylessProvider for provider serialization.
+func toKeylessKeylessProviderValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case KeylessIssuerEntry:
+	case KeylessKeylessProvider:
 		return x.ToValue()
-	case *KeylessIssuerEntry:
+	case *KeylessKeylessProvider:
 		if x == nil {
-			return nil, fmt.Errorf("nil KeylessIssuerEntry")
+			return nil, fmt.Errorf("nil KeylessKeylessProvider")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected KeylessIssuerEntry, got %T", v)
+		return nil, fmt.Errorf("expected KeylessKeylessProvider, got %T", v)
 	}
 }
 
@@ -17510,33 +17941,18 @@ func toKeylessKeylessMarkerValue(v any) (map[string]any, error) {
 	}
 }
 
-// toKeylessIssuerIndexValue converts any into KeylessIssuerIndex for provider serialization.
-func toKeylessIssuerIndexValue(v any) (map[string]any, error) {
+// toKeylessProviderIndexValue converts any into KeylessProviderIndex for provider serialization.
+func toKeylessProviderIndexValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case KeylessIssuerIndex:
+	case KeylessProviderIndex:
 		return x.ToValue()
-	case *KeylessIssuerIndex:
+	case *KeylessProviderIndex:
 		if x == nil {
-			return nil, fmt.Errorf("nil KeylessIssuerIndex")
+			return nil, fmt.Errorf("nil KeylessProviderIndex")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected KeylessIssuerIndex, got %T", v)
-	}
-}
-
-// toKeylessIssuerInfoValue converts any into KeylessIssuerInfo for provider serialization.
-func toKeylessIssuerInfoValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case KeylessIssuerInfo:
-		return x.ToValue()
-	case *KeylessIssuerInfo:
-		if x == nil {
-			return nil, fmt.Errorf("nil KeylessIssuerInfo")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected KeylessIssuerInfo, got %T", v)
+		return nil, fmt.Errorf("expected KeylessProviderIndex, got %T", v)
 	}
 }
 
@@ -18920,7 +19336,6 @@ type TokenApp struct {
 	MintBatch *TokenMintBatchIx
 	Burn *TokenBurnIx
 	Transfer *TokenTransferIx
-	TransferWithTag *TokenTransferWithTagIx
 	TransferBatch *TokenTransferBatchIx
 	Freeze *TokenFreezeIx
 	Unfreeze *TokenUnfreezeIx
@@ -18953,7 +19368,6 @@ var Token = &TokenApp{
 	MintBatch: &TokenMintBatchIx{},
 	Burn: &TokenBurnIx{},
 	Transfer: &TokenTransferIx{},
-	TransferWithTag: &TokenTransferWithTagIx{},
 	TransferBatch: &TokenTransferBatchIx{},
 	Freeze: &TokenFreezeIx{},
 	Unfreeze: &TokenUnfreezeIx{},
@@ -18987,7 +19401,6 @@ func (a *TokenApp) bind(pd *provider.Provider) {
 	a.MintBatch.pd = pd
 	a.Burn.pd = pd
 	a.Transfer.pd = pd
-	a.TransferWithTag.pd = pd
 	a.TransferBatch.pd = pd
 	a.Freeze.pd = pd
 	a.Unfreeze.pd = pd
@@ -19356,54 +19769,6 @@ func (a *TokenTransferArgs) Encode() (api.PackedInstruction, error) {
 	// amount: u64
 	args["amount"] = a.amount
 	wire, err := a.pd.Encode("Transfer", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type TokenTransferWithTagIx struct {
-	pd *provider.Provider
-}
-
-type TokenTransferWithTagArgs struct {
-	from *crypto.Address
-	token *crypto.Address
-	to *crypto.Address
-	amount uint64
-	tag uint32
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of TransferWithTag.
-func (ix *TokenTransferWithTagIx) Args(from *crypto.Address, token *crypto.Address, to *crypto.Address, amount uint64, tag uint32) *TokenTransferWithTagArgs {
-	return &TokenTransferWithTagArgs{
-		from: from,
-		token: token,
-		to: to,
-		amount: amount,
-		tag: tag,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *TokenTransferWithTagArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// from: Signer
-	args["from"] = a.from
-	// token: Address
-	args["token"] = a.token
-	// to: Address
-	args["to"] = a.to
-	// amount: u64
-	args["amount"] = a.amount
-	// tag: u32
-	args["tag"] = a.tag
-	wire, err := a.pd.Encode("TransferWithTag", args)
 	if err != nil {
 		return nil, err
 	}
@@ -23534,71 +23899,107 @@ func (ix *IdentityOrganizationUpdatedAtIx) DecodeView(body []byte) (out uint64, 
 type NftApp struct {
 	Pd *provider.Provider
 	CreateCollection *NftCreateCollectionIx
-	SetCollectionMetadata *NftSetCollectionMetadataIx
-	SetMetadata *NftSetMetadataIx
+	TransferUpdateAuthor *NftTransferUpdateAuthorIx
+	TransferFreezeAuthor *NftTransferFreezeAuthorIx
+	SetCollectionTransferable *NftSetCollectionTransferableIx
+	TransferCollectionOwner *NftTransferCollectionOwnerIx
+	SetCollectionCoverUri *NftSetCollectionCoverUriIx
+	SetCollectionExternalUrl *NftSetCollectionExternalUrlIx
+	SetMintCoverUri *NftSetMintCoverUriIx
+	SetMintExternalUrl *NftSetMintExternalUrlIx
 	SetAttributes *NftSetAttributesIx
 	SetProperties *NftSetPropertiesIx
 	CreateUnique *NftCreateUniqueIx
 	CreateBatch *NftCreateBatchIx
 	MintBatch *NftMintBatchIx
+	Freeze *NftFreezeIx
+	Unfreeze *NftUnfreezeIx
 	Transfer *NftTransferIx
 	Burn *NftBurnIx
-	SetRoyalty *NftSetRoyaltyIx
 	TransferRoyaltyRecipient *NftTransferRoyaltyRecipientIx
 	CollectionMetadata *NftCollectionMetadataIx
-	MetadataUri *NftMetadataUriIx
+	CollectionUpdateAuthor *NftCollectionUpdateAuthorIx
+	CollectionFreezeAuthor *NftCollectionFreezeAuthorIx
+	CollectionTransferable *NftCollectionTransferableIx
+	MintCoverUri *NftMintCoverUriIx
 	Attributes *NftAttributesIx
 	Properties *NftPropertiesIx
-	MintConfigView *NftMintConfigViewIx
+	IsFrozen *NftIsFrozenIx
+	MintDefinition *NftMintDefinitionIx
 	TotalSupply *NftTotalSupplyIx
 	BalanceOf *NftBalanceOfIx
+	CurrentMintSeed *NftCurrentMintSeedIx
 	RoyaltyInfo *NftRoyaltyInfoIx
 }
 
 var Nft = &NftApp{
 	CreateCollection: &NftCreateCollectionIx{},
-	SetCollectionMetadata: &NftSetCollectionMetadataIx{},
-	SetMetadata: &NftSetMetadataIx{},
+	TransferUpdateAuthor: &NftTransferUpdateAuthorIx{},
+	TransferFreezeAuthor: &NftTransferFreezeAuthorIx{},
+	SetCollectionTransferable: &NftSetCollectionTransferableIx{},
+	TransferCollectionOwner: &NftTransferCollectionOwnerIx{},
+	SetCollectionCoverUri: &NftSetCollectionCoverUriIx{},
+	SetCollectionExternalUrl: &NftSetCollectionExternalUrlIx{},
+	SetMintCoverUri: &NftSetMintCoverUriIx{},
+	SetMintExternalUrl: &NftSetMintExternalUrlIx{},
 	SetAttributes: &NftSetAttributesIx{},
 	SetProperties: &NftSetPropertiesIx{},
 	CreateUnique: &NftCreateUniqueIx{},
 	CreateBatch: &NftCreateBatchIx{},
 	MintBatch: &NftMintBatchIx{},
+	Freeze: &NftFreezeIx{},
+	Unfreeze: &NftUnfreezeIx{},
 	Transfer: &NftTransferIx{},
 	Burn: &NftBurnIx{},
-	SetRoyalty: &NftSetRoyaltyIx{},
 	TransferRoyaltyRecipient: &NftTransferRoyaltyRecipientIx{},
 	CollectionMetadata: &NftCollectionMetadataIx{},
-	MetadataUri: &NftMetadataUriIx{},
+	CollectionUpdateAuthor: &NftCollectionUpdateAuthorIx{},
+	CollectionFreezeAuthor: &NftCollectionFreezeAuthorIx{},
+	CollectionTransferable: &NftCollectionTransferableIx{},
+	MintCoverUri: &NftMintCoverUriIx{},
 	Attributes: &NftAttributesIx{},
 	Properties: &NftPropertiesIx{},
-	MintConfigView: &NftMintConfigViewIx{},
+	IsFrozen: &NftIsFrozenIx{},
+	MintDefinition: &NftMintDefinitionIx{},
 	TotalSupply: &NftTotalSupplyIx{},
 	BalanceOf: &NftBalanceOfIx{},
+	CurrentMintSeed: &NftCurrentMintSeedIx{},
 	RoyaltyInfo: &NftRoyaltyInfoIx{},
 }
 
 func (a *NftApp) bind(pd *provider.Provider) {
 	a.Pd = pd
 	a.CreateCollection.pd = pd
-	a.SetCollectionMetadata.pd = pd
-	a.SetMetadata.pd = pd
+	a.TransferUpdateAuthor.pd = pd
+	a.TransferFreezeAuthor.pd = pd
+	a.SetCollectionTransferable.pd = pd
+	a.TransferCollectionOwner.pd = pd
+	a.SetCollectionCoverUri.pd = pd
+	a.SetCollectionExternalUrl.pd = pd
+	a.SetMintCoverUri.pd = pd
+	a.SetMintExternalUrl.pd = pd
 	a.SetAttributes.pd = pd
 	a.SetProperties.pd = pd
 	a.CreateUnique.pd = pd
 	a.CreateBatch.pd = pd
 	a.MintBatch.pd = pd
+	a.Freeze.pd = pd
+	a.Unfreeze.pd = pd
 	a.Transfer.pd = pd
 	a.Burn.pd = pd
-	a.SetRoyalty.pd = pd
 	a.TransferRoyaltyRecipient.pd = pd
 	a.CollectionMetadata.pd = pd
-	a.MetadataUri.pd = pd
+	a.CollectionUpdateAuthor.pd = pd
+	a.CollectionFreezeAuthor.pd = pd
+	a.CollectionTransferable.pd = pd
+	a.MintCoverUri.pd = pd
 	a.Attributes.pd = pd
 	a.Properties.pd = pd
-	a.MintConfigView.pd = pd
+	a.IsFrozen.pd = pd
+	a.MintDefinition.pd = pd
 	a.TotalSupply.pd = pd
 	a.BalanceOf.pd = pd
+	a.CurrentMintSeed.pd = pd
 	a.RoyaltyInfo.pd = pd
 }
 
@@ -23609,16 +24010,24 @@ type NftCreateCollectionIx struct {
 type NftCreateCollectionArgs struct {
 	collection *crypto.Address
 	owner *crypto.Address
-	metadata NftCollectionMetadata
+	update_author *crypto.Address
+	freeze_author *crypto.Address
+	transferable bool
+	metadata NftMetadata
+	royalty NftRoyalty
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of CreateCollection.
-func (ix *NftCreateCollectionIx) Args(collection *crypto.Address, owner *crypto.Address, metadata NftCollectionMetadata) *NftCreateCollectionArgs {
+func (ix *NftCreateCollectionIx) Args(collection *crypto.Address, owner *crypto.Address, update_author *crypto.Address, freeze_author *crypto.Address, transferable bool, metadata NftMetadata, royalty NftRoyalty) *NftCreateCollectionArgs {
 	return &NftCreateCollectionArgs{
 		collection: collection,
 		owner: owner,
+		update_author: update_author,
+		freeze_author: freeze_author,
+		transferable: transferable,
 		metadata: metadata,
+		royalty: royalty,
 		pd: ix.pd,
 	}
 }
@@ -23633,12 +24042,24 @@ func (a *NftCreateCollectionArgs) Encode() (api.PackedInstruction, error) {
 	args["collection"] = a.collection
 	// owner: Address
 	args["owner"] = a.owner
-	// metadata: CollectionMetadata
-	v0, err := toNftCollectionMetadataValue(a.metadata)
+	// update_author: Address
+	args["update_author"] = a.update_author
+	// freeze_author: Address
+	args["freeze_author"] = a.freeze_author
+	// transferable: bool
+	args["transferable"] = a.transferable
+	// metadata: Metadata
+	v0, err := toNftMetadataValue(a.metadata)
 	if err != nil {
 		return nil, err
 	}
 	args["metadata"] = v0
+	// royalty: Royalty
+	v1, err := toNftRoyaltyValue(a.royalty)
+	if err != nil {
+		return nil, err
+	}
+	args["royalty"] = v1
 	wire, err := a.pd.Encode("CreateCollection", args)
 	if err != nil {
 		return nil, err
@@ -23646,84 +24067,296 @@ func (a *NftCreateCollectionArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-type NftSetCollectionMetadataIx struct {
+type NftTransferUpdateAuthorIx struct {
 	pd *provider.Provider
 }
 
-type NftSetCollectionMetadataArgs struct {
+type NftTransferUpdateAuthorArgs struct {
 	collection *crypto.Address
-	metadata NftCollectionMetadata
+	new_author *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of SetCollectionMetadata.
-func (ix *NftSetCollectionMetadataIx) Args(collection *crypto.Address, metadata NftCollectionMetadata) *NftSetCollectionMetadataArgs {
-	return &NftSetCollectionMetadataArgs{
+// Args builds the IDL arguments of TransferUpdateAuthor.
+func (ix *NftTransferUpdateAuthorIx) Args(collection *crypto.Address, new_author *crypto.Address) *NftTransferUpdateAuthorArgs {
+	return &NftTransferUpdateAuthorArgs{
 		collection: collection,
-		metadata: metadata,
+		new_author: new_author,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *NftSetCollectionMetadataArgs) Encode() (api.PackedInstruction, error) {
+func (a *NftTransferUpdateAuthorArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// collection: Address
 	args["collection"] = a.collection
-	// metadata: CollectionMetadata
-	v0, err := toNftCollectionMetadataValue(a.metadata)
-	if err != nil {
-		return nil, err
-	}
-	args["metadata"] = v0
-	wire, err := a.pd.Encode("SetCollectionMetadata", args)
+	// new_author: Address
+	args["new_author"] = a.new_author
+	wire, err := a.pd.Encode("TransferUpdateAuthor", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type NftSetMetadataIx struct {
+type NftTransferFreezeAuthorIx struct {
 	pd *provider.Provider
 }
 
-type NftSetMetadataArgs struct {
+type NftTransferFreezeAuthorArgs struct {
 	collection *crypto.Address
-	mint *crypto.Address
-	metadata NftMetadata
+	new_author *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of SetMetadata.
-func (ix *NftSetMetadataIx) Args(collection *crypto.Address, mint *crypto.Address, metadata NftMetadata) *NftSetMetadataArgs {
-	return &NftSetMetadataArgs{
+// Args builds the IDL arguments of TransferFreezeAuthor.
+func (ix *NftTransferFreezeAuthorIx) Args(collection *crypto.Address, new_author *crypto.Address) *NftTransferFreezeAuthorArgs {
+	return &NftTransferFreezeAuthorArgs{
 		collection: collection,
-		mint: mint,
-		metadata: metadata,
+		new_author: new_author,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *NftSetMetadataArgs) Encode() (api.PackedInstruction, error) {
+func (a *NftTransferFreezeAuthorArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// collection: Address
 	args["collection"] = a.collection
-	// mint: Address
-	args["mint"] = a.mint
-	// metadata: Metadata
-	v0, err := toNftMetadataValue(a.metadata)
+	// new_author: Address
+	args["new_author"] = a.new_author
+	wire, err := a.pd.Encode("TransferFreezeAuthor", args)
 	if err != nil {
 		return nil, err
 	}
-	args["metadata"] = v0
-	wire, err := a.pd.Encode("SetMetadata", args)
+	return api.PackedInstruction(wire), nil
+}
+
+type NftSetCollectionTransferableIx struct {
+	pd *provider.Provider
+}
+
+type NftSetCollectionTransferableArgs struct {
+	collection *crypto.Address
+	transferable bool
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetCollectionTransferable.
+func (ix *NftSetCollectionTransferableIx) Args(collection *crypto.Address, transferable bool) *NftSetCollectionTransferableArgs {
+	return &NftSetCollectionTransferableArgs{
+		collection: collection,
+		transferable: transferable,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftSetCollectionTransferableArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// transferable: bool
+	args["transferable"] = a.transferable
+	wire, err := a.pd.Encode("SetCollectionTransferable", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type NftTransferCollectionOwnerIx struct {
+	pd *provider.Provider
+}
+
+type NftTransferCollectionOwnerArgs struct {
+	collection *crypto.Address
+	new_owner *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TransferCollectionOwner.
+func (ix *NftTransferCollectionOwnerIx) Args(collection *crypto.Address, new_owner *crypto.Address) *NftTransferCollectionOwnerArgs {
+	return &NftTransferCollectionOwnerArgs{
+		collection: collection,
+		new_owner: new_owner,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftTransferCollectionOwnerArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// new_owner: Address
+	args["new_owner"] = a.new_owner
+	wire, err := a.pd.Encode("TransferCollectionOwner", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type NftSetCollectionCoverUriIx struct {
+	pd *provider.Provider
+}
+
+type NftSetCollectionCoverUriArgs struct {
+	collection *crypto.Address
+	cover_uri string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetCollectionCoverUri.
+func (ix *NftSetCollectionCoverUriIx) Args(collection *crypto.Address, cover_uri string) *NftSetCollectionCoverUriArgs {
+	return &NftSetCollectionCoverUriArgs{
+		collection: collection,
+		cover_uri: cover_uri,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftSetCollectionCoverUriArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// cover_uri: String
+	args["cover_uri"] = a.cover_uri
+	wire, err := a.pd.Encode("SetCollectionCoverUri", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type NftSetCollectionExternalUrlIx struct {
+	pd *provider.Provider
+}
+
+type NftSetCollectionExternalUrlArgs struct {
+	collection *crypto.Address
+	external_url string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetCollectionExternalUrl.
+func (ix *NftSetCollectionExternalUrlIx) Args(collection *crypto.Address, external_url string) *NftSetCollectionExternalUrlArgs {
+	return &NftSetCollectionExternalUrlArgs{
+		collection: collection,
+		external_url: external_url,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftSetCollectionExternalUrlArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// external_url: String
+	args["external_url"] = a.external_url
+	wire, err := a.pd.Encode("SetCollectionExternalUrl", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type NftSetMintCoverUriIx struct {
+	pd *provider.Provider
+}
+
+type NftSetMintCoverUriArgs struct {
+	collection *crypto.Address
+	seed uint64
+	cover_uri string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetMintCoverUri.
+func (ix *NftSetMintCoverUriIx) Args(collection *crypto.Address, seed uint64, cover_uri string) *NftSetMintCoverUriArgs {
+	return &NftSetMintCoverUriArgs{
+		collection: collection,
+		seed: seed,
+		cover_uri: cover_uri,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftSetMintCoverUriArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
+	// cover_uri: String
+	args["cover_uri"] = a.cover_uri
+	wire, err := a.pd.Encode("SetMintCoverUri", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type NftSetMintExternalUrlIx struct {
+	pd *provider.Provider
+}
+
+type NftSetMintExternalUrlArgs struct {
+	collection *crypto.Address
+	seed uint64
+	external_url string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetMintExternalUrl.
+func (ix *NftSetMintExternalUrlIx) Args(collection *crypto.Address, seed uint64, external_url string) *NftSetMintExternalUrlArgs {
+	return &NftSetMintExternalUrlArgs{
+		collection: collection,
+		seed: seed,
+		external_url: external_url,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftSetMintExternalUrlArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
+	// external_url: String
+	args["external_url"] = a.external_url
+	wire, err := a.pd.Encode("SetMintExternalUrl", args)
 	if err != nil {
 		return nil, err
 	}
@@ -23736,16 +24369,16 @@ type NftSetAttributesIx struct {
 
 type NftSetAttributesArgs struct {
 	collection *crypto.Address
-	mint *crypto.Address
+	seed uint64
 	attributes []NftMetadataAttribute
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of SetAttributes.
-func (ix *NftSetAttributesIx) Args(collection *crypto.Address, mint *crypto.Address, attributes []NftMetadataAttribute) *NftSetAttributesArgs {
+func (ix *NftSetAttributesIx) Args(collection *crypto.Address, seed uint64, attributes []NftMetadataAttribute) *NftSetAttributesArgs {
 	return &NftSetAttributesArgs{
 		collection: collection,
-		mint: mint,
+		seed: seed,
 		attributes: attributes,
 		pd: ix.pd,
 	}
@@ -23759,8 +24392,8 @@ func (a *NftSetAttributesArgs) Encode() (api.PackedInstruction, error) {
 	args := provider.Args{}
 	// collection: Address
 	args["collection"] = a.collection
-	// mint: Address
-	args["mint"] = a.mint
+	// seed: u64
+	args["seed"] = a.seed
 	// attributes: vec<MetadataAttribute>
 	v0 := make([]any, len(a.attributes))
 	for v1, v2 := range a.attributes {
@@ -23784,16 +24417,16 @@ type NftSetPropertiesIx struct {
 
 type NftSetPropertiesArgs struct {
 	collection *crypto.Address
-	mint *crypto.Address
+	seed uint64
 	properties []NftMetadataProperty
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of SetProperties.
-func (ix *NftSetPropertiesIx) Args(collection *crypto.Address, mint *crypto.Address, properties []NftMetadataProperty) *NftSetPropertiesArgs {
+func (ix *NftSetPropertiesIx) Args(collection *crypto.Address, seed uint64, properties []NftMetadataProperty) *NftSetPropertiesArgs {
 	return &NftSetPropertiesArgs{
 		collection: collection,
-		mint: mint,
+		seed: seed,
 		properties: properties,
 		pd: ix.pd,
 	}
@@ -23807,8 +24440,8 @@ func (a *NftSetPropertiesArgs) Encode() (api.PackedInstruction, error) {
 	args := provider.Args{}
 	// collection: Address
 	args["collection"] = a.collection
-	// mint: Address
-	args["mint"] = a.mint
+	// seed: u64
+	args["seed"] = a.seed
 	// properties: vec<MetadataProperty>
 	v0 := make([]any, len(a.properties))
 	for v1, v2 := range a.properties {
@@ -23832,25 +24465,21 @@ type NftCreateUniqueIx struct {
 
 type NftCreateUniqueArgs struct {
 	collection *crypto.Address
-	mint *crypto.Address
 	to *crypto.Address
 	metadata NftMetadata
 	attributes []NftMetadataAttribute
 	properties []NftMetadataProperty
-	royalty NftRoyalty
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of CreateUnique.
-func (ix *NftCreateUniqueIx) Args(collection *crypto.Address, mint *crypto.Address, to *crypto.Address, metadata NftMetadata, attributes []NftMetadataAttribute, properties []NftMetadataProperty, royalty NftRoyalty) *NftCreateUniqueArgs {
+func (ix *NftCreateUniqueIx) Args(collection *crypto.Address, to *crypto.Address, metadata NftMetadata, attributes []NftMetadataAttribute, properties []NftMetadataProperty) *NftCreateUniqueArgs {
 	return &NftCreateUniqueArgs{
 		collection: collection,
-		mint: mint,
 		to: to,
 		metadata: metadata,
 		attributes: attributes,
 		properties: properties,
-		royalty: royalty,
 		pd: ix.pd,
 	}
 }
@@ -23863,8 +24492,6 @@ func (a *NftCreateUniqueArgs) Encode() (api.PackedInstruction, error) {
 	args := provider.Args{}
 	// collection: Address
 	args["collection"] = a.collection
-	// mint: Signer
-	args["mint"] = a.mint
 	// to: Address
 	args["to"] = a.to
 	// metadata: Metadata
@@ -23893,12 +24520,6 @@ func (a *NftCreateUniqueArgs) Encode() (api.PackedInstruction, error) {
 		v5[v6] = v8
 	}
 	args["properties"] = v5
-	// royalty: Royalty
-	v9, err := toNftRoyaltyValue(a.royalty)
-	if err != nil {
-		return nil, err
-	}
-	args["royalty"] = v9
 	wire, err := a.pd.Encode("CreateUnique", args)
 	if err != nil {
 		return nil, err
@@ -23912,29 +24533,23 @@ type NftCreateBatchIx struct {
 
 type NftCreateBatchArgs struct {
 	collection *crypto.Address
-	mint *crypto.Address
 	to []*crypto.Address
 	amounts []uint64
-	max_supply uint64
 	metadata NftMetadata
 	attributes []NftMetadataAttribute
 	properties []NftMetadataProperty
-	royalty NftRoyalty
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of CreateBatch.
-func (ix *NftCreateBatchIx) Args(collection *crypto.Address, mint *crypto.Address, to []*crypto.Address, amounts []uint64, max_supply uint64, metadata NftMetadata, attributes []NftMetadataAttribute, properties []NftMetadataProperty, royalty NftRoyalty) *NftCreateBatchArgs {
+func (ix *NftCreateBatchIx) Args(collection *crypto.Address, to []*crypto.Address, amounts []uint64, metadata NftMetadata, attributes []NftMetadataAttribute, properties []NftMetadataProperty) *NftCreateBatchArgs {
 	return &NftCreateBatchArgs{
 		collection: collection,
-		mint: mint,
 		to: to,
 		amounts: amounts,
-		max_supply: max_supply,
 		metadata: metadata,
 		attributes: attributes,
 		properties: properties,
-		royalty: royalty,
 		pd: ix.pd,
 	}
 }
@@ -23947,8 +24562,6 @@ func (a *NftCreateBatchArgs) Encode() (api.PackedInstruction, error) {
 	args := provider.Args{}
 	// collection: Address
 	args["collection"] = a.collection
-	// mint: Signer
-	args["mint"] = a.mint
 	// to: vec<Address>
 	v0 := make([]any, len(a.to))
 	for v1, v2 := range a.to {
@@ -23961,8 +24574,6 @@ func (a *NftCreateBatchArgs) Encode() (api.PackedInstruction, error) {
 		v3[v4] = v5
 	}
 	args["amounts"] = v3
-	// max_supply: u64
-	args["max_supply"] = a.max_supply
 	// metadata: Metadata
 	v6, err := toNftMetadataValue(a.metadata)
 	if err != nil {
@@ -23989,12 +24600,6 @@ func (a *NftCreateBatchArgs) Encode() (api.PackedInstruction, error) {
 		v11[v12] = v14
 	}
 	args["properties"] = v11
-	// royalty: Royalty
-	v15, err := toNftRoyaltyValue(a.royalty)
-	if err != nil {
-		return nil, err
-	}
-	args["royalty"] = v15
 	wire, err := a.pd.Encode("CreateBatch", args)
 	if err != nil {
 		return nil, err
@@ -24008,17 +24613,17 @@ type NftMintBatchIx struct {
 
 type NftMintBatchArgs struct {
 	collection *crypto.Address
-	mint *crypto.Address
+	seed uint64
 	to []*crypto.Address
 	amounts []uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of MintBatch.
-func (ix *NftMintBatchIx) Args(collection *crypto.Address, mint *crypto.Address, to []*crypto.Address, amounts []uint64) *NftMintBatchArgs {
+func (ix *NftMintBatchIx) Args(collection *crypto.Address, seed uint64, to []*crypto.Address, amounts []uint64) *NftMintBatchArgs {
 	return &NftMintBatchArgs{
 		collection: collection,
-		mint: mint,
+		seed: seed,
 		to: to,
 		amounts: amounts,
 		pd: ix.pd,
@@ -24033,8 +24638,8 @@ func (a *NftMintBatchArgs) Encode() (api.PackedInstruction, error) {
 	args := provider.Args{}
 	// collection: Address
 	args["collection"] = a.collection
-	// mint: Address
-	args["mint"] = a.mint
+	// seed: u64
+	args["seed"] = a.seed
 	// to: vec<Address>
 	v0 := make([]any, len(a.to))
 	for v1, v2 := range a.to {
@@ -24054,23 +24659,97 @@ func (a *NftMintBatchArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type NftFreezeIx struct {
+	pd *provider.Provider
+}
+
+type NftFreezeArgs struct {
+	collection *crypto.Address
+	seed uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Freeze.
+func (ix *NftFreezeIx) Args(collection *crypto.Address, seed uint64) *NftFreezeArgs {
+	return &NftFreezeArgs{
+		collection: collection,
+		seed: seed,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftFreezeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
+	wire, err := a.pd.Encode("Freeze", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type NftUnfreezeIx struct {
+	pd *provider.Provider
+}
+
+type NftUnfreezeArgs struct {
+	collection *crypto.Address
+	seed uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Unfreeze.
+func (ix *NftUnfreezeIx) Args(collection *crypto.Address, seed uint64) *NftUnfreezeArgs {
+	return &NftUnfreezeArgs{
+		collection: collection,
+		seed: seed,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftUnfreezeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
+	wire, err := a.pd.Encode("Unfreeze", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type NftTransferIx struct {
 	pd *provider.Provider
 }
 
 type NftTransferArgs struct {
 	from *crypto.Address
-	mint *crypto.Address
+	collection *crypto.Address
+	seed uint64
 	to *crypto.Address
 	amount *uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Transfer.
-func (ix *NftTransferIx) Args(from *crypto.Address, mint *crypto.Address, to *crypto.Address, amount *uint64) *NftTransferArgs {
+func (ix *NftTransferIx) Args(from *crypto.Address, collection *crypto.Address, seed uint64, to *crypto.Address, amount *uint64) *NftTransferArgs {
 	return &NftTransferArgs{
 		from: from,
-		mint: mint,
+		collection: collection,
+		seed: seed,
 		to: to,
 		amount: amount,
 		pd: ix.pd,
@@ -24085,8 +24764,10 @@ func (a *NftTransferArgs) Encode() (api.PackedInstruction, error) {
 	args := provider.Args{}
 	// from: Signer
 	args["from"] = a.from
-	// mint: Address
-	args["mint"] = a.mint
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
 	// to: Address
 	args["to"] = a.to
 	// amount: option<u64>
@@ -24108,16 +24789,18 @@ type NftBurnIx struct {
 
 type NftBurnArgs struct {
 	owner *crypto.Address
-	mint *crypto.Address
+	collection *crypto.Address
+	seed uint64
 	amount *uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Burn.
-func (ix *NftBurnIx) Args(owner *crypto.Address, mint *crypto.Address, amount *uint64) *NftBurnArgs {
+func (ix *NftBurnIx) Args(owner *crypto.Address, collection *crypto.Address, seed uint64, amount *uint64) *NftBurnArgs {
 	return &NftBurnArgs{
 		owner: owner,
-		mint: mint,
+		collection: collection,
+		seed: seed,
 		amount: amount,
 		pd: ix.pd,
 	}
@@ -24131,8 +24814,10 @@ func (a *NftBurnArgs) Encode() (api.PackedInstruction, error) {
 	args := provider.Args{}
 	// owner: Signer
 	args["owner"] = a.owner
-	// mint: Address
-	args["mint"] = a.mint
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
 	// amount: option<u64>
 	if a.amount == nil {
 		args["amount"] = nil
@@ -24146,66 +24831,22 @@ func (a *NftBurnArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-type NftSetRoyaltyIx struct {
-	pd *provider.Provider
-}
-
-type NftSetRoyaltyArgs struct {
-	collection *crypto.Address
-	mint *crypto.Address
-	royalty NftRoyalty
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SetRoyalty.
-func (ix *NftSetRoyaltyIx) Args(collection *crypto.Address, mint *crypto.Address, royalty NftRoyalty) *NftSetRoyaltyArgs {
-	return &NftSetRoyaltyArgs{
-		collection: collection,
-		mint: mint,
-		royalty: royalty,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *NftSetRoyaltyArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// collection: Address
-	args["collection"] = a.collection
-	// mint: Address
-	args["mint"] = a.mint
-	// royalty: Royalty
-	v0, err := toNftRoyaltyValue(a.royalty)
-	if err != nil {
-		return nil, err
-	}
-	args["royalty"] = v0
-	wire, err := a.pd.Encode("SetRoyalty", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
 type NftTransferRoyaltyRecipientIx struct {
 	pd *provider.Provider
 }
 
 type NftTransferRoyaltyRecipientArgs struct {
 	recipient *crypto.Address
-	mint *crypto.Address
+	collection *crypto.Address
 	new_recipient *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of TransferRoyaltyRecipient.
-func (ix *NftTransferRoyaltyRecipientIx) Args(recipient *crypto.Address, mint *crypto.Address, new_recipient *crypto.Address) *NftTransferRoyaltyRecipientArgs {
+func (ix *NftTransferRoyaltyRecipientIx) Args(recipient *crypto.Address, collection *crypto.Address, new_recipient *crypto.Address) *NftTransferRoyaltyRecipientArgs {
 	return &NftTransferRoyaltyRecipientArgs{
 		recipient: recipient,
-		mint: mint,
+		collection: collection,
 		new_recipient: new_recipient,
 		pd: ix.pd,
 	}
@@ -24219,8 +24860,8 @@ func (a *NftTransferRoyaltyRecipientArgs) Encode() (api.PackedInstruction, error
 	args := provider.Args{}
 	// recipient: Signer
 	args["recipient"] = a.recipient
-	// mint: Address
-	args["mint"] = a.mint
+	// collection: Address
+	args["collection"] = a.collection
 	// new_recipient: Address
 	args["new_recipient"] = a.new_recipient
 	wire, err := a.pd.Encode("TransferRoyaltyRecipient", args)
@@ -24262,8 +24903,8 @@ func (a *NftCollectionMetadataArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of CollectionMetadata into NftCollectionMetadata.
-func (ix *NftCollectionMetadataIx) DecodeView(body []byte) (out NftCollectionMetadata, err error) {
+// DecodeView decodes the raw view response body of CollectionMetadata into NftMetadata.
+func (ix *NftCollectionMetadataIx) DecodeView(body []byte) (out NftMetadata, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
@@ -24274,7 +24915,7 @@ func (ix *NftCollectionMetadataIx) DecodeView(body []byte) (out NftCollectionMet
 	if failure, ok := v.(*api.TxFailurePayload); ok {
 		return out, fmt.Errorf("view CollectionMetadata failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
-	v0, err := fromNftCollectionMetadata(v)
+	v0, err := fromNftMetadata(v)
 	if err != nil {
 		return out, err
 	}
@@ -24282,49 +24923,209 @@ func (ix *NftCollectionMetadataIx) DecodeView(body []byte) (out NftCollectionMet
 	return out, nil
 }
 
-type NftMetadataUriIx struct {
+type NftCollectionUpdateAuthorIx struct {
 	pd *provider.Provider
 }
 
-type NftMetadataUriArgs struct {
-	mint *crypto.Address
+type NftCollectionUpdateAuthorArgs struct {
+	collection *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of MetadataUri.
-func (ix *NftMetadataUriIx) Args(mint *crypto.Address) *NftMetadataUriArgs {
-	return &NftMetadataUriArgs{
-		mint: mint,
+// Args builds the IDL arguments of CollectionUpdateAuthor.
+func (ix *NftCollectionUpdateAuthorIx) Args(collection *crypto.Address) *NftCollectionUpdateAuthorArgs {
+	return &NftCollectionUpdateAuthorArgs{
+		collection: collection,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *NftMetadataUriArgs) Encode() (api.PackedInstruction, error) {
+func (a *NftCollectionUpdateAuthorArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// mint: Address
-	args["mint"] = a.mint
-	wire, err := a.pd.Encode("MetadataUri", args)
+	// collection: Address
+	args["collection"] = a.collection
+	wire, err := a.pd.Encode("CollectionUpdateAuthor", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of MetadataUri into string.
-func (ix *NftMetadataUriIx) DecodeView(body []byte) (out string, err error) {
+// DecodeView decodes the raw view response body of CollectionUpdateAuthor into *crypto.Address.
+func (ix *NftCollectionUpdateAuthorIx) DecodeView(body []byte) (out *crypto.Address, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("MetadataUri", body)
+	v, err := ix.pd.DecodeViewData("CollectionUpdateAuthor", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view MetadataUri failed: code=%d msg=%q", failure.Code, failure.Message)
+		return out, fmt.Errorf("view CollectionUpdateAuthor failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type NftCollectionFreezeAuthorIx struct {
+	pd *provider.Provider
+}
+
+type NftCollectionFreezeAuthorArgs struct {
+	collection *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CollectionFreezeAuthor.
+func (ix *NftCollectionFreezeAuthorIx) Args(collection *crypto.Address) *NftCollectionFreezeAuthorArgs {
+	return &NftCollectionFreezeAuthorArgs{
+		collection: collection,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftCollectionFreezeAuthorArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	wire, err := a.pd.Encode("CollectionFreezeAuthor", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CollectionFreezeAuthor into *crypto.Address.
+func (ix *NftCollectionFreezeAuthorIx) DecodeView(body []byte) (out *crypto.Address, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CollectionFreezeAuthor", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view CollectionFreezeAuthor failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type NftCollectionTransferableIx struct {
+	pd *provider.Provider
+}
+
+type NftCollectionTransferableArgs struct {
+	collection *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CollectionTransferable.
+func (ix *NftCollectionTransferableIx) Args(collection *crypto.Address) *NftCollectionTransferableArgs {
+	return &NftCollectionTransferableArgs{
+		collection: collection,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftCollectionTransferableArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	wire, err := a.pd.Encode("CollectionTransferable", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CollectionTransferable into bool.
+func (ix *NftCollectionTransferableIx) DecodeView(body []byte) (out bool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CollectionTransferable", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view CollectionTransferable failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := toBool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type NftMintCoverUriIx struct {
+	pd *provider.Provider
+}
+
+type NftMintCoverUriArgs struct {
+	collection *crypto.Address
+	seed uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of MintCoverUri.
+func (ix *NftMintCoverUriIx) Args(collection *crypto.Address, seed uint64) *NftMintCoverUriArgs {
+	return &NftMintCoverUriArgs{
+		collection: collection,
+		seed: seed,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftMintCoverUriArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
+	wire, err := a.pd.Encode("MintCoverUri", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of MintCoverUri into string.
+func (ix *NftMintCoverUriIx) DecodeView(body []byte) (out string, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("MintCoverUri", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view MintCoverUri failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
 	v0, err := toString(v)
 	if err != nil {
@@ -24339,14 +25140,16 @@ type NftAttributesIx struct {
 }
 
 type NftAttributesArgs struct {
-	mint *crypto.Address
+	collection *crypto.Address
+	seed uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Attributes.
-func (ix *NftAttributesIx) Args(mint *crypto.Address) *NftAttributesArgs {
+func (ix *NftAttributesIx) Args(collection *crypto.Address, seed uint64) *NftAttributesArgs {
 	return &NftAttributesArgs{
-		mint: mint,
+		collection: collection,
+		seed: seed,
 		pd: ix.pd,
 	}
 }
@@ -24357,8 +25160,10 @@ func (a *NftAttributesArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// mint: Address
-	args["mint"] = a.mint
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
 	wire, err := a.pd.Encode("Attributes", args)
 	if err != nil {
 		return nil, err
@@ -24398,14 +25203,16 @@ type NftPropertiesIx struct {
 }
 
 type NftPropertiesArgs struct {
-	mint *crypto.Address
+	collection *crypto.Address
+	seed uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Properties.
-func (ix *NftPropertiesIx) Args(mint *crypto.Address) *NftPropertiesArgs {
+func (ix *NftPropertiesIx) Args(collection *crypto.Address, seed uint64) *NftPropertiesArgs {
 	return &NftPropertiesArgs{
-		mint: mint,
+		collection: collection,
+		seed: seed,
 		pd: ix.pd,
 	}
 }
@@ -24416,8 +25223,10 @@ func (a *NftPropertiesArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// mint: Address
-	args["mint"] = a.mint
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
 	wire, err := a.pd.Encode("Properties", args)
 	if err != nil {
 		return nil, err
@@ -24452,51 +25261,111 @@ func (ix *NftPropertiesIx) DecodeView(body []byte) (out []NftMetadataProperty, e
 	return out, nil
 }
 
-type NftMintConfigViewIx struct {
+type NftIsFrozenIx struct {
 	pd *provider.Provider
 }
 
-type NftMintConfigViewArgs struct {
-	mint *crypto.Address
+type NftIsFrozenArgs struct {
+	collection *crypto.Address
+	seed uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of MintConfigView.
-func (ix *NftMintConfigViewIx) Args(mint *crypto.Address) *NftMintConfigViewArgs {
-	return &NftMintConfigViewArgs{
-		mint: mint,
+// Args builds the IDL arguments of IsFrozen.
+func (ix *NftIsFrozenIx) Args(collection *crypto.Address, seed uint64) *NftIsFrozenArgs {
+	return &NftIsFrozenArgs{
+		collection: collection,
+		seed: seed,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *NftMintConfigViewArgs) Encode() (api.PackedInstruction, error) {
+func (a *NftIsFrozenArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// mint: Address
-	args["mint"] = a.mint
-	wire, err := a.pd.Encode("MintConfigView", args)
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
+	wire, err := a.pd.Encode("IsFrozen", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of MintConfigView into NftMintConfig.
-func (ix *NftMintConfigViewIx) DecodeView(body []byte) (out NftMintConfig, err error) {
+// DecodeView decodes the raw view response body of IsFrozen into bool.
+func (ix *NftIsFrozenIx) DecodeView(body []byte) (out bool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("MintConfigView", body)
+	v, err := ix.pd.DecodeViewData("IsFrozen", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view MintConfigView failed: code=%d msg=%q", failure.Code, failure.Message)
+		return out, fmt.Errorf("view IsFrozen failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
-	v0, err := fromNftMintConfig(v)
+	v0, err := toBool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type NftMintDefinitionIx struct {
+	pd *provider.Provider
+}
+
+type NftMintDefinitionArgs struct {
+	collection *crypto.Address
+	seed uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of MintDefinition.
+func (ix *NftMintDefinitionIx) Args(collection *crypto.Address, seed uint64) *NftMintDefinitionArgs {
+	return &NftMintDefinitionArgs{
+		collection: collection,
+		seed: seed,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftMintDefinitionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
+	wire, err := a.pd.Encode("MintDefinition", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of MintDefinition into NftMintDefinition.
+func (ix *NftMintDefinitionIx) DecodeView(body []byte) (out NftMintDefinition, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("MintDefinition", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view MintDefinition failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := fromNftMintDefinition(v)
 	if err != nil {
 		return out, err
 	}
@@ -24509,14 +25378,16 @@ type NftTotalSupplyIx struct {
 }
 
 type NftTotalSupplyArgs struct {
-	mint *crypto.Address
+	collection *crypto.Address
+	seed uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of TotalSupply.
-func (ix *NftTotalSupplyIx) Args(mint *crypto.Address) *NftTotalSupplyArgs {
+func (ix *NftTotalSupplyIx) Args(collection *crypto.Address, seed uint64) *NftTotalSupplyArgs {
 	return &NftTotalSupplyArgs{
-		mint: mint,
+		collection: collection,
+		seed: seed,
 		pd: ix.pd,
 	}
 }
@@ -24527,8 +25398,10 @@ func (a *NftTotalSupplyArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// mint: Address
-	args["mint"] = a.mint
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
 	wire, err := a.pd.Encode("TotalSupply", args)
 	if err != nil {
 		return nil, err
@@ -24561,15 +25434,17 @@ type NftBalanceOfIx struct {
 }
 
 type NftBalanceOfArgs struct {
-	mint *crypto.Address
+	collection *crypto.Address
+	seed uint64
 	owner *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of BalanceOf.
-func (ix *NftBalanceOfIx) Args(mint *crypto.Address, owner *crypto.Address) *NftBalanceOfArgs {
+func (ix *NftBalanceOfIx) Args(collection *crypto.Address, seed uint64, owner *crypto.Address) *NftBalanceOfArgs {
 	return &NftBalanceOfArgs{
-		mint: mint,
+		collection: collection,
+		seed: seed,
 		owner: owner,
 		pd: ix.pd,
 	}
@@ -24581,8 +25456,10 @@ func (a *NftBalanceOfArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// mint: Address
-	args["mint"] = a.mint
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
 	// owner: Address
 	args["owner"] = a.owner
 	wire, err := a.pd.Encode("BalanceOf", args)
@@ -24612,19 +25489,71 @@ func (ix *NftBalanceOfIx) DecodeView(body []byte) (out uint64, err error) {
 	return out, nil
 }
 
+type NftCurrentMintSeedIx struct {
+	pd *provider.Provider
+}
+
+type NftCurrentMintSeedArgs struct {
+	collection *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CurrentMintSeed.
+func (ix *NftCurrentMintSeedIx) Args(collection *crypto.Address) *NftCurrentMintSeedArgs {
+	return &NftCurrentMintSeedArgs{
+		collection: collection,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *NftCurrentMintSeedArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection: Address
+	args["collection"] = a.collection
+	wire, err := a.pd.Encode("CurrentMintSeed", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CurrentMintSeed into uint64.
+func (ix *NftCurrentMintSeedIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CurrentMintSeed", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view CurrentMintSeed failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
 type NftRoyaltyInfoIx struct {
 	pd *provider.Provider
 }
 
 type NftRoyaltyInfoArgs struct {
-	mint *crypto.Address
+	collection *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of RoyaltyInfo.
-func (ix *NftRoyaltyInfoIx) Args(mint *crypto.Address) *NftRoyaltyInfoArgs {
+func (ix *NftRoyaltyInfoIx) Args(collection *crypto.Address) *NftRoyaltyInfoArgs {
 	return &NftRoyaltyInfoArgs{
-		mint: mint,
+		collection: collection,
 		pd: ix.pd,
 	}
 }
@@ -24635,8 +25564,8 @@ func (a *NftRoyaltyInfoArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app nft is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// mint: Address
-	args["mint"] = a.mint
+	// collection: Address
+	args["collection"] = a.collection
 	wire, err := a.pd.Encode("RoyaltyInfo", args)
 	if err != nil {
 		return nil, err
@@ -25604,8 +26533,10 @@ func (ix *RandomnessBeaconIx) DecodeView(body []byte) (out RandomnessBeaconRecor
 type KeylessApp struct {
 	Pd *provider.Provider
 	SetAdmin *KeylessSetAdminIx
-	RegisterIssuer *KeylessRegisterIssuerIx
-	SetIssuerEnabled *KeylessSetIssuerEnabledIx
+	RegisterProvider *KeylessRegisterProviderIx
+	UpdateProvider *KeylessUpdateProviderIx
+	SetProviderGovernanceEnabled *KeylessSetProviderGovernanceEnabledIx
+	ControllerSetProviderEnabled *KeylessControllerSetProviderEnabledIx
 	SetParams *KeylessSetParamsIx
 	Authenticate *KeylessAuthenticateIx
 	Bind *KeylessBindIx
@@ -25613,15 +26544,18 @@ type KeylessApp struct {
 	RevokeSession *KeylessRevokeSessionIx
 	GetSessions *KeylessGetSessionsIx
 	GetBinding *KeylessGetBindingIx
-	ListIssuers *KeylessListIssuersIx
+	ListProviders *KeylessListProvidersIx
+	GetProvider *KeylessGetProviderIx
 	GetParams *KeylessGetParamsIx
 	IsKeylessAccount *KeylessIsKeylessAccountIx
 }
 
 var Keyless = &KeylessApp{
 	SetAdmin: &KeylessSetAdminIx{},
-	RegisterIssuer: &KeylessRegisterIssuerIx{},
-	SetIssuerEnabled: &KeylessSetIssuerEnabledIx{},
+	RegisterProvider: &KeylessRegisterProviderIx{},
+	UpdateProvider: &KeylessUpdateProviderIx{},
+	SetProviderGovernanceEnabled: &KeylessSetProviderGovernanceEnabledIx{},
+	ControllerSetProviderEnabled: &KeylessControllerSetProviderEnabledIx{},
 	SetParams: &KeylessSetParamsIx{},
 	Authenticate: &KeylessAuthenticateIx{},
 	Bind: &KeylessBindIx{},
@@ -25629,7 +26563,8 @@ var Keyless = &KeylessApp{
 	RevokeSession: &KeylessRevokeSessionIx{},
 	GetSessions: &KeylessGetSessionsIx{},
 	GetBinding: &KeylessGetBindingIx{},
-	ListIssuers: &KeylessListIssuersIx{},
+	ListProviders: &KeylessListProvidersIx{},
+	GetProvider: &KeylessGetProviderIx{},
 	GetParams: &KeylessGetParamsIx{},
 	IsKeylessAccount: &KeylessIsKeylessAccountIx{},
 }
@@ -25637,8 +26572,10 @@ var Keyless = &KeylessApp{
 func (a *KeylessApp) bind(pd *provider.Provider) {
 	a.Pd = pd
 	a.SetAdmin.pd = pd
-	a.RegisterIssuer.pd = pd
-	a.SetIssuerEnabled.pd = pd
+	a.RegisterProvider.pd = pd
+	a.UpdateProvider.pd = pd
+	a.SetProviderGovernanceEnabled.pd = pd
+	a.ControllerSetProviderEnabled.pd = pd
 	a.SetParams.pd = pd
 	a.Authenticate.pd = pd
 	a.Bind.pd = pd
@@ -25646,7 +26583,8 @@ func (a *KeylessApp) bind(pd *provider.Provider) {
 	a.RevokeSession.pd = pd
 	a.GetSessions.pd = pd
 	a.GetBinding.pd = pd
-	a.ListIssuers.pd = pd
+	a.ListProviders.pd = pd
+	a.GetProvider.pd = pd
 	a.GetParams.pd = pd
 	a.IsKeylessAccount.pd = pd
 }
@@ -25683,80 +26621,148 @@ func (a *KeylessSetAdminArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-type KeylessRegisterIssuerIx struct {
+type KeylessRegisterProviderIx struct {
 	pd *provider.Provider
 }
 
-type KeylessRegisterIssuerArgs struct {
-	issuer string
-	aud string
-	name string
+type KeylessRegisterProviderArgs struct {
+	provider KeylessKeylessProvider
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of RegisterIssuer.
-func (ix *KeylessRegisterIssuerIx) Args(issuer string, aud string, name string) *KeylessRegisterIssuerArgs {
-	return &KeylessRegisterIssuerArgs{
-		issuer: issuer,
-		aud: aud,
-		name: name,
+// Args builds the IDL arguments of RegisterProvider.
+func (ix *KeylessRegisterProviderIx) Args(provider KeylessKeylessProvider) *KeylessRegisterProviderArgs {
+	return &KeylessRegisterProviderArgs{
+		provider: provider,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *KeylessRegisterIssuerArgs) Encode() (api.PackedInstruction, error) {
+func (a *KeylessRegisterProviderArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// issuer: String
-	args["issuer"] = a.issuer
-	// aud: String
-	args["aud"] = a.aud
-	// name: String
-	args["name"] = a.name
-	wire, err := a.pd.Encode("RegisterIssuer", args)
+	// provider: KeylessProvider
+	v0, err := toKeylessKeylessProviderValue(a.provider)
+	if err != nil {
+		return nil, err
+	}
+	args["provider"] = v0
+	wire, err := a.pd.Encode("RegisterProvider", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type KeylessSetIssuerEnabledIx struct {
+type KeylessUpdateProviderIx struct {
 	pd *provider.Provider
 }
 
-type KeylessSetIssuerEnabledArgs struct {
-	issuer_hash_raw [32]byte
-	aud_hash_raw [32]byte
+type KeylessUpdateProviderArgs struct {
+	provider KeylessKeylessProvider
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of UpdateProvider.
+func (ix *KeylessUpdateProviderIx) Args(provider KeylessKeylessProvider) *KeylessUpdateProviderArgs {
+	return &KeylessUpdateProviderArgs{
+		provider: provider,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessUpdateProviderArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// provider: KeylessProvider
+	v0, err := toKeylessKeylessProviderValue(a.provider)
+	if err != nil {
+		return nil, err
+	}
+	args["provider"] = v0
+	wire, err := a.pd.Encode("UpdateProvider", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type KeylessSetProviderGovernanceEnabledIx struct {
+	pd *provider.Provider
+}
+
+type KeylessSetProviderGovernanceEnabledArgs struct {
+	provider_id [32]byte
 	enabled bool
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of SetIssuerEnabled.
-func (ix *KeylessSetIssuerEnabledIx) Args(issuer_hash_raw [32]byte, aud_hash_raw [32]byte, enabled bool) *KeylessSetIssuerEnabledArgs {
-	return &KeylessSetIssuerEnabledArgs{
-		issuer_hash_raw: issuer_hash_raw,
-		aud_hash_raw: aud_hash_raw,
+// Args builds the IDL arguments of SetProviderGovernanceEnabled.
+func (ix *KeylessSetProviderGovernanceEnabledIx) Args(provider_id [32]byte, enabled bool) *KeylessSetProviderGovernanceEnabledArgs {
+	return &KeylessSetProviderGovernanceEnabledArgs{
+		provider_id: provider_id,
 		enabled: enabled,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *KeylessSetIssuerEnabledArgs) Encode() (api.PackedInstruction, error) {
+func (a *KeylessSetProviderGovernanceEnabledArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// issuer_hash_raw: B256
-	args["issuer_hash_raw"] = a.issuer_hash_raw
-	// aud_hash_raw: B256
-	args["aud_hash_raw"] = a.aud_hash_raw
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
 	// enabled: bool
 	args["enabled"] = a.enabled
-	wire, err := a.pd.Encode("SetIssuerEnabled", args)
+	wire, err := a.pd.Encode("SetProviderGovernanceEnabled", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type KeylessControllerSetProviderEnabledIx struct {
+	pd *provider.Provider
+}
+
+type KeylessControllerSetProviderEnabledArgs struct {
+	provider_id [32]byte
+	enabled bool
+	controller *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ControllerSetProviderEnabled.
+func (ix *KeylessControllerSetProviderEnabledIx) Args(provider_id [32]byte, enabled bool, controller *crypto.Address) *KeylessControllerSetProviderEnabledArgs {
+	return &KeylessControllerSetProviderEnabledArgs{
+		provider_id: provider_id,
+		enabled: enabled,
+		controller: controller,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessControllerSetProviderEnabledArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
+	// enabled: bool
+	args["enabled"] = a.enabled
+	// controller: Signer
+	args["controller"] = a.controller
+	wire, err := a.pd.Encode("ControllerSetProviderEnabled", args)
 	if err != nil {
 		return nil, err
 	}
@@ -25804,14 +26810,16 @@ type KeylessAuthenticateIx struct {
 }
 
 type KeylessAuthenticateArgs struct {
+	provider_id [32]byte
 	jwt []byte
 	ephemeral_pk *crypto.PublicKey
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Authenticate.
-func (ix *KeylessAuthenticateIx) Args(jwt []byte, ephemeral_pk *crypto.PublicKey) *KeylessAuthenticateArgs {
+func (ix *KeylessAuthenticateIx) Args(provider_id [32]byte, jwt []byte, ephemeral_pk *crypto.PublicKey) *KeylessAuthenticateArgs {
 	return &KeylessAuthenticateArgs{
+		provider_id: provider_id,
 		jwt: jwt,
 		ephemeral_pk: ephemeral_pk,
 		pd: ix.pd,
@@ -25824,6 +26832,8 @@ func (a *KeylessAuthenticateArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
 	// jwt: bytes
 	args["jwt"] = a.jwt
 	// ephemeral_pk: PublicKey
@@ -25840,19 +26850,19 @@ type KeylessBindIx struct {
 }
 
 type KeylessBindArgs struct {
+	provider_id [32]byte
 	jwt []byte
 	ephemeral_pk *crypto.PublicKey
-	ephemeral_sig *crypto.Signature
 	owner *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Bind.
-func (ix *KeylessBindIx) Args(jwt []byte, ephemeral_pk *crypto.PublicKey, ephemeral_sig *crypto.Signature, owner *crypto.Address) *KeylessBindArgs {
+func (ix *KeylessBindIx) Args(provider_id [32]byte, jwt []byte, ephemeral_pk *crypto.PublicKey, owner *crypto.Address) *KeylessBindArgs {
 	return &KeylessBindArgs{
+		provider_id: provider_id,
 		jwt: jwt,
 		ephemeral_pk: ephemeral_pk,
-		ephemeral_sig: ephemeral_sig,
 		owner: owner,
 		pd: ix.pd,
 	}
@@ -25864,12 +26874,12 @@ func (a *KeylessBindArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
 	// jwt: bytes
 	args["jwt"] = a.jwt
 	// ephemeral_pk: PublicKey
 	args["ephemeral_pk"] = a.ephemeral_pk
-	// ephemeral_sig: Signature
-	args["ephemeral_sig"] = a.ephemeral_sig
 	// owner: Signer
 	args["owner"] = a.owner
 	wire, err := a.pd.Encode("Bind", args)
@@ -26068,57 +27078,115 @@ func (ix *KeylessGetBindingIx) DecodeView(body []byte) (out *KeylessKeylessBindi
 	return out, nil
 }
 
-type KeylessListIssuersIx struct {
+type KeylessListProvidersIx struct {
 	pd *provider.Provider
 }
 
-type KeylessListIssuersArgs struct {
+type KeylessListProvidersArgs struct {
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ListIssuers.
-func (ix *KeylessListIssuersIx) Args() *KeylessListIssuersArgs {
-	return &KeylessListIssuersArgs{
+// Args builds the IDL arguments of ListProviders.
+func (ix *KeylessListProvidersIx) Args() *KeylessListProvidersArgs {
+	return &KeylessListProvidersArgs{
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *KeylessListIssuersArgs) Encode() (api.PackedInstruction, error) {
+func (a *KeylessListProvidersArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	wire, err := a.pd.Encode("ListIssuers", args)
+	wire, err := a.pd.Encode("ListProviders", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of ListIssuers into []KeylessIssuerInfo.
-func (ix *KeylessListIssuersIx) DecodeView(body []byte) (out []KeylessIssuerInfo, err error) {
+// DecodeView decodes the raw view response body of ListProviders into []KeylessKeylessProvider.
+func (ix *KeylessListProvidersIx) DecodeView(body []byte) (out []KeylessKeylessProvider, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ListIssuers", body)
+	v, err := ix.pd.DecodeViewData("ListProviders", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ListIssuers failed: code=%d msg=%q", failure.Code, failure.Message)
+		return out, fmt.Errorf("view ListProviders failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
 		return out, err
 	}
-	out = make([]KeylessIssuerInfo, len(v0))
+	out = make([]KeylessKeylessProvider, len(v0))
 	for v1, v2 := range v0 {
-		v3, err := fromKeylessIssuerInfo(v2)
+		v3, err := fromKeylessKeylessProvider(v2)
 		if err != nil {
 			return out, err
 		}
 		out[v1] = v3
+	}
+	return out, nil
+}
+
+type KeylessGetProviderIx struct {
+	pd *provider.Provider
+}
+
+type KeylessGetProviderArgs struct {
+	provider_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of GetProvider.
+func (ix *KeylessGetProviderIx) Args(provider_id [32]byte) *KeylessGetProviderArgs {
+	return &KeylessGetProviderArgs{
+		provider_id: provider_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessGetProviderArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
+	wire, err := a.pd.Encode("GetProvider", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of GetProvider into *KeylessKeylessProvider.
+func (ix *KeylessGetProviderIx) DecodeView(body []byte) (out *KeylessKeylessProvider, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("GetProvider", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view GetProvider failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 KeylessKeylessProvider
+		v1, err := fromKeylessKeylessProvider(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
 	}
 	return out, nil
 }
@@ -26383,7 +27451,8 @@ type LuckyBoxCreateNftIx struct {
 type LuckyBoxCreateNftArgs struct {
 	creator *crypto.Address
 	box_id uint64
-	mint *crypto.Address
+	collection *crypto.Address
+	seed uint64
 	total_amount uint64
 	claim_count uint64
 	rules *LuckyBoxBoxRules
@@ -26391,11 +27460,12 @@ type LuckyBoxCreateNftArgs struct {
 }
 
 // Args builds the IDL arguments of CreateNft.
-func (ix *LuckyBoxCreateNftIx) Args(creator *crypto.Address, box_id uint64, mint *crypto.Address, total_amount uint64, claim_count uint64, rules *LuckyBoxBoxRules) *LuckyBoxCreateNftArgs {
+func (ix *LuckyBoxCreateNftIx) Args(creator *crypto.Address, box_id uint64, collection *crypto.Address, seed uint64, total_amount uint64, claim_count uint64, rules *LuckyBoxBoxRules) *LuckyBoxCreateNftArgs {
 	return &LuckyBoxCreateNftArgs{
 		creator: creator,
 		box_id: box_id,
-		mint: mint,
+		collection: collection,
+		seed: seed,
 		total_amount: total_amount,
 		claim_count: claim_count,
 		rules: rules,
@@ -26413,8 +27483,10 @@ func (a *LuckyBoxCreateNftArgs) Encode() (api.PackedInstruction, error) {
 	args["creator"] = a.creator
 	// box_id: u64
 	args["box_id"] = a.box_id
-	// mint: Address
-	args["mint"] = a.mint
+	// collection: Address
+	args["collection"] = a.collection
+	// seed: u64
+	args["seed"] = a.seed
 	// total_amount: u64
 	args["total_amount"] = a.total_amount
 	// claim_count: u64
