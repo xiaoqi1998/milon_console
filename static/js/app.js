@@ -3133,7 +3133,7 @@ var IDL_PAYMENT_MODES = [
 // IDL 方法实例参数映射表：键为 appName.MethodName，值为该方法的 args 示例对象
 // 数据来源：D:\pprojiect\Auto_test_new\test_cases\milon\ 下 6 个模块的测试用例
 var IDL_EXAMPLE_ARGS = {
-  // ==================== token 模块（app_id=2，29 个方法：22 entry + 7 view）====================
+  // ==================== token 模块（app_id=2，31 个方法：24 entry + 7 view）====================
   'token.Create': {
     token: 'M11on1111111111111111111111',
     owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
@@ -3163,6 +3163,7 @@ var IDL_EXAMPLE_ARGS = {
   'token.Revoke': { owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token: 'M11on1111111111111111111111', spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH' },
   'token.TransferFrom': { spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', token: 'M11on1111111111111111111111', from: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', amount: 500000000 },
   'token.SetIcon': { token: 'M11on1111111111111111111111', icon_url: 'https://example.com/new_icon.png' },
+  'token.SetUri': { token: 'M11on1111111111111111111111', uri: 'https://example.com/token.json' },
   'token.CreateWithCompliance': {
     token: 'M11on1111111111111111111111',
     owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
@@ -3173,6 +3174,7 @@ var IDL_EXAMPLE_ARGS = {
   'token.AddComplianceRequirement': { token: 'M11on1111111111111111111111', credential_id: 'schema_id_xxx' },
   'token.RemoveComplianceRequirement': { token: 'M11on1111111111111111111111', credential_id: 'schema_id_xxx' },
   'token.ClearComplianceRequirements': { token: 'M11on1111111111111111111111' },
+  'token.BootstrapGenesis': {},
   'token.ClaimFaucet': { claimer: 'gKzpjpfWVvwgDs26DTCFFA9eRxb' },
   'token.BalanceOf': { token: 'M11on1111111111111111111111', account: '2T2u6f4znq3ps3XvBPQYUtNH4DKx' },
   'token.FrozenOf': { token: 'M11on1111111111111111111111', account: '2T2u6f4znq3ps3XvBPQYUtNH4DKx' },
@@ -3251,7 +3253,7 @@ var IDL_EXAMPLE_ARGS = {
     token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
   },
 
-  // ==================== identity 模块（app_id=4，41 个方法：17 entry + 24 view）====================
+  // ==================== identity 模块（app_id=4，42 个方法：17 entry + 25 view）====================
   'identity.Create': {
     subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     doc: {
@@ -3364,6 +3366,7 @@ var IDL_EXAMPLE_ARGS = {
   },
   'identity.DisclosedVcSchemas': {subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA'},
   'identity.DisclosedVcs': {subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', offset: 0, limit: 10},
+  'identity.CredentialId': { issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19', credential_schema: 'TestSchemaV1' },
 
   // ==================== nft 模块（app_id=5，32 个方法：19 entry + 13 view）====================
   'nft.CreateCollection': {
@@ -3435,7 +3438,6 @@ var IDL_EXAMPLE_ARGS = {
     consensus_account: '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
     consensus_pubkey: 'fndsa512_public_key_hex_string',
     bls_pubkey: 'bls12381_public_key_hex_string',
-    network_address: '3030303030303030303030303030303030303030303030303030303030303030',
     commission_rate_bps: 100
   },
   'staking.JoinCandidatePool': { operator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e' },
@@ -3462,14 +3464,15 @@ var IDL_EXAMPLE_ARGS = {
   },
   'staking.ListDeclaredValidatorsForEpoch': {epoch: 0},
 
-  // ==================== system 模块（app_id=0，11 个方法：11 entry + 0 view）====================
+  // ==================== system 模块（app_id=0，13 个方法：13 entry + 0 view）====================
   'system.Noop': {},
+  'system.BootstrapEpochClock': { start_timestamp_ms: 0, min_duration_ms: 60000 },
+  'system.BootstrapValidatorSetConfig': { max_validator_set_size: 100 },
   'system.RegisterValidatorIdentity': {
     validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e',
     consensus_account: '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
     consensus_pubkey: '0x0d5c7fd5c67c2e20c43d1fbebe52e3cb92c2c1cc8f3b3eff13ee1ee126b2c699',
     bls_pubkey: '0xedd27cce7f53b5513c11cf326c41713807465b68d8c9935be6d3e1b75a3ac674',
-    network_address: '3030303030303030303030303030303030303030303030303030303030303030',
     ed25519_pubkey: '0x45b91b018a92e84093c49ba2758680643250911b5a0a1a2f42fc9c903412eebd',
   },
   'system.PrepareValidatorSet': {target_epoch: 0, validator_set_seed: '0x537fe66a118edf5a58af70dd9b7b753271bb096b7eda9a4c896bbcc3c2d589cb'},
@@ -3484,16 +3487,12 @@ var IDL_EXAMPLE_ARGS = {
     consensus_account: '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
     consensus_pubkey: '0x0d5c7fd5c67c2e20c43d1fbebe52e3cb92c2c1cc8f3b3eff13ee1ee126b2c699',
     bls_pubkey: '0xedd27cce7f53b5513c11cf326c41713807465b68d8c9935be6d3e1b75a3ac674',
-    network_address: '3030303030303030303030303030303030303030303030303030303030303030',
     ed25519_pubkey: '0x45b91b018a92e84093c49ba2758680643250911b5a0a1a2f42fc9c903412eebd',
     commission_rate_bps: 100,
     operator_stake: 1000000000,
   },
   'system.BootstrapStakingEpochZero': {},
-  'system.PublishLocalBlockBeacon': {
-    parent_block_hash: '0x64bac889caa97cafabd4a92112218428c868445922c13f7fe969fff29f775b1e',
-    entropy: '0x248cbcd302e8e58e55ce7563f75cd7aa4c1bbb3de27172b95bc34e73ad3589f6',
-  },
+  'system.CommitBlockSeed': {},
 
   // ==================== dex 模块（app_id=6，14 个方法：8 entry + 6 view）====================
   'dex.CreateMarket': {
@@ -3555,11 +3554,7 @@ var IDL_EXAMPLE_ARGS = {
   'dex.OrdersAtLevel': {market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', side: 'Bid', tick: 0, cursor_order_id: 0, limit: 10},
   'dex.VaultLiability': {market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', token: 'M11on1111111111111111111111'},
 
-  // ==================== randomness 模块（app_id=7，2 个方法：0 entry + 2 view）====================
-  'randomness.LatestBeacon': {},
-  'randomness.Beacon': {index: 0},
-
-  // ==================== keyless 模块（app_id=8，16 个方法：10 entry + 6 view）====================
+  // ==================== keyless 模块（app_id=8，17 个方法：11 entry + 6 view）====================
   'keyless.SetAdmin': {new_admin: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b'},
   'keyless.RegisterProvider': {
     provider: {
@@ -3598,6 +3593,7 @@ var IDL_EXAMPLE_ARGS = {
     controller: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
   },
   'keyless.SetParams': {max_session_ttl_ms: 86400000, bind_activation_delay_ms: 0},
+  'keyless.BootstrapGenesis': {},
   'keyless.Authenticate': {
     provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
     jwt: '0x637dca1ed85901f74d2634ec978c3e441598b7cc2f86a2b9a004662222009808',
@@ -3656,7 +3652,7 @@ var IDL_EXAMPLE_ARGS = {
 // IDL Entry 方法支付配置映射表：键为 appName.MethodName
 // paymentMode: 测试用例使用的支付模式；payerRole: 付款角色提示；signerHint: 多签名场景提示
 var IDL_EXAMPLE_PAYMENT = {
-  // token 模块（22 entry）
+  // token 模块（24 entry）
   'token.Create': { paymentMode: 'unified_payer_all', payerRole: 'token' },
   'token.AbandonOwner': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.TransferOwner': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
@@ -3673,11 +3669,13 @@ var IDL_EXAMPLE_PAYMENT = {
   'token.Revoke': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.TransferFrom': { paymentMode: 'unified_payer_all', payerRole: 'spender' },
   'token.SetIcon': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.SetUri': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.CreateWithCompliance': { paymentMode: 'unified_payer_all', payerRole: 'token' },
   'token.SetComplianceMode': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.AddComplianceRequirement': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.RemoveComplianceRequirement': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'token.ClearComplianceRequirements': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
+  'token.BootstrapGenesis': { paymentMode: 'unified_payer_all' },
   'token.ClaimFaucet': { paymentMode: 'unified_payer_all', payerRole: 'claimer' },
 
   // account 模块（10 entry）
@@ -3747,7 +3745,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'nft.Unfreeze': {paymentMode: 'unified_payer_all', payerRole: 'freeze_author'},
 
   // staking 模块（10 entry）
-  'staking.CreateValidator': { paymentMode: 'multi_signer', payerRole: 'operator', signerHint: '该方法需 operator + consensus_account 双签，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用。注：consensus_pubkey/bls_pubkey/network_address 为 bytes 类型，JSON REST API 可能无法正确序列化' },
+  'staking.CreateValidator': { paymentMode: 'multi_signer', payerRole: 'operator', signerHint: '该方法需 operator + consensus_account 双签，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用。注：consensus_pubkey/bls_pubkey 为 bytes 类型，JSON REST API 可能无法正确序列化' },
   'staking.JoinCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
   'staking.LeaveCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
   'staking.FundRewardTreasury': { paymentMode: 'unified_payer_all', payerRole: 'funder' },
@@ -3758,8 +3756,10 @@ var IDL_EXAMPLE_PAYMENT = {
   'staking.RequestUnstake': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'staking.DeclareValidatorAvailability': {paymentMode: 'unified_payer_all', payerRole: 'operator'},
 
-  // system 模块（11 entry）
+  // system 模块（13 entry）
   'system.Noop': {paymentMode: 'unified_payer_all'},
+  'system.BootstrapEpochClock': {paymentMode: 'unified_payer_all'},
+  'system.BootstrapValidatorSetConfig': {paymentMode: 'unified_payer_all'},
   'system.RegisterValidatorIdentity': {paymentMode: 'unified_payer_all', payerRole: 'consensus_account'},
   'system.PrepareValidatorSet': {paymentMode: 'unified_payer_all'},
   'system.SettleStakingEpoch': {paymentMode: 'unified_payer_all'},
@@ -3769,7 +3769,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'system.FundStakingRewardTreasury': {paymentMode: 'unified_payer_all'},
   'system.BootstrapStakingValidator': {paymentMode: 'unified_payer_all'},
   'system.BootstrapStakingEpochZero': {paymentMode: 'unified_payer_all'},
-  'system.PublishLocalBlockBeacon': {paymentMode: 'unified_payer_all'},
+  'system.CommitBlockSeed': {paymentMode: 'unified_payer_all'},
 
   // dex 模块（8 entry）
   'dex.CreateMarket': {paymentMode: 'unified_payer_all', payerRole: 'authority'},
@@ -3781,13 +3781,14 @@ var IDL_EXAMPLE_PAYMENT = {
   'dex.BatchCancel': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'dex.SetMarketStatus': {paymentMode: 'unified_payer_all', payerRole: 'authority'},
 
-  // keyless 模块（10 entry）
+  // keyless 模块（11 entry）
   'keyless.SetAdmin': {paymentMode: 'unified_payer_all', payerRole: 'new_admin'},
   'keyless.RegisterProvider': {paymentMode: 'unified_payer_all'},
   'keyless.UpdateProvider': {paymentMode: 'unified_payer_all'},
   'keyless.SetProviderGovernanceEnabled': {paymentMode: 'unified_payer_all'},
   'keyless.ControllerSetProviderEnabled': {paymentMode: 'unified_payer_all', payerRole: 'controller'},
   'keyless.SetParams': {paymentMode: 'unified_payer_all'},
+  'keyless.BootstrapGenesis': {paymentMode: 'unified_payer_all'},
   'keyless.Authenticate': {paymentMode: 'unified_payer_all'},
   'keyless.Bind': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'keyless.Unbind': {paymentMode: 'unified_payer_all', payerRole: 'owner'},

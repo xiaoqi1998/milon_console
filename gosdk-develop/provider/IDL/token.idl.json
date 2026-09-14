@@ -447,6 +447,33 @@
           "type": "Address"
         },
         {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 52758,
+      "handler": "set_uri",
+      "kind": "entry",
+      "name": "SetUri",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
           "name": "account",
           "role": "input",
           "type": "Address"
@@ -671,6 +698,13 @@
       }
     },
     {
+      "args": [],
+      "discriminator": 1300,
+      "handler": "bootstrap_genesis",
+      "kind": "entry",
+      "name": "BootstrapGenesis"
+    },
+    {
       "args": [
         {
           "name": "claimer",
@@ -734,6 +768,10 @@
         },
         {
           "name": "icon",
+          "type": "String"
+        },
+        {
+          "name": "uri",
           "type": "String"
         }
       ],
@@ -824,6 +862,11 @@
       "name": "GAS_SPONSOR_MINT",
       "type": "u64",
       "value": "1_000_000 * 1_000_000"
+    },
+    {
+      "name": "FAUCET_CHAIN_ID_MIN",
+      "type": "u64",
+      "value": 900000001
     }
   ],
   "events": [

@@ -1,13 +1,13 @@
 # Milon IDL 函数清单
 
-> 导出自 `gosdk-develop/provider/IDL/`，共 **11** 个 app、**209** 个函数（view 85 + entry 124）。
+> 导出自 `gosdk-develop/provider/IDL/`，共 **10** 个 app、**213** 个函数（view 84 + entry 129）。
 
 > 表格列：`appname`(应用名) · `meth`(方法名/指令名) · `handler`(链上入口名) · `id`(discriminator 指令编号) · `说明`(中文释义，逻辑移植自 handler/idl_handler.go 的 describeInstruction)
 
 
 ## View（只读查询，kind=view）
 
-共 **85** 个。
+共 **84** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -58,6 +58,7 @@
 | identity | OrganizationCapabilities | organization_capabilities | 6251 | （只读查询）查询身份（DID）的 OrganizationCapabilities 数据。 |
 | identity | OrganizationStatus | organization_status | 39483 | （只读查询）查询身份（DID）的 OrganizationStatus 数据。 |
 | identity | OrganizationUpdatedAt | organization_updated_at | 23820 | （只读查询）查询身份（DID）的 OrganizationUpdatedAt 数据。 |
+| identity | CredentialId | credential_id | 63370 | （只读查询）查询身份（DID）的 CredentialId 数据。 |
 | nft | CollectionMetadata | collection_metadata | 10326 | （只读查询）查询NFT的 CollectionMetadata 数据。 |
 | nft | CollectionUpdateAuthor | collection_update_author | 23904 | （只读查询）查询NFT的 CollectionUpdateAuthor 数据。 |
 | nft | CollectionFreezeAuthor | collection_freeze_author | 53202 | （只读查询）查询NFT的 CollectionFreezeAuthor 数据。 |
@@ -77,8 +78,6 @@
 | dex | OrderbookDepth | orderbook_depth | 46884 | （只读查询）查询DEX的 OrderbookDepth 数据。 |
 | dex | OrdersAtLevel | orders_at_level | 24461 | （只读查询）查询DEX的 OrdersAtLevel 数据。 |
 | dex | VaultLiability | vault_liability | 6759 | （只读查询）查询DEX的 VaultLiability 数据。 |
-| randomness | LatestBeacon | latest_beacon | 49324 | （只读查询）查询随机数（VRF）信标的 LatestBeacon 数据。 |
-| randomness | Beacon | beacon | 14904 | （只读查询）查询随机数（VRF）信标的 Beacon 数据。 |
 | keyless | GetSessions | get_sessions | 58087 | （只读查询）查询无密钥相关信息（GetSessions）。 |
 | keyless | GetBinding | get_binding | 4855 | （只读查询）查询无密钥相关信息（GetBinding）。 |
 | keyless | ListProviders | list_providers | 12570 | （只读查询）查询无密钥相关信息（ListProviders）。 |
@@ -99,11 +98,13 @@
 
 ## Entry（写操作，kind=entry）
 
-共 **124** 个。
+共 **129** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
 | system | Noop | noop | 13507 | 调用 系统 的 Noop 方法（handler: noop）。 |
+| system | BootstrapEpochClock | bootstrap_epoch_clock | 57604 | 调用 系统 的 BootstrapEpochClock 方法（handler: bootstrap_epoch_clock）。 |
+| system | BootstrapValidatorSetConfig | bootstrap_validator_set_config | 37696 | 调用 系统 的 BootstrapValidatorSetConfig 方法（handler: bootstrap_validator_set_config）。 |
 | system | RegisterValidatorIdentity | register_validator_identity | 16918 | 注册系统（handler: register_validator_identity）。 |
 | system | PrepareValidatorSet | prepare_validator_set | 55212 | 调用 系统 的 PrepareValidatorSet 方法（handler: prepare_validator_set）。 |
 | system | SettleStakingEpoch | settle_staking_epoch | 61700 | 设置系统（handler: settle_staking_epoch）。 |
@@ -113,7 +114,7 @@
 | system | FundStakingRewardTreasury | fund_staking_reward_treasury | 32864 | 调用 系统 的 FundStakingRewardTreasury 方法（handler: fund_staking_reward_treasury）。 |
 | system | BootstrapStakingValidator | bootstrap_staking_validator | 43888 | 调用 系统 的 BootstrapStakingValidator 方法（handler: bootstrap_staking_validator）。 |
 | system | BootstrapStakingEpochZero | bootstrap_staking_epoch_zero | 15870 | 调用 系统 的 BootstrapStakingEpochZero 方法（handler: bootstrap_staking_epoch_zero）。 |
-| system | PublishLocalBlockBeacon | publish_local_block_beacon | 9713 | 调用 系统 的 PublishLocalBlockBeacon 方法（handler: publish_local_block_beacon）。 |
+| system | CommitBlockSeed | commit_block_seed | 49456 | 调用 系统 的 CommitBlockSeed 方法（handler: commit_block_seed）。 |
 | account | Create | create | 2182 | 创建账户（handler: create）。 |
 | account | EnsureAccount | ensure_account | 38184 | 调用 账户 的 EnsureAccount 方法（handler: ensure_account）。 |
 | account | CreateMultisig | create_multisig | 20289 | 创建账户（handler: create_multisig）。 |
@@ -140,11 +141,13 @@
 | token | Revoke | revoke | 8619 | 撤销授权代币（handler: revoke）。 |
 | token | TransferFrom | transfer_from | 18655 | 转账代币（handler: transfer_from）。 |
 | token | SetIcon | set_icon | 40941 | 设置代币（handler: set_icon）。 |
+| token | SetUri | set_uri | 52758 | 设置代币（handler: set_uri）。 |
 | token | CreateWithCompliance | create_with_compliance | 62196 | 创建代币（handler: create_with_compliance）。 |
 | token | SetComplianceMode | set_compliance_mode | 33931 | 设置代币（handler: set_compliance_mode）。 |
 | token | AddComplianceRequirement | add_compliance_requirement | 59302 | 添加代币（handler: add_compliance_requirement）。 |
 | token | RemoveComplianceRequirement | remove_compliance_requirement | 14909 | 移除代币（handler: remove_compliance_requirement）。 |
 | token | ClearComplianceRequirements | clear_compliance_requirements | 50437 | 调用 代币 的 ClearComplianceRequirements 方法（handler: clear_compliance_requirements）。 |
+| token | BootstrapGenesis | bootstrap_genesis | 1300 | 调用 代币 的 BootstrapGenesis 方法（handler: bootstrap_genesis）。 |
 | token | ClaimFaucet | claim_faucet | 63796 | 领取代币（handler: claim_faucet）。 |
 | staking | CreateValidator | create_validator | 16533 | 创建质押（handler: create_validator）。 |
 | staking | JoinCandidatePool | join_candidate_pool | 36277 | 调用 质押 的 JoinCandidatePool 方法（handler: join_candidate_pool）。 |
@@ -206,6 +209,7 @@
 | keyless | SetProviderGovernanceEnabled | set_provider_governance_enabled | 24046 | 设置无密钥（handler: set_provider_governance_enabled）。 |
 | keyless | ControllerSetProviderEnabled | controller_set_provider_enabled | 27342 | 调用 无密钥 的 ControllerSetProviderEnabled 方法（handler: controller_set_provider_enabled）。 |
 | keyless | SetParams | set_params | 11932 | 设置无密钥（handler: set_params）。 |
+| keyless | BootstrapGenesis | bootstrap_genesis | 3506 | 调用 无密钥 的 BootstrapGenesis 方法（handler: bootstrap_genesis）。 |
 | keyless | Authenticate | authenticate | 21310 | 调用 无密钥 的 Authenticate 方法（handler: authenticate）。 |
 | keyless | Bind | bind | 59392 | 调用 无密钥 的 Bind 方法（handler: bind）。 |
 | keyless | Unbind | unbind | 57503 | 调用 无密钥 的 Unbind 方法（handler: unbind）。 |
@@ -232,22 +236,14 @@
 
 | appname | app_id | view | entry | 合计 |
 |---------|--------|------|-------|------|
-| system | 0 | 0 | 11 | 11 |
+| system | 0 | 0 | 13 | 13 |
 | account | 1 | 5 | 10 | 15 |
-| token | 2 | 7 | 22 | 29 |
+| token | 2 | 7 | 24 | 31 |
 | staking | 3 | 11 | 10 | 21 |
-| identity | 4 | 24 | 17 | 41 |
+| identity | 4 | 25 | 17 | 42 |
 | nft | 5 | 13 | 19 | 32 |
 | dex | 6 | 6 | 8 | 14 |
-| randomness | 7 | 2 | 0 | 2 |
-| keyless | 8 | 6 | 10 | 16 |
+| keyless | 8 | 6 | 11 | 17 |
 | lucky_box | 9 | 2 | 5 | 7 |
 | demo | 255 | 9 | 12 | 21 |
-| **合计** | — | **85** | **124** | **209** |
-
-## 备注
-
-- 数据源：`gosdk-develop/provider/IDL/index.json`（SDK 实际注册的 app 列表），与 `gen/idl_gen.go` 的 `DefaultIDLs` 一致。
-- `provider/IDL/randomness_demo.idl.json` 文件存在但未登记在 `index.json`，SDK 不会加载，故未收录。
-- 本次（2026-09-11，SDK zip 8 / commit `8a58799`）相比上一版的变化：新增 app `dex`(6) / `keyless`(8) / `lucky_box`(9)；`nft` 由 20 → 32 个方法（issuer/metadata/royalty 模型改为 provider/mint 模型）；`staking` 移除 ActiveSet*/ConsensusActive* 等 10 个视图；`token` 移除 `transfer_with_tag`。
-- `说明` 列由 `handler/idl_handler.go` 的 `describeInstruction` 逻辑生成。其中 `dex`、`keyless`、`lucky_box` 三个 app 的名称尚未列入 `appNameCN` / obj 映射，服务端 `/api/idl/metadata` 目前会回退为「`dex`对象」这类原始名；本表按语义显示为 DEX / 无密钥 / 幸运盒。
+| **合计** | — | **84** | **129** | **213** |

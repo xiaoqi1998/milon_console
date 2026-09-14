@@ -33,11 +33,6 @@
           "type": "bytes"
         },
         {
-          "name": "network_address",
-          "role": "input",
-          "type": "bytes"
-        },
-        {
           "name": "commission_rate_bps",
           "role": "input",
           "type": "u64"

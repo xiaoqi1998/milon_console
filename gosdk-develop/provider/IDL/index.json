@@ -36,11 +36,6 @@
       "name": "dex"
     },
     {
-      "app_id": 7,
-      "idl": "./randomness.idl.json",
-      "name": "randomness"
-    },
-    {
       "app_id": 8,
       "idl": "./keyless.idl.json",
       "name": "keyless"

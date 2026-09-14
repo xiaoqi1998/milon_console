@@ -104,6 +104,13 @@
       "name": "SetParams"
     },
     {
+      "args": [],
+      "discriminator": 3506,
+      "handler": "bootstrap_genesis",
+      "kind": "entry",
+      "name": "BootstrapGenesis"
+    },
+    {
       "args": [
         {
           "name": "provider_id",
@@ -953,6 +960,11 @@
       "code": 2121,
       "message": "provider allowed algorithms contain duplicates",
       "name": "DuplicateAlgorithm"
+    },
+    {
+      "code": 2122,
+      "message": "keyless genesis bootstrap is only valid at height 0 on a faucet chain",
+      "name": "GenesisBootstrapInvalid"
     }
   ]
 }

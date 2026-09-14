@@ -173,7 +173,7 @@ func coerceValue(pd *provider.Provider, typeName string, value any) (any, error)
 	switch typeName {
 	case "bytes":
 		return coerceBytes(value)
-	case "B96", "B144", "B160", "B256":
+	case "B96", "B144", "B160", "B256", "Hash32":
 		// Fixed-size byte types: coerce hex string / number array to []byte;
 		// the SDK's serializer enforces the exact length afterwards.
 		return coerceBytes(value)

@@ -32,6 +32,37 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "start_timestamp_ms",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "min_duration_ms",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 57604,
+				Handler: "bootstrap_epoch_clock",
+				Kind: "entry",
+				Name: "BootstrapEpochClock",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "max_validator_set_size",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 37696,
+				Handler: "bootstrap_validator_set_config",
+				Kind: "entry",
+				Name: "BootstrapValidatorSetConfig",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "validator",
 						Role: "input",
 						Type: "Address",
@@ -48,11 +79,6 @@ provider.IDL{
 					},
 					provider.Arg{
 						Name: "bls_pubkey",
-						Role: "input",
-						Type: "bytes",
-					},
-					provider.Arg{
-						Name: "network_address",
 						Role: "input",
 						Type: "bytes",
 					},
@@ -77,7 +103,7 @@ provider.IDL{
 					provider.Arg{
 						Name: "validator_set_seed",
 						Role: "input",
-						Type: "B256",
+						Type: "Hash32",
 					},
 				},
 				Discriminator: 55212,
@@ -171,11 +197,6 @@ provider.IDL{
 						Type: "bytes",
 					},
 					provider.Arg{
-						Name: "network_address",
-						Role: "input",
-						Type: "bytes",
-					},
-					provider.Arg{
 						Name: "ed25519_pubkey",
 						Role: "input",
 						Type: "bytes",
@@ -204,22 +225,11 @@ provider.IDL{
 				Name: "BootstrapStakingEpochZero",
 			},
 			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "parent_block_hash",
-						Role: "input",
-						Type: "B256",
-					},
-					provider.Arg{
-						Name: "entropy",
-						Role: "input",
-						Type: "B256",
-					},
-				},
-				Discriminator: 9713,
-				Handler: "publish_local_block_beacon",
+				Args: nil,
+				Discriminator: 49456,
+				Handler: "commit_block_seed",
 				Kind: "entry",
-				Name: "PublishLocalBlockBeacon",
+				Name: "CommitBlockSeed",
 			},
 		},
 		Types: []provider.IDLType{
@@ -239,10 +249,6 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "bls_pubkey",
-						Type: "bytes",
-					},
-					provider.StructField{
-						Name: "network_address",
 						Type: "bytes",
 					},
 					provider.StructField{
@@ -289,6 +295,28 @@ provider.IDL{
 				Code: 3,
 				Message: "ValidatorSet action failed: {0}",
 				Name: "ValidatorSetFailure",
+			},
+			provider.ErrorDef{
+				Code: 4,
+				Message: "Block seed is not initialized",
+				Name: "BlockSeedNotInitialized",
+			},
+			provider.ErrorDef{
+				Code: 5,
+				Message: "Block seed is already initialized",
+				Name: "BlockSeedAlreadyInitialized",
+			},
+			provider.ErrorDef{
+				Code: 6,
+				Message: "Invalid random range {0}..{1}",
+				Name: "InvalidRandomRange",
+			},
+		},
+		Constants: []provider.Constant{
+			provider.Constant{
+				Name: "BLOCK_SEED_RES_HINT",
+				Type: "usize",
+				Value: 1,
 			},
 		},
 	},
@@ -872,6 +900,11 @@ provider.IDL{
 				Message: "Vote proposal wire is invalid",
 				Name: "VoteProposalInvalid",
 			},
+			provider.ErrorDef{
+				Code: 285,
+				Message: "Account {0:?} exists; pubkey mode not allowed",
+				Name: "PubkeyModeForbidden",
+			},
 		},
 		Constants: []provider.Constant{
 			provider.Constant{
@@ -1350,6 +1383,33 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
+						Name: "uri",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 52758,
+				Handler: "set_uri",
+				Kind: "entry",
+				Name: "SetUri",
+				SignerLookups: provider.SignerLookups{
+					"owner": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "token",
+							Type: "Address",
+						},
+						Res: 241,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "token",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
 						Name: "account",
 						Role: "input",
 						Type: "Address",
@@ -1574,6 +1634,13 @@ provider.IDL{
 				},
 			},
 			provider.Instruction{
+				Args: nil,
+				Discriminator: 1300,
+				Handler: "bootstrap_genesis",
+				Kind: "entry",
+				Name: "BootstrapGenesis",
+			},
+			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
 						Name: "claimer",
@@ -1637,6 +1704,10 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "icon",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "uri",
 						Type: "String",
 					},
 				},
@@ -1862,6 +1933,11 @@ provider.IDL{
 				Type: "u64",
 				Value: "1_000_000 * 1_000_000",
 			},
+			provider.Constant{
+				Name: "FAUCET_CHAIN_ID_MIN",
+				Type: "u64",
+				Value: 9.00000001e+08,
+			},
 		},
 	},
 provider.IDL{
@@ -1895,11 +1971,6 @@ provider.IDL{
 					},
 					provider.Arg{
 						Name: "bls_pubkey",
-						Role: "input",
-						Type: "bytes",
-					},
-					provider.Arg{
-						Name: "network_address",
 						Role: "input",
 						Type: "bytes",
 					},
@@ -3812,6 +3883,27 @@ provider.IDL{
 				Name: "OrganizationUpdatedAt",
 				Returns: provider.ReturnValue{
 					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "issuer",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "credential_schema",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 63370,
+				Handler: "credential_id",
+				Kind: "view",
+				Name: "CredentialId",
+				Returns: provider.ReturnValue{
+					Type: "CredentialId",
 				},
 			},
 		},
@@ -7360,158 +7452,6 @@ provider.IDL{
 	},
 provider.IDL{
 		Metadata: provider.Metadata{
-			AppID: 7,
-			Name: "randomness",
-			Description: "Milon randomness app IDL",
-		},
-		Instructions: []provider.Instruction{
-			provider.Instruction{
-				Args: nil,
-				Discriminator: 49324,
-				Handler: "latest_beacon",
-				Kind: "view",
-				Name: "LatestBeacon",
-				Returns: provider.ReturnValue{
-					Type: "BeaconRecordV1",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "index",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 14904,
-				Handler: "beacon",
-				Kind: "view",
-				Name: "Beacon",
-				Returns: provider.ReturnValue{
-					Type: "BeaconRecordV1",
-				},
-			},
-		},
-		Types: []provider.IDLType{
-			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
-						Name: "Genesis",
-						Kind: "struct",
-						Fields: []provider.StructField{
-							provider.StructField{
-								Name: "genesis_hash",
-								Type: "B256",
-							},
-						},
-					},
-					provider.EnumVariant{
-						Name: "LocalBlockEntropy",
-						Kind: "struct",
-						Fields: []provider.StructField{
-							provider.StructField{
-								Name: "block_height",
-								Type: "u64",
-							},
-							provider.StructField{
-								Name: "parent_block_hash",
-								Type: "B256",
-							},
-							provider.StructField{
-								Name: "entropy",
-								Type: "B256",
-							},
-						},
-					},
-				},
-				Kind: "enum",
-				Name: "BeaconInputV1",
-				TypeTag: 16364217729533752697,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "beacon_index",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "input",
-						Type: "BeaconInputV1",
-					},
-					provider.StructField{
-						Name: "recorded_at_height",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "derivable_from_height",
-						Type: "option<u64>",
-					},
-					provider.StructField{
-						Name: "previous_seed",
-						Type: "B256",
-					},
-					provider.StructField{
-						Name: "seed",
-						Type: "B256",
-					},
-				},
-				Kind: "struct",
-				Name: "BeaconRecordV1",
-				TypeTag: 9190330151735324740,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "u64",
-				TypeTag: 5563585020063213298,
-			},
-		},
-		Errors: []provider.ErrorDef{
-			provider.ErrorDef{
-				Code: 1792,
-				Message: "Randomness genesis beacon is already initialized",
-				Name: "AlreadyInitialized",
-			},
-			provider.ErrorDef{
-				Code: 1793,
-				Message: "Randomness genesis beacon is not initialized",
-				Name: "NotInitialized",
-			},
-			provider.ErrorDef{
-				Code: 1794,
-				Message: "Randomness beacon not found: {0}",
-				Name: "BeaconNotFound",
-			},
-			provider.ErrorDef{
-				Code: 1795,
-				Message: "Randomness expected block height {0}, actual block height is {1}",
-				Name: "UnexpectedBlockHeight",
-			},
-			provider.ErrorDef{
-				Code: 1796,
-				Message: "Genesis beacon is a deterministic anchor and cannot be consumed",
-				Name: "GenesisBeaconNotConsumable",
-			},
-			provider.ErrorDef{
-				Code: 1797,
-				Message: "Randomness beacon {0} is derivable from block {1}, current block is {2}",
-				Name: "BeaconNotYetDerivable",
-			},
-		},
-		Constants: []provider.Constant{
-			provider.Constant{
-				Name: "DERIVATION_DELAY_BLOCKS",
-				Type: "u64",
-				Value: 1,
-			},
-			provider.Constant{
-				Name: "LOCAL_BLOCK_BEACON_RES_HINT",
-				Type: "usize",
-				Value: 3,
-			},
-		},
-	},
-provider.IDL{
-		Metadata: provider.Metadata{
 			AppID: 8,
 			Name: "keyless",
 			Description: "Milon keyless app IDL",
@@ -7614,6 +7554,13 @@ provider.IDL{
 				Handler: "set_params",
 				Kind: "entry",
 				Name: "SetParams",
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 3506,
+				Handler: "bootstrap_genesis",
+				Kind: "entry",
+				Name: "BootstrapGenesis",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -8411,6 +8358,11 @@ provider.IDL{
 				Code: 2121,
 				Message: "provider allowed algorithms contain duplicates",
 				Name: "DuplicateAlgorithm",
+			},
+			provider.ErrorDef{
+				Code: 2122,
+				Message: "keyless genesis bootstrap is only valid at height 0 on a faucet chain",
+				Name: "GenesisBootstrapInvalid",
 			},
 		},
 		Constants: []provider.Constant{
@@ -9548,10 +9500,6 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "target_beacon_index",
-						Type: "u64",
-					},
-					provider.StructField{
 						Name: "random_bytes",
 						Type: "option<B256>",
 					},
@@ -9689,16 +9637,6 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 65292,
-				Message: "Target randomness beacon {0} was not found",
-				Name: "TargetBeaconNotFound",
-			},
-			provider.ErrorDef{
-				Code: 65293,
-				Message: "Target randomness beacon {0} is derivable from block {1}, current block is {2}",
-				Name: "RandomnessNotReady",
-			},
-			provider.ErrorDef{
-				Code: 65294,
 				Message: "NFT reveal derivation failed: {0}",
 				Name: "RandomnessFailure",
 			},
@@ -9712,13 +9650,12 @@ type SystemConsensusValidatorIdentity struct {
 	ConsensusAccount *crypto.Address
 	ConsensusPubkey []byte
 	BlsPubkey []byte
-	NetworkAddress []byte
 	Ed25519Pubkey []byte
 }
 
 // ToValue converts SystemConsensusValidatorIdentity into the provider wire value (map[string]any).
 func (v SystemConsensusValidatorIdentity) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 6)
+	out := make(map[string]any, 5)
 	// validator: Address
 	out["validator"] = v.Validator
 	// consensus_account: Address
@@ -9727,8 +9664,6 @@ func (v SystemConsensusValidatorIdentity) ToValue() (map[string]any, error) {
 	out["consensus_pubkey"] = v.ConsensusPubkey
 	// bls_pubkey: bytes
 	out["bls_pubkey"] = v.BlsPubkey
-	// network_address: bytes
-	out["network_address"] = v.NetworkAddress
 	// ed25519_pubkey: bytes
 	out["ed25519_pubkey"] = v.Ed25519Pubkey
 	return out, nil
@@ -9831,11 +9766,12 @@ type TokenMetadata struct {
 	Symbol string
 	Decimals uint8
 	Icon string
+	Uri string
 }
 
 // ToValue converts TokenMetadata into the provider wire value (map[string]any).
 func (v TokenMetadata) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
+	out := make(map[string]any, 5)
 	// name: String
 	out["name"] = v.Name
 	// symbol: String
@@ -9844,6 +9780,8 @@ func (v TokenMetadata) ToValue() (map[string]any, error) {
 	out["decimals"] = v.Decimals
 	// icon: String
 	out["icon"] = v.Icon
+	// uri: String
+	out["uri"] = v.Uri
 	return out, nil
 }
 
@@ -11759,79 +11697,6 @@ func (v DexDidSubjectType) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// RandomnessBeaconInputV1 matches the IDL enum BeaconInputV1.
-type RandomnessBeaconInputV1 struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
-}
-
-// ToValue converts RandomnessBeaconInputV1 into the provider wire value (map[string]any).
-func (v RandomnessBeaconInputV1) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum BeaconInputV1: empty variant")
-	}
-	switch v.Variant {
-	case "Genesis":
-		if len(v.Fields) != 1 {
-			return nil, fmt.Errorf("enum BeaconInputV1: variant Genesis expects %d fields", len(v.Fields))
-		}
-		record := make(map[string]any, 1)
-		// genesis_hash: B256
-		record["genesis_hash"] = v.Fields[0]
-		return map[string]any{"variant": "Genesis", "fields": record}, nil
-	case "LocalBlockEntropy":
-		if len(v.Fields) != 3 {
-			return nil, fmt.Errorf("enum BeaconInputV1: variant LocalBlockEntropy expects %d fields", len(v.Fields))
-		}
-		record := make(map[string]any, 3)
-		// block_height: u64
-		record["block_height"] = v.Fields[0]
-		// parent_block_hash: B256
-		record["parent_block_hash"] = v.Fields[1]
-		// entropy: B256
-		record["entropy"] = v.Fields[2]
-		return map[string]any{"variant": "LocalBlockEntropy", "fields": record}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
-}
-
-// RandomnessBeaconRecordV1 matches the IDL struct BeaconRecordV1.
-type RandomnessBeaconRecordV1 struct {
-	BeaconIndex uint64
-	Input RandomnessBeaconInputV1
-	RecordedAtHeight uint64
-	DerivableFromHeight *uint64
-	PreviousSeed [32]byte
-	Seed [32]byte
-}
-
-// ToValue converts RandomnessBeaconRecordV1 into the provider wire value (map[string]any).
-func (v RandomnessBeaconRecordV1) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 6)
-	// beacon_index: u64
-	out["beacon_index"] = v.BeaconIndex
-	// input: BeaconInputV1
-	v0, err := toRandomnessBeaconInputV1Value(v.Input)
-	if err != nil {
-		return nil, err
-	}
-	out["input"] = v0
-	// recorded_at_height: u64
-	out["recorded_at_height"] = v.RecordedAtHeight
-	// derivable_from_height: option<u64>
-	if v.DerivableFromHeight == nil {
-		out["derivable_from_height"] = nil
-	} else {
-		out["derivable_from_height"] = *v.DerivableFromHeight
-	}
-	// previous_seed: B256
-	out["previous_seed"] = v.PreviousSeed
-	// seed: B256
-	out["seed"] = v.Seed
-	return out, nil
-}
-
 // KeylessJwtAlgorithm matches the IDL enum JwtAlgorithm.
 type KeylessJwtAlgorithm struct {
 	Variant string // Active variant name
@@ -12360,7 +12225,6 @@ type DemoRevealRecord struct {
 	Owner *crypto.Address
 	TokenId [32]byte
 	RequestedAtHeight uint64
-	TargetBeaconIndex uint64
 	RandomBytes *[32]byte
 	Rarity *DemoRevealRarity
 	RevealedAtHeight *uint64
@@ -12368,15 +12232,13 @@ type DemoRevealRecord struct {
 
 // ToValue converts DemoRevealRecord into the provider wire value (map[string]any).
 func (v DemoRevealRecord) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 7)
+	out := make(map[string]any, 6)
 	// owner: Address
 	out["owner"] = v.Owner
 	// token_id: B256
 	out["token_id"] = v.TokenId
 	// requested_at_height: u64
 	out["requested_at_height"] = v.RequestedAtHeight
-	// target_beacon_index: u64
-	out["target_beacon_index"] = v.TargetBeaconIndex
 	// random_bytes: option<B256>
 	if v.RandomBytes == nil {
 		out["random_bytes"] = nil
@@ -12440,21 +12302,13 @@ func fromSystemConsensusValidatorIdentity(v any) (out SystemConsensusValidatorId
 		}
 		out.BlsPubkey = v3
 	}
-	// network_address: bytes
-	{
-		v4, err := toBytes(m["network_address"])
-		if err != nil {
-			return out, err
-		}
-		out.NetworkAddress = v4
-	}
 	// ed25519_pubkey: bytes
 	{
-		v5, err := toBytes(m["ed25519_pubkey"])
+		v4, err := toBytes(m["ed25519_pubkey"])
 		if err != nil {
 			return out, err
 		}
-		out.Ed25519Pubkey = v5
+		out.Ed25519Pubkey = v4
 	}
 	return out, nil
 }
@@ -12642,6 +12496,14 @@ func fromTokenMetadata(v any) (out TokenMetadata, err error) {
 			return out, err
 		}
 		out.Icon = v3
+	}
+	// uri: String
+	{
+		v4, err := toString(m["uri"])
+		if err != nil {
+			return out, err
+		}
+		out.Uri = v4
 	}
 	return out, nil
 }
@@ -15568,100 +15430,6 @@ func fromDexDidSubjectType(v any) (out DexDidSubjectType, err error) {
 	return out, nil
 }
 
-// fromRandomnessBeaconInputV1 converts a decoded IDL value into RandomnessBeaconInputV1.
-func fromRandomnessBeaconInputV1(v any) (out RandomnessBeaconInputV1, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum BeaconInputV1: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	switch out.Variant {
-	case "Genesis":
-		out.Fields = []any{
-			m["genesis_hash"],
-		}
-	case "LocalBlockEntropy":
-		out.Fields = []any{
-			m["block_height"],
-			m["parent_block_hash"],
-			m["entropy"],
-		}
-	}
-	return out, nil
-}
-
-// fromRandomnessBeaconRecordV1 converts a decoded IDL value into RandomnessBeaconRecordV1.
-func fromRandomnessBeaconRecordV1(v any) (out RandomnessBeaconRecordV1, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// beacon_index: u64
-	{
-		v0, err := toUint64(m["beacon_index"])
-		if err != nil {
-			return out, err
-		}
-		out.BeaconIndex = v0
-	}
-	// input: BeaconInputV1
-	{
-		v1, err := fromRandomnessBeaconInputV1(m["input"])
-		if err != nil {
-			return out, err
-		}
-		out.Input = v1
-	}
-	// recorded_at_height: u64
-	{
-		v2, err := toUint64(m["recorded_at_height"])
-		if err != nil {
-			return out, err
-		}
-		out.RecordedAtHeight = v2
-	}
-	// derivable_from_height: option<u64>
-	{
-		if m["derivable_from_height"] == nil {
-			out.DerivableFromHeight = nil
-		} else {
-			var v3 uint64
-			v4, err := toUint64(m["derivable_from_height"])
-			if err != nil {
-				return out, err
-			}
-			v3 = v4
-			out.DerivableFromHeight = &v3
-		}
-	}
-	// previous_seed: B256
-	{
-		v5, err := toFixed32(m["previous_seed"])
-		if err != nil {
-			return out, err
-		}
-		out.PreviousSeed = v5
-	}
-	// seed: B256
-	{
-		v6, err := toFixed32(m["seed"])
-		if err != nil {
-			return out, err
-		}
-		out.Seed = v6
-	}
-	return out, nil
-}
-
 // fromKeylessJwtAlgorithm converts a decoded IDL value into KeylessJwtAlgorithm.
 func fromKeylessJwtAlgorithm(v any) (out KeylessJwtAlgorithm, err error) {
 	m, err := toRecord(v)
@@ -16403,26 +16171,18 @@ func fromDemoRevealRecord(v any) (out DemoRevealRecord, err error) {
 		}
 		out.RequestedAtHeight = v2
 	}
-	// target_beacon_index: u64
-	{
-		v3, err := toUint64(m["target_beacon_index"])
-		if err != nil {
-			return out, err
-		}
-		out.TargetBeaconIndex = v3
-	}
 	// random_bytes: option<B256>
 	{
 		if m["random_bytes"] == nil {
 			out.RandomBytes = nil
 		} else {
-			var v4 [32]byte
-			v5, err := toFixed32(m["random_bytes"])
+			var v3 [32]byte
+			v4, err := toFixed32(m["random_bytes"])
 			if err != nil {
 				return out, err
 			}
-			v4 = v5
-			out.RandomBytes = &v4
+			v3 = v4
+			out.RandomBytes = &v3
 		}
 	}
 	// rarity: option<RevealRarity>
@@ -16430,13 +16190,13 @@ func fromDemoRevealRecord(v any) (out DemoRevealRecord, err error) {
 		if m["rarity"] == nil {
 			out.Rarity = nil
 		} else {
-			var v6 DemoRevealRarity
-			v7, err := fromDemoRevealRarity(m["rarity"])
+			var v5 DemoRevealRarity
+			v6, err := fromDemoRevealRarity(m["rarity"])
 			if err != nil {
 				return out, err
 			}
-			v6 = v7
-			out.Rarity = &v6
+			v5 = v6
+			out.Rarity = &v5
 		}
 	}
 	// revealed_at_height: option<u64>
@@ -16444,13 +16204,13 @@ func fromDemoRevealRecord(v any) (out DemoRevealRecord, err error) {
 		if m["revealed_at_height"] == nil {
 			out.RevealedAtHeight = nil
 		} else {
-			var v8 uint64
-			v9, err := toUint64(m["revealed_at_height"])
+			var v7 uint64
+			v8, err := toUint64(m["revealed_at_height"])
 			if err != nil {
 				return out, err
 			}
-			v8 = v9
-			out.RevealedAtHeight = &v8
+			v7 = v8
+			out.RevealedAtHeight = &v7
 		}
 	}
 	return out, nil
@@ -17776,36 +17536,6 @@ func toDexDidSubjectTypeValue(v any) (map[string]any, error) {
 	}
 }
 
-// toRandomnessBeaconInputV1Value converts any into RandomnessBeaconInputV1 for provider serialization.
-func toRandomnessBeaconInputV1Value(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case RandomnessBeaconInputV1:
-		return x.ToValue()
-	case *RandomnessBeaconInputV1:
-		if x == nil {
-			return nil, fmt.Errorf("nil RandomnessBeaconInputV1")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected RandomnessBeaconInputV1, got %T", v)
-	}
-}
-
-// toRandomnessBeaconRecordV1Value converts any into RandomnessBeaconRecordV1 for provider serialization.
-func toRandomnessBeaconRecordV1Value(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case RandomnessBeaconRecordV1:
-		return x.ToValue()
-	case *RandomnessBeaconRecordV1:
-		if x == nil {
-			return nil, fmt.Errorf("nil RandomnessBeaconRecordV1")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected RandomnessBeaconRecordV1, got %T", v)
-	}
-}
-
 // toKeylessJwtAlgorithmValue converts any into KeylessJwtAlgorithm for provider serialization.
 func toKeylessJwtAlgorithmValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -18140,6 +17870,8 @@ func toDemoRevealRecordValue(v any) (map[string]any, error) {
 type SystemApp struct {
 	Pd *provider.Provider
 	Noop *SystemNoopIx
+	BootstrapEpochClock *SystemBootstrapEpochClockIx
+	BootstrapValidatorSetConfig *SystemBootstrapValidatorSetConfigIx
 	RegisterValidatorIdentity *SystemRegisterValidatorIdentityIx
 	PrepareValidatorSet *SystemPrepareValidatorSetIx
 	SettleStakingEpoch *SystemSettleStakingEpochIx
@@ -18149,11 +17881,13 @@ type SystemApp struct {
 	FundStakingRewardTreasury *SystemFundStakingRewardTreasuryIx
 	BootstrapStakingValidator *SystemBootstrapStakingValidatorIx
 	BootstrapStakingEpochZero *SystemBootstrapStakingEpochZeroIx
-	PublishLocalBlockBeacon *SystemPublishLocalBlockBeaconIx
+	CommitBlockSeed *SystemCommitBlockSeedIx
 }
 
 var System = &SystemApp{
 	Noop: &SystemNoopIx{},
+	BootstrapEpochClock: &SystemBootstrapEpochClockIx{},
+	BootstrapValidatorSetConfig: &SystemBootstrapValidatorSetConfigIx{},
 	RegisterValidatorIdentity: &SystemRegisterValidatorIdentityIx{},
 	PrepareValidatorSet: &SystemPrepareValidatorSetIx{},
 	SettleStakingEpoch: &SystemSettleStakingEpochIx{},
@@ -18163,12 +17897,14 @@ var System = &SystemApp{
 	FundStakingRewardTreasury: &SystemFundStakingRewardTreasuryIx{},
 	BootstrapStakingValidator: &SystemBootstrapStakingValidatorIx{},
 	BootstrapStakingEpochZero: &SystemBootstrapStakingEpochZeroIx{},
-	PublishLocalBlockBeacon: &SystemPublishLocalBlockBeaconIx{},
+	CommitBlockSeed: &SystemCommitBlockSeedIx{},
 }
 
 func (a *SystemApp) bind(pd *provider.Provider) {
 	a.Pd = pd
 	a.Noop.pd = pd
+	a.BootstrapEpochClock.pd = pd
+	a.BootstrapValidatorSetConfig.pd = pd
 	a.RegisterValidatorIdentity.pd = pd
 	a.PrepareValidatorSet.pd = pd
 	a.SettleStakingEpoch.pd = pd
@@ -18178,7 +17914,7 @@ func (a *SystemApp) bind(pd *provider.Provider) {
 	a.FundStakingRewardTreasury.pd = pd
 	a.BootstrapStakingValidator.pd = pd
 	a.BootstrapStakingEpochZero.pd = pd
-	a.PublishLocalBlockBeacon.pd = pd
+	a.CommitBlockSeed.pd = pd
 }
 
 type SystemNoopIx struct {
@@ -18209,6 +17945,74 @@ func (a *SystemNoopArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type SystemBootstrapEpochClockIx struct {
+	pd *provider.Provider
+}
+
+type SystemBootstrapEpochClockArgs struct {
+	start_timestamp_ms uint64
+	min_duration_ms uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of BootstrapEpochClock.
+func (ix *SystemBootstrapEpochClockIx) Args(start_timestamp_ms uint64, min_duration_ms uint64) *SystemBootstrapEpochClockArgs {
+	return &SystemBootstrapEpochClockArgs{
+		start_timestamp_ms: start_timestamp_ms,
+		min_duration_ms: min_duration_ms,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemBootstrapEpochClockArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// start_timestamp_ms: u64
+	args["start_timestamp_ms"] = a.start_timestamp_ms
+	// min_duration_ms: u64
+	args["min_duration_ms"] = a.min_duration_ms
+	wire, err := a.pd.Encode("BootstrapEpochClock", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SystemBootstrapValidatorSetConfigIx struct {
+	pd *provider.Provider
+}
+
+type SystemBootstrapValidatorSetConfigArgs struct {
+	max_validator_set_size uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of BootstrapValidatorSetConfig.
+func (ix *SystemBootstrapValidatorSetConfigIx) Args(max_validator_set_size uint64) *SystemBootstrapValidatorSetConfigArgs {
+	return &SystemBootstrapValidatorSetConfigArgs{
+		max_validator_set_size: max_validator_set_size,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemBootstrapValidatorSetConfigArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// max_validator_set_size: u64
+	args["max_validator_set_size"] = a.max_validator_set_size
+	wire, err := a.pd.Encode("BootstrapValidatorSetConfig", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type SystemRegisterValidatorIdentityIx struct {
 	pd *provider.Provider
 }
@@ -18218,19 +18022,17 @@ type SystemRegisterValidatorIdentityArgs struct {
 	consensus_account *crypto.Address
 	consensus_pubkey []byte
 	bls_pubkey []byte
-	network_address []byte
 	ed25519_pubkey []byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of RegisterValidatorIdentity.
-func (ix *SystemRegisterValidatorIdentityIx) Args(validator *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, network_address []byte, ed25519_pubkey []byte) *SystemRegisterValidatorIdentityArgs {
+func (ix *SystemRegisterValidatorIdentityIx) Args(validator *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, ed25519_pubkey []byte) *SystemRegisterValidatorIdentityArgs {
 	return &SystemRegisterValidatorIdentityArgs{
 		validator: validator,
 		consensus_account: consensus_account,
 		consensus_pubkey: consensus_pubkey,
 		bls_pubkey: bls_pubkey,
-		network_address: network_address,
 		ed25519_pubkey: ed25519_pubkey,
 		pd: ix.pd,
 	}
@@ -18250,8 +18052,6 @@ func (a *SystemRegisterValidatorIdentityArgs) Encode() (api.PackedInstruction, e
 	args["consensus_pubkey"] = a.consensus_pubkey
 	// bls_pubkey: bytes
 	args["bls_pubkey"] = a.bls_pubkey
-	// network_address: bytes
-	args["network_address"] = a.network_address
 	// ed25519_pubkey: bytes
 	args["ed25519_pubkey"] = a.ed25519_pubkey
 	wire, err := a.pd.Encode("RegisterValidatorIdentity", args)
@@ -18267,12 +18067,12 @@ type SystemPrepareValidatorSetIx struct {
 
 type SystemPrepareValidatorSetArgs struct {
 	target_epoch uint64
-	validator_set_seed [32]byte
+	validator_set_seed any
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of PrepareValidatorSet.
-func (ix *SystemPrepareValidatorSetIx) Args(target_epoch uint64, validator_set_seed [32]byte) *SystemPrepareValidatorSetArgs {
+func (ix *SystemPrepareValidatorSetIx) Args(target_epoch uint64, validator_set_seed any) *SystemPrepareValidatorSetArgs {
 	return &SystemPrepareValidatorSetArgs{
 		target_epoch: target_epoch,
 		validator_set_seed: validator_set_seed,
@@ -18288,7 +18088,7 @@ func (a *SystemPrepareValidatorSetArgs) Encode() (api.PackedInstruction, error) 
 	args := provider.Args{}
 	// target_epoch: u64
 	args["target_epoch"] = a.target_epoch
-	// validator_set_seed: B256
+	// validator_set_seed: Hash32
 	args["validator_set_seed"] = a.validator_set_seed
 	wire, err := a.pd.Encode("PrepareValidatorSet", args)
 	if err != nil {
@@ -18463,7 +18263,6 @@ type SystemBootstrapStakingValidatorArgs struct {
 	consensus_account *crypto.Address
 	consensus_pubkey []byte
 	bls_pubkey []byte
-	network_address []byte
 	ed25519_pubkey []byte
 	commission_rate_bps uint64
 	operator_stake uint64
@@ -18471,14 +18270,13 @@ type SystemBootstrapStakingValidatorArgs struct {
 }
 
 // Args builds the IDL arguments of BootstrapStakingValidator.
-func (ix *SystemBootstrapStakingValidatorIx) Args(operator *crypto.Address, validator *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, network_address []byte, ed25519_pubkey []byte, commission_rate_bps uint64, operator_stake uint64) *SystemBootstrapStakingValidatorArgs {
+func (ix *SystemBootstrapStakingValidatorIx) Args(operator *crypto.Address, validator *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, ed25519_pubkey []byte, commission_rate_bps uint64, operator_stake uint64) *SystemBootstrapStakingValidatorArgs {
 	return &SystemBootstrapStakingValidatorArgs{
 		operator: operator,
 		validator: validator,
 		consensus_account: consensus_account,
 		consensus_pubkey: consensus_pubkey,
 		bls_pubkey: bls_pubkey,
-		network_address: network_address,
 		ed25519_pubkey: ed25519_pubkey,
 		commission_rate_bps: commission_rate_bps,
 		operator_stake: operator_stake,
@@ -18502,8 +18300,6 @@ func (a *SystemBootstrapStakingValidatorArgs) Encode() (api.PackedInstruction, e
 	args["consensus_pubkey"] = a.consensus_pubkey
 	// bls_pubkey: bytes
 	args["bls_pubkey"] = a.bls_pubkey
-	// network_address: bytes
-	args["network_address"] = a.network_address
 	// ed25519_pubkey: bytes
 	args["ed25519_pubkey"] = a.ed25519_pubkey
 	// commission_rate_bps: u64
@@ -18545,36 +18341,28 @@ func (a *SystemBootstrapStakingEpochZeroArgs) Encode() (api.PackedInstruction, e
 	return api.PackedInstruction(wire), nil
 }
 
-type SystemPublishLocalBlockBeaconIx struct {
+type SystemCommitBlockSeedIx struct {
 	pd *provider.Provider
 }
 
-type SystemPublishLocalBlockBeaconArgs struct {
-	parent_block_hash [32]byte
-	entropy [32]byte
+type SystemCommitBlockSeedArgs struct {
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of PublishLocalBlockBeacon.
-func (ix *SystemPublishLocalBlockBeaconIx) Args(parent_block_hash [32]byte, entropy [32]byte) *SystemPublishLocalBlockBeaconArgs {
-	return &SystemPublishLocalBlockBeaconArgs{
-		parent_block_hash: parent_block_hash,
-		entropy: entropy,
+// Args builds the IDL arguments of CommitBlockSeed.
+func (ix *SystemCommitBlockSeedIx) Args() *SystemCommitBlockSeedArgs {
+	return &SystemCommitBlockSeedArgs{
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SystemPublishLocalBlockBeaconArgs) Encode() (api.PackedInstruction, error) {
+func (a *SystemCommitBlockSeedArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// parent_block_hash: B256
-	args["parent_block_hash"] = a.parent_block_hash
-	// entropy: B256
-	args["entropy"] = a.entropy
-	wire, err := a.pd.Encode("PublishLocalBlockBeacon", args)
+	wire, err := a.pd.Encode("CommitBlockSeed", args)
 	if err != nil {
 		return nil, err
 	}
@@ -19343,6 +19131,7 @@ type TokenApp struct {
 	Revoke *TokenRevokeIx
 	TransferFrom *TokenTransferFromIx
 	SetIcon *TokenSetIconIx
+	SetUri *TokenSetUriIx
 	BalanceOf *TokenBalanceOfIx
 	FrozenOf *TokenFrozenOfIx
 	ApprovalOf *TokenApprovalOfIx
@@ -19353,6 +19142,7 @@ type TokenApp struct {
 	AddComplianceRequirement *TokenAddComplianceRequirementIx
 	RemoveComplianceRequirement *TokenRemoveComplianceRequirementIx
 	ClearComplianceRequirements *TokenClearComplianceRequirementsIx
+	BootstrapGenesis *TokenBootstrapGenesisIx
 	ClaimFaucet *TokenClaimFaucetIx
 	Compliance *TokenComplianceIx
 	FaucetCooldownRemaining *TokenFaucetCooldownRemainingIx
@@ -19375,6 +19165,7 @@ var Token = &TokenApp{
 	Revoke: &TokenRevokeIx{},
 	TransferFrom: &TokenTransferFromIx{},
 	SetIcon: &TokenSetIconIx{},
+	SetUri: &TokenSetUriIx{},
 	BalanceOf: &TokenBalanceOfIx{},
 	FrozenOf: &TokenFrozenOfIx{},
 	ApprovalOf: &TokenApprovalOfIx{},
@@ -19385,6 +19176,7 @@ var Token = &TokenApp{
 	AddComplianceRequirement: &TokenAddComplianceRequirementIx{},
 	RemoveComplianceRequirement: &TokenRemoveComplianceRequirementIx{},
 	ClearComplianceRequirements: &TokenClearComplianceRequirementsIx{},
+	BootstrapGenesis: &TokenBootstrapGenesisIx{},
 	ClaimFaucet: &TokenClaimFaucetIx{},
 	Compliance: &TokenComplianceIx{},
 	FaucetCooldownRemaining: &TokenFaucetCooldownRemainingIx{},
@@ -19408,6 +19200,7 @@ func (a *TokenApp) bind(pd *provider.Provider) {
 	a.Revoke.pd = pd
 	a.TransferFrom.pd = pd
 	a.SetIcon.pd = pd
+	a.SetUri.pd = pd
 	a.BalanceOf.pd = pd
 	a.FrozenOf.pd = pd
 	a.ApprovalOf.pd = pd
@@ -19418,6 +19211,7 @@ func (a *TokenApp) bind(pd *provider.Provider) {
 	a.AddComplianceRequirement.pd = pd
 	a.RemoveComplianceRequirement.pd = pd
 	a.ClearComplianceRequirements.pd = pd
+	a.BootstrapGenesis.pd = pd
 	a.ClaimFaucet.pd = pd
 	a.Compliance.pd = pd
 	a.FaucetCooldownRemaining.pd = pd
@@ -20071,6 +19865,42 @@ func (a *TokenSetIconArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type TokenSetUriIx struct {
+	pd *provider.Provider
+}
+
+type TokenSetUriArgs struct {
+	token *crypto.Address
+	uri string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetUri.
+func (ix *TokenSetUriIx) Args(token *crypto.Address, uri string) *TokenSetUriArgs {
+	return &TokenSetUriArgs{
+		token: token,
+		uri: uri,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenSetUriArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// token: Address
+	args["token"] = a.token
+	// uri: String
+	args["uri"] = a.uri
+	wire, err := a.pd.Encode("SetUri", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type TokenBalanceOfIx struct {
 	pd *provider.Provider
 }
@@ -20539,6 +20369,34 @@ func (a *TokenClearComplianceRequirementsArgs) Encode() (api.PackedInstruction, 
 	return api.PackedInstruction(wire), nil
 }
 
+type TokenBootstrapGenesisIx struct {
+	pd *provider.Provider
+}
+
+type TokenBootstrapGenesisArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of BootstrapGenesis.
+func (ix *TokenBootstrapGenesisIx) Args() *TokenBootstrapGenesisArgs {
+	return &TokenBootstrapGenesisArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenBootstrapGenesisArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("BootstrapGenesis", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type TokenClaimFaucetIx struct {
 	pd *provider.Provider
 }
@@ -20760,20 +20618,18 @@ type StakingCreateValidatorArgs struct {
 	consensus_account *crypto.Address
 	consensus_pubkey []byte
 	bls_pubkey []byte
-	network_address []byte
 	commission_rate_bps uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of CreateValidator.
-func (ix *StakingCreateValidatorIx) Args(operator *crypto.Address, validator *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, network_address []byte, commission_rate_bps uint64) *StakingCreateValidatorArgs {
+func (ix *StakingCreateValidatorIx) Args(operator *crypto.Address, validator *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, commission_rate_bps uint64) *StakingCreateValidatorArgs {
 	return &StakingCreateValidatorArgs{
 		operator: operator,
 		validator: validator,
 		consensus_account: consensus_account,
 		consensus_pubkey: consensus_pubkey,
 		bls_pubkey: bls_pubkey,
-		network_address: network_address,
 		commission_rate_bps: commission_rate_bps,
 		pd: ix.pd,
 	}
@@ -20795,8 +20651,6 @@ func (a *StakingCreateValidatorArgs) Encode() (api.PackedInstruction, error) {
 	args["consensus_pubkey"] = a.consensus_pubkey
 	// bls_pubkey: bytes
 	args["bls_pubkey"] = a.bls_pubkey
-	// network_address: bytes
-	args["network_address"] = a.network_address
 	// commission_rate_bps: u64
 	args["commission_rate_bps"] = a.commission_rate_bps
 	wire, err := a.pd.Encode("CreateValidator", args)
@@ -21757,6 +21611,7 @@ type IdentityApp struct {
 	OrganizationCapabilities *IdentityOrganizationCapabilitiesIx
 	OrganizationStatus *IdentityOrganizationStatusIx
 	OrganizationUpdatedAt *IdentityOrganizationUpdatedAtIx
+	CredentialId *IdentityCredentialIdIx
 }
 
 var Identity = &IdentityApp{
@@ -21801,6 +21656,7 @@ var Identity = &IdentityApp{
 	OrganizationCapabilities: &IdentityOrganizationCapabilitiesIx{},
 	OrganizationStatus: &IdentityOrganizationStatusIx{},
 	OrganizationUpdatedAt: &IdentityOrganizationUpdatedAtIx{},
+	CredentialId: &IdentityCredentialIdIx{},
 }
 
 func (a *IdentityApp) bind(pd *provider.Provider) {
@@ -21846,6 +21702,7 @@ func (a *IdentityApp) bind(pd *provider.Provider) {
 	a.OrganizationCapabilities.pd = pd
 	a.OrganizationStatus.pd = pd
 	a.OrganizationUpdatedAt.pd = pd
+	a.CredentialId.pd = pd
 }
 
 type IdentityDiscloseVcAttestationIx struct {
@@ -23892,6 +23749,58 @@ func (ix *IdentityOrganizationUpdatedAtIx) DecodeView(body []byte) (out uint64, 
 		return out, err
 	}
 	out = v0
+	return out, nil
+}
+
+type IdentityCredentialIdIx struct {
+	pd *provider.Provider
+}
+
+type IdentityCredentialIdArgs struct {
+	issuer *crypto.Address
+	credential_schema string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CredentialId.
+func (ix *IdentityCredentialIdIx) Args(issuer *crypto.Address, credential_schema string) *IdentityCredentialIdArgs {
+	return &IdentityCredentialIdArgs{
+		issuer: issuer,
+		credential_schema: credential_schema,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *IdentityCredentialIdArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// issuer: Address
+	args["issuer"] = a.issuer
+	// credential_schema: String
+	args["credential_schema"] = a.credential_schema
+	wire, err := a.pd.Encode("CredentialId", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CredentialId into any.
+func (ix *IdentityCredentialIdIx) DecodeView(body []byte) (out any, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CredentialId", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view CredentialId failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	out = v
 	return out, nil
 }
 
@@ -26411,124 +26320,6 @@ func (ix *DexVaultLiabilityIx) DecodeView(body []byte) (out uint64, err error) {
 	return out, nil
 }
 
-// RandomnessApp exposes type-safe instruction builders for IDL app "randomness".
-type RandomnessApp struct {
-	Pd *provider.Provider
-	LatestBeacon *RandomnessLatestBeaconIx
-	Beacon *RandomnessBeaconIx
-}
-
-var Randomness = &RandomnessApp{
-	LatestBeacon: &RandomnessLatestBeaconIx{},
-	Beacon: &RandomnessBeaconIx{},
-}
-
-func (a *RandomnessApp) bind(pd *provider.Provider) {
-	a.Pd = pd
-	a.LatestBeacon.pd = pd
-	a.Beacon.pd = pd
-}
-
-type RandomnessLatestBeaconIx struct {
-	pd *provider.Provider
-}
-
-type RandomnessLatestBeaconArgs struct {
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of LatestBeacon.
-func (ix *RandomnessLatestBeaconIx) Args() *RandomnessLatestBeaconArgs {
-	return &RandomnessLatestBeaconArgs{
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *RandomnessLatestBeaconArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app randomness is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	wire, err := a.pd.Encode("LatestBeacon", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of LatestBeacon into RandomnessBeaconRecordV1.
-func (ix *RandomnessLatestBeaconIx) DecodeView(body []byte) (out RandomnessBeaconRecordV1, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app randomness is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("LatestBeacon", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view LatestBeacon failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := fromRandomnessBeaconRecordV1(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type RandomnessBeaconIx struct {
-	pd *provider.Provider
-}
-
-type RandomnessBeaconArgs struct {
-	index uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of Beacon.
-func (ix *RandomnessBeaconIx) Args(index uint64) *RandomnessBeaconArgs {
-	return &RandomnessBeaconArgs{
-		index: index,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *RandomnessBeaconArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app randomness is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// index: u64
-	args["index"] = a.index
-	wire, err := a.pd.Encode("Beacon", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of Beacon into RandomnessBeaconRecordV1.
-func (ix *RandomnessBeaconIx) DecodeView(body []byte) (out RandomnessBeaconRecordV1, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app randomness is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("Beacon", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Beacon failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := fromRandomnessBeaconRecordV1(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
 // KeylessApp exposes type-safe instruction builders for IDL app "keyless".
 type KeylessApp struct {
 	Pd *provider.Provider
@@ -26538,6 +26329,7 @@ type KeylessApp struct {
 	SetProviderGovernanceEnabled *KeylessSetProviderGovernanceEnabledIx
 	ControllerSetProviderEnabled *KeylessControllerSetProviderEnabledIx
 	SetParams *KeylessSetParamsIx
+	BootstrapGenesis *KeylessBootstrapGenesisIx
 	Authenticate *KeylessAuthenticateIx
 	Bind *KeylessBindIx
 	Unbind *KeylessUnbindIx
@@ -26557,6 +26349,7 @@ var Keyless = &KeylessApp{
 	SetProviderGovernanceEnabled: &KeylessSetProviderGovernanceEnabledIx{},
 	ControllerSetProviderEnabled: &KeylessControllerSetProviderEnabledIx{},
 	SetParams: &KeylessSetParamsIx{},
+	BootstrapGenesis: &KeylessBootstrapGenesisIx{},
 	Authenticate: &KeylessAuthenticateIx{},
 	Bind: &KeylessBindIx{},
 	Unbind: &KeylessUnbindIx{},
@@ -26577,6 +26370,7 @@ func (a *KeylessApp) bind(pd *provider.Provider) {
 	a.SetProviderGovernanceEnabled.pd = pd
 	a.ControllerSetProviderEnabled.pd = pd
 	a.SetParams.pd = pd
+	a.BootstrapGenesis.pd = pd
 	a.Authenticate.pd = pd
 	a.Bind.pd = pd
 	a.Unbind.pd = pd
@@ -26799,6 +26593,34 @@ func (a *KeylessSetParamsArgs) Encode() (api.PackedInstruction, error) {
 	// bind_activation_delay_ms: u64
 	args["bind_activation_delay_ms"] = a.bind_activation_delay_ms
 	wire, err := a.pd.Encode("SetParams", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type KeylessBootstrapGenesisIx struct {
+	pd *provider.Provider
+}
+
+type KeylessBootstrapGenesisArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of BootstrapGenesis.
+func (ix *KeylessBootstrapGenesisIx) Args() *KeylessBootstrapGenesisArgs {
+	return &KeylessBootstrapGenesisArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessBootstrapGenesisArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("BootstrapGenesis", args)
 	if err != nil {
 		return nil, err
 	}
@@ -29007,7 +28829,6 @@ func init() {
 	RegisterApp("identity", func(pd *provider.Provider) error { Identity.bind(pd); return nil })
 	RegisterApp("nft", func(pd *provider.Provider) error { Nft.bind(pd); return nil })
 	RegisterApp("dex", func(pd *provider.Provider) error { Dex.bind(pd); return nil })
-	RegisterApp("randomness", func(pd *provider.Provider) error { Randomness.bind(pd); return nil })
 	RegisterApp("keyless", func(pd *provider.Provider) error { Keyless.bind(pd); return nil })
 	RegisterApp("lucky_box", func(pd *provider.Provider) error { LuckyBox.bind(pd); return nil })
 	RegisterApp("demo", func(pd *provider.Provider) error { Demo.bind(pd); return nil })

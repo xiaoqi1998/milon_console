@@ -810,6 +810,27 @@
       "returns": {
         "type": "u64"
       }
+    },
+    {
+      "args": [
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 63370,
+      "handler": "credential_id",
+      "kind": "view",
+      "name": "CredentialId",
+      "returns": {
+        "type": "CredentialId"
+      }
     }
   ],
   "types": [

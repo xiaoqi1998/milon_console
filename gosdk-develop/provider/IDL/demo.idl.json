@@ -591,10 +591,6 @@
           "type": "u64"
         },
         {
-          "name": "target_beacon_index",
-          "type": "u64"
-        },
-        {
           "name": "random_bytes",
           "type": "option<B256>"
         },
@@ -733,16 +729,6 @@
     },
     {
       "code": 65292,
-      "message": "Target randomness beacon {0} was not found",
-      "name": "TargetBeaconNotFound"
-    },
-    {
-      "code": 65293,
-      "message": "Target randomness beacon {0} is derivable from block {1}, current block is {2}",
-      "name": "RandomnessNotReady"
-    },
-    {
-      "code": 65294,
       "message": "NFT reveal derivation failed: {0}",
       "name": "RandomnessFailure"
     }

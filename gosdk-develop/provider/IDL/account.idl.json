@@ -604,6 +604,11 @@
       "code": 284,
       "message": "Vote proposal wire is invalid",
       "name": "VoteProposalInvalid"
+    },
+    {
+      "code": 285,
+      "message": "Account {0:?} exists; pubkey mode not allowed",
+      "name": "PubkeyModeForbidden"
     }
   ]
 }
