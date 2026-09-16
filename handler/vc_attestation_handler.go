@@ -37,7 +37,8 @@ func NewVcAttestationHandler() *VcAttestationHandler {
 // generateVcAttestationRequest 是 GenerateVcAttestation 的请求体。
 // 字段与 Python 脚本 generate_vc_attestation() 参数一一对应。
 type generateVcAttestationRequest struct {
-	IssuerPrivateKey   string `json:"issuerPrivateKey"`             // issuer 私钥（hex, 32 字节，必填）
+	IssuerPrivateKey   string `json:"issuerPrivateKey"`             // issuer 私钥（hex/base58：32 字节经典 Ed25519 密钥或 1281 字节 FN-DSA-512 密钥，必填）
+	IssuerPublicKey    string `json:"issuerPublicKey"`              // issuer 公钥（hex/base58，897 字节）；issuer 为 FN-DSA-512 密钥时必填（SDK 无法从签名密钥反推公钥）
 	ChainID            *int64 `json:"chainId"`                      // 链 ID，缺省 900000001
 	SubjectPrivateKey  string `json:"subjectPrivateKey"`            // subject 私钥（hex）—— 与 subjectAddress 二选一
 	SubjectAddress     string `json:"subjectAddress"`               // subject 地址（bs58）—— 与 subjectPrivateKey 二选一
@@ -162,18 +163,11 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 		issuedAt = time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
 	}
 
-	// ---- issuer 密钥与地址 ----
-	issuerSK := &crypto.ClassicalSecretKey{}
-	if err := issuerSK.FromStringRelaxed(req.IssuerPrivateKey); err != nil {
-		logSDKError(c, "GenerateVcAttestation", err)
-		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid issuerPrivateKey: "+err.Error(), nil))
-		return
-	}
-	issuerPub := issuerSK.Ed25519Public()
-	issuerAddr, err := crypto.NewAddressFromPublicKey(issuerPub)
+	// ---- issuer 密钥、公钥与地址（按私钥长度自动识别经典 Ed25519 / FN-DSA-512 后量子密钥）----
+	issuerSK, issuerPub, issuerAddr, err := resolveIssuerIdentity(req.IssuerPrivateKey, req.IssuerPublicKey)
 	if err != nil {
-		logSDKError(c, "GenerateVcAttestation", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to derive issuer address: "+err.Error(), nil))
+		logParamError(c, "GenerateVcAttestation", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 		return
 	}
 
@@ -221,16 +215,14 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 		validUntilForSign,
 	)
 
-	// ---- issuer ed25519 签名（raw R||S, 64 字节） ----
-	sig := issuerSK.SignEd25519(signingDigest[:])
-	issuerSignature := hex.EncodeToString(sig.Bytes)
-
-	// ---- 本地验签（失败会返回错误） ----
-	if err := sig.Verify(signingDigest[:], issuerPub); err != nil {
+	// ---- issuer 签名并本地验签：Ed25519 产出 64 字节，FN-DSA-512 产出 666 字节 ----
+	sig, err := signVcAttestationDigest(issuerSK, issuerPub, signingDigest[:])
+	if err != nil {
 		logSDKError(c, "GenerateVcAttestation", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "local signature verification failed: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, err.Error(), nil))
 		return
 	}
+	issuerSignature := hex.EncodeToString(sig.Bytes)
 
 	// ---- 组装 milon-vc-disclosure 裸文档（字段顺序与 vc_attestation_custom.json 一致） ----
 	var validUntilISO *string
@@ -273,6 +265,62 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 
 	// 直接输出裸 JSON 文档（无 success/code/data 包装），与脚本产物文件结构完全一致
 	c.JSON(http.StatusOK, resp)
+}
+
+// resolveIssuerIdentity 解析 issuer 私钥并得到对应公钥与地址。
+// 按密钥字节数自动识别：32 字节经典私钥走 Ed25519（公钥可直接推导）；
+// 1281 字节为 FN-DSA-512 后量子签名密钥，Go SDK 无法从签名密钥反推验证公钥，
+// 必须额外提供 issuerPublicKey（hex/base58，897 字节，可用 /api/account/generate?keyType=fndsa512 生成）。
+func resolveIssuerIdentity(issuerPrivateKey, issuerPublicKey string) (crypto.SecretKeyer, *crypto.PublicKey, *crypto.Address, error) {
+	sker, err := crypto.SecretKeyerFromStringRelaxed(issuerPrivateKey)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("invalid issuerPrivateKey: %w", err)
+	}
+
+	var pub *crypto.PublicKey
+	if fk := crypto.AsFnDsa512SecretKey(sker); fk != nil {
+		if strings.TrimSpace(issuerPublicKey) == "" {
+			return nil, nil, nil, fmt.Errorf("issuerPublicKey is required when issuer private key is FN-DSA-512")
+		}
+		pub, err = crypto.NewPublicKeyFromStringRelaxed(issuerPublicKey)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("invalid issuerPublicKey: %w", err)
+		}
+		if !pub.IsFnDsa512() {
+			return nil, nil, nil, fmt.Errorf("issuerPrivateKey is FN-DSA-512 but issuerPublicKey is %s", keyTypeName(pub.Variant))
+		}
+	} else {
+		ck := crypto.AsClassicalSecretKey(sker)
+		if ck == nil {
+			return nil, nil, nil, fmt.Errorf("unsupported issuer private key type: only Ed25519 (32 bytes) and FN-DSA-512 (1281 bytes) are supported")
+		}
+		pub = ck.Ed25519Public()
+	}
+
+	addr, err := crypto.NewAddressFromPublicKey(pub)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to derive issuer address: %w", err)
+	}
+	return sker, pub, addr, nil
+}
+
+// signVcAttestationDigest 用 issuer 私钥对断言摘要签名并立即本地验签。
+// FN-DSA-512 产出 666 字节签名（HASH_ID_RAW，对摘要原文签名），Ed25519 产出 64 字节。
+func signVcAttestationDigest(sker crypto.SecretKeyer, pub *crypto.PublicKey, digest []byte) (*crypto.Signature, error) {
+	var sig *crypto.Signature
+	var err error
+	if fk := crypto.AsFnDsa512SecretKey(sker); fk != nil {
+		sig, err = fk.SignFnDsa512(digest)
+	} else {
+		sig = crypto.AsClassicalSecretKey(sker).SignEd25519(digest)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign attestation: %w", err)
+	}
+	if err := sig.Verify(digest, pub); err != nil {
+		return nil, fmt.Errorf("local signature verification failed: %w", err)
+	}
+	return sig, nil
 }
 
 // vcAttestationDigest 构造 DiscloseVcAttestation 签名摘要。

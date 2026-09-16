@@ -1878,7 +1878,8 @@ curl -X POST http://localhost:8080/api/util/verify \
 
 | 字段 | 类型 | 是否必填 | 说明 |
 | --- | --- | --- | --- |
-| `issuerPrivateKey` | string | 是 | issuer 私钥（hex，32 字节） |
+| `issuerPrivateKey` | string | 是 | issuer 私钥（hex/base58）：32 字节为经典 Ed25519 密钥；1281 字节为 FN-DSA-512 后量子密钥，按长度自动识别 |
+| `issuerPublicKey` | string | 条件必填 | issuer 公钥（hex/base58，897 字节）。issuer 为 FN-DSA-512 密钥时必填（SDK 无法从签名密钥反推公钥），可用 `/api/account/generate?keyType=fndsa512` 与私钥成对生成；Ed25519 时无需传 |
 | `subjectPrivateKey` | string | 条件必填 | subject 私钥（hex），与 `subjectAddress` 二选一 |
 | `subjectAddress` | string | 条件必填 | subject 地址（base58，20 字节），与 `subjectPrivateKey` 二选一 |
 | `chainId` | number | 否 | 链 ID，缺省 `900000001` |
@@ -1918,6 +1919,24 @@ curl -X POST http://localhost:8080/api/util/vc-attestation \
   }'
 ```
 
+**请求示例（FN-DSA-512 后量子 issuer）**
+
+issuer 组织使用后量子密钥时，`issuerPrivateKey` 为 1281 字节（hex 2562 字符），且必须同时传 `issuerPublicKey`（897 字节，hex 1794 字符），两者由 `/api/account/generate?keyType=fndsa512` 成对生成：
+
+```bash
+curl -X POST http://localhost:8080/api/util/vc-attestation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "issuerPrivateKey":"<1281字节 FN-DSA-512 私钥 hex>",
+    "issuerPublicKey":"<897字节 FN-DSA-512 公钥 hex>",
+    "subjectAddress":"3pbWorV6iS7Mv8iCs36JUi18RfFy",
+    "credentialSchema":"Change",
+    "credentialName":"Change Credential",
+    "credentialDesc":"A mock Credential credential for testing the DID web upload flow.",
+    "validUntil":"2027-08-31T00:00:00.000Z"
+  }'
+```
+
 **响应示例**
 
 成功响应为**裸 JSON 文档**（无 `success/code/data` 包装），结构与 `milon-vc-disclosure` 产物文件完全一致，可将响应体直接保存为 `.json` 文件使用：
@@ -1948,7 +1967,7 @@ curl -X POST http://localhost:8080/api/util/vc-attestation \
 }
 ```
 
-> 注：`valid_until` / `valid_until_ms` 为 `null` 表示凭证永不过期（请求传 `validUntilMs: 0` 时）。错误响应仍为统一的 `success/code/message` 包装结构。
+> 注：`valid_until` / `valid_until_ms` 为 `null` 表示凭证永不过期（请求传 `validUntilMs: 0` 时）。`issuer_signature` 长度随 issuer 密钥算法而定：Ed25519 为 64 字节（128 hex 字符），FN-DSA-512 为 666 字节（1332 hex 字符）。错误响应仍为统一的 `success/code/message` 包装结构。
 
 ---
 

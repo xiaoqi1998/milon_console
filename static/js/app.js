@@ -53,7 +53,8 @@ const ENDPOINTS = [
     bodyTemplate: JSON.stringify({ publicKey: 'base58公钥', message: 'hex编码或明文', signature: 'hex签名', keyType: 'secp256k1' }, null, 2) },
   { id: 'vc-attestation', method: 'POST', path: '/api/util/vc-attestation', summary: '生成VC凭证参数(DiscloseVcAttestation)', group: '工具',
     bodyTemplate: JSON.stringify({
-      issuerPrivateKey: 'hex或base58私钥',
+      issuerPrivateKey: 'hex或base58私钥(32字节Ed25519 或 1281字节FN-DSA-512)',
+      issuerPublicKey: 'hex或base58公钥(仅FN-DSA-512 issuer必填, /api/account/generate?keyType=fndsa512 生成)',
       subjectPrivateKey: 'hex私钥(与subjectAddress二选一)',
       subjectAddress: 'base58地址(与subjectPrivateKey二选一)',
       credentialSchema: 'KycLevelCredential',
