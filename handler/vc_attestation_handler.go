@@ -40,8 +40,8 @@ type generateVcAttestationRequest struct {
 	IssuerPrivateKey   string `json:"issuerPrivateKey"`             // issuer 私钥（hex/base58：32 字节经典 Ed25519 密钥或 1281 字节 FN-DSA-512 密钥，必填）
 	IssuerPublicKey    string `json:"issuerPublicKey"`              // issuer 公钥（hex/base58，897 字节）；issuer 为 FN-DSA-512 密钥时必填（SDK 无法从签名密钥反推公钥）
 	ChainID            *int64 `json:"chainId"`                      // 链 ID，缺省 900000001
-	SubjectPrivateKey  string `json:"subjectPrivateKey"`            // subject 私钥（hex）—— 与 subjectAddress 二选一
-	SubjectAddress     string `json:"subjectAddress"`               // subject 地址（bs58）—— 与 subjectPrivateKey 二选一
+	SubjectPrivateKey  string `json:"subjectPrivateKey"`            // subject 私钥（hex）—— 与 subjectAddress 二选一；同时传时以 subjectAddress 为准
+	SubjectAddress     string `json:"subjectAddress"`               // subject 地址（bs58，20 字节）—— 与 subjectPrivateKey 二选一；两者同时传时以此地址为准
 	IssuerKeyID        *int   `json:"issuerKeyId"`                  // issuer 密钥索引，缺省 0
 	CredentialSchema   string `json:"credentialSchema"`             // 凭证 schema，缺省 KycLevelCredential
 	CredentialJson     string `json:"credentialJson"`               // 凭证规范化 JSON 字符串（sha256 作为 credential_hash）
@@ -171,22 +171,9 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 		return
 	}
 
-	// ---- subject 地址：私钥优先，否则 base58 解码地址 ----
+	// ---- subject 地址：显式 subjectAddress 优先；未传时才从 subjectPrivateKey 派生（Ed25519） ----
 	var subjectAddr *crypto.Address
-	if strings.TrimSpace(req.SubjectPrivateKey) != "" {
-		subjectSK := &crypto.ClassicalSecretKey{}
-		if err := subjectSK.FromStringRelaxed(req.SubjectPrivateKey); err != nil {
-			logSDKError(c, "GenerateVcAttestation", err)
-			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid subjectPrivateKey: "+err.Error(), nil))
-			return
-		}
-		subjectAddr, err = crypto.NewAddressFromPublicKey(subjectSK.Ed25519Public())
-		if err != nil {
-			logSDKError(c, "GenerateVcAttestation", err)
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to derive subject address: "+err.Error(), nil))
-			return
-		}
-	} else {
+	if strings.TrimSpace(req.SubjectAddress) != "" {
 		decoded := base58.Decode(req.SubjectAddress)
 		if len(decoded) != crypto.AddressRawLen {
 			logParamError(c, "GenerateVcAttestation", fmt.Errorf("subject 地址解码后必须为 20 字节, got %d", len(decoded)))
@@ -197,6 +184,19 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 		if err != nil {
 			logSDKError(c, "GenerateVcAttestation", err)
 			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid subjectAddress: "+err.Error(), nil))
+			return
+		}
+	} else {
+		subjectSK := &crypto.ClassicalSecretKey{}
+		if err := subjectSK.FromStringRelaxed(req.SubjectPrivateKey); err != nil {
+			logSDKError(c, "GenerateVcAttestation", err)
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid subjectPrivateKey: "+err.Error(), nil))
+			return
+		}
+		subjectAddr, err = crypto.NewAddressFromPublicKey(subjectSK.Ed25519Public())
+		if err != nil {
+			logSDKError(c, "GenerateVcAttestation", err)
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to derive subject address: "+err.Error(), nil))
 			return
 		}
 	}
