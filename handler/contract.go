@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"milon-api-server/client"
@@ -438,6 +439,9 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if err != nil {
 			return nil, nil, fmt.Errorf("invalid signers: %w", err)
 		}
+		if err := normalizeSignerModes(mc, signerAddrs, signerModes); err != nil {
+			return nil, nil, fmt.Errorf("invalid signers: %w", err)
+		}
 
 		var gasPayerAddr *crypto.Address
 		var gasPayerMode lib.AccountSignatureMode
@@ -479,6 +483,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 }
 
 // parsePayerAndMode parses address + signatureMode JSON into the SDK types.
+// 解析后会按账户链上状态自动修正签名模式（见 normalizeSignatureModeForAccount）。
 func (h *ContractHandler) parsePayerAndMode(addrStr string, sigModeRaw json.RawMessage) (crypto.Address, lib.AccountSignatureMode, error) {
 	if addrStr == "" {
 		return crypto.Address{}, nil, fmt.Errorf("address is required")
@@ -491,7 +496,150 @@ func (h *ContractHandler) parsePayerAndMode(addrStr string, sigModeRaw json.RawM
 	if err != nil {
 		return crypto.Address{}, nil, fmt.Errorf("invalid signatureMode: %w", err)
 	}
+	mc, _ := h.nm.GetCurrent()
+	mode, err = normalizeSignatureModeForAccount(mc, addr, mode)
+	if err != nil {
+		return crypto.Address{}, nil, err
+	}
 	return addr, mode, nil
+}
+
+// ==================== 签名模式自动修正（链端错误 285 PubkeyModeForbidden） ====================
+//
+// 公钥模式（SigBit=0 且携带 PubKey）只在账户尚未在链上注册时被链端接受。账户一旦已有
+// Account 资源（signers 列表），submit 会被 account 模块拒绝：
+//
+//	status 6: {Message:Account <addr> exists; pubkey mode not allowed}   // 错误码 285
+//
+// 因此这里在构建交易前先查一次账户的链上 signers 列表：
+//   - 账户未上链            → 保持公钥模式（这正是首笔交易 / 隐式开户需要的）
+//   - 已上链且公钥在列表中  → 升级为签名者列表模式 MultisigKeySignatureMode{Index: i}
+//     （线格式 SigBit = 1<<i 且不携带公钥，链端按账户登记的 signers 列表验签）
+//   - 已上链但公钥不在列表  → 直接返回明确错误，而不是让链端抛 285
+//   - 查询失败              → 不修正、不阻断，交给链端判定
+//
+// 只缓存「已上链」这一正向结果（账户不会消失，缓存安全）；「未上链」不缓存，
+// 避免刚注册（如刚领水）的账户被误判成公钥模式。
+
+const onchainSignersTTL = 60 * time.Second
+
+type onchainSigners struct {
+	keys []string
+	at   time.Time
+}
+
+var (
+	onchainSignersMu    sync.Mutex
+	onchainSignersCache = map[string]onchainSigners{}
+)
+
+// listOnchainSigners 查询账户链上 signers 公钥列表（base58，顺序即 index）。
+// 返回 ok=false 表示账户不存在或查询失败。
+func listOnchainSigners(mc *milon.Client, addr crypto.Address) ([]string, bool) {
+	cacheKey := string(addr.Bytes[:])
+
+	onchainSignersMu.Lock()
+	cached, hit := onchainSignersCache[cacheKey]
+	onchainSignersMu.Unlock()
+	if hit && time.Since(cached.at) < onchainSignersTTL {
+		return cached.keys, len(cached.keys) > 0
+	}
+
+	signers, err := mc.ListAccountSigners(&addr)
+	if err != nil || len(signers) < 2 {
+		return nil, false
+	}
+	rows, ok := signers[1].([]any)
+	if !ok {
+		return nil, false
+	}
+	keys := make([]string, 0, len(rows))
+	for _, row := range rows {
+		cols, ok := row.([]any)
+		if !ok || len(cols) == 0 {
+			continue
+		}
+		// signers 每行形如 [PublicKey, res, weight]；PublicKey 可能是
+		// *crypto.PublicKey（SDK 解码结果）或 base58 字符串（JSON 形式）。
+		switch v := cols[0].(type) {
+		case string:
+			keys = append(keys, v)
+		case *crypto.PublicKey:
+			if v != nil {
+				keys = append(keys, v.ToBase58())
+			}
+		case crypto.PublicKey:
+			keys = append(keys, v.ToBase58())
+		}
+	}
+	if len(keys) == 0 {
+		return nil, false
+	}
+
+	onchainSignersMu.Lock()
+	onchainSignersCache[cacheKey] = onchainSigners{keys: keys, at: time.Now()}
+	onchainSignersMu.Unlock()
+	return keys, true
+}
+
+// normalizeSignatureModeForAccount 按账户链上状态修正签名模式（见上方说明）。
+// 调用方显式使用签名者列表模式 / multisig 模式时不做改动。
+func normalizeSignatureModeForAccount(mc *milon.Client, addr crypto.Address, mode lib.AccountSignatureMode) (lib.AccountSignatureMode, error) {
+	if mc == nil {
+		return mode, nil
+	}
+
+	// 显式指定 multisig 时只做范围校验：给出比链端更清晰的报错，不改写调用方的选择
+	if ms, ok := mode.(lib.MultisigKeySignatureMode); ok {
+		if keys, onchain := listOnchainSigners(mc, addr); onchain && int(ms.Index) >= len(keys) {
+			return nil, fmt.Errorf("multisig index %d out of range: account %s has %d on-chain signer(s) %v",
+				ms.Index, addr, len(keys), keys)
+		}
+		return mode, nil
+	}
+
+	pubMode, ok := mode.(lib.PubKeySignatureMode)
+	if !ok || pubMode.SkipPubKey {
+		// 已经是签名者列表模式（SkipPubKey）：尊重调用方的显式选择
+		return mode, nil
+	}
+
+	keys, onchain := listOnchainSigners(mc, addr)
+	if !onchain {
+		// 账户尚未上链（或查询失败）：公钥模式正是链端此时需要的
+		return mode, nil
+	}
+
+	pkBase58 := pubMode.PublicKey.ToBase58()
+	for i, k := range keys {
+		if k != pkBase58 {
+			continue
+		}
+		if i > 63 {
+			return nil, fmt.Errorf("signer index %d out of range (max 63) for account %s", i, addr)
+		}
+		return lib.MultisigKeySignatureMode{Index: uint8(i), PublicKey: pubMode.PublicKey}, nil
+	}
+
+	return nil, fmt.Errorf("publicKey %s is not in the on-chain signers list of account %s (signers: %v); "+
+		"the account is registered on chain, so pubkey mode is rejected by the chain (error 285 PubkeyModeForbidden) — "+
+		"check that signatureMode.publicKey matches the signing private key, or pass {\"type\":\"multisig\",\"index\":N} explicitly",
+		pkBase58, addr, keys)
+}
+
+// normalizeSignerModes 对多签名者列表逐个按链上状态修正签名模式。
+func normalizeSignerModes(mc *milon.Client, addrs []crypto.Address, modes []lib.AccountSignatureMode) error {
+	for i := range modes {
+		if modes[i] == nil {
+			continue
+		}
+		fixed, err := normalizeSignatureModeForAccount(mc, addrs[i], modes[i])
+		if err != nil {
+			return fmt.Errorf("signers[%d]: %w", i, err)
+		}
+		modes[i] = fixed
+	}
+	return nil
 }
 
 // buildMultiSignerTransaction builds a transaction with multiple signers signing the same ix (bit0).
@@ -906,6 +1054,9 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid signers: %w", err)
 		}
+		if err := normalizeSignerModes(mc, signerAddrs, signerModes); err != nil {
+			return "", nil, fmt.Errorf("invalid signers: %w", err)
+		}
 
 		var gasPayerAddr *crypto.Address
 		var gasPayerSk crypto.SecretKeyer
@@ -1139,6 +1290,9 @@ func (h *ContractHandler) dispatchSimulateMulti(mc *milon.Client, req *multiCont
 		if err != nil {
 			return nil, nil, fmt.Errorf("invalid signers: %w", err)
 		}
+		if err := normalizeSignerModes(mc, signerAddrs, signerModes); err != nil {
+			return nil, nil, fmt.Errorf("invalid signers: %w", err)
+		}
 		builder := lib.NewTransactionBuilder(instructions)
 		if req.GasPayer != nil {
 			gasAddr, gasMode, err := h.parsePayerAndMode(req.GasPayer.Address, req.GasPayer.SignatureMode)
@@ -1340,6 +1494,9 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 	case PaymentModeMultiSigner:
 		signerAddrs, signerSks, signerModes, err := types.ParseSignerList(req.Signers, true)
 		if err != nil {
+			return "", nil, fmt.Errorf("invalid signers: %w", err)
+		}
+		if err := normalizeSignerModes(mc, signerAddrs, signerModes); err != nil {
 			return "", nil, fmt.Errorf("invalid signers: %w", err)
 		}
 

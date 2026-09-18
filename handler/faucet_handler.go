@@ -67,6 +67,14 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 
 	mc, _ := h.nm.GetCurrent()
 
+	// 账户已上链时公钥模式会被链端拒绝（错误 285 PubkeyModeForbidden）→ 自动切签名者列表模式
+	mode, err = normalizeSignatureModeForAccount(mc, addr, mode)
+	if err != nil {
+		logParamError(c, "ClaimFaucet", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+
 	tx, err := buildClaimFaucetTx(mc, addr, sk, mode)
 	if err != nil {
 		logSDKError(c, "ClaimFaucet", err)

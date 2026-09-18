@@ -106,6 +106,20 @@ Milon API Server 将 Milon Go SDK 封装为一组 RESTful HTTP 接口，提供�
 | `publicKey` | string | 是 | 公钥（hex 或 base58 编码） |
 | `index` | number | multisig 模式必填 | 多签账户中的索引位置 |
 
+**⚠️ 公钥模式（pubkey）的使用限制**
+
+`type: "pubkey"` 只在**账户尚未在链上注册**时可用（首笔交易 / 隐式开户）。账户一旦已在链上注册（`GET /api/accounts/:address` 能返回 `data.PublicKeysBs58`），链端会拒绝公钥模式签名：
+
+```
+API returned error status 6: {Message:Account <addr> exists; pubkey mode not allowed Code:<nil> Data:<nil>}
+```
+
+对应链上 account 模块错误 `285 PubkeyModeForbidden`。此时必须改用 **multisig（签名者列表模式）**：线格式只带 `SigBit = 1<<index`、不携带公钥，链端按账户登记的 signers 列表定位公钥。
+
+- `index` = 该公钥在账户链上 signers 位图中的位置，**单密钥账户为 `0`**。
+- 获取方式：`GET /api/accounts/:address` 返回的 `PublicKeysBs58` 数组下标，或 `account::list_signers` 返回的 `bitmap`/signers 列表（SDK：`client.AccountSignerBit(addr)`）。
+- 该限制同时作用于 ix 签名者与 payer（gas 付款方），每个签名账户各自判定。
+
 ### Gas 费用说明
 
 - 交易回执（`receipt`）中包含 `gasCharged` 字段，表示该笔交易实际消耗的 gas 费用。

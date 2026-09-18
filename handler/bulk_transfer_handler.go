@@ -239,6 +239,14 @@ func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *cryp
 	}
 
 	// 2. 归集 MIL 到目标地址，预留 gasReserve 作为手续费
+	//    领水后该账户可能已注册上链，此时公钥模式会被链端拒绝（错误 285 PubkeyModeForbidden），
+	//    因此按链上状态重新解析签名模式（已上链 → 签名者列表模式）。
+	transferMode, err := normalizeSignatureModeForAccount(mc, *account, mode)
+	if err != nil {
+		res.Error = "resolve signature mode: " + err.Error()
+		return res
+	}
+
 	wire, err := gen.Token.Transfer.Args(account, api.MILToken, toAddr, transferAmount).Encode()
 	if err != nil {
 		res.Error = "encode transfer: " + err.Error()
@@ -247,7 +255,7 @@ func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *cryp
 
 	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
 		WithPayer(account).
-		AddIxAndPayerSig(*account, sk, 0, mode).
+		AddIxAndPayerSig(*account, sk, 0, transferMode).
 		Build()
 	if err != nil {
 		res.Error = "build transfer tx: " + err.Error()

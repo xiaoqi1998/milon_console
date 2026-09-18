@@ -4634,6 +4634,176 @@ function onIDLExecModeChange(mode) {
   renderIDLPaymentFields();
 }
 
+// ==================== 执行配置：签名模式（公钥 / 签名者列表） ====================
+//
+// 链上 account 模块错误 285（PubkeyModeForbidden："Account X exists; pubkey mode not allowed"）：
+// 账户一旦已在链上注册（存在 Account 资源 + signers 列表），交易就不能再用「公钥模式」签名
+// （线格式 SigBit=0 且携带 PubKey），必须改用「签名者列表模式」：SigBit = 1<<index
+// （index 为该公钥在链上 signers 位图中的位置，单密钥账户为 0），且不携带公钥。
+// 只有尚未上链的账户才能用公钥模式（首笔交易 / 隐式开户）。
+// 这里在渲染执行配置时探测账户状态，自动选择正确模式。
+
+var idlSigModeCache = {};   // "address|pk" → {ts, mode}，20 秒内复用（账户可能刚被注册，缓存必须短）
+var idlPkDeriveCache = {};  // address → Promise<publicKey>
+var IDL_SIG_MODE_TTL = 20000;
+
+// 简单防抖：地址输入框逐字触发探测时避免刷请求。
+function idlDebounce(fn, ms) {
+  var timer = null;
+  return function () {
+    var args = arguments;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () {
+      timer = null;
+      fn.apply(null, args);
+    }, ms);
+  };
+}
+
+// 账户公钥：优先取已保存的；只有私钥时按私钥派生并回填到账户对象。
+function idlAccountPublicKey(acc) {
+  if (!acc) return Promise.resolve('');
+  if (acc.publicKey) return Promise.resolve(acc.publicKey);
+  if (!acc.privateKey) return Promise.resolve('');
+  var cacheKey = acc.address || acc.privateKey;
+  if (idlPkDeriveCache[cacheKey]) return idlPkDeriveCache[cacheKey];
+  var p = fetch('/api/util/key/derive-public', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ privateKey: acc.privateKey.replace(/\s/g, ''), keyType: 'secp256k1' })
+  }).then(function (r) { return r.json(); }).then(function (resp) {
+    if (resp && resp.success && resp.data && resp.data.publicKey) {
+      acc.publicKey = resp.data.publicKey;
+      return acc.publicKey;
+    }
+    return '';
+  }).catch(function () { return ''; });
+  idlPkDeriveCache[cacheKey] = p;
+  return p;
+}
+
+// 探测账户是否已上链，返回应使用的签名模式对象。
+// 已上链 → {type:'multisig', index:N}（签名者列表模式）；未上链/探测失败 → {type:'pubkey'}。
+function idlProbeSigMode(addr, pk) {
+  var a = (addr || '').trim();
+  var k = (pk || '').trim();
+  if (!a) return Promise.resolve({ type: 'pubkey', publicKey: k });
+  var cacheKey = a + '|' + k;
+  var cached = idlSigModeCache[cacheKey];
+  if (cached && (Date.now() - cached.ts) < IDL_SIG_MODE_TTL) return Promise.resolve(cached.mode);
+  return fetch('/api/accounts/' + encodeURIComponent(a))
+    .then(function (r) { return r.json(); })
+    .then(function (resp) {
+      var d = resp && resp.data;
+      var keys = d ? (d.PublicKeysBs58 || d.publicKeysBs58) : null;
+      var out;
+      if (resp && resp.success && keys && keys.length > 0) {
+        var idx = k ? keys.indexOf(k) : -1;
+        out = { type: 'multisig', index: idx < 0 ? 0 : idx, publicKey: k || keys[0], onchain: true };
+      } else {
+        out = { type: 'pubkey', publicKey: k, onchain: false };
+      }
+      idlSigModeCache[cacheKey] = { ts: Date.now(), mode: out };
+      return out;
+    })
+    .catch(function () { return { type: 'pubkey', publicKey: k }; });
+}
+
+// 签名模式 JSON 文本（对齐 API 的 signatureMode 字段格式）。
+function idlSigModeText(mode) {
+  if (mode && mode.type === 'multisig') {
+    return '{\n  "type": "multisig",\n  "index": ' + mode.index + ',\n  "publicKey": "' + (mode.publicKey || '') + '"\n}';
+  }
+  return '{\n  "type": "pubkey",\n  "publicKey": "' + ((mode && mode.publicKey) || 'base58公钥') + '"\n}';
+}
+
+function idlSigModeHintText(mode, addr) {
+  if (!addr) {
+    return '账户已上链时必须用「签名者列表模式」（index 取该账户 signers 位图位置，单密钥账户为 0）。';
+  }
+  if (mode && mode.type === 'multisig') {
+    return '账户已上链 → 签名者列表模式：SigBit = 1<<' + mode.index + '，不带公钥。（链端错误 285 只允许这种写法）';
+  }
+  return '账户尚未上链 → 公钥模式可用（首笔交易）。账户注册后需改用签名者列表模式。';
+}
+
+// 签名模式输入行：textarea + 两个手动切换按钮 + 自动探测提示。
+// 返回的 DOM 节点带 idlSetAddress(addr) 方法，供外部（payerAddress / ixAddress 变化时）重新探测。
+function buildIDLSigModeRow(fieldName, label, addr, pk) {
+  var row = el('div', { class: 'param-row' });
+  var head = el('div', { class: 'param-label' });
+  head.appendChild(el('span', { text: label }));
+  var btnPub = el('button', { type: 'button', class: 'base58-toggle-btn', text: '⇄ 公钥模式', title: 'SigBit=0 且携带公钥；仅账户未上链时链端接受' });
+  var btnList = el('button', { type: 'button', class: 'base58-toggle-btn', text: '⇄ 签名者列表模式', title: 'SigBit=1<<index 且不带公钥；账户已上链时必须使用' });
+  head.appendChild(btnPub);
+  head.appendChild(btnList);
+  head.style.display = 'flex';
+  head.style.alignItems = 'center';
+  head.style.gap = '6px';
+  row.appendChild(head);
+
+  var ta = el('textarea', { class: 'body-editor idl-field-editor', spellcheck: 'false' });
+  ta.setAttribute('data-field', fieldName);
+  ta.value = idlSigModeText({ type: 'pubkey', publicKey: pk });
+  ta.addEventListener('input', function () { ta.dataset.userEdited = '1'; });
+  row.appendChild(ta);
+
+  var hint = el('div', { class: 'idl-signer-hint-box', text: '正在检测账户链上状态…' });
+  row.appendChild(hint);
+
+  var curAddr = (addr || '').trim();
+  var curPk = (pk || '').trim();
+
+  function apply(mode, pinned) {
+    ta.value = idlSigModeText(mode);
+    ta.dataset.userEdited = pinned ? '1' : '';
+  }
+  function refresh() {
+    return idlProbeSigMode(curAddr, curPk).then(function (mode) {
+      if (!ta.dataset.userEdited) apply(mode, false);
+      hint.textContent = idlSigModeHintText(mode, curAddr);
+      return mode;
+    });
+  }
+
+  btnPub.addEventListener('click', function () {
+    apply({ type: 'pubkey', publicKey: curPk || (getCurrentAccount() || {}).publicKey || '' }, true);
+    hint.textContent = '已切到公钥模式：仅当该账户尚未上链时链端才接受。';
+  });
+  btnList.addEventListener('click', function () {
+    var pkNow = curPk || (getCurrentAccount() || {}).publicKey || '';
+    idlProbeSigMode(curAddr, pkNow).then(function (m) {
+      var idx = (m.type === 'multisig') ? m.index : 0;
+      apply({ type: 'multisig', index: idx, publicKey: pkNow || m.publicKey || '' }, true);
+      hint.textContent = '已切到签名者列表模式：SigBit = 1<<' + idx + '，不带公钥。若该账户是多签，index 请按链上 signers 位图调整。';
+    });
+  });
+
+  row.idlSetAddress = function (nextAddr, nextPk) {
+    curAddr = (nextAddr || '').trim();
+    if (nextPk !== undefined) curPk = (nextPk || '').trim();
+    return refresh();
+  };
+
+  if (curAddr) {
+    idlAccountPublicKey(getCurrentAccount()).then(function (pkNow) {
+      if (pkNow && !curPk) curPk = pkNow;
+      return refresh();
+    }).catch(function () { hint.textContent = idlSigModeHintText(null, curAddr); });
+  } else {
+    hint.textContent = idlSigModeHintText(null, '');
+  }
+
+  return row;
+}
+
+// multi_signer 模式下 signers 数组里的单个签名者条目模板。
+function buildIDLSignerEntryTpl(addr, sk, mode, isSubmit) {
+  return '{\n  "address": "' + (addr || 'base58地址') + '",\n'
+    + (isSubmit ? '  "privateKey": "' + (sk || 'hex或base58私钥') + '",\n' : '')
+    + '  "signatureMode": ' + idlSigModeText(mode).replace(/\n/g, '\n  ') + '\n}';
+}
+
 function renderIDLPaymentFields() {
   var container = $('idlPaymentFields');
   if (!container) return;
@@ -4645,35 +4815,28 @@ function renderIDLPaymentFields() {
   var prefilledAddr = activeAcc ? activeAcc.address : '';
   var prefilledSk = activeAcc ? activeAcc.privateKey : '';
   var prefilledPk = (activeAcc && activeAcc.publicKey) ? activeAcc.publicKey : '';
-  var sigModeTpl = prefilledPk
-    ? '{\n  "type": "pubkey",\n  "publicKey": "' + prefilledPk + '"\n}'
-    : '{\n  "type": "pubkey",\n  "publicKey": "base58公钥"\n}';
-  // 若账户只有私钥而无公钥，则异步派生公钥并回填 signatureMode 字段
-  if (activeAcc && !prefilledPk && prefilledSk) {
-    fetch('/api/util/key/derive-public', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ privateKey: prefilledSk.replace(/\s/g, ''), keyType: 'secp256k1' })
-    }).then(function (r) { return r.json(); }).then(function (resp) {
-      if (resp && resp.success && resp.data && resp.data.publicKey) {
-        var pk = resp.data.publicKey;
-        activeAcc.publicKey = pk;
-        var sigNode = document.querySelector('#idlPaymentFields [data-field="signatureMode"]');
-        if (sigNode) sigNode.value = '{\n  "type": "pubkey",\n  "publicKey": "' + pk + '"\n}';
-      }
-    }).catch(function () {});
-  }
-  var signerEntryTpl = '{\n  "address": "' + (prefilledAddr || 'base58地址') + '",\n'
-    + (isSubmit ? '  "privateKey": "' + (prefilledSk || 'hex或base58私钥') + '",\n' : '')
-    + '  "signatureMode": ' + sigModeTpl.replace(/\n/g, '\n  ') + '\n}';
+  // 先按公钥模式渲染占位值；账户链上状态探测完成后由 buildIDLSigModeRow 自动改写
+  var defaultMode = { type: 'pubkey', publicKey: prefilledPk };
 
   // 通用：payer/owner 地址（优先用 signerLookups 推导签名角色，回退实例支付配置）
   var examplePay = state.currentIdlApp && state.currentIdlMethod
     ? IDL_EXAMPLE_PAYMENT[state.currentIdlApp + '.' + state.currentIdlMethod.name]
     : null;
   if (pm === 'multi_signer') {
-    container.appendChild(buildIDLFieldRow('signers', 'signers (JSON 数组)', '[\n' + signerEntryTpl + '\n]', 'textarea', 'data-field', 'signers'));
+    container.appendChild(buildIDLFieldRow('signers', 'signers (JSON 数组)', '[\n' + buildIDLSignerEntryTpl(prefilledAddr, prefilledSk, defaultMode, isSubmit) + '\n]', 'textarea', 'data-field', 'signers'));
     container.appendChild(buildIDLFieldRow('gasPayer', 'gasPayer (JSON，可选)', '', 'textarea', 'data-field', 'gasPayer'));
+    // signers 里的 signatureMode 同样受错误 285 约束：账户已上链时自动换成签名者列表模式
+    var signersNode = container.querySelector('[data-field="signers"]');
+    if (signersNode) {
+      signersNode.addEventListener('input', function () { signersNode.dataset.userEdited = '1'; });
+      idlAccountPublicKey(activeAcc).then(function (pkNow) {
+        return idlProbeSigMode(prefilledAddr, pkNow);
+      }).then(function (m) {
+        if (!signersNode.dataset.userEdited) {
+          signersNode.value = '[\n' + buildIDLSignerEntryTpl(prefilledAddr, prefilledSk, m, isSubmit) + '\n]';
+        }
+      }).catch(function () {});
+    }
     return;
   }
 
@@ -4702,10 +4865,20 @@ function renderIDLPaymentFields() {
     }
   }
 
-  // signatureMode（JSON）— 若活跃账户有 publicKey 则自动预填
-  container.appendChild(buildIDLFieldRow('signatureMode', 'signatureMode (JSON)', sigModeTpl, 'textarea', 'data-field', 'signatureMode'));
+  // signatureMode（JSON）— 自动探测账户是否已上链，选择公钥模式 / 签名者列表模式
+  var sigRow = buildIDLSigModeRow('signatureMode', 'signatureMode (JSON)', prefilledAddr, prefilledPk);
+  container.appendChild(sigRow);
+  var payerNode = container.querySelector('[data-field="payerAddress"]');
+  if (payerNode) {
+    payerNode.addEventListener('input', idlDebounce(function () { sigRow.idlSetAddress(payerNode.value.trim()); }, 400));
+  }
   if (modeDef && modeDef.needIx) {
-    container.appendChild(buildIDLFieldRow('ixSignatureMode', 'ixSignatureMode (JSON)', '{\n  "type": "pubkey",\n  "publicKey": "base58公钥"\n}', 'textarea', 'data-field', 'ixSignatureMode'));
+    var ixSigRow = buildIDLSigModeRow('ixSignatureMode', 'ixSignatureMode (JSON)', '', '');
+    container.appendChild(ixSigRow);
+    var ixAddrNode = container.querySelector('[data-field="ixAddress"]');
+    if (ixAddrNode) {
+      ixAddrNode.addEventListener('input', idlDebounce(function () { ixSigRow.idlSetAddress(ixAddrNode.value.trim()); }, 400));
+    }
   }
 }
 
