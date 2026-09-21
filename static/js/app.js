@@ -4306,6 +4306,18 @@ function buildIDLBatchCard(item, i) {
   return card;
 }
 
+// 参数名像"签名者/账户"的地址参数（仅在指令未显式声明 signer 时用于兜底预填活跃账户）。
+var IDL_SIGNER_LIKE_NAME_RE = /^(from|owner|holder|claimer|sender|payer|spender|subject|admin|freezer|to|recipient|account)$/i;
+
+// 该指令是否在 IDL 里显式声明了 signer/any_signer 参数。
+function idlInstructionHasExplicitSigner(appName, methodName) {
+  var app = state.idlMetadata && state.idlMetadata.find(function (a) { return a.name === appName; });
+  if (!app) return false;
+  var ix = app.instructions && app.instructions.find(function (i) { return i.name === methodName; });
+  if (!ix || !ix.args) return false;
+  return ix.args.some(function (a) { return a.role === 'signer' || a.role === 'any_signer'; });
+}
+
 function buildIDLArgInput(arg, appName, methodName) {
   var typeDef = idlGetTypeDef(appName, arg.type);
   var paramDesc = arg.description;
@@ -4343,8 +4355,14 @@ function buildIDLArgInput(arg, appName, methodName) {
       //    预填活跃账户地址，避免示例假地址导致链端报 requires signer。
       // 2) 资源地址类参数（如 token 等代币/合约资源地址）：优先示例值（如 MIL token 地址），
       //    绝不预填账户地址——否则 BalanceOf.token 会被填成账户自己，链端报"账户不存在"。
+      //
+      // 注意：参数名兜底只在指令**没有**显式 signer 参数时生效。若 IDL 已声明签名者
+      //（如 sftoken.CreateSft 的 sft、token.Transfer 的 from），说明该指令的签名职责已有明确
+      //  归属，此时把同为 Address 的 owner/to/spender 也填成活跃账户，会让两个地址取值相同，
+      //  链端直接拒绝，例如 sftoken.CreateSft 会报
+      //  "Invalid SFT parameters: sft resource account must differ from owner"。
       var isSignerLike = arg.role === 'signer' || arg.role === 'any_signer'
-        || /^(from|owner|holder|claimer|sender|payer|spender|subject|admin|freezer|to|recipient|account)$/i.test(arg.name);
+        || (!ixHasExplicitSigner && IDL_SIGNER_LIKE_NAME_RE.test(arg.name));
       if (isSignerLike) {
         val = activeAddr || (hasExample ? String(exampleVal) : defaultVal);
       } else {
@@ -4358,6 +4376,12 @@ function buildIDLArgInput(arg, appName, methodName) {
           val = 'M11on1111111111111111111111';
         } else {
           val = defaultVal;
+        }
+        // 保险：该指令已有显式签名者时，名字像账户的 input 地址不得与签名者预填的活跃账户
+        // 同值，否则链端必然拒绝（资源账户与持有者/来源不能是同一个地址）。清空交由用户填写。
+        if (ixHasExplicitSigner && activeAddr && val === activeAddr
+          && IDL_SIGNER_LIKE_NAME_RE.test(arg.name)) {
+          val = '';
         }
       }
     } else if (arg.type === 'PublicKey') {
