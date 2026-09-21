@@ -2031,6 +2031,21 @@ body::before {
   height: 20px;
 }
 
+/* 左栏方法项：批量打包模式下"已加入批次 N 次"角标（同一方法允许重复加入） */
+.idl-method-item .idl-batch-count {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.14);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  color: var(--accent-cyan);
+  font-family: var(--mono-font);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
 /* app 分组内的 entry/view 小标签 */
 .idl-kind-label {
   font-size: 11px;
@@ -3169,6 +3184,15 @@ body::before {
   font-size: 13px;
   font-weight: 600;
   word-break: break-all;
+}
+
+/* 同一方法被重复加入批次时，卡片标题上的第几个标注 */
+.idl-batch-dup {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent-cyan);
+  opacity: 0.85;
 }
 
 .idl-batch-tools {

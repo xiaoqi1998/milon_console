@@ -377,7 +377,8 @@ const state = {
   currentIdlMethod: null,
   idlExecMode: 'simulate', // entry 方法：simulate | submit
   idlBatchMode: false,     // IDL 批量打包模式（多指令打包成单笔交易）
-  idlBatchItems: [],       // 批次指令列表 [{appName, methodName}]
+  idlBatchItems: [],       // 批次指令列表 [{appName, methodName, uid}]，同一方法可重复加入
+  idlBatchSeq: 0,          // 批次项 uid 自增序列（用于区分重复方法并承载参数快照）
   idlActiveRespTab: 'idl-json',
   idlLastResponse: null,
   idlCollapsedApps: {}, // appName -> true 表示折叠；默认全部折叠
@@ -4046,10 +4047,19 @@ function buildIDLMethodItem(app, ix) {
   var isActive = state.currentIdlMethod &&
     state.currentIdlApp === app.name &&
     state.currentIdlMethod.name === ix.name;
+  // 批量打包模式下显示该方法已被加入批次的次数（同一方法允许重复加入）
+  var batchCount = 0;
+  if (state.idlBatchMode) {
+    batchCount = state.idlBatchItems.filter(function (it) {
+      return it.appName === app.name && it.methodName === ix.name;
+    }).length;
+  }
   return el(
     'div',
     {
-      class: 'endpoint-item idl-method-item' + (isActive ? ' active' : ''),
+      class: 'endpoint-item idl-method-item' + (isActive ? ' active' : '') + (batchCount ? ' in-batch' : ''),
+      'data-idlapp': app.name,
+      'data-idlmethod': ix.name,
       onclick: function () { selectIDLMethod(app.name, ix.name); },
     },
     el('span', { class: 'idl-kind-badge ' + ix.kind, text: ix.kind }),
@@ -4059,7 +4069,8 @@ function buildIDLMethodItem(app, ix) {
       { class: 'endpoint-text' },
       el('span', { class: 'endpoint-name', text: ix.name }),
       el('span', { class: 'endpoint-desc', text: ix.handler + (ix.sponsor ? ' · sponsored' : '') })
-    )
+    ),
+    (batchCount ? el('span', { class: 'idl-batch-count', title: '已加入批次 ' + batchCount + ' 次（可重复添加）', text: '×' + batchCount }) : null)
   );
 }
 
@@ -4200,25 +4211,69 @@ function setIDLBatchMode(mode) {
   } else if (state.currentIdlMethod) {
     renderIDLForm(state.currentIdlMethod);
   }
+  refreshAllIDLBatchCountBadges();
 }
 
-// 向批次追加一个方法（已存在则聚焦对应卡片）
-function addIDLBatchItem(appName, methodName) {
-  var idx = state.idlBatchItems.findIndex(function (it) {
-    return it.appName === appName && it.methodName === methodName;
-  });
-  if (idx >= 0) {
-    renderIDLBatchForm(idx);
+// 就地刷新左侧某个方法的"已加入批次 N 次"角标。
+// 注意：不能调用 renderIDLAppList() 整树重建，否则每加一条指令侧栏滚动位置都会丢。
+function updateIDLBatchCountBadge(appName, methodName) {
+  if (!appName || !methodName) return;
+  var node = document.querySelector(
+    '#idlTree .idl-method-item[data-idlapp="' + appName + '"][data-idlmethod="' + methodName + '"]'
+  );
+  if (!node) return;
+  var old = node.querySelector('.idl-batch-count');
+  var count = 0;
+  if (state.idlBatchMode) {
+    count = state.idlBatchItems.filter(function (it) {
+      return it.appName === appName && it.methodName === methodName;
+    }).length;
+  }
+  if (!count) {
+    if (old) old.parentNode.removeChild(old);
+    node.classList.remove('in-batch');
     return;
   }
-  state.idlBatchItems.push({ appName: appName, methodName: methodName });
+  node.classList.add('in-batch');
+  if (!old) {
+    old = el('span', { class: 'idl-batch-count' });
+    node.appendChild(old);
+  }
+  old.textContent = '×' + count;
+  old.title = '已加入批次 ' + count + ' 次（可重复添加）';
+}
+
+// 全量就地刷新角标（进入/退出批量模式时用）
+function refreshAllIDLBatchCountBadges() {
+  var nodes = document.querySelectorAll('#idlTree .idl-method-item');
+  for (var i = 0; i < nodes.length; i++) {
+    updateIDLBatchCountBadge(nodes[i].getAttribute('data-idlapp'), nodes[i].getAttribute('data-idlmethod'));
+  }
+}
+
+// 生成批次项 uid：同一个方法可以重复加入批次，靠 uid 区分卡片并承载各自的参数快照。
+function nextIDLBatchUid() {
+  state.idlBatchSeq = (state.idlBatchSeq || 0) + 1;
+  return state.idlBatchSeq;
+}
+
+// 向批次追加一个方法（同一方法可重复加入，各卡片独立填参）
+function addIDLBatchItem(appName, methodName) {
+  state.idlBatchItems.push({
+    appName: appName,
+    methodName: methodName,
+    uid: nextIDLBatchUid(),
+  });
   renderIDLBatchForm(state.idlBatchItems.length - 1);
+  updateIDLBatchCountBadge(appName, methodName); // 刷新"已加入 N 次"角标
   if (window.innerWidth <= 768) $('idlSidebar').classList.remove('open');
 }
 
 function removeIDLBatchItem(i) {
+  var removed = state.idlBatchItems[i];
   state.idlBatchItems.splice(i, 1);
   renderIDLBatchForm();
+  if (removed) updateIDLBatchCountBadge(removed.appName, removed.methodName);
 }
 
 function moveIDLBatchItem(i, dir) {
@@ -4230,9 +4285,30 @@ function moveIDLBatchItem(i, dir) {
   renderIDLBatchForm(j);
 }
 
+// 读取当前批次卡片里已填写的参数，key 为批次项 uid。
+// renderIDLBatchForm 会整块重建 DOM（innerHTML=''），必须在重建前抓取快照、重建后回填，
+// 否则添加/删除/排序任意一张卡片都会把其它卡片里已输入的参数冲成默认值。
+function snapshotIDLBatchValues() {
+  var map = {};
+  var cards = document.querySelectorAll('#idlEditorBody .idl-batch-card');
+  for (var ci = 0; ci < cards.length; ci++) {
+    var uid = cards[ci].getAttribute('data-batchuid');
+    if (!uid) continue;
+    var vals = {};
+    var inputs = cards[ci].querySelectorAll('[data-argname]');
+    for (var ii = 0; ii < inputs.length; ii++) {
+      vals[inputs[ii].getAttribute('data-argname')] = inputs[ii].value;
+    }
+    map[uid] = vals;
+  }
+  return map;
+}
+
 // 渲染批量打包表单：指令卡片列表 + 共享执行配置
-function renderIDLBatchForm(focusIdx) {
+// opts.reset = true 时忽略快照、全部回落默认值（用于"重置参数"）
+function renderIDLBatchForm(focusIdx, opts) {
   var body = $('idlEditorBody');
+  var restore = (opts && opts.reset) ? null : snapshotIDLBatchValues();
   body.innerHTML = '';
 
   if (!state.idlBatchItems.length) {
@@ -4242,10 +4318,10 @@ function renderIDLBatchForm(focusIdx) {
         el('span', { class: 'empty-icon', text: '🧩' })
       ),
       el('h3', { text: '批量打包模式' }),
-      el('p', { text: '在左侧按 app 分组点击方法，可逐个加入批次，\n最终打包成单笔交易原子执行（全部成功或全部失败）' }),
+      el('p', { text: '在左侧按 app 分组点击方法，可逐个加入批次（同一方法可重复加入，各自独立填参），\n最终打包成单笔交易原子执行（全部成功或全部失败）' }),
       el('div', { class: 'empty-hint' },
         el('span', { text: '提示' }),
-        el('span', { text: '指令按顺序执行，卡片上的 ↑↓ 可调整顺序' })
+        el('span', { text: '指令按顺序执行，卡片上的 ↑↓ 可调整顺序；标题上的「第 k/n 个」用于区分重复方法' })
       )
     );
     body.appendChild(empty);
@@ -4254,7 +4330,9 @@ function renderIDLBatchForm(focusIdx) {
 
   // 指令卡片区
   state.idlBatchItems.forEach(function (item, i) {
-    body.appendChild(buildIDLBatchCard(item, i));
+    if (item.uid === undefined || item.uid === null) item.uid = nextIDLBatchUid();
+    var preset = restore ? restore[String(item.uid)] : null;
+    body.appendChild(buildIDLBatchCard(item, i, preset));
   });
 
   // 共享执行配置（paymentMode / payer / 签名等，与单指令一致）
@@ -4272,14 +4350,31 @@ function renderIDLBatchForm(focusIdx) {
 }
 
 // 渲染单张指令卡片（参数表单复用 buildIDLArgInput）
-function buildIDLBatchCard(item, i) {
+// preset: 重建表单时从快照恢复的参数原始值 {argName: 原始字符串}，无则用示例/默认值
+function buildIDLBatchCard(item, i, preset) {
   var app = state.idlMetadata.find(function (a) { return a.name === item.appName; });
   var ix = app && app.instructions.find(function (x) { return x.name === item.methodName; });
 
-  var card = el('div', { class: 'idl-batch-card', 'data-batchix': String(i) });
+  var card = el('div', {
+    class: 'idl-batch-card',
+    'data-batchix': String(i),
+    'data-batchuid': String(item.uid),
+  });
+  // 同一方法被重复加入时，标题上标注第几个，便于区分各张卡片的参数
+  var dupes = state.idlBatchItems.filter(function (it) {
+    return it.appName === item.appName && it.methodName === item.methodName;
+  });
+  var dupTag = '';
+  if (dupes.length > 1) {
+    var ord = dupes.indexOf(item) + 1;
+    dupTag = ' · 第 ' + ord + '/' + dupes.length + ' 个';
+  }
   var header = el('div', { class: 'idl-batch-card-header' },
     el('span', { class: 'idl-batch-idx', text: '#' + (i + 1) }),
-    el('span', { class: 'idl-batch-title', text: item.appName + '::' + item.methodName }),
+    el('span', { class: 'idl-batch-title' },
+      el('span', { text: item.appName + '::' + item.methodName }),
+      (dupTag ? el('span', { class: 'idl-batch-dup', text: dupTag }) : null)
+    ),
     el('span', { class: 'idl-batch-tools' },
       el('button', { type: 'button', class: 'btn btn-ghost btn-sm', title: '上移', onclick: function () { moveIDLBatchItem(i, -1); } }, '↑'),
       el('button', { type: 'button', class: 'btn btn-ghost btn-sm', title: '下移', onclick: function () { moveIDLBatchItem(i, 1); } }, '↓'),
@@ -4298,7 +4393,9 @@ function buildIDLBatchCard(item, i) {
   });
   var argSec = el('div', { class: 'idl-batch-args' });
   if (inputArgs.length) {
-    inputArgs.forEach(function (a) { argSec.appendChild(buildIDLArgInput(a, item.appName, ix.name)); });
+    inputArgs.forEach(function (a) {
+      argSec.appendChild(buildIDLArgInput(a, item.appName, ix.name, preset ? preset[a.name] : undefined));
+    });
   } else {
     argSec.appendChild(el('div', { class: 'idl-batch-noargs', text: '（无参数）' }));
   }
@@ -4318,8 +4415,11 @@ function idlInstructionHasExplicitSigner(appName, methodName) {
   return ix.args.some(function (a) { return a.role === 'signer' || a.role === 'any_signer'; });
 }
 
-function buildIDLArgInput(arg, appName, methodName) {
+// presetRaw: 批量打包重建表单时回填的历史输入值（原始字符串），undefined 表示无回填、走默认/示例值
+function buildIDLArgInput(arg, appName, methodName, presetRaw) {
   var typeDef = idlGetTypeDef(appName, arg.type);
+  // 该指令是否已显式声明签名者（决定地址类参数是否可用"参数名兜底预填活跃账户"）
+  var ixHasExplicitSigner = idlInstructionHasExplicitSigner(appName, methodName);
   var paramDesc = arg.description;
   var row = el('div', { class: 'param-row idl-arg-row' },
     el('label', { class: 'param-label' },
@@ -4331,13 +4431,13 @@ function buildIDLArgInput(arg, appName, methodName) {
 
   // 枚举类型：渲染为下拉选择
   if (typeDef && typeDef.kind === 'enum') {
-    row.appendChild(buildIDLEnumInput(arg, appName, methodName, typeDef));
+    row.appendChild(buildIDLEnumInput(arg, appName, methodName, typeDef, presetRaw));
     return row;
   }
 
   // struct 类型：渲染为字段级子表单
   if (typeDef && typeDef.kind === 'struct') {
-    row.appendChild(buildIDLStructInput(arg, appName, methodName, typeDef));
+    row.appendChild(buildIDLStructInput(arg, appName, methodName, typeDef, presetRaw));
     return row;
   }
 
@@ -4399,6 +4499,8 @@ function buildIDLArgInput(arg, appName, methodName) {
         val = defaultVal;
       }
     }
+    // 批量打包重建时的回填值优先于示例/默认值
+    if (presetRaw !== undefined && presetRaw !== null) val = presetRaw;
     var inp = el('input', {
       class: 'param-input',
       'data-argname': arg.name,
@@ -4433,6 +4535,8 @@ function buildIDLArgInput(arg, appName, methodName) {
     spellcheck: 'false',
     placeholder: (genericHint ? genericHint + '；' : '') + 'JSON，如 ' + defaultComplex,
   });
+  // 批量打包重建时的回填值优先于示例/默认值
+  if (presetRaw !== undefined && presetRaw !== null) complexVal = presetRaw;
   ta.value = complexVal;
   row.appendChild(ta);
   return row;
@@ -4469,7 +4573,7 @@ function idlConstantForArg(appName, arg) {
 }
 
 // 枚举参数：渲染为 select，选项值为合法的 JSON 编码（unit variant 用字符串，带字段 variant 用对象）。
-function buildIDLEnumInput(arg, appName, methodName, typeDef) {
+function buildIDLEnumInput(arg, appName, methodName, typeDef, presetRaw) {
   var exampleVal = idlArgExampleValue(appName, methodName, arg);
   var selectedVariant = '';
   if (typeof exampleVal === 'string') {
@@ -4508,26 +4612,65 @@ function buildIDLEnumInput(arg, appName, methodName, typeDef) {
       if (o.textContent === selectedVariant) { sel.selectedIndex = i; break; }
     }
   }
+  // 批量打包重建时的回填值优先：按原始 option.value 精确匹配，失败再按变体名匹配
+  if (presetRaw) {
+    var matched = false;
+    for (var pi = 0; pi < sel.options.length; pi++) {
+      if (sel.options[pi].value === presetRaw) { sel.selectedIndex = pi; matched = true; break; }
+    }
+    if (!matched) {
+      var presetName = '';
+      try {
+        var pj = JSON.parse(presetRaw);
+        presetName = (typeof pj === 'string') ? pj : ((pj && pj.variant) || '');
+      } catch (e) { presetName = ''; }
+      if (presetName) {
+        for (var pj2 = 0; pj2 < sel.options.length; pj2++) {
+          if (sel.options[pj2].textContent === presetName) { sel.selectedIndex = pj2; break; }
+        }
+      }
+    }
+  }
   return sel;
 }
 
 // struct 参数：渲染为字段级子表单，隐藏 textarea 保存完整 JSON，字段变化时同步。
-function buildIDLStructInput(arg, appName, methodName, typeDef) {
+// presetRaw: 批量打包重建时回填的完整 struct JSON 字符串；有值时整段字段级子表单按它还原。
+function buildIDLStructInput(arg, appName, methodName, typeDef, presetRaw) {
   var container = el('div', { class: 'idl-struct-input' });
 
-  // 初始对象：优先示例值，否则按字段类型生成默认值
+  // 回填值（来自批次卡片快照）优先，其次示例值，最后按字段类型生成默认值
+  var presetObj = null;
+  if (presetRaw !== undefined && presetRaw !== null && presetRaw !== '') {
+    try {
+      var parsedPreset = JSON.parse(presetRaw);
+      if (parsedPreset && typeof parsedPreset === 'object' && !Array.isArray(parsedPreset)) {
+        presetObj = parsedPreset;
+      }
+    } catch (e) { presetObj = null; }
+  }
+
   var exampleVal = idlArgExampleValue(appName, methodName, arg);
-  var initial = (exampleVal && typeof exampleVal === 'object' && !Array.isArray(exampleVal))
-    ? exampleVal
-    : {};
-  if (!exampleVal || typeof exampleVal !== 'object') {
-    typeDef.fields.forEach(function (f) { initial[f.name] = idlDefaultForType(appName, f.type); });
+  var initial;
+  if (presetObj) {
+    initial = presetObj;
+    // 回填对象若缺字段，补默认值，避免字段级子表单出现空值/漏字段
+    typeDef.fields.forEach(function (f) {
+      if (initial[f.name] === undefined) initial[f.name] = idlDefaultForType(appName, f.type);
+    });
+  } else {
+    initial = (exampleVal && typeof exampleVal === 'object' && !Array.isArray(exampleVal))
+      ? exampleVal
+      : {};
+    if (!exampleVal || typeof exampleVal !== 'object') {
+      typeDef.fields.forEach(function (f) { initial[f.name] = idlDefaultForType(appName, f.type); });
+    }
+    if (Object.keys(initial).length === 0) {
+      typeDef.fields.forEach(function (f) { initial[f.name] = idlDefaultForType(appName, f.type); });
+    }
+    // struct 子表单同样注入当前活跃账户的真实公钥，替换示例里的假/占位公钥（回填时不覆盖用户值）
+    initial = idlInjectAccountPublicKey(initial, getCurrentAccount());
   }
-  if (Object.keys(initial).length === 0) {
-    typeDef.fields.forEach(function (f) { initial[f.name] = idlDefaultForType(appName, f.type); });
-  }
-  // struct 子表单同样注入当前活跃账户的真实公钥，替换示例里的假/占位公钥
-  initial = idlInjectAccountPublicKey(initial, getCurrentAccount());
 
   // 隐藏 textarea 承载完整 JSON，供 buildIDLRequest 统一收集
   var hidden = el('textarea', {
@@ -5508,7 +5651,8 @@ function downloadIDLResponse() {
 
 function resetIDLForm() {
   if (state.idlBatchMode) {
-    renderIDLBatchForm();
+    // 重置：忽略快照，全部卡片回到示例/默认值
+    renderIDLBatchForm(undefined, { reset: true });
     showToast('参数已重置', 'success');
     return;
   }
