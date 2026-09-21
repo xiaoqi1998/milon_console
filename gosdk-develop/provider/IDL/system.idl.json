@@ -36,6 +36,36 @@
           "name": "max_validator_set_size",
           "role": "input",
           "type": "u64"
+        },
+        {
+          "name": "group_threshold_ratio_num",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "group_threshold_ratio_den",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "block_threshold_ratio_num",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "block_threshold_ratio_den",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "batch_committee_ratio_num",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "batch_committee_ratio_den",
+          "role": "input",
+          "type": "u32"
         }
       ],
       "discriminator": 37696,
@@ -86,7 +116,7 @@
         {
           "name": "validator_set_seed",
           "role": "input",
-          "type": "Hash32"
+          "type": "B256"
         }
       ],
       "discriminator": 55212,
@@ -107,105 +137,6 @@
       "handler": "commit_validator_set",
       "kind": "entry",
       "name": "CommitValidatorSet"
-    },
-    {
-      "args": [
-        {
-          "name": "token",
-          "role": "input",
-          "type": "Address"
-        }
-      ],
-      "discriminator": 31505,
-      "handler": "configure_staking_token",
-      "kind": "entry",
-      "name": "ConfigureStakingToken"
-    },
-    {
-      "args": [
-        {
-          "name": "reward_per_validator",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 59536,
-      "handler": "initialize_staking_epoch_config",
-      "kind": "entry",
-      "name": "InitializeStakingEpochConfig"
-    },
-    {
-      "args": [
-        {
-          "name": "funder",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "amount",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 32864,
-      "handler": "fund_staking_reward_treasury",
-      "kind": "entry",
-      "name": "FundStakingRewardTreasury"
-    },
-    {
-      "args": [
-        {
-          "name": "operator",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "validator",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "consensus_account",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "consensus_pubkey",
-          "role": "input",
-          "type": "bytes"
-        },
-        {
-          "name": "bls_pubkey",
-          "role": "input",
-          "type": "bytes"
-        },
-        {
-          "name": "ed25519_pubkey",
-          "role": "input",
-          "type": "bytes"
-        },
-        {
-          "name": "commission_rate_bps",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "operator_stake",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 43888,
-      "handler": "bootstrap_staking_validator",
-      "kind": "entry",
-      "name": "BootstrapStakingValidator"
-    },
-    {
-      "args": [],
-      "discriminator": 15870,
-      "handler": "bootstrap_staking_epoch_zero",
-      "kind": "entry",
-      "name": "BootstrapStakingEpochZero"
     },
     {
       "args": [],
@@ -252,6 +183,11 @@
       "kind": "builtin",
       "name": "bytes",
       "typeTag": 10405529814227927951
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
     },
     {
       "kind": "builtin",

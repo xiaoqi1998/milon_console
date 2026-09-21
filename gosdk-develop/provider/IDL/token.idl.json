@@ -698,13 +698,6 @@
       }
     },
     {
-      "args": [],
-      "discriminator": 1300,
-      "handler": "bootstrap_genesis",
-      "kind": "entry",
-      "name": "BootstrapGenesis"
-    },
-    {
       "args": [
         {
           "name": "claimer",

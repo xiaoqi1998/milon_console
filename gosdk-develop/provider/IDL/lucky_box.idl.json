@@ -90,52 +90,6 @@
     {
       "args": [
         {
-          "name": "creator",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "box_id",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "collection",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "seed",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "total_amount",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "claim_count",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "rules",
-          "role": "input",
-          "type": "option<BoxRules>"
-        }
-      ],
-      "discriminator": 13669,
-      "handler": "create_nft",
-      "kind": "entry",
-      "name": "CreateNft",
-      "returns": {
-        "type": "u64"
-      }
-    },
-    {
-      "args": [
-        {
           "name": "claimant",
           "role": "signer",
           "type": "Signer"
@@ -230,20 +184,6 @@
           ],
           "kind": "struct",
           "name": "Token"
-        },
-        {
-          "fields": [
-            {
-              "name": "collection",
-              "type": "Address"
-            },
-            {
-              "name": "seed",
-              "type": "u64"
-            }
-          ],
-          "kind": "struct",
-          "name": "Nft"
         }
       ]
     },
@@ -478,12 +418,6 @@
     },
     {
       "code": 2319,
-      "message": "Transparent NftError",
-      "name": "NftError",
-      "transparent": true
-    },
-    {
-      "code": 2320,
       "message": "Transparent ContextError",
       "name": "ContextError",
       "transparent": true

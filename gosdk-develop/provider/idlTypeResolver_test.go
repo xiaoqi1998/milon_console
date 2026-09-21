@@ -13,7 +13,7 @@ func TestIDLTypeResolver_DecodeResource(t *testing.T) {
 
 	resolver := &IDLTypeResolver{Providers: map[string]*Provider{"token": pd}}
 
-	// token::Metadata struct: name(String) + symbol(String) + decimals(u8) + icon(String)
+	// token::Metadata struct: name(String) + symbol(String) + decimals(u8) + icon(String) + uri(String)
 	metadata, ok := pd.IDLTypeByName["Metadata"]
 	assert.True(t, ok)
 
@@ -22,6 +22,7 @@ func TestIDLTypeResolver_DecodeResource(t *testing.T) {
 	assert.NoError(t, serializer.SerializeStr("TST"))
 	assert.NoError(t, serializer.SerializeU8(6))
 	assert.NoError(t, serializer.SerializeStr("https://example.com/icon.png"))
+	assert.NoError(t, serializer.SerializeStr("https://example.com/token.json"))
 	payload := serializer.Bytes()
 
 	// extra bytes after the resource value
@@ -59,6 +60,7 @@ func TestIDLTypeResolver_MultipleProviders(t *testing.T) {
 	assert.NoError(t, serializer.SerializeStr("B"))
 	assert.NoError(t, serializer.SerializeU8(2))
 	assert.NoError(t, serializer.SerializeStr("C"))
+	assert.NoError(t, serializer.SerializeStr("D"))
 	resourceBytes := serializer.Bytes()
 
 	valueBytes, remaining, err := resolver.DecodeResource(metadata.TypeTag, resourceBytes)

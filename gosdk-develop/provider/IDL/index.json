@@ -27,8 +27,8 @@
     },
     {
       "app_id": 5,
-      "idl": "./nft.idl.json",
-      "name": "nft"
+      "idl": "./sftoken.idl.json",
+      "name": "sftoken"
     },
     {
       "app_id": 6,
@@ -44,6 +44,11 @@
       "app_id": 9,
       "idl": "./lucky_box.idl.json",
       "name": "lucky_box"
+    },
+    {
+      "app_id": 10,
+      "idl": "./social.idl.json",
+      "name": "social"
     },
     {
       "app_id": 255,

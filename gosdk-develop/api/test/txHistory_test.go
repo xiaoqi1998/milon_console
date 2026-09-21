@@ -75,9 +75,10 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 				{
 					ResourceID: api.RsHash{3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
 					LastWritten: api.PersistedValue{
-						Variant:    0,                   // Inline(AnySerializeOwned), no length prefix
-						TypeTag:    17390915333023917609, // Account (account.idl.json)
-						InlineData: []byte{1, 255, 255}, // bitmap=1 (u64 varint), weight=255 (u8), threshold=255 (u8)
+						Variant: 0,                     // Inline(AnySerializeOwned), no length prefix
+						TypeTag: 17390915333023917609, // Account (account.idl.json)
+						// bitmap=7 (u64 varint), weight=6 (u8), threshold=4 (u8), last_modified_block=183 (u64 varint)
+						InlineData: []byte{7, 6, 4, 0xB7, 0x01},
 					},
 				},
 			},
@@ -127,6 +128,18 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 	assert.Equal(t, original.Receipt.Events, deserialized.Receipt.Events)
 	assert.Equal(t, original.Receipt.Error, deserialized.Receipt.Error)
 	assert.Equal(t, original.Receipt.GasCharged, deserialized.Receipt.GasCharged)
+
+	// The inline Account value must decode as the full 4-field struct. Regression
+	// for a missing last_modified_block field in account.idl.json: the resolver
+	// consumed 3 of 5 bytes, desyncing the stream into "invalid postcard boolean".
+	accountValue, err := accountPD.DecodeDataByIDLTypeName("Account", deserialized.Receipt.Access[2].LastWritten.InlineData)
+	assert.NoError(t, err)
+	accountRecord, ok := accountValue.(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, uint64(7), accountRecord["bitmap"])
+	assert.Equal(t, uint8(6), accountRecord["weight"])
+	assert.Equal(t, uint8(4), accountRecord["threshold"])
+	assert.Equal(t, uint64(183), accountRecord["last_modified_block"])
 }
 
 func TestTxHistory_WithError(t *testing.T) {

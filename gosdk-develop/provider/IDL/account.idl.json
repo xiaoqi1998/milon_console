@@ -325,6 +325,10 @@
         {
           "name": "threshold",
           "type": "u8"
+        },
+        {
+          "name": "last_modified_block",
+          "type": "u64"
         }
       ],
       "kind": "struct",

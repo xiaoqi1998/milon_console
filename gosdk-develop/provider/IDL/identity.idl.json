@@ -829,7 +829,7 @@
       "kind": "view",
       "name": "CredentialId",
       "returns": {
-        "type": "CredentialId"
+        "type": "String"
       }
     }
   ],
@@ -1311,6 +1311,16 @@
       "kind": "builtin",
       "name": "u8",
       "typeTag": 631772817358541784
+    },
+    {
+      "kind": "builtin",
+      "name": "vec<AcceptedVcIssuer>",
+      "typeTag": 13839084772846465265
+    },
+    {
+      "kind": "builtin",
+      "name": "vec<String>",
+      "typeTag": 2316261776970198819
     }
   ],
   "errors": [

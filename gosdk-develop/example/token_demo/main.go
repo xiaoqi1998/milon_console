@@ -144,19 +144,26 @@ func example(networkConfig milon.Network) {
 		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	fmt.Printf("\n================ 4.Transfer(account1 transfer 100 to account2  + account1 sign) ================\n")
+	fmt.Printf("\n================ 4.Transfer(account1 transfer 30+70 to account2  + account1 sign) ================\n")
 
-	wire, err = gen.Token.Transfer.Args(account1, token, account2, 100).Encode()
+	wire, err = gen.Token.Transfer.Args(account1, token, account2, 30).Encode()
 	if err != nil {
 		panic("failed to encode Transfer instruction:" + err.Error())
 	}
-	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+
+	wire2, err := gen.Token.Transfer.Args(account1, token, account2, 70).Encode()
+	if err != nil {
+		panic("failed to encode Transfer instruction:" + err.Error())
+	}
+
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire, wire2}).
 		WithPayer(account1).
-		AddIxesSig(*account1, account1Sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *account1Pk}).
+		AddIxesSig(*account1, account1Sk, []uint8{0, 1}, true, lib.PubKeySignatureMode{PublicKey: *account1Pk}).
 		Build()
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
+
 	err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())

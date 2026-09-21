@@ -35,6 +35,14 @@ func example(networkConfig milon.Network) {
 	fmt.Printf("pkD = %v \n\n", pkD)
 
 	accountA, _ := crypto.NewAddressFromPublicKey(pkA)
+	accountB, _ := crypto.NewAddressFromPublicKey(pkB)
+	accountC, _ := crypto.NewAddressFromPublicKey(pkC)
+	accountD, _ := crypto.NewAddressFromPublicKey(pkD)
+
+	fmt.Printf("accountA = %v \n", accountA)
+	fmt.Printf("accountB = %v \n", accountB)
+	fmt.Printf("accountC = %v \n", accountC)
+	fmt.Printf("accountD = %v \n\n", accountD)
 
 	if err := client.ClaimFaucet(signerA, accountA, lib.PubKeySignatureMode{PublicKey: *pkA}); err != nil {
 		panic("failed to ClaimFaucet MIL:" + err.Error())
@@ -111,7 +119,7 @@ func addSigner(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.Secre
 	ixPart := []lib.IxHashItem{{Index: 0, Hash: tx.IxHashes()[0]}}
 
 	multisigSig, err := lib.NewAccountSignatureBuilder().AuthorizeIxAndPayer(0).
-		Sign(*accountA, signerA, txHash, ixPart, lib.PubKeySignatureMode{PublicKey: *pkA}).
+		Sign(*accountA, signerA, txHash, ixPart, lib.PubKeySignatureMode{PublicKey: *pkA, SkipPubKey: true, SigBit: types.Bitmap64(1)}).
 		Build()
 	if err != nil {
 		panic("failed to build multisig signature:" + err.Error())

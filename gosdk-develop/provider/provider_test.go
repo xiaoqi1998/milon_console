@@ -114,6 +114,7 @@ func TestProviderTokenEncodeAndDecode(t *testing.T) {
 			"symbol":   "TST",
 			"decimals": 6,
 			"icon":     "https://example.com/icon.png",
+			"uri":      "https://example.com/token.json",
 		},
 	}
 
@@ -818,12 +819,13 @@ func TestDecodeDataByIDLTypeName(t *testing.T) {
 	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
 	assert.NoError(t, err)
 
-	// token::Metadata struct: name(String) + symbol(String) + decimals(u8) + icon(String)
+	// token::Metadata struct: name(String) + symbol(String) + decimals(u8) + icon(String) + uri(String)
 	serializer := postcard.NewSerializer()
 	assert.NoError(t, serializer.SerializeStr("TestCoin"))
 	assert.NoError(t, serializer.SerializeStr("TST"))
 	assert.NoError(t, serializer.SerializeU8(6))
 	assert.NoError(t, serializer.SerializeStr("https://example.com/icon.png"))
+	assert.NoError(t, serializer.SerializeStr("https://example.com/token.json"))
 	data := serializer.Bytes()
 
 	value, err := pd.DecodeDataByIDLTypeName("Metadata", data)
@@ -833,6 +835,7 @@ func TestDecodeDataByIDLTypeName(t *testing.T) {
 	assert.Equal(t, "TST", record["symbol"])
 	assert.Equal(t, uint8(6), record["decimals"])
 	assert.Equal(t, "https://example.com/icon.png", record["icon"])
+	assert.Equal(t, "https://example.com/token.json", record["uri"])
 
 	// trailing bytes must error
 	_, err = pd.DecodeDataByIDLTypeName("Metadata", append(append([]byte{}, data...), 0xAA))

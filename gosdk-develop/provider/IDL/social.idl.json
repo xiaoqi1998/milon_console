@@ -1,0 +1,997 @@
+{
+  "metadata": {
+    "app_id": 10,
+    "name": "social",
+    "description": "Milon social app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 13067,
+      "handler": "upsert_social_profile",
+      "kind": "entry",
+      "name": "UpsertSocialProfile"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 23225,
+      "handler": "register_source_app",
+      "kind": "entry",
+      "name": "RegisterSourceApp",
+      "returns": {
+        "type": "u32"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "publisher",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 55820,
+      "handler": "add_source_app_publisher",
+      "kind": "entry",
+      "name": "AddSourceAppPublisher"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "publisher",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 62309,
+      "handler": "remove_source_app_publisher",
+      "kind": "entry",
+      "name": "RemoveSourceAppPublisher"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "new_owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 21283,
+      "handler": "transfer_source_app_owner",
+      "kind": "entry",
+      "name": "TransferSourceAppOwner"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 52796,
+      "handler": "deactivate_source_app",
+      "kind": "entry",
+      "name": "DeactivateSourceApp"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 55074,
+      "handler": "reactivate_source_app",
+      "kind": "entry",
+      "name": "ReactivateSourceApp"
+    },
+    {
+      "args": [
+        {
+          "name": "publisher",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "dataset_kind",
+          "role": "input",
+          "type": "DatasetKind"
+        },
+        {
+          "name": "scope_key",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 445,
+      "handler": "upsert_public_data_uri",
+      "kind": "entry",
+      "name": "UpsertPublicDataUri"
+    },
+    {
+      "args": [
+        {
+          "name": "publisher",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "dataset_kind",
+          "role": "input",
+          "type": "DatasetKind"
+        },
+        {
+          "name": "scope_key",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 17929,
+      "handler": "retire_public_data_uri",
+      "kind": "entry",
+      "name": "RetirePublicDataUri"
+    },
+    {
+      "args": [
+        {
+          "name": "publisher",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "dataset_kind",
+          "role": "input",
+          "type": "DatasetKind"
+        },
+        {
+          "name": "scope_key",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 25488,
+      "handler": "restore_public_data_uri",
+      "kind": "entry",
+      "name": "RestorePublicDataUri"
+    },
+    {
+      "args": [
+        {
+          "name": "publisher",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "join_mode",
+          "role": "input",
+          "type": "JoinMode"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 18868,
+      "handler": "create_community",
+      "kind": "entry",
+      "name": "CreateCommunity",
+      "returns": {
+        "type": "u32"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "publisher",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 63564,
+      "handler": "update_community_uri",
+      "kind": "entry",
+      "name": "UpdateCommunityUri"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "join_mode",
+          "role": "input",
+          "type": "JoinMode"
+        }
+      ],
+      "discriminator": 20649,
+      "handler": "set_community_join_mode",
+      "kind": "entry",
+      "name": "SetCommunityJoinMode"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "new_owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 5543,
+      "handler": "transfer_community_owner",
+      "kind": "entry",
+      "name": "TransferCommunityOwner"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 32318,
+      "handler": "deactivate_community",
+      "kind": "entry",
+      "name": "DeactivateCommunity"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "admin",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 10690,
+      "handler": "grant_community_admin",
+      "kind": "entry",
+      "name": "GrantCommunityAdmin"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "admin",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 62146,
+      "handler": "revoke_community_admin",
+      "kind": "entry",
+      "name": "RevokeCommunityAdmin"
+    },
+    {
+      "args": [
+        {
+          "name": "member",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 39196,
+      "handler": "join_community",
+      "kind": "entry",
+      "name": "JoinCommunity"
+    },
+    {
+      "args": [
+        {
+          "name": "member",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 57790,
+      "handler": "request_join_community",
+      "kind": "entry",
+      "name": "RequestJoinCommunity"
+    },
+    {
+      "args": [
+        {
+          "name": "member",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 33199,
+      "handler": "cancel_join_request",
+      "kind": "entry",
+      "name": "CancelJoinRequest"
+    },
+    {
+      "args": [
+        {
+          "name": "admin",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 2182,
+      "handler": "approve_join_request",
+      "kind": "entry",
+      "name": "ApproveJoinRequest"
+    },
+    {
+      "args": [
+        {
+          "name": "admin",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 21924,
+      "handler": "reject_join_request",
+      "kind": "entry",
+      "name": "RejectJoinRequest"
+    },
+    {
+      "args": [
+        {
+          "name": "member",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 7711,
+      "handler": "leave_community",
+      "kind": "entry",
+      "name": "LeaveCommunity"
+    },
+    {
+      "args": [
+        {
+          "name": "admin",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 7071,
+      "handler": "remove_community_member",
+      "kind": "entry",
+      "name": "RemoveCommunityMember"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 5863,
+      "handler": "social_profile",
+      "kind": "view",
+      "name": "SocialProfile",
+      "returns": {
+        "type": "String"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 2147,
+      "handler": "source_app",
+      "kind": "view",
+      "name": "SourceApp",
+      "returns": {
+        "type": "SourceApp"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "publisher",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 14357,
+      "handler": "is_source_app_publisher",
+      "kind": "view",
+      "name": "IsSourceAppPublisher",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "dataset_kind",
+          "role": "input",
+          "type": "DatasetKind"
+        },
+        {
+          "name": "scope_key",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 63112,
+      "handler": "public_data_anchor",
+      "kind": "view",
+      "name": "PublicDataAnchor",
+      "returns": {
+        "type": "PublicDataAnchor"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 59279,
+      "handler": "community",
+      "kind": "view",
+      "name": "Community",
+      "returns": {
+        "type": "CommunityControl"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "admin",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 56720,
+      "handler": "is_community_admin",
+      "kind": "view",
+      "name": "IsCommunityAdmin",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 38404,
+      "handler": "join_request",
+      "kind": "view",
+      "name": "JoinRequest",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 36616,
+      "handler": "community_membership",
+      "kind": "view",
+      "name": "CommunityMembership",
+      "returns": {
+        "type": "bool"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "DatasetKind",
+      "typeTag": 17428762375069664538,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Profile"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Tags"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Content"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Relationship"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Other"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "JoinMode",
+      "typeTag": 2350450800222339267,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Open"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Approval"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "publishing_enabled",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "SourceApp",
+      "typeTag": 8914166003957741580
+    },
+    {
+      "fields": [
+        {
+          "name": "uri",
+          "type": "String"
+        },
+        {
+          "name": "retired",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "PublicDataAnchor",
+      "typeTag": 12104690320851153008
+    },
+    {
+      "fields": [
+        {
+          "name": "source_app_id",
+          "type": "u32"
+        },
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "join_mode",
+          "type": "JoinMode"
+        },
+        {
+          "name": "mutations_enabled",
+          "type": "bool"
+        },
+        {
+          "name": "uri",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "CommunityControl",
+      "typeTag": 16708904908548046110
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    }
+  ],
+  "errors": [
+    {
+      "code": 2560,
+      "message": "DID does not exist or is deactivated: {0:?}",
+      "name": "DidNotActive"
+    },
+    {
+      "code": 2561,
+      "message": "an active organization DID is required: {0:?}",
+      "name": "OrganizationDidRequired"
+    },
+    {
+      "code": 2562,
+      "message": "community ID sequence is exhausted",
+      "name": "CommunityIdExhausted"
+    },
+    {
+      "code": 2563,
+      "message": "URI is invalid",
+      "name": "InvalidUri"
+    },
+    {
+      "code": 2564,
+      "message": "source app not found: {0}",
+      "name": "SourceAppNotFound"
+    },
+    {
+      "code": 2565,
+      "message": "source app already exists: {0}",
+      "name": "SourceAppAlreadyExists"
+    },
+    {
+      "code": 2566,
+      "message": "source app publishing is disabled: {0}",
+      "name": "SourceAppPublishingDisabled"
+    },
+    {
+      "code": 2567,
+      "message": "source app owner required: {0:?}",
+      "name": "SourceAppOwnerRequired"
+    },
+    {
+      "code": 2568,
+      "message": "source app publisher required: app={0}, signer={1:?}",
+      "name": "SourceAppPublisherRequired"
+    },
+    {
+      "code": 2569,
+      "message": "publisher already exists: app={0}, signer={1:?}",
+      "name": "PublisherAlreadyExists"
+    },
+    {
+      "code": 2570,
+      "message": "publisher not found: app={0}, signer={1:?}",
+      "name": "PublisherNotFound"
+    },
+    {
+      "code": 2571,
+      "message": "a source app owner cannot be removed as its publisher",
+      "name": "CannotRemoveOwnerPublisher"
+    },
+    {
+      "code": 2572,
+      "message": "source app ID sequence is exhausted",
+      "name": "SourceAppIdExhausted"
+    },
+    {
+      "code": 2573,
+      "message": "dataset scope key is invalid",
+      "name": "InvalidScopeKey"
+    },
+    {
+      "code": 2574,
+      "message": "public data anchor not found",
+      "name": "DataAnchorNotFound"
+    },
+    {
+      "code": 2575,
+      "message": "public data anchor is retired",
+      "name": "DataAnchorRetired"
+    },
+    {
+      "code": 2576,
+      "message": "public data anchor is not retired",
+      "name": "DataAnchorNotRetired"
+    },
+    {
+      "code": 2577,
+      "message": "community not found: {0}",
+      "name": "CommunityNotFound"
+    },
+    {
+      "code": 2578,
+      "message": "community already exists: {0}",
+      "name": "CommunityAlreadyExists"
+    },
+    {
+      "code": 2579,
+      "message": "community mutations are disabled: {0}",
+      "name": "CommunityMutationsDisabled"
+    },
+    {
+      "code": 2580,
+      "message": "community owner required: {0:?}",
+      "name": "CommunityOwnerRequired"
+    },
+    {
+      "code": 2581,
+      "message": "community administrator required: {0:?}",
+      "name": "CommunityAdminRequired"
+    },
+    {
+      "code": 2582,
+      "message": "the community owner cannot be removed",
+      "name": "CannotRemoveCommunityOwner"
+    },
+    {
+      "code": 2583,
+      "message": "community administrator already exists: {0:?}",
+      "name": "CommunityAdminAlreadyExists"
+    },
+    {
+      "code": 2584,
+      "message": "community administrator not found: {0:?}",
+      "name": "CommunityAdminNotFound"
+    },
+    {
+      "code": 2585,
+      "message": "join mode does not allow this operation",
+      "name": "InvalidJoinMode"
+    },
+    {
+      "code": 2586,
+      "message": "membership is already active: {0:?}",
+      "name": "MembershipAlreadyActive"
+    },
+    {
+      "code": 2587,
+      "message": "active membership was not found: {0:?}",
+      "name": "MembershipNotActive"
+    },
+    {
+      "code": 2588,
+      "message": "a join request is already pending: {0:?}",
+      "name": "JoinRequestAlreadyPending"
+    },
+    {
+      "code": 2589,
+      "message": "pending join request was not found: {0:?}",
+      "name": "JoinRequestNotPending"
+    },
+    {
+      "code": 2590,
+      "message": "Transparent IdentityError",
+      "name": "IdentityError",
+      "transparent": true
+    },
+    {
+      "code": 2591,
+      "message": "Transparent ContextError",
+      "name": "ContextError",
+      "transparent": true
+    }
+  ]
+}

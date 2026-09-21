@@ -46,6 +46,32 @@
     {
       "args": [
         {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 3396,
+      "handler": "set_staking_token",
+      "kind": "entry",
+      "name": "SetStakingToken"
+    },
+    {
+      "args": [
+        {
+          "name": "reward_per_validator",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 36863,
+      "handler": "initialize_epoch_config",
+      "kind": "entry",
+      "name": "InitializeEpochConfig"
+    },
+    {
+      "args": [
+        {
           "name": "operator",
           "role": "signer",
           "type": "Signer"

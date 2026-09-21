@@ -89,7 +89,10 @@ func main() {
 │   ├── account_create_four_crypto  四种密码学算法创建账户
 │   ├── account_demo                账户创建与使用
 │   ├── create_multisig_demo        多签账户创建
+│   ├── create_multisig_vote        多签投票与执行（拆分付款）
+│   ├── create_multisig_vote2       多签投票与执行（统一付款）
 │   ├── multi_ix_demo               多条指令交易
+│   ├── nft_demo                    NFT 集合创建与铸造
 │   ├── pubkey_signature_mode_demo  签名模式
 │   ├── token_demo                  代币使用
 │   └── view_demo                   视图查询
@@ -131,7 +134,7 @@ wire, err := gen.Token.BalanceOf.Args(token, account).Encode()
 交易中的 `AuthBit`（64 位授权位图）布局：
 
 - **bit 0-61**：指令授权位，第 i 条指令对应 bit i（单笔交易最多 62 条指令）
-- **bit 62**：保留，不可用
+- **bit 62**：投票门控位（MIP-25 vote gate），专用于多签投票通过后的意图执行（`lib.AuthVoteIxes` + `lib.Unsigned` 生成纯授权签名）
 - **bit 63**：gas 授权位（payer 位）
 
 SDK 支持四种付款模式：
@@ -298,9 +301,10 @@ Provider 基于 IDL JSON 实现合约方法的序列化与反序列化，支持�
 |------|------|------|
 | 账户 | `ClaimFaucet(sk, address, mode)` | 领取测试代币 |
 | | `CreateAccount(sk, pk)` | 创建链上账户 |
-| | `BalanceOf(address)` | 查询账户余额 |
+| | `BalanceOf(account, token ...any)` | 查询账户余额 |
 | | `ListAccountSigners(address)` | 查询账户签名者列表 |
 | | `AccountSignerBit(address)` | 查询签名者槽位位图（Bitmap64） |
+| | `TokenMetadata(token)` | 查询代币元数据（名称/符号/精度/图标/URI） |
 | 交易 | `SubmitTx(tx, opts...)` | ValidateWire 校验后提交 |
 | | `SubmitTxWithSponsorIxes(tx, sponsorIxes, opts...)` | ValidateWireWith(sponsorIxes) 校验后提交（可指定赞助指令） |
 | | `SimulateTx(tx, opts...)` | 模拟执行（估算 gas） |
