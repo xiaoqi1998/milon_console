@@ -539,7 +539,7 @@
       "kind": "view",
       "name": "SlotInfo",
       "returns": {
-        "type": "tuple<String,String,bool>"
+        "type": "SlotData"
       }
     },
     {
@@ -862,6 +862,25 @@
       "kind": "struct",
       "name": "Token",
       "typeTag": 14126857848543451857
+    },
+    {
+      "fields": [
+        {
+          "name": "metadata",
+          "type": "String"
+        },
+        {
+          "name": "attribute",
+          "type": "String"
+        },
+        {
+          "name": "is_transferable",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "SlotData",
+      "typeTag": 16546317778011887664
     },
     {
       "kind": "builtin",

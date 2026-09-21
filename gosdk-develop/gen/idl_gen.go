@@ -4317,6 +4317,16 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "vec<AcceptedVcIssuer>",
+				TypeTag: 13839084772846465265,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "vec<String>",
+				TypeTag: 2316261776970198819,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "bool",
 				TypeTag: 14785269867199075517,
 			},
@@ -4344,16 +4354,6 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u8",
 				TypeTag: 631772817358541784,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "vec<AcceptedVcIssuer>",
-				TypeTag: 13839084772846465265,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "vec<String>",
-				TypeTag: 2316261776970198819,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -5150,7 +5150,7 @@ provider.IDL{
 				Kind: "view",
 				Name: "SlotInfo",
 				Returns: provider.ReturnValue{
-					Type: "tuple<String,String,bool>",
+					Type: "SlotData",
 				},
 			},
 			provider.Instruction{
@@ -5473,6 +5473,25 @@ provider.IDL{
 				Kind: "struct",
 				Name: "Token",
 				TypeTag: 14126857848543451857,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "metadata",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "attribute",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "is_transferable",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "SlotData",
+				TypeTag: 16546317778011887664,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -9232,14 +9251,9 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "publisher",
+						Name: "creator",
 						Role: "signer",
 						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "source_app_id",
-						Role: "input",
-						Type: "u32",
 					},
 					provider.Arg{
 						Name: "join_mode",
@@ -9263,7 +9277,7 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "publisher",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
@@ -9776,10 +9790,6 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "source_app_id",
-						Type: "u32",
-					},
-					provider.StructField{
 						Name: "owner",
 						Type: "Address",
 					},
@@ -9790,6 +9800,10 @@ provider.IDL{
 					provider.StructField{
 						Name: "mutations_enabled",
 						Type: "bool",
+					},
+					provider.StructField{
+						Name: "member_count",
+						Type: "u32",
 					},
 					provider.StructField{
 						Name: "uri",
@@ -9981,6 +9995,38 @@ provider.IDL{
 				Code: 2591,
 				Message: "Transparent ContextError",
 				Name: "ContextError",
+			},
+			provider.ErrorDef{
+				Code: 2592,
+				Message: "community creation limit reached for DID: {0:?}",
+				Name: "CommunityCreationLimitReached",
+			},
+			provider.ErrorDef{
+				Code: 2593,
+				Message: "community member limit reached: {0}",
+				Name: "CommunityMemberLimitReached",
+			},
+			provider.ErrorDef{
+				Code: 2594,
+				Message: "community member count invariant failed: {0}",
+				Name: "CommunityMemberCountInvariant",
+			},
+			provider.ErrorDef{
+				Code: 2595,
+				Message: "the community owner cannot leave",
+				Name: "CannotLeaveCommunityOwner",
+			},
+		},
+		Constants: []provider.Constant{
+			provider.Constant{
+				Name: "MAX_COMMUNITIES_PER_CREATOR",
+				Type: "u32",
+				Value: 8,
+			},
+			provider.Constant{
+				Name: "MAX_MEMBERS_PER_COMMUNITY",
+				Type: "u32",
+				Value: 10000,
 			},
 		},
 	},
@@ -11928,6 +11974,25 @@ func (v SftokenToken) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
+// SftokenSlotData matches the IDL struct SlotData.
+type SftokenSlotData struct {
+	Metadata string
+	Attribute string
+	IsTransferable bool
+}
+
+// ToValue converts SftokenSlotData into the provider wire value (map[string]any).
+func (v SftokenSlotData) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// metadata: String
+	out["metadata"] = v.Metadata
+	// attribute: String
+	out["attribute"] = v.Attribute
+	// is_transferable: bool
+	out["is_transferable"] = v.IsTransferable
+	return out, nil
+}
+
 // DexMarketStatus matches the IDL enum MarketStatus.
 type DexMarketStatus struct {
 	Variant string // Active variant name
@@ -13210,18 +13275,16 @@ func (v SocialPublicDataAnchor) ToValue() (map[string]any, error) {
 
 // SocialCommunityControl matches the IDL struct CommunityControl.
 type SocialCommunityControl struct {
-	SourceAppId uint32
 	Owner *crypto.Address
 	JoinMode SocialJoinMode
 	MutationsEnabled bool
+	MemberCount uint32
 	Uri string
 }
 
 // ToValue converts SocialCommunityControl into the provider wire value (map[string]any).
 func (v SocialCommunityControl) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 5)
-	// source_app_id: u32
-	out["source_app_id"] = v.SourceAppId
 	// owner: Address
 	out["owner"] = v.Owner
 	// join_mode: JoinMode
@@ -13232,6 +13295,8 @@ func (v SocialCommunityControl) ToValue() (map[string]any, error) {
 	out["join_mode"] = v0
 	// mutations_enabled: bool
 	out["mutations_enabled"] = v.MutationsEnabled
+	// member_count: u32
+	out["member_count"] = v.MemberCount
 	// uri: String
 	out["uri"] = v.Uri
 	return out, nil
@@ -15366,6 +15431,39 @@ func fromSftokenToken(v any) (out SftokenToken, err error) {
 	return out, nil
 }
 
+// fromSftokenSlotData converts a decoded IDL value into SftokenSlotData.
+func fromSftokenSlotData(v any) (out SftokenSlotData, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// metadata: String
+	{
+		v0, err := toString(m["metadata"])
+		if err != nil {
+			return out, err
+		}
+		out.Metadata = v0
+	}
+	// attribute: String
+	{
+		v1, err := toString(m["attribute"])
+		if err != nil {
+			return out, err
+		}
+		out.Attribute = v1
+	}
+	// is_transferable: bool
+	{
+		v2, err := toBool(m["is_transferable"])
+		if err != nil {
+			return out, err
+		}
+		out.IsTransferable = v2
+	}
+	return out, nil
+}
+
 // fromDexMarketStatus converts a decoded IDL value into DexMarketStatus.
 func fromDexMarketStatus(v any) (out DexMarketStatus, err error) {
 	m, err := toRecord(v)
@@ -17265,37 +17363,37 @@ func fromSocialCommunityControl(v any) (out SocialCommunityControl, err error) {
 	if err != nil {
 		return out, err
 	}
-	// source_app_id: u32
-	{
-		v0, err := toUint32(m["source_app_id"])
-		if err != nil {
-			return out, err
-		}
-		out.SourceAppId = v0
-	}
 	// owner: Address
 	{
-		v1, err := toAddress(m["owner"])
+		v0, err := toAddress(m["owner"])
 		if err != nil {
 			return out, err
 		}
-		out.Owner = v1
+		out.Owner = v0
 	}
 	// join_mode: JoinMode
 	{
-		v2, err := fromSocialJoinMode(m["join_mode"])
+		v1, err := fromSocialJoinMode(m["join_mode"])
 		if err != nil {
 			return out, err
 		}
-		out.JoinMode = v2
+		out.JoinMode = v1
 	}
 	// mutations_enabled: bool
 	{
-		v3, err := toBool(m["mutations_enabled"])
+		v2, err := toBool(m["mutations_enabled"])
 		if err != nil {
 			return out, err
 		}
-		out.MutationsEnabled = v3
+		out.MutationsEnabled = v2
+	}
+	// member_count: u32
+	{
+		v3, err := toUint32(m["member_count"])
+		if err != nil {
+			return out, err
+		}
+		out.MemberCount = v3
 	}
 	// uri: String
 	{
@@ -18261,6 +18359,21 @@ func toSftokenTokenValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected SftokenToken, got %T", v)
+	}
+}
+
+// toSftokenSlotDataValue converts any into SftokenSlotData for provider serialization.
+func toSftokenSlotDataValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SftokenSlotData:
+		return x.ToValue()
+	case *SftokenSlotData:
+		if x == nil {
+			return nil, fmt.Errorf("nil SftokenSlotData")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SftokenSlotData, got %T", v)
 	}
 }
 
@@ -25836,8 +25949,8 @@ func (a *SftokenSlotInfoArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of SlotInfo into []any.
-func (ix *SftokenSlotInfoIx) DecodeView(body []byte) (out []any, err error) {
+// DecodeView decodes the raw view response body of SlotInfo into SftokenSlotData.
+func (ix *SftokenSlotInfoIx) DecodeView(body []byte) (out SftokenSlotData, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
@@ -25848,7 +25961,7 @@ func (ix *SftokenSlotInfoIx) DecodeView(body []byte) (out []any, err error) {
 	if failure, ok := v.(*api.TxFailurePayload); ok {
 		return out, fmt.Errorf("view SlotInfo failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
-	v0, err := toSlice(v)
+	v0, err := fromSftokenSlotData(v)
 	if err != nil {
 		return out, err
 	}
@@ -29091,18 +29204,16 @@ type SocialCreateCommunityIx struct {
 }
 
 type SocialCreateCommunityArgs struct {
-	publisher *crypto.Address
-	source_app_id uint32
+	creator *crypto.Address
 	join_mode SocialJoinMode
 	uri string
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of CreateCommunity.
-func (ix *SocialCreateCommunityIx) Args(publisher *crypto.Address, source_app_id uint32, join_mode SocialJoinMode, uri string) *SocialCreateCommunityArgs {
+func (ix *SocialCreateCommunityIx) Args(creator *crypto.Address, join_mode SocialJoinMode, uri string) *SocialCreateCommunityArgs {
 	return &SocialCreateCommunityArgs{
-		publisher: publisher,
-		source_app_id: source_app_id,
+		creator: creator,
 		join_mode: join_mode,
 		uri: uri,
 		pd: ix.pd,
@@ -29115,10 +29226,8 @@ func (a *SocialCreateCommunityArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// publisher: Signer
-	args["publisher"] = a.publisher
-	// source_app_id: u32
-	args["source_app_id"] = a.source_app_id
+	// creator: Signer
+	args["creator"] = a.creator
 	// join_mode: JoinMode
 	v0, err := toSocialJoinModeValue(a.join_mode)
 	if err != nil {
@@ -29139,16 +29248,16 @@ type SocialUpdateCommunityUriIx struct {
 }
 
 type SocialUpdateCommunityUriArgs struct {
-	publisher *crypto.Address
+	owner *crypto.Address
 	community_id uint32
 	uri string
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of UpdateCommunityUri.
-func (ix *SocialUpdateCommunityUriIx) Args(publisher *crypto.Address, community_id uint32, uri string) *SocialUpdateCommunityUriArgs {
+func (ix *SocialUpdateCommunityUriIx) Args(owner *crypto.Address, community_id uint32, uri string) *SocialUpdateCommunityUriArgs {
 	return &SocialUpdateCommunityUriArgs{
-		publisher: publisher,
+		owner: owner,
 		community_id: community_id,
 		uri: uri,
 		pd: ix.pd,
@@ -29161,8 +29270,8 @@ func (a *SocialUpdateCommunityUriArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// publisher: Signer
-	args["publisher"] = a.publisher
+	// owner: Signer
+	args["owner"] = a.owner
 	// community_id: u32
 	args["community_id"] = a.community_id
 	// uri: String

@@ -176,6 +176,11 @@
       "code": 24,
       "message": "invalid vote-gated auth_bit shape",
       "name": "InvalidVoteAuthBit"
+    },
+    {
+      "code": 25,
+      "message": "invalid transaction signature",
+      "name": "InvalidTransactionSignature"
     }
   ]
 }

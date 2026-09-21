@@ -79,7 +79,7 @@ func main() {
 │   └── fn_dsa512.go       FnDSA-512 密码学实现
 │
 ├── provider/              合约 IDL 加载与指令/事件编解码
-│   ├── IDL/               内置 IDL JSON (account/token/staking/identity/nft/demo...)
+│   ├── IDL/               内置 IDL JSON (account/token/staking/identity/sft/demo...)
 │   ├── provider.go        Provider: IDL 加载、指令编码(Encode)、值序列化/反序列化
 │   ├── registry.go        IDLRegistry: 多 IDL 统一注册、指令/事件解码与格式化
 │   ├── idlTypeResolver.go 基于 type_tag 的动态类型解析器 (DecodeResource/DecodeEvent)
@@ -91,8 +91,9 @@ func main() {
 │   ├── create_multisig_demo        多签账户创建
 │   ├── create_multisig_vote        多签投票与执行（拆分付款）
 │   ├── create_multisig_vote2       多签投票与执行（统一付款）
+│   ├── identity_demo               链上身份：DID / 机构注册 / VC 合规
 │   ├── multi_ix_demo               多条指令交易
-│   ├── nft_demo                    NFT 集合创建与铸造
+│   ├── sft_demo                    SFT 集合创建与铸造
 │   ├── pubkey_signature_mode_demo  签名模式
 │   ├── token_demo                  代币使用
 │   └── view_demo                   视图查询

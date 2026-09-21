@@ -241,14 +241,9 @@
     {
       "args": [
         {
-          "name": "publisher",
+          "name": "creator",
           "role": "signer",
           "type": "Signer"
-        },
-        {
-          "name": "source_app_id",
-          "role": "input",
-          "type": "u32"
         },
         {
           "name": "join_mode",
@@ -272,7 +267,7 @@
     {
       "args": [
         {
-          "name": "publisher",
+          "name": "owner",
           "role": "signer",
           "type": "Signer"
         },
@@ -785,10 +780,6 @@
     {
       "fields": [
         {
-          "name": "source_app_id",
-          "type": "u32"
-        },
-        {
           "name": "owner",
           "type": "Address"
         },
@@ -799,6 +790,10 @@
         {
           "name": "mutations_enabled",
           "type": "bool"
+        },
+        {
+          "name": "member_count",
+          "type": "u32"
         },
         {
           "name": "uri",
@@ -828,6 +823,18 @@
       "kind": "builtin",
       "name": "u32",
       "typeTag": 5560783464435099345
+    }
+  ],
+  "constants": [
+    {
+      "name": "MAX_COMMUNITIES_PER_CREATOR",
+      "type": "u32",
+      "value": 8
+    },
+    {
+      "name": "MAX_MEMBERS_PER_COMMUNITY",
+      "type": "u32",
+      "value": 10000
     }
   ],
   "errors": [
@@ -992,6 +999,26 @@
       "message": "Transparent ContextError",
       "name": "ContextError",
       "transparent": true
+    },
+    {
+      "code": 2592,
+      "message": "community creation limit reached for DID: {0:?}",
+      "name": "CommunityCreationLimitReached"
+    },
+    {
+      "code": 2593,
+      "message": "community member limit reached: {0}",
+      "name": "CommunityMemberLimitReached"
+    },
+    {
+      "code": 2594,
+      "message": "community member count invariant failed: {0}",
+      "name": "CommunityMemberCountInvariant"
+    },
+    {
+      "code": 2595,
+      "message": "the community owner cannot leave",
+      "name": "CannotLeaveCommunityOwner"
     }
   ]
 }
