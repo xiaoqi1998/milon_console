@@ -34,22 +34,22 @@ type idlAppMeta struct {
 
 // idlInstructionMeta 描述一个 IDL 方法（指令）的元数据。
 type idlInstructionMeta struct {
-	Name          string                          `json:"name"`
-	Kind          string                          `json:"kind"` // "entry" | "view"
-	Handler       string                          `json:"handler"`
-	Discriminator uint16                          `json:"discriminator"`
-	Description   string                          `json:"description"` // 方法中文说明
-	Args          []idlArgMeta                    `json:"args"`
-	Returns       *idlReturnMeta                  `json:"returns,omitempty"` // view 必有
-	Sponsor       bool                            `json:"sponsor,omitempty"`  // entry 可有
-	SignerLookups map[string]idlSignerLookupMeta  `json:"signerLookups,omitempty"` // entry 可有，签名者角色 -> 参数映射
+	Name          string                         `json:"name"`
+	Kind          string                         `json:"kind"` // "entry" | "view"
+	Handler       string                         `json:"handler"`
+	Discriminator uint16                         `json:"discriminator"`
+	Description   string                         `json:"description"` // 方法中文说明
+	Args          []idlArgMeta                   `json:"args"`
+	Returns       *idlReturnMeta                 `json:"returns,omitempty"`       // view 必有
+	Sponsor       bool                           `json:"sponsor,omitempty"`       // entry 可有
+	SignerLookups map[string]idlSignerLookupMeta `json:"signerLookups,omitempty"` // entry 可有，签名者角色 -> 参数映射
 }
 
 // idlArgMeta 描述一个方法参数。
 type idlArgMeta struct {
 	Name        string `json:"name"`
-	Type        string `json:"type"` // 原始 IDL 类型字符串，如 "vec<PublicKey>"
-	Role        string `json:"role"` // "input" | "signer" | "any_signer"
+	Type        string `json:"type"`        // 原始 IDL 类型字符串，如 "vec<PublicKey>"
+	Role        string `json:"role"`        // "input" | "signer" | "any_signer"
 	Description string `json:"description"` // 参数中文说明
 }
 
@@ -299,8 +299,10 @@ func describeInstruction(app, name, handler, kind string) string {
 		obj = "质押"
 	case "identity":
 		obj = "身份（DID）"
-	case "nft":
-		obj = "NFT"
+	case "sftoken":
+		obj = "半同质化代币（SFT）"
+	case "social":
+		obj = "社交"
 	case "randomness":
 		obj = "随机数（VRF）信标"
 	case "demo":
@@ -372,7 +374,8 @@ func appNameCN(app string) string {
 		"token":      "代币",
 		"staking":    "质押",
 		"identity":   "身份",
-		"nft":        "NFT",
+		"sftoken":    "SFT",
+		"social":     "社交",
 		"randomness": "随机数",
 		"demo":       "示例",
 	}
