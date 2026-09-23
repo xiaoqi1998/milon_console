@@ -21,35 +21,17 @@
           "name": "metadata",
           "role": "input",
           "type": "String"
+        },
+        {
+          "name": "royalty_bps",
+          "role": "input",
+          "type": "u16"
         }
       ],
       "discriminator": 5334,
       "handler": "create_sft",
       "kind": "entry",
       "name": "CreateSft"
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "current_owner",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "new_owner",
-          "role": "input",
-          "type": "Address"
-        }
-      ],
-      "discriminator": 35617,
-      "handler": "transfer_owner",
-      "kind": "entry",
-      "name": "TransferOwner"
     },
     {
       "args": [
@@ -84,11 +66,6 @@
           "type": "option<Address>"
         },
         {
-          "name": "mint_authority",
-          "role": "input",
-          "type": "option<Address>"
-        },
-        {
           "name": "update_author",
           "role": "input",
           "type": "option<Address>"
@@ -112,25 +89,20 @@
           "type": "Address"
         },
         {
-          "name": "manager",
+          "name": "current_owner",
           "role": "signer",
           "type": "Signer"
         },
         {
-          "name": "slot_id",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "authority",
+          "name": "new_owner",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 3502,
-      "handler": "set_slot_mint_authority",
+      "discriminator": 35617,
+      "handler": "transfer_owner",
       "kind": "entry",
-      "name": "SetSlotMintAuthority"
+      "name": "TransferOwner"
     },
     {
       "args": [
@@ -150,15 +122,94 @@
           "type": "u64"
         },
         {
-          "name": "author",
+          "name": "new_owner",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 42421,
-      "handler": "set_slot_update_author",
+      "discriminator": 26666,
+      "handler": "transfer_slot_owner",
       "kind": "entry",
-      "name": "SetSlotUpdateAuthor"
+      "name": "TransferSlotOwner"
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "current_author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "new_author",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 8940,
+      "handler": "transfer_slot_update_author",
+      "kind": "entry",
+      "name": "TransferSlotUpdateAuthor"
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "current_authority",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "new_authority",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 10654,
+      "handler": "transfer_slot_freeze_authority",
+      "kind": "entry",
+      "name": "TransferSlotFreezeAuthority"
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "current_recipient",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "new_recipient",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 56414,
+      "handler": "transfer_royalty_recipient",
+      "kind": "entry",
+      "name": "TransferRoyaltyRecipient"
     },
     {
       "args": [
@@ -178,15 +229,15 @@
           "type": "u64"
         },
         {
-          "name": "authority",
+          "name": "is_transferable",
           "role": "input",
-          "type": "Address"
+          "type": "bool"
         }
       ],
-      "discriminator": 43329,
-      "handler": "set_slot_freeze_authority",
+      "discriminator": 57575,
+      "handler": "set_slot_transferable",
       "kind": "entry",
-      "name": "SetSlotFreezeAuthority"
+      "name": "SetSlotTransferable"
     },
     {
       "args": [
@@ -279,6 +330,29 @@
       "returns": {
         "type": "u64"
       }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 7015,
+      "handler": "burn",
+      "kind": "entry",
+      "name": "Burn"
     },
     {
       "args": [
@@ -548,6 +622,22 @@
           "name": "sft",
           "role": "input",
           "type": "Address"
+        }
+      ],
+      "discriminator": 30311,
+      "handler": "royalty_info",
+      "kind": "view",
+      "name": "RoyaltyInfo",
+      "returns": {
+        "type": "Royalty"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
         },
         {
           "name": "token_id",
@@ -687,27 +777,6 @@
       "name": "IsSlotFrozen",
       "returns": {
         "type": "bool"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "slot_id",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 57757,
-      "handler": "slot_mint_authority",
-      "kind": "view",
-      "name": "SlotMintAuthority",
-      "returns": {
-        "type": "Address"
       }
     },
     {
@@ -883,6 +952,21 @@
       "typeTag": 16546317778011887664
     },
     {
+      "fields": [
+        {
+          "name": "recipient",
+          "type": "Address"
+        },
+        {
+          "name": "bps",
+          "type": "u16"
+        }
+      ],
+      "kind": "struct",
+      "name": "Royalty",
+      "typeTag": 8013111409802783456
+    },
+    {
       "kind": "builtin",
       "name": "Address",
       "typeTag": 17438174819379414968
@@ -899,7 +983,69 @@
     },
     {
       "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
       "name": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "resources": [
+    {
+      "name": "_Sft",
+      "type": "Sft",
+      "typeTag": 7460940398751880426
+    },
+    {
+      "name": "_SftNextSlotId",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_SftNextTokenId",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_Slot",
+      "type": "SlotData",
+      "typeTag": 6310559783402314447
+    },
+    {
+      "name": "_SlotOwner",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_SlotUpdateAuthor",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_SlotFreezeAuthority",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_SlotFrozen",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_SftRoyalty",
+      "type": "Royalty",
+      "typeTag": 16416299771797568401
+    },
+    {
+      "name": "_Token",
+      "type": "Token",
+      "typeTag": 7491257169663686040
+    },
+    {
+      "name": "_Approval",
+      "type": "u64",
       "typeTag": 5563585020063213298
     }
   ],
@@ -940,11 +1086,6 @@
         {
           "indexed": true,
           "name": "owner",
-          "type": "Address"
-        },
-        {
-          "indexed": true,
-          "name": "mint_authority",
           "type": "Address"
         },
         {
@@ -1172,6 +1313,27 @@
       ],
       "name": "AttributeSetEvent",
       "typeTag": 4045023747084950996
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "sft",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "from",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "to",
+          "type": "Address"
+        }
+      ],
+      "name": "RoyaltyRecipientTransferredEvent",
+      "typeTag": 567351340953111585
     }
   ],
   "errors": [

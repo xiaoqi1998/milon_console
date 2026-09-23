@@ -825,6 +825,63 @@
       "typeTag": 5560783464435099345
     }
   ],
+  "resources": [
+    {
+      "name": "_SocialProfile",
+      "type": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "name": "_SourceApp",
+      "type": "SourceApp",
+      "typeTag": 8914166003957741580
+    },
+    {
+      "name": "_SourceAppSequence",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_SourcePublisher",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_PublicDataAnchor",
+      "type": "PublicDataAnchor",
+      "typeTag": 12104690320851153008
+    },
+    {
+      "name": "_CommunityControl",
+      "type": "CommunityControl",
+      "typeTag": 16708904908548046110
+    },
+    {
+      "name": "_CommunitySequence",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_CommunityCreatorCount",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_CommunityAdmin",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_JoinRequest",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_Membership",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    }
+  ],
   "constants": [
     {
       "name": "MAX_COMMUNITIES_PER_CREATOR",

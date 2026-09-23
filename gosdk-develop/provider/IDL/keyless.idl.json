@@ -309,23 +309,6 @@
   "types": [
     {
       "kind": "enum",
-      "name": "JwtAlgorithm",
-      "typeTag": 18304619079013862325,
-      "variants": [
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "Rs256"
-        },
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "Es256"
-        }
-      ]
-    },
-    {
-      "kind": "enum",
       "name": "StringOrArray",
       "typeTag": 563464638590666036,
       "variants": [
@@ -491,7 +474,7 @@
         },
         {
           "name": "algorithm",
-          "type": "JwtAlgorithm"
+          "type": "String"
         },
         {
           "name": "material",
@@ -522,7 +505,7 @@
         },
         {
           "name": "allowed_algs",
-          "type": "vec<JwtAlgorithm>"
+          "type": "vec<String>"
         },
         {
           "name": "max_id_token_age_ms",
@@ -643,6 +626,11 @@
     },
     {
       "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
       "name": "PublicKey",
       "typeTag": 12784977254987571496
     },
@@ -670,6 +658,48 @@
       "kind": "builtin",
       "name": "u8",
       "typeTag": 631772817358541784
+    }
+  ],
+  "resources": [
+    {
+      "name": "_KeylessSessions",
+      "type": "SessionsState",
+      "typeTag": 3961147753519811779
+    },
+    {
+      "name": "_KeylessParams",
+      "type": "KeylessParams",
+      "typeTag": 725874807982920445
+    },
+    {
+      "name": "_KeylessProvider",
+      "type": "KeylessProvider",
+      "typeTag": 10056985480167392574
+    },
+    {
+      "name": "_KeylessProviderStatus",
+      "type": "KeylessProviderStatus",
+      "typeTag": 17012131112946806176
+    },
+    {
+      "name": "_KeylessAudience",
+      "type": "KeylessAudience",
+      "typeTag": 15864154800524683589
+    },
+    {
+      "name": "_KeylessBinding",
+      "type": "KeylessBinding",
+      "typeTag": 14670956490051724736
+    },
+    {
+      "name": "_KeylessMarker",
+      "type": "KeylessMarker",
+      "typeTag": 17054723070852806189
+    },
+    {
+      "name": "_ProviderIndex",
+      "type": "ProviderIndex",
+      "typeTag": 2484498175435113698
     }
   ],
   "constants": [

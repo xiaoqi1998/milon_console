@@ -81,9 +81,9 @@ func main() {
 ├── provider/              合约 IDL 加载与指令/事件编解码
 │   ├── IDL/               内置 IDL JSON (account/token/staking/identity/sft/demo...)
 │   ├── provider.go        Provider: IDL 加载、指令编码(Encode)、值序列化/反序列化
-│   ├── registry.go        IDLRegistry: 多 IDL 统一注册、指令/事件解码与格式化
+│   ├── registry.go        IDLRegistry: 多 IDL 统一注册、指令/事件/资源解码与格式化
 │   ├── idlTypeResolver.go 基于 type_tag 的动态类型解析器 (DecodeResource/DecodeEvent)
-│   └── types.go           IDL 数据结构定义
+│   └── types.go           IDL 数据结构定义 (含 resources 资源段)
 │
 ├── example/               完整使用示例
 │   ├── account_create_four_crypto  四种密码学算法创建账户
@@ -355,6 +355,33 @@ for _, event := range eventsResult.BodyEventsByTxHash.Events {
 	fmt.Printf("Event: %+v\n", decoded)
 }
 ```
+
+### 资源解析
+
+链上持久化资源在 IDL `resources` 段声明（如 `token:_Balance`、`account:_Account`），按资源的 type_tag 解码；交易历史中的 AccessRecord 内联值由 SDK 自动按资源定义解析字节范围：
+
+```go
+txResult, _ := client.GetTxByHash(txHash)
+
+for _, record := range txResult.BodyTxHistory.Receipt.Access {
+	lastWritten := record.LastWritten
+	if lastWritten.Variant != 0 { // 仅 Inline 值可直接解码
+		continue
+	}
+
+	decoded, err := client.GetProviderManager().DecodeResourceDataByTag(
+		lastWritten.TypeTag,
+		lastWritten.InlineData,
+	)
+	if err != nil {
+		continue
+	}
+	fmt.Printf("Resource: %+v\n", decoded) // 含 app_name / resource_name / resource_type / data
+}
+```
+
+> - 多个资源可共享同一 type_tag（如多个 `u64` 计数器），此时按 IDL 中首个声明的资源解析；解码按资源 `type` 字段指向的值类型进行。
+> - type_tag 未命中 resources 段时，自动回退到 IDL `types` 段按类型解码，覆盖创世交易等直接以裸值类型 tag 持久化的场景（如 `Address`、`B256` builtin tag），与 Rust SDK 的注册范围（resources ∪ types）保持一致。
 
 ### 只读查询（View）
 

@@ -244,6 +244,52 @@ func TestIDLRegistry_DecodeEventDataByTag_Errors(t *testing.T) {
 	assert.Contains(t, err.Error(), "unknown type tag")
 }
 
+func TestIDLRegistry_DecodeResourceDataByTag(t *testing.T) {
+	reg, err := NewIDLRegistry(loadProviders(t, "demo"))
+	assert.NoError(t, err)
+
+	// demo _NextOrderSeed: u16, resource typeTag 5558799945458185151
+	decoded, err := reg.DecodeResourceDataByTag(5558799945458185151, []byte{7})
+	assert.NoError(t, err)
+
+	assert.Equal(t, uint8(255), decoded["app_id"])
+	assert.Equal(t, "demo", decoded["app_name"])
+	assert.Equal(t, "_NextOrderSeed", decoded["resource_name"])
+	assert.Equal(t, "u16", decoded["resource_type"])
+	assert.Equal(t, uint16(7), decoded["data"])
+
+	// The genesis transaction persists a bare Address value under the Address
+	// builtin tag (types section), which is not declared as a resource; the
+	// types index must serve as fallback.
+	addressBytes := make([]byte, 20)
+	for i := range addressBytes {
+		addressBytes[i] = byte(i + 1)
+	}
+
+	decodedAddress, err := reg.DecodeResourceDataByTag(17438174819379414968, addressBytes)
+	assert.NoError(t, err)
+	assert.Equal(t, "Address", decodedAddress["resource_name"])
+	assert.Equal(t, "Address", decodedAddress["resource_type"])
+
+	addr, ok := decodedAddress["data"].(*crypto.Address)
+	assert.True(t, ok)
+	assert.Equal(t, addressBytes, addr.Bytes[:])
+}
+
+func TestIDLRegistry_DecodeResourceDataByTag_Errors(t *testing.T) {
+	reg, err := NewIDLRegistry(loadProviders(t, "token"))
+	assert.NoError(t, err)
+
+	_, err = reg.DecodeResourceDataByTag(999999999, []byte{1, 2, 3})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown resource type tag")
+
+	// token _Owner decodes a 20-byte Address; the extra byte must be rejected
+	_, err = reg.DecodeResourceDataByTag(10794467625820907094, make([]byte, 21))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "trailing bytes")
+}
+
 func TestIDLRegistry_FormatDecodedInstruction(t *testing.T) {
 	reg, err := NewIDLRegistry(loadProviders(t, "token"))
 	assert.NoError(t, err)

@@ -22,6 +22,8 @@ type Provider struct {
 	IDLTypeByName              map[string]IDLType      // key=IDLType.Name
 	IDLTypeByTypeTag           map[uint64]*IDLType     // key=IDLType.typeTag,
 	EventByTypeTag             map[uint64]Event        // key=Event.typeTag
+	ResourceByName             map[string]*Resource    // key=Resource.Name
+	ResourceByTypeTag          map[uint64]*Resource    // key=Resource.TypeTag (first declaration wins)
 }
 
 func NewProvider(idl IDL) *Provider {
@@ -72,6 +74,21 @@ func NewProvider(idl IDL) *Provider {
 		eventByTypeTag[event.TypeTag] = event
 	}
 
+	resourceByName := make(map[string]*Resource, len(idl.Resources))
+	resourceByTypeTag := make(map[uint64]*Resource, len(idl.Resources))
+	for i := range idl.Resources {
+		resource := &idl.Resources[i]
+		resourceByName[resource.Name] = resource
+
+		// Multiple resources may share one typeTag (e.g. several u64
+		// counters); the first declaration wins so lookups stay
+		// deterministic. Decoding is unaffected because shared tags imply
+		// the same value type.
+		if _, exists := resourceByTypeTag[resource.TypeTag]; !exists {
+			resourceByTypeTag[resource.TypeTag] = resource
+		}
+	}
+
 	return &Provider{
 		IDL:                        idl,
 		InstructionByName:          instructionByName,
@@ -79,6 +96,8 @@ func NewProvider(idl IDL) *Provider {
 		IDLTypeByName:              idlTypeByName,
 		IDLTypeByTypeTag:           idlTypeByTypeTag,
 		EventByTypeTag:             eventByTypeTag,
+		ResourceByName:             resourceByName,
+		ResourceByTypeTag:          resourceByTypeTag,
 	}
 }
 
@@ -117,6 +136,16 @@ func (p *Provider) GetEventByTypeTag(typeTag uint64) (*Event, bool) {
 		return nil, false
 	}
 	return &event, true
+}
+
+func (p *Provider) GetResourceByName(name string) (*Resource, bool) {
+	resource, ok := p.ResourceByName[name]
+	return resource, ok
+}
+
+func (p *Provider) GetResourceByTypeTag(typeTag uint64) (*Resource, bool) {
+	resource, ok := p.ResourceByTypeTag[typeTag]
+	return resource, ok
 }
 
 // Encode encodes instruction args into wire bytes for on-chain submission.

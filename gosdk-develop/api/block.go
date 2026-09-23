@@ -8,6 +8,7 @@ import (
 type Block struct {
 	Number    uint64
 	Epoch     uint64
+	Slot      uint64
 	Hash      TxHash
 	PrevHash  TxHash
 	StateHash TxHash
@@ -23,6 +24,10 @@ func (b *Block) MarshalPostcard(serializer *postcard.Serializer) error {
 
 	if err := serializer.SerializeU64(b.Epoch); err != nil {
 		return fmt.Errorf("failed to serialize Epoch: %w", err)
+	}
+
+	if err := serializer.SerializeU64(b.Slot); err != nil {
+		return fmt.Errorf("failed to serialize Slot: %w", err)
 	}
 
 	serializer.SerializeFixedBytes(b.Hash[:])
@@ -56,6 +61,12 @@ func (b *Block) UnmarshalPostcard(deserializer *postcard.Deserializer) error {
 		return fmt.Errorf("failed to deserialize Epoch: %w", err)
 	}
 	b.Epoch = epoch
+
+	slot, err := deserializer.DeserializeU64()
+	if err != nil {
+		return fmt.Errorf("failed to deserialize Slot: %w", err)
+	}
+	b.Slot = slot
 
 	hash, err := deserializer.DeserializeFixedBytes(TxHashLen)
 	if err != nil {

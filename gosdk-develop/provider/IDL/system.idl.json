@@ -181,6 +181,11 @@
     },
     {
       "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
       "name": "bytes",
       "typeTag": 10405529814227927951
     },
@@ -193,6 +198,43 @@
       "kind": "builtin",
       "name": "u64",
       "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    }
+  ],
+  "resources": [
+    {
+      "name": "_ResourceAccountClaim",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_BlockSeed",
+      "type": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "name": "_ConsensusValidatorIdentity",
+      "type": "ConsensusValidatorIdentity",
+      "typeTag": 16798500351373647328
+    },
+    {
+      "name": "_ConsensusValidatorByAccount",
+      "type": "Address",
+      "typeTag": 7031394024774032867
+    },
+    {
+      "name": "_ConsensusValidatorByPubkey",
+      "type": "Address",
+      "typeTag": 7031394024774032867
+    },
+    {
+      "name": "_ConsensusValidatorByBls",
+      "type": "Address",
+      "typeTag": 7031394024774032867
     }
   ],
   "constants": [

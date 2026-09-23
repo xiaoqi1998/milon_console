@@ -4,6 +4,7 @@ type IDL struct {
 	Metadata     Metadata      `json:"metadata"`
 	Instructions []Instruction `json:"instructions"`
 	Types        []IDLType     `json:"types"`
+	Resources    []Resource    `json:"resources,omitempty"`
 	Events       []Event       `json:"events,omitempty"`
 	Errors       []ErrorDef    `json:"errors,omitempty"`
 	Constants    []Constant    `json:"constants,omitempty"`
@@ -65,6 +66,16 @@ type EnumVariant struct {
 	Name   string        `json:"name"`
 	Kind   string        `json:"kind"`
 	Fields []StructField `json:"fields"`
+}
+
+// Resource is a persisted on-chain value declared in the IDL resources
+// section. Name carries the "_" prefix (e.g. "_Sft"), Type is the IDL type
+// of the stored value and TypeTag identifies the resource itself; multiple
+// resources (e.g. several u64 counters) may share one TypeTag.
+type Resource struct {
+	Name    string `json:"name"`
+	Type    string `json:"type"` // IDL type name (u8, u16, ...)
+	TypeTag uint64 `json:"typeTag"`
 }
 
 type Event struct {

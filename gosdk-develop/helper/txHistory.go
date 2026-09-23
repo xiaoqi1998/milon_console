@@ -187,7 +187,22 @@ func displayEvents(client *milon.Client, events []api.TypeTagWithData) {
 	}
 }
 
+// findIDLTypeByTag locates the provider and IDL type of a persisted value.
+// Resource tags (declared in the IDL resources section) are checked first;
+// the types index remains as a fallback for values that are not declared as
+// resources.
 func findIDLTypeByTag(client *milon.Client, typeTag uint64) (*provider.Provider, *provider.IDLType) {
+	for _, pd := range client.GetAllPd() {
+		if resource, ok := pd.GetResourceByTypeTag(typeTag); ok {
+			if idlType, ok := pd.IDLTypeByName[resource.Type]; ok {
+				return pd, &idlType
+			}
+			// The resource value type may be a builtin that the IDL does not
+			// declare in its types section (e.g. system _B256 uses B256);
+			// primitive types are decoded by name.
+			return pd, &provider.IDLType{Kind: "builtin", Name: resource.Type}
+		}
+	}
 	for _, pd := range client.GetAllPd() {
 		if idlType, ok := pd.GetIDLTypeByTypeTag(typeTag); ok {
 			return pd, idlType

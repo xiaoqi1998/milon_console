@@ -21,6 +21,10 @@ func example(networkConfig milon.Network) {
 	tokenPk := tokenSk.Ed25519Public()
 	token, _ := crypto.NewAddressFromPublicKey(tokenPk)
 
+	payerSk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
+	payerPk := payerSk.Ed25519Public()
+	payer, _ := crypto.NewAddressFromPublicKey(payerPk)
+
 	ownerSk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	ownerPk := ownerSk.Ed25519Public()
 	owner, _ := crypto.NewAddressFromPublicKey(ownerPk)
@@ -38,6 +42,7 @@ func example(networkConfig milon.Network) {
 	spender, _ := crypto.NewAddressFromPublicKey(spenderPk)
 
 	fmt.Printf("token = %v \n", token)
+	fmt.Printf("payer = %v \n", payer)
 	fmt.Printf("owner = %v \n", owner)
 	fmt.Printf("spender = %v \n", spender)
 	fmt.Printf("account1 = %v \n", account1)
@@ -45,14 +50,14 @@ func example(networkConfig milon.Network) {
 	fmt.Printf("spender = %v \n\n", spender)
 
 	fmt.Printf("\n================ 1.Initial MIL ================\n")
-	if err := client.ClaimFaucet(tokenSk, token, lib.PubKeySignatureMode{PublicKey: *tokenPk}); err != nil {
+	if err := client.ClaimFaucet(payerSk, payer, lib.PubKeySignatureMode{PublicKey: *payerPk}); err != nil {
 		panic("failed to ClaimFaucet MIL:" + err.Error())
 	}
-	tokenBalance, err := client.BalanceOf(token)
+	payerBalance, err := client.BalanceOf(payer)
 	if err != nil {
-		panic("failed to get token MIL:" + err.Error())
+		panic("failed to get payer MIL:" + err.Error())
 	}
-	fmt.Printf("token MIL: %d\n", tokenBalance)
+	fmt.Printf("payer MIL: %d\n", payerBalance)
 
 	if err = client.ClaimFaucet(ownerSk, owner, lib.PubKeySignatureMode{PublicKey: *ownerPk}); err != nil {
 		panic("failed to ClaimFaucet owner:" + err.Error())
@@ -72,7 +77,7 @@ func example(networkConfig milon.Network) {
 	}
 	fmt.Printf("account1 MIL: %d\n", account1Balance)
 
-	fmt.Printf("\n================ 2.Create(token sign) ================\n")
+	fmt.Printf("\n================ 2.Create(payer sign) ================\n")
 
 	wire, err := gen.Token.Create.Args(token, owner, gen.TokenMetadata{
 		Name:     "Example Token",
@@ -85,8 +90,9 @@ func example(networkConfig milon.Network) {
 	}
 
 	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
-		WithPayer(token).
-		AddIxesSig(*token, tokenSk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *tokenPk}).
+		WithPayer(payer).
+		AddPayerSig(*payer, payerSk, lib.PubKeySignatureMode{PublicKey: *payerPk}).
+		AddIxesSig(*token, tokenSk, []uint8{0}, false, lib.PubKeySignatureMode{PublicKey: *tokenPk}).
 		Build()
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())

@@ -74,7 +74,7 @@ func example(networkConfig milon.Network) {
 
 	fmt.Printf("\n================ 2.CreateSft(sft sign) ================\n")
 	// create_sft 由 sft 资源账户签名，owner 指定为 owner 账户。
-	wire, err := gen.Sftoken.CreateSft.Args(sft, owner, `{"name":"Milon SFT Demo","desc":"semi-fungible token"}`).Encode()
+	wire, err := gen.Sftoken.CreateSft.Args(sft, owner, `{"name":"Milon SFT Demo","desc":"semi-fungible token"}`, 50).Encode()
 	if err != nil {
 		panic("failed to encode CreateSft instruction:" + err.Error())
 	}
@@ -91,7 +91,7 @@ func example(networkConfig milon.Network) {
 	// slot 只能由 SFT owner 创建；slot_owner / mint_authority / update_author / freeze_authority
 	// 均为可选项，这里全部指定为 owner。
 	authority := owner
-	wire, err = gen.Sftoken.CreateSlot.Args(sft, owner, "Level-1 VIP Card", "level=1", true, &authority, &authority, &authority, &authority).Encode()
+	wire, err = gen.Sftoken.CreateSlot.Args(sft, owner, "Level-1 VIP Card", "level=1", true, &authority, &authority, &authority).Encode()
 	if err != nil {
 		panic("failed to encode CreateSlot instruction:" + err.Error())
 	}

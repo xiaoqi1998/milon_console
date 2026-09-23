@@ -8,17 +8,30 @@ import (
 )
 
 type IDLRegistry struct {
-	providerByAppID        map[uint8]*Provider  // app_id -> Provider
-	providerByName         map[string]*Provider // app name -> Provider (O(1) lookup for DecodeViewDatas)
-	providerByEventTypeTag map[uint64]*Provider // event typeTag -> Provider (global index)
+	providerByAppID           map[uint8]*Provider  // app_id -> Provider
+	providerByName            map[string]*Provider // app name -> Provider (O(1) lookup for DecodeViewDatas)
+	providerByEventTypeTag    map[uint64]*Provider // event typeTag -> Provider (global index)
+	providerByResourceTypeTag map[uint64]*Provider // resource typeTag -> Provider (global index, first wins)
+	providerByTypeTag         map[uint64]*Provider // IDL type typeTag -> Provider (global index, first wins)
 }
 
 func NewIDLRegistry(providerByIDLName map[string]*Provider) (*IDLRegistry, error) {
 	providerByAppID := make(map[uint8]*Provider, len(providerByIDLName))
 	providerByName := make(map[string]*Provider, len(providerByIDLName))
 	providerByEventTypeTag := make(map[uint64]*Provider)
+	providerByResourceTypeTag := make(map[uint64]*Provider)
+	providerByTypeTag := make(map[uint64]*Provider)
 
-	for _, pd := range providerByIDLName {
+	// Sort provider names so the resource index built below is deterministic
+	// regardless of map iteration order.
+	names := make([]string, 0, len(providerByIDLName))
+	for name := range providerByIDLName {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, idlName := range names {
+		pd := providerByIDLName[idlName]
 		appID := pd.appID()
 		if _, ok := providerByAppID[appID]; ok {
 			return nil, fmt.Errorf("duplicate app_id: %d", appID)
@@ -41,12 +54,33 @@ func NewIDLRegistry(providerByIDLName map[string]*Provider) (*IDLRegistry, error
 			}
 			providerByEventTypeTag[typeTag] = pd
 		}
+
+		// resource typeTags may repeat across IDLs (e.g. the builtin u64 or
+		// bool resource tags); the first provider wins, matching the per-
+		// provider first-declaration rule. Decoding is unaffected because
+		// shared tags imply the same value type.
+		for typeTag := range pd.ResourceByTypeTag {
+			if _, ok := providerByResourceTypeTag[typeTag]; !ok {
+				providerByResourceTypeTag[typeTag] = pd
+			}
+		}
+
+		// type typeTags repeat across IDLs as well (builtins such as Address
+		// are declared by every application); the first provider wins for the
+		// same reason.
+		for typeTag := range pd.IDLTypeByTypeTag {
+			if _, ok := providerByTypeTag[typeTag]; !ok {
+				providerByTypeTag[typeTag] = pd
+			}
+		}
 	}
 
 	return &IDLRegistry{
-		providerByAppID:        providerByAppID,
-		providerByName:         providerByName,
-		providerByEventTypeTag: providerByEventTypeTag,
+		providerByAppID:           providerByAppID,
+		providerByName:            providerByName,
+		providerByEventTypeTag:    providerByEventTypeTag,
+		providerByResourceTypeTag: providerByResourceTypeTag,
+		providerByTypeTag:         providerByTypeTag,
 	}, nil
 }
 
@@ -209,6 +243,60 @@ func (m *IDLRegistry) DecodeEventDataByTag(typeTag uint64, data []byte) (map[str
 		"event_name": matchedEvent.Name,
 		"data":       record,
 	}, nil
+}
+
+// DecodeResourceDataByTag decodes a persisted value by its typeTag. Resource
+// declarations win; when the tag is not declared as a resource the IDL types
+// section is used as fallback (values persisted under their raw value-type
+// tag, e.g. an Address written by the genesis transaction).
+func (m *IDLRegistry) DecodeResourceDataByTag(typeTag uint64, data []byte) (map[string]any, error) {
+	if matchedProvider := m.providerByResourceTypeTag[typeTag]; matchedProvider != nil {
+		matchedResource, _ := matchedProvider.GetResourceByTypeTag(typeTag)
+
+		offset := 0
+		value, err := matchedProvider.deserializeValue(matchedResource.Type, data, &offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode resource '%s' (%s): %w", matchedResource.Name, matchedResource.Type, err)
+		}
+
+		// Verify no unparsed data remains
+		if offset != len(data) {
+			return nil, fmt.Errorf("%d trailing bytes after decoding resource data", len(data)-offset)
+		}
+
+		return map[string]any{
+			"app_id":        matchedProvider.IDL.Metadata.AppID,
+			"app_name":      matchedProvider.IDL.Metadata.Name,
+			"resource_name": matchedResource.Name,
+			"resource_type": matchedResource.Type,
+			"data":          value,
+		}, nil
+	}
+
+	if matchedProvider := m.providerByTypeTag[typeTag]; matchedProvider != nil {
+		matchedType, _ := matchedProvider.GetIDLTypeByTypeTag(typeTag)
+
+		offset := 0
+		value, err := matchedProvider.deserializeValue(matchedType.Name, data, &offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode type '%s': %w", matchedType.Name, err)
+		}
+
+		// Verify no unparsed data remains
+		if offset != len(data) {
+			return nil, fmt.Errorf("%d trailing bytes after decoding type data", len(data)-offset)
+		}
+
+		return map[string]any{
+			"app_id":        matchedProvider.IDL.Metadata.AppID,
+			"app_name":      matchedProvider.IDL.Metadata.Name,
+			"resource_name": matchedType.Name,
+			"resource_type": matchedType.Name,
+			"data":          value,
+		}, nil
+	}
+
+	return nil, fmt.Errorf("unknown resource type tag: %d (loaded %d IDLs)", typeTag, len(m.providerByAppID))
 }
 
 // FormatDecodedInstruction formats decoded instruction into readable string.

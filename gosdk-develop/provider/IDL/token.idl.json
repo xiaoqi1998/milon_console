@@ -825,6 +825,58 @@
       "typeTag": 631772817358541784
     }
   ],
+  "resources": [
+    {
+      "name": "_Owner",
+      "type": "Address",
+      "typeTag": 10794467625820907094
+    },
+    {
+      "name": "_Freezer",
+      "type": "Address",
+      "typeTag": 10794467625820907094
+    },
+    {
+      "name": "_Metadata",
+      "type": "Metadata",
+      "typeTag": 13005725662941815531
+    },
+    {
+      "name": "_TotalSupply",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_Balance",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_Frozen",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_Approval",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_AppHold",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_Compliance",
+      "type": "Compliance",
+      "typeTag": 2365014396550645377
+    },
+    {
+      "name": "_FaucetLastClaim",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
   "constants": [
     {
       "name": "MIL_TOKEN",

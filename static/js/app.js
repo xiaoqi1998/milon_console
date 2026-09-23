@@ -3358,7 +3358,7 @@ var IDL_EXAMPLE_ARGS = {
   'identity.CredentialId': { issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19', credential_schema: 'TestSchemaV1' },
 
 
-  // ==================== sftoken 模块（app_id=5，31 个方法：16 entry + 15 view）====================
+  // ==================== sftoken 模块（app_id=5，34 个方法：19 entry + 15 view）====================
 
   'sftoken.ApprovalOf': {
     sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
@@ -3380,7 +3380,7 @@ var IDL_EXAMPLE_ARGS = {
     sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
   },
-  'sftoken.CreateSft': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', metadata: 'metadata-value'},
+  'sftoken.CreateSft': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', metadata: 'metadata-value', royalty_bps: 500},
   'sftoken.CreateSlot': {
     sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     creator: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
@@ -3388,7 +3388,6 @@ var IDL_EXAMPLE_ARGS = {
     attribute: 'attribute-value',
     is_transferable: true,
     slot_owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    mint_authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     update_author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     freeze_authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
   },
@@ -3425,29 +3424,10 @@ var IDL_EXAMPLE_ARGS = {
     token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
     attribute: 'attribute-value',
   },
-  'sftoken.SetSlotFreezeAuthority': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    manager: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    slot_id: 1000,
-    authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-  },
-  'sftoken.SetSlotMintAuthority': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    manager: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    slot_id: 1000,
-    authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-  },
-  'sftoken.SetSlotUpdateAuthor': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    manager: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    slot_id: 1000,
-    author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-  },
   'sftoken.SftInfo': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'sftoken.SftOwnerOf': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'sftoken.SlotFreezeAuthority': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
   'sftoken.SlotInfo': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
-  'sftoken.SlotMintAuthority': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
   'sftoken.SlotOf': {
     sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
@@ -3488,6 +3468,41 @@ var IDL_EXAMPLE_ARGS = {
   'sftoken.ValueOf': {
     sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
+  },
+  'sftoken.Burn': {
+    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
+  },
+  'sftoken.RoyaltyInfo': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+  'sftoken.SetSlotTransferable': {
+    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    manager: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    slot_id: 1000,
+    is_transferable: true,
+  },
+  'sftoken.TransferRoyaltyRecipient': {
+    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    current_recipient: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    new_recipient: 'gKzpjpfWVvwgDs26DTCFFA9eRxb',
+  },
+  'sftoken.TransferSlotFreezeAuthority': {
+    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    current_authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    slot_id: 1000,
+    new_authority: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
+  },
+  'sftoken.TransferSlotOwner': {
+    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    manager: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    slot_id: 1000,
+    new_owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
+  },
+  'sftoken.TransferSlotUpdateAuthor': {
+    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    current_author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    slot_id: 1000,
+    new_author: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
   },
   // ==================== staking 模块（app_id=3，23 个方法：12 entry + 11 view）====================
   'staking.CreateValidator': {
@@ -3818,7 +3833,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'identity.RevokeVcAttestation': { paymentMode: 'unified_payer_all', payerRole: 'issuer' },
 
 
-  // sftoken 模块（16 entry）
+  // sftoken 模块（19 entry）
 
   'sftoken.Approve': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'sftoken.CreateSft': {paymentMode: 'unified_payer_all', payerRole: 'sft'},
@@ -3828,14 +3843,17 @@ var IDL_EXAMPLE_PAYMENT = {
   'sftoken.Mint': {paymentMode: 'unified_payer_all', payerRole: 'minter'},
   'sftoken.RevokeApproval': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'sftoken.SetAttribute': {paymentMode: 'unified_payer_all', payerRole: 'signer'},
-  'sftoken.SetSlotFreezeAuthority': {paymentMode: 'unified_payer_all', payerRole: 'manager'},
-  'sftoken.SetSlotMintAuthority': {paymentMode: 'unified_payer_all', payerRole: 'manager'},
-  'sftoken.SetSlotUpdateAuthor': {paymentMode: 'unified_payer_all', payerRole: 'manager'},
   'sftoken.Split': {paymentMode: 'unified_payer_all', payerRole: 'signer'},
   'sftoken.Transfer': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'sftoken.TransferFrom': {paymentMode: 'unified_payer_all', payerRole: 'spender'},
   'sftoken.TransferOwner': {paymentMode: 'unified_payer_all', payerRole: 'current_owner'},
   'sftoken.UnfreezeSlot': {paymentMode: 'unified_payer_all', payerRole: 'freezer'},
+  'sftoken.Burn': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'sftoken.SetSlotTransferable': {paymentMode: 'unified_payer_all', payerRole: 'manager'},
+  'sftoken.TransferRoyaltyRecipient': {paymentMode: 'unified_payer_all', payerRole: 'current_recipient'},
+  'sftoken.TransferSlotFreezeAuthority': {paymentMode: 'unified_payer_all', payerRole: 'current_authority'},
+  'sftoken.TransferSlotOwner': {paymentMode: 'unified_payer_all', payerRole: 'manager'},
+  'sftoken.TransferSlotUpdateAuthor': {paymentMode: 'unified_payer_all', payerRole: 'current_author'},
   // staking 模块（12 entry）
   'staking.CreateValidator': { paymentMode: 'multi_signer', payerRole: 'operator', signerHint: '该方法需 operator + consensus_account 双签，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用。注：consensus_pubkey/bls_pubkey 为 bytes 类型，JSON REST API 可能无法正确序列化' },
   'staking.JoinCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },

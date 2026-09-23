@@ -402,6 +402,11 @@
     },
     {
       "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
       "name": "Bitmap64",
       "typeTag": 6259351211094536142
     },
@@ -434,6 +439,33 @@
       "kind": "builtin",
       "name": "u8",
       "typeTag": 631772817358541784
+    }
+  ],
+  "resources": [
+    {
+      "name": "_Account",
+      "type": "Account",
+      "typeTag": 5121685491907179737
+    },
+    {
+      "name": "_AccountSigner",
+      "type": "AccountSigner",
+      "typeTag": 862513842932132671
+    },
+    {
+      "name": "_VoteProgress",
+      "type": "Bitmap64",
+      "typeTag": 14664585694504875734
+    },
+    {
+      "name": "_VoteOccupancy",
+      "type": "Bitmap64",
+      "typeTag": 14664585694504875734
+    },
+    {
+      "name": "_VoteSlot",
+      "type": "VoteMeta",
+      "typeTag": 2370275984328722986
     }
   ],
   "constants": [

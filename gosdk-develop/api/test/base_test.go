@@ -164,16 +164,43 @@ func TestDeserializeAccessRecordNoLen_InlinePersistedValue(t *testing.T) {
 	ser.SerializeFixedBytes(make([]byte, api.RsHashLen)) // ResourceID
 	ser.SerializeBool(false)                             // FirstSnapshot: None
 	ser.SerializeU32(0)                                  // LastWritten variant: Inline
-	ser.SerializeU64(5563585020063213298)                // type_tag: u64 (system builtin)
-	ser.SerializeFixedBytes([]byte{42})                  // u64 value, NO length prefix
+	ser.SerializeU64(14785269867199075517)               // type_tag: system _ResourceAccountClaim (bool)
+	ser.SerializeFixedBytes([]byte{1})                   // bool true, NO length prefix
 
 	rec, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.AccessRecord, error) {
 		return api.DeserializeAccessRecordNoLen(d)
 	}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"system": pd}})
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(0), rec.LastWritten.Variant)
-	assert.Equal(t, uint64(5563585020063213298), rec.LastWritten.TypeTag)
-	assert.Equal(t, []byte{42}, rec.LastWritten.InlineData)
+	assert.Equal(t, uint64(14785269867199075517), rec.LastWritten.TypeTag)
+	assert.Equal(t, []byte{1}, rec.LastWritten.InlineData)
+}
+
+func TestDeserializeAccessRecordNoLen_BuiltinTypeFallback(t *testing.T) {
+	pd, err := provider.LoadProviderFromFile("../../provider/IDL/system.idl.json")
+	assert.NoError(t, err)
+
+	// The genesis transaction persists a bare Address value under the Address
+	// builtin tag (types section), not under a resource tag.
+	addressBytes := make([]byte, 20)
+	for i := range addressBytes {
+		addressBytes[i] = byte(i + 1)
+	}
+
+	ser := postcard.NewSerializer()
+	ser.SerializeFixedBytes(make([]byte, api.RsHashLen)) // ResourceID
+	ser.SerializeBool(false)                             // FirstSnapshot: None
+	ser.SerializeU32(0)                                  // LastWritten variant: Inline
+	ser.SerializeU64(17438174819379414968)               // type_tag: Address builtin
+	ser.SerializeFixedBytes(addressBytes)                // Address value, NO length prefix
+
+	rec, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.AccessRecord, error) {
+		return api.DeserializeAccessRecordNoLen(d)
+	}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"system": pd}})
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(0), rec.LastWritten.Variant)
+	assert.Equal(t, uint64(17438174819379414968), rec.LastWritten.TypeTag)
+	assert.Equal(t, addressBytes, rec.LastWritten.InlineData)
 }
 
 func TestDeserializeEventEntry(t *testing.T) {

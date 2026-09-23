@@ -198,6 +198,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "bytes",
 				TypeTag: 10405529814227927951,
 			},
@@ -210,6 +215,43 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u64",
 				TypeTag: 5563585020063213298,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "bool",
+				TypeTag: 14785269867199075517,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_ResourceAccountClaim",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_BlockSeed",
+				Type: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.Resource{
+				Name: "_ConsensusValidatorIdentity",
+				Type: "ConsensusValidatorIdentity",
+				TypeTag: 16798500351373647328,
+			},
+			provider.Resource{
+				Name: "_ConsensusValidatorByAccount",
+				Type: "Address",
+				TypeTag: 7031394024774032867,
+			},
+			provider.Resource{
+				Name: "_ConsensusValidatorByPubkey",
+				Type: "Address",
+				TypeTag: 7031394024774032867,
+			},
+			provider.Resource{
+				Name: "_ConsensusValidatorByBls",
+				Type: "Address",
+				TypeTag: 7031394024774032867,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -660,6 +702,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "Bitmap64",
 				TypeTag: 6259351211094536142,
 			},
@@ -692,6 +739,33 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u8",
 				TypeTag: 631772817358541784,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_Account",
+				Type: "Account",
+				TypeTag: 5121685491907179737,
+			},
+			provider.Resource{
+				Name: "_AccountSigner",
+				Type: "AccountSigner",
+				TypeTag: 862513842932132671,
+			},
+			provider.Resource{
+				Name: "_VoteProgress",
+				Type: "Bitmap64",
+				TypeTag: 14664585694504875734,
+			},
+			provider.Resource{
+				Name: "_VoteOccupancy",
+				Type: "Bitmap64",
+				TypeTag: 14664585694504875734,
+			},
+			provider.Resource{
+				Name: "_VoteSlot",
+				Type: "VoteMeta",
+				TypeTag: 2370275984328722986,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -1699,6 +1773,58 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u8",
 				TypeTag: 631772817358541784,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_Owner",
+				Type: "Address",
+				TypeTag: 10794467625820907094,
+			},
+			provider.Resource{
+				Name: "_Freezer",
+				Type: "Address",
+				TypeTag: 10794467625820907094,
+			},
+			provider.Resource{
+				Name: "_Metadata",
+				Type: "Metadata",
+				TypeTag: 13005725662941815531,
+			},
+			provider.Resource{
+				Name: "_TotalSupply",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Balance",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Frozen",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Approval",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_AppHold",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Compliance",
+				Type: "Compliance",
+				TypeTag: 2365014396550645377,
+			},
+			provider.Resource{
+				Name: "_FaucetLastClaim",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 		},
 		Events: []provider.Event{
@@ -2834,6 +2960,113 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u64",
 				TypeTag: 5563585020063213298,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_ValidatorMetadata",
+				Type: "ValidatorMetadata",
+				TypeTag: 5113745851405436789,
+			},
+			provider.Resource{
+				Name: "_ValidatorByOperator",
+				Type: "Address",
+				TypeTag: 2932656090694604690,
+			},
+			provider.Resource{
+				Name: "_ValidatorStatus",
+				Type: "ValidatorStatus",
+				TypeTag: 13064668281266539954,
+			},
+			provider.Resource{
+				Name: "_PoolAccounting",
+				Type: "PoolAccounting",
+				TypeTag: 8885911992509280689,
+			},
+			provider.Resource{
+				Name: "_StakePosition",
+				Type: "StakePosition",
+				TypeTag: 4315718473348021435,
+			},
+			provider.Resource{
+				Name: "_CandidatePool",
+				Type: "CandidatePool",
+				TypeTag: 13697025346691171769,
+			},
+			provider.Resource{
+				Name: "_StakeIntent",
+				Type: "StakeIntent",
+				TypeTag: 14197438823968938622,
+			},
+			provider.Resource{
+				Name: "_UnstakeIntent",
+				Type: "UnstakeIntent",
+				TypeTag: 16353406510077713387,
+			},
+			provider.Resource{
+				Name: "_CandidateIntent",
+				Type: "CandidateIntent",
+				TypeTag: 14589332730925993977,
+			},
+			provider.Resource{
+				Name: "_StakeIntentValidatorsByEpoch",
+				Type: "AddressList",
+				TypeTag: 14016723206793154190,
+			},
+			provider.Resource{
+				Name: "_UnstakeIntentValidatorsByEpoch",
+				Type: "AddressList",
+				TypeTag: 14016723206793154190,
+			},
+			provider.Resource{
+				Name: "_CandidateIntentValidatorsByEpoch",
+				Type: "AddressList",
+				TypeTag: 14016723206793154190,
+			},
+			provider.Resource{
+				Name: "_AvailabilityDeclarationByEpochValidator",
+				Type: "ValidatorAvailabilityDeclaration",
+				TypeTag: 11947663504094390661,
+			},
+			provider.Resource{
+				Name: "_DeclaredValidatorsByEpoch",
+				Type: "AddressList",
+				TypeTag: 14016723206793154190,
+			},
+			provider.Resource{
+				Name: "_StakeIntentPositionsByValidator",
+				Type: "AddressList",
+				TypeTag: 14016723206793154190,
+			},
+			provider.Resource{
+				Name: "_UnstakeIntentPositionsByValidator",
+				Type: "AddressList",
+				TypeTag: 14016723206793154190,
+			},
+			provider.Resource{
+				Name: "_EpochTransitionByEpoch",
+				Type: "EpochTransition",
+				TypeTag: 4868229573134556260,
+			},
+			provider.Resource{
+				Name: "_EpochState",
+				Type: "EpochState",
+				TypeTag: 12288930857070923756,
+			},
+			provider.Resource{
+				Name: "_EpochConfig",
+				Type: "StoredEpochConfig",
+				TypeTag: 6676851746566294408,
+			},
+			provider.Resource{
+				Name: "_StakingToken",
+				Type: "Address",
+				TypeTag: 2932656090694604690,
+			},
+			provider.Resource{
+				Name: "_RewardAccounting",
+				Type: "RewardAccounting",
+				TypeTag: 17782288577908561212,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -4302,6 +4535,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "PublicKey",
 				TypeTag: 12784977254987571496,
 			},
@@ -4314,16 +4552,6 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "String",
 				TypeTag: 8566531010829758022,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "vec<AcceptedVcIssuer>",
-				TypeTag: 13839084772846465265,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "vec<String>",
-				TypeTag: 2316261776970198819,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -4354,6 +4582,103 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u8",
 				TypeTag: 631772817358541784,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_VcAttestationCore",
+				Type: "VcAttestationCore",
+				TypeTag: 5275629503764841895,
+			},
+			provider.Resource{
+				Name: "_VcAttestationLifecycle",
+				Type: "VcAttestationLifecycle",
+				TypeTag: 11310965231460569252,
+			},
+			provider.Resource{
+				Name: "_AcceptedVcIssuerIndexMeta",
+				Type: "String",
+				TypeTag: 8566531010829758022,
+			},
+			provider.Resource{
+				Name: "_AcceptedVcIssuers",
+				Type: "vec<AcceptedVcIssuer>",
+				TypeTag: 13839084772846465265,
+			},
+			provider.Resource{
+				Name: "_DisclosedVcSchemas",
+				Type: "vec<String>",
+				TypeTag: 2316261776970198819,
+			},
+			provider.Resource{
+				Name: "_DidCore",
+				Type: "DidCoreState",
+				TypeTag: 9239335515597431984,
+			},
+			provider.Resource{
+				Name: "_DidKeyIndex",
+				Type: "DidKeyIndexState",
+				TypeTag: 2872292561178606790,
+			},
+			provider.Resource{
+				Name: "_DidKey",
+				Type: "DidKey",
+				TypeTag: 6808078180298008975,
+			},
+			provider.Resource{
+				Name: "_DidServiceIndex",
+				Type: "DidServiceIndexState",
+				TypeTag: 15068076793216390618,
+			},
+			provider.Resource{
+				Name: "_DidService",
+				Type: "DidService",
+				TypeTag: 9558035208667919587,
+			},
+			provider.Resource{
+				Name: "_DidAlias",
+				Type: "DidAliasState",
+				TypeTag: 5069792348825440705,
+			},
+			provider.Resource{
+				Name: "_DidAvatar",
+				Type: "DidAvatarState",
+				TypeTag: 17427120674153500170,
+			},
+			provider.Resource{
+				Name: "_DidUpdatedAt",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_DidDeactivate",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_NameBinding",
+				Type: "DidNameBinding",
+				TypeTag: 11976108436880291804,
+			},
+			provider.Resource{
+				Name: "_OrganizationCapabilities",
+				Type: "OrganizationCapabilities",
+				TypeTag: 16180937054376829620,
+			},
+			provider.Resource{
+				Name: "_CredentialDefinition",
+				Type: "CredentialDefinition",
+				TypeTag: 2804905021398639289,
+			},
+			provider.Resource{
+				Name: "_OrganizationStatus",
+				Type: "OrganizationStatus",
+				TypeTag: 6886365030236042100,
+			},
+			provider.Resource{
+				Name: "_OrganizationUpdatedAt",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -4633,34 +4958,16 @@ provider.IDL{
 						Role: "input",
 						Type: "String",
 					},
+					provider.Arg{
+						Name: "royalty_bps",
+						Role: "input",
+						Type: "u16",
+					},
 				},
 				Discriminator: 5334,
 				Handler: "create_sft",
 				Kind: "entry",
 				Name: "CreateSft",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "current_owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "new_owner",
-						Role: "input",
-						Type: "Address",
-					},
-				},
-				Discriminator: 35617,
-				Handler: "transfer_owner",
-				Kind: "entry",
-				Name: "TransferOwner",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -4695,11 +5002,6 @@ provider.IDL{
 						Type: "option<Address>",
 					},
 					provider.Arg{
-						Name: "mint_authority",
-						Role: "input",
-						Type: "option<Address>",
-					},
-					provider.Arg{
 						Name: "update_author",
 						Role: "input",
 						Type: "option<Address>",
@@ -4723,25 +5025,20 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "manager",
+						Name: "current_owner",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "slot_id",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "authority",
+						Name: "new_owner",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 3502,
-				Handler: "set_slot_mint_authority",
+				Discriminator: 35617,
+				Handler: "transfer_owner",
 				Kind: "entry",
-				Name: "SetSlotMintAuthority",
+				Name: "TransferOwner",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -4761,15 +5058,94 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.Arg{
-						Name: "author",
+						Name: "new_owner",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 42421,
-				Handler: "set_slot_update_author",
+				Discriminator: 26666,
+				Handler: "transfer_slot_owner",
 				Kind: "entry",
-				Name: "SetSlotUpdateAuthor",
+				Name: "TransferSlotOwner",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "current_author",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "slot_id",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "new_author",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 8940,
+				Handler: "transfer_slot_update_author",
+				Kind: "entry",
+				Name: "TransferSlotUpdateAuthor",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "current_authority",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "slot_id",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "new_authority",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 10654,
+				Handler: "transfer_slot_freeze_authority",
+				Kind: "entry",
+				Name: "TransferSlotFreezeAuthority",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "current_recipient",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "new_recipient",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 56414,
+				Handler: "transfer_royalty_recipient",
+				Kind: "entry",
+				Name: "TransferRoyaltyRecipient",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -4789,15 +5165,15 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.Arg{
-						Name: "authority",
+						Name: "is_transferable",
 						Role: "input",
-						Type: "Address",
+						Type: "bool",
 					},
 				},
-				Discriminator: 43329,
-				Handler: "set_slot_freeze_authority",
+				Discriminator: 57575,
+				Handler: "set_slot_transferable",
 				Kind: "entry",
-				Name: "SetSlotFreezeAuthority",
+				Name: "SetSlotTransferable",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -4890,6 +5266,29 @@ provider.IDL{
 				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "token_id",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 7015,
+				Handler: "burn",
+				Kind: "entry",
+				Name: "Burn",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -5160,6 +5559,22 @@ provider.IDL{
 						Role: "input",
 						Type: "Address",
 					},
+				},
+				Discriminator: 30311,
+				Handler: "royalty_info",
+				Kind: "view",
+				Name: "RoyaltyInfo",
+				Returns: provider.ReturnValue{
+					Type: "Royalty",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
 					provider.Arg{
 						Name: "token_id",
 						Role: "input",
@@ -5298,27 +5713,6 @@ provider.IDL{
 				Name: "IsSlotFrozen",
 				Returns: provider.ReturnValue{
 					Type: "bool",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "slot_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 57757,
-				Handler: "slot_mint_authority",
-				Kind: "view",
-				Name: "SlotMintAuthority",
-				Returns: provider.ReturnValue{
-					Type: "Address",
 				},
 			},
 			provider.Instruction{
@@ -5494,6 +5888,21 @@ provider.IDL{
 				TypeTag: 16546317778011887664,
 			},
 			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "recipient",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "bps",
+						Type: "u16",
+					},
+				},
+				Kind: "struct",
+				Name: "Royalty",
+				TypeTag: 8013111409802783456,
+			},
+			provider.IDLType{
 				Kind: "builtin",
 				Name: "Address",
 				TypeTag: 17438174819379414968,
@@ -5510,7 +5919,69 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "u16",
+				TypeTag: 5558799945458185151,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "u64",
+				TypeTag: 5563585020063213298,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_Sft",
+				Type: "Sft",
+				TypeTag: 7460940398751880426,
+			},
+			provider.Resource{
+				Name: "_SftNextSlotId",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_SftNextTokenId",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Slot",
+				Type: "SlotData",
+				TypeTag: 6310559783402314447,
+			},
+			provider.Resource{
+				Name: "_SlotOwner",
+				Type: "Address",
+				TypeTag: 15146535206056819577,
+			},
+			provider.Resource{
+				Name: "_SlotUpdateAuthor",
+				Type: "Address",
+				TypeTag: 15146535206056819577,
+			},
+			provider.Resource{
+				Name: "_SlotFreezeAuthority",
+				Type: "Address",
+				TypeTag: 15146535206056819577,
+			},
+			provider.Resource{
+				Name: "_SlotFrozen",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_SftRoyalty",
+				Type: "Royalty",
+				TypeTag: 16416299771797568401,
+			},
+			provider.Resource{
+				Name: "_Token",
+				Type: "Token",
+				TypeTag: 7491257169663686040,
+			},
+			provider.Resource{
+				Name: "_Approval",
+				Type: "u64",
 				TypeTag: 5563585020063213298,
 			},
 		},
@@ -5550,11 +6021,6 @@ provider.IDL{
 					},
 					provider.EventField{
 						Name: "owner",
-						Type: "Address",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "mint_authority",
 						Type: "Address",
 						Indexed: true,
 					},
@@ -5775,6 +6241,27 @@ provider.IDL{
 					},
 				},
 				TypeTag: 4045023747084950996,
+			},
+			provider.Event{
+				Name: "RoyaltyRecipientTransferredEvent",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "sft",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "from",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "to",
+						Type: "Address",
+						Indexed: true,
+					},
+				},
+				TypeTag: 567351340953111585,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -6888,6 +7375,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "PublicKey",
 				TypeTag: 12784977254987571496,
 			},
@@ -6925,6 +7417,93 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u8",
 				TypeTag: 631772817358541784,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_MarketTokens",
+				Type: "MarketTokensState",
+				TypeTag: 5654559684954199973,
+			},
+			provider.Resource{
+				Name: "_MarketRules",
+				Type: "MarketRulesState",
+				TypeTag: 11123398268661740058,
+			},
+			provider.Resource{
+				Name: "_MarketAuthority",
+				Type: "Address",
+				TypeTag: 7718767688299500702,
+			},
+			provider.Resource{
+				Name: "_MarketStatus",
+				Type: "u8",
+				TypeTag: 631772817358541784,
+			},
+			provider.Resource{
+				Name: "_BookBestTick",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_BookTotals",
+				Type: "BookTotalsState",
+				TypeTag: 16631658590519238925,
+			},
+			provider.Resource{
+				Name: "_PriceBitmap",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_PriceLevelLinks",
+				Type: "PriceLevelLinkState",
+				TypeTag: 15822207962510117388,
+			},
+			provider.Resource{
+				Name: "_PriceLevelQueue",
+				Type: "PriceLevelQueueState",
+				TypeTag: 11467908556707130883,
+			},
+			provider.Resource{
+				Name: "_OrderStatic",
+				Type: "OrderStaticState",
+				TypeTag: 17960764635315497153,
+			},
+			provider.Resource{
+				Name: "_OrderMutable",
+				Type: "OrderMutableState",
+				TypeTag: 9595926857480671517,
+			},
+			provider.Resource{
+				Name: "_OrderLinks",
+				Type: "OrderLinkState",
+				TypeTag: 17455953695198391291,
+			},
+			provider.Resource{
+				Name: "_ClientOrder",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_VaultLiability",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_MarketSequence",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_NextMarketSeed",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_MarketSeedOwner",
+				Type: "Address",
+				TypeTag: 7718767688299500702,
 			},
 		},
 		Events: []provider.Event{
@@ -7757,23 +8336,6 @@ provider.IDL{
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
 					provider.EnumVariant{
-						Name: "Rs256",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Es256",
-						Kind: "unit",
-						Fields: nil,
-					},
-				},
-				Kind: "enum",
-				Name: "JwtAlgorithm",
-				TypeTag: 18304619079013862325,
-			},
-			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
 						Name: "Single",
 						Kind: "tuple",
 						Fields: []provider.StructField{
@@ -7938,7 +8500,7 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "algorithm",
-						Type: "JwtAlgorithm",
+						Type: "String",
 					},
 					provider.StructField{
 						Name: "material",
@@ -7969,7 +8531,7 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "allowed_algs",
-						Type: "vec<JwtAlgorithm>",
+						Type: "vec<String>",
 					},
 					provider.StructField{
 						Name: "max_id_token_age_ms",
@@ -8090,6 +8652,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "PublicKey",
 				TypeTag: 12784977254987571496,
 			},
@@ -8117,6 +8684,48 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u8",
 				TypeTag: 631772817358541784,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_KeylessSessions",
+				Type: "SessionsState",
+				TypeTag: 3961147753519811779,
+			},
+			provider.Resource{
+				Name: "_KeylessParams",
+				Type: "KeylessParams",
+				TypeTag: 725874807982920445,
+			},
+			provider.Resource{
+				Name: "_KeylessProvider",
+				Type: "KeylessProvider",
+				TypeTag: 10056985480167392574,
+			},
+			provider.Resource{
+				Name: "_KeylessProviderStatus",
+				Type: "KeylessProviderStatus",
+				TypeTag: 17012131112946806176,
+			},
+			provider.Resource{
+				Name: "_KeylessAudience",
+				Type: "KeylessAudience",
+				TypeTag: 15864154800524683589,
+			},
+			provider.Resource{
+				Name: "_KeylessBinding",
+				Type: "KeylessBinding",
+				TypeTag: 14670956490051724736,
+			},
+			provider.Resource{
+				Name: "_KeylessMarker",
+				Type: "KeylessMarker",
+				TypeTag: 17054723070852806189,
+			},
+			provider.Resource{
+				Name: "_ProviderIndex",
+				Type: "ProviderIndex",
+				TypeTag: 2484498175435113698,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -8896,6 +9505,28 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u8",
 				TypeTag: 631772817358541784,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_Box",
+				Type: "BoxState",
+				TypeTag: 5257330722607027646,
+			},
+			provider.Resource{
+				Name: "_AssetPool",
+				Type: "AssetPoolState",
+				TypeTag: 3332345046324256743,
+			},
+			provider.Resource{
+				Name: "_EligibilityBloom",
+				Type: "EligibilityBloom",
+				TypeTag: 12069729471053596772,
+			},
+			provider.Resource{
+				Name: "_ClaimedBloom",
+				Type: "ClaimedBloom",
+				TypeTag: 96439039821236184,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -9835,6 +10466,63 @@ provider.IDL{
 				TypeTag: 5560783464435099345,
 			},
 		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_SocialProfile",
+				Type: "String",
+				TypeTag: 8566531010829758022,
+			},
+			provider.Resource{
+				Name: "_SourceApp",
+				Type: "SourceApp",
+				TypeTag: 8914166003957741580,
+			},
+			provider.Resource{
+				Name: "_SourceAppSequence",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_SourcePublisher",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_PublicDataAnchor",
+				Type: "PublicDataAnchor",
+				TypeTag: 12104690320851153008,
+			},
+			provider.Resource{
+				Name: "_CommunityControl",
+				Type: "CommunityControl",
+				TypeTag: 16708904908548046110,
+			},
+			provider.Resource{
+				Name: "_CommunitySequence",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_CommunityCreatorCount",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_CommunityAdmin",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_JoinRequest",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_Membership",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+		},
 		Errors: []provider.ErrorDef{
 			provider.ErrorDef{
 				Code: 2560,
@@ -10558,6 +11246,53 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u8",
 				TypeTag: 631772817358541784,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_Admin",
+				Type: "Address",
+				TypeTag: 8066144737129915696,
+			},
+			provider.Resource{
+				Name: "_Label",
+				Type: "Label",
+				TypeTag: 4454442085531989710,
+			},
+			provider.Resource{
+				Name: "_Score",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_TierCap",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Order",
+				Type: "OrderState",
+				TypeTag: 12174282691231125773,
+			},
+			provider.Resource{
+				Name: "_NextOrderSeed",
+				Type: "u16",
+				TypeTag: 5558799945458185151,
+			},
+			provider.Resource{
+				Name: "_NextSponsorSeed",
+				Type: "u16",
+				TypeTag: 5558799945458185151,
+			},
+			provider.Resource{
+				Name: "_SponsorPool",
+				Type: "Address",
+				TypeTag: 8066144737129915696,
+			},
+			provider.Resource{
+				Name: "_PoolSponsor",
+				Type: "u16",
+				TypeTag: 5558799945458185151,
 			},
 		},
 		Events: []provider.Event{
@@ -11993,6 +12728,22 @@ func (v SftokenSlotData) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
+// SftokenRoyalty matches the IDL struct Royalty.
+type SftokenRoyalty struct {
+	Recipient *crypto.Address
+	Bps uint16
+}
+
+// ToValue converts SftokenRoyalty into the provider wire value (map[string]any).
+func (v SftokenRoyalty) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// recipient: Address
+	out["recipient"] = v.Recipient
+	// bps: u16
+	out["bps"] = v.Bps
+	return out, nil
+}
+
 // DexMarketStatus matches the IDL enum MarketStatus.
 type DexMarketStatus struct {
 	Variant string // Active variant name
@@ -12636,27 +13387,6 @@ func (v DexDidSubjectType) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// KeylessJwtAlgorithm matches the IDL enum JwtAlgorithm.
-type KeylessJwtAlgorithm struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
-}
-
-// ToValue converts KeylessJwtAlgorithm into the provider wire value (map[string]any).
-func (v KeylessJwtAlgorithm) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum JwtAlgorithm: empty variant")
-	}
-	switch v.Variant {
-	case "Rs256":
-		return map[string]any{"variant": "Rs256"}, nil
-	case "Es256":
-		return map[string]any{"variant": "Es256"}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
-}
-
 // KeylessStringOrArray matches the IDL enum StringOrArray.
 type KeylessStringOrArray struct {
 	Variant string // Active variant name
@@ -12852,7 +13582,7 @@ func (v KeylessKeylessKeyMaterial) ToValue() (map[string]any, error) {
 // KeylessKeylessVerificationKey matches the IDL struct KeylessVerificationKey.
 type KeylessKeylessVerificationKey struct {
 	Kid string
-	Algorithm KeylessJwtAlgorithm
+	Algorithm string
 	Material KeylessKeylessKeyMaterial
 }
 
@@ -12861,18 +13591,14 @@ func (v KeylessKeylessVerificationKey) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 3)
 	// kid: String
 	out["kid"] = v.Kid
-	// algorithm: JwtAlgorithm
-	v0, err := toKeylessJwtAlgorithmValue(v.Algorithm)
-	if err != nil {
-		return nil, err
-	}
-	out["algorithm"] = v0
+	// algorithm: String
+	out["algorithm"] = v.Algorithm
 	// material: KeylessKeyMaterial
-	v1, err := toKeylessKeylessKeyMaterialValue(v.Material)
+	v0, err := toKeylessKeylessKeyMaterialValue(v.Material)
 	if err != nil {
 		return nil, err
 	}
-	out["material"] = v1
+	out["material"] = v0
 	return out, nil
 }
 
@@ -12882,7 +13608,7 @@ type KeylessKeylessProvider struct {
 	Kind KeylessKeylessProviderKind
 	DisplayName string
 	Issuer string
-	AllowedAlgs []KeylessJwtAlgorithm
+	AllowedAlgs []string
 	MaxIdTokenAgeMs uint64
 	MaxSessionTtlMs uint64
 	Owner **crypto.Address
@@ -12905,14 +13631,10 @@ func (v KeylessKeylessProvider) ToValue() (map[string]any, error) {
 	out["display_name"] = v.DisplayName
 	// issuer: String
 	out["issuer"] = v.Issuer
-	// allowed_algs: vec<JwtAlgorithm>
+	// allowed_algs: vec<String>
 	v1 := make([]any, len(v.AllowedAlgs))
 	for v2, v3 := range v.AllowedAlgs {
-		v4, err := toKeylessJwtAlgorithmValue(v3)
-		if err != nil {
-			return nil, err
-		}
-		v1[v2] = v4
+		v1[v2] = v3
 	}
 	out["allowed_algs"] = v1
 	// max_id_token_age_ms: u64
@@ -12926,15 +13648,15 @@ func (v KeylessKeylessProvider) ToValue() (map[string]any, error) {
 		out["owner"] = *v.Owner
 	}
 	// keys: vec<KeylessVerificationKey>
-	v5 := make([]any, len(v.Keys))
-	for v6, v7 := range v.Keys {
-		v8, err := toKeylessKeylessVerificationKeyValue(v7)
+	v4 := make([]any, len(v.Keys))
+	for v5, v6 := range v.Keys {
+		v7, err := toKeylessKeylessVerificationKeyValue(v6)
 		if err != nil {
 			return nil, err
 		}
-		v5[v6] = v8
+		v4[v5] = v7
 	}
-	out["keys"] = v5
+	out["keys"] = v4
 	// key_revision: u64
 	out["key_revision"] = v.KeyRevision
 	return out, nil
@@ -15464,6 +16186,31 @@ func fromSftokenSlotData(v any) (out SftokenSlotData, err error) {
 	return out, nil
 }
 
+// fromSftokenRoyalty converts a decoded IDL value into SftokenRoyalty.
+func fromSftokenRoyalty(v any) (out SftokenRoyalty, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// recipient: Address
+	{
+		v0, err := toAddress(m["recipient"])
+		if err != nil {
+			return out, err
+		}
+		out.Recipient = v0
+	}
+	// bps: u16
+	{
+		v1, err := toUint16(m["bps"])
+		if err != nil {
+			return out, err
+		}
+		out.Bps = v1
+	}
+	return out, nil
+}
+
 // fromDexMarketStatus converts a decoded IDL value into DexMarketStatus.
 func fromDexMarketStatus(v any) (out DexMarketStatus, err error) {
 	m, err := toRecord(v)
@@ -16496,25 +17243,6 @@ func fromDexDidSubjectType(v any) (out DexDidSubjectType, err error) {
 	return out, nil
 }
 
-// fromKeylessJwtAlgorithm converts a decoded IDL value into KeylessJwtAlgorithm.
-func fromKeylessJwtAlgorithm(v any) (out KeylessJwtAlgorithm, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum JwtAlgorithm: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	return out, nil
-}
-
 // fromKeylessStringOrArray converts a decoded IDL value into KeylessStringOrArray.
 func fromKeylessStringOrArray(v any) (out KeylessStringOrArray, err error) {
 	m, err := toRecord(v)
@@ -16762,9 +17490,9 @@ func fromKeylessKeylessVerificationKey(v any) (out KeylessKeylessVerificationKey
 		}
 		out.Kid = v0
 	}
-	// algorithm: JwtAlgorithm
+	// algorithm: String
 	{
-		v1, err := fromKeylessJwtAlgorithm(m["algorithm"])
+		v1, err := toString(m["algorithm"])
 		if err != nil {
 			return out, err
 		}
@@ -16819,15 +17547,15 @@ func fromKeylessKeylessProvider(v any) (out KeylessKeylessProvider, err error) {
 		}
 		out.Issuer = v3
 	}
-	// allowed_algs: vec<JwtAlgorithm>
+	// allowed_algs: vec<String>
 	{
 		v4, err := toSlice(m["allowed_algs"])
 		if err != nil {
 			return out, err
 		}
-		out.AllowedAlgs = make([]KeylessJwtAlgorithm, len(v4))
+		out.AllowedAlgs = make([]string, len(v4))
 		for v5, v6 := range v4 {
-			v7, err := fromKeylessJwtAlgorithm(v6)
+			v7, err := toString(v6)
 			if err != nil {
 				return out, err
 			}
@@ -18377,6 +19105,21 @@ func toSftokenSlotDataValue(v any) (map[string]any, error) {
 	}
 }
 
+// toSftokenRoyaltyValue converts any into SftokenRoyalty for provider serialization.
+func toSftokenRoyaltyValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SftokenRoyalty:
+		return x.ToValue()
+	case *SftokenRoyalty:
+		if x == nil {
+			return nil, fmt.Errorf("nil SftokenRoyalty")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SftokenRoyalty, got %T", v)
+	}
+}
+
 // toDexMarketStatusValue converts any into DexMarketStatus for provider serialization.
 func toDexMarketStatusValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -18749,21 +19492,6 @@ func toDexDidSubjectTypeValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected DexDidSubjectType, got %T", v)
-	}
-}
-
-// toKeylessJwtAlgorithmValue converts any into KeylessJwtAlgorithm for provider serialization.
-func toKeylessJwtAlgorithmValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case KeylessJwtAlgorithm:
-		return x.ToValue()
-	case *KeylessJwtAlgorithm:
-		if x == nil {
-			return nil, fmt.Errorf("nil KeylessJwtAlgorithm")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected KeylessJwtAlgorithm, got %T", v)
 	}
 }
 
@@ -25008,14 +25736,17 @@ func (ix *IdentityCredentialIdIx) DecodeView(body []byte) (out string, err error
 type SftokenApp struct {
 	Pd *provider.Provider
 	CreateSft *SftokenCreateSftIx
-	TransferOwner *SftokenTransferOwnerIx
 	CreateSlot *SftokenCreateSlotIx
-	SetSlotMintAuthority *SftokenSetSlotMintAuthorityIx
-	SetSlotUpdateAuthor *SftokenSetSlotUpdateAuthorIx
-	SetSlotFreezeAuthority *SftokenSetSlotFreezeAuthorityIx
+	TransferOwner *SftokenTransferOwnerIx
+	TransferSlotOwner *SftokenTransferSlotOwnerIx
+	TransferSlotUpdateAuthor *SftokenTransferSlotUpdateAuthorIx
+	TransferSlotFreezeAuthority *SftokenTransferSlotFreezeAuthorityIx
+	TransferRoyaltyRecipient *SftokenTransferRoyaltyRecipientIx
+	SetSlotTransferable *SftokenSetSlotTransferableIx
 	FreezeSlot *SftokenFreezeSlotIx
 	UnfreezeSlot *SftokenUnfreezeSlotIx
 	Mint *SftokenMintIx
+	Burn *SftokenBurnIx
 	Split *SftokenSplitIx
 	Merge *SftokenMergeIx
 	SetAttribute *SftokenSetAttributeIx
@@ -25025,6 +25756,7 @@ type SftokenApp struct {
 	TransferFrom *SftokenTransferFromIx
 	SftInfo *SftokenSftInfoIx
 	SlotInfo *SftokenSlotInfoIx
+	RoyaltyInfo *SftokenRoyaltyInfoIx
 	SlotOf *SftokenSlotOfIx
 	Token *SftokenTokenIx
 	OwnerOf *SftokenOwnerOfIx
@@ -25032,7 +25764,6 @@ type SftokenApp struct {
 	BalanceOf *SftokenBalanceOfIx
 	AttributeOf *SftokenAttributeOfIx
 	IsSlotFrozen *SftokenIsSlotFrozenIx
-	SlotMintAuthority *SftokenSlotMintAuthorityIx
 	SlotUpdateAuthor *SftokenSlotUpdateAuthorIx
 	SlotFreezeAuthority *SftokenSlotFreezeAuthorityIx
 	SftOwnerOf *SftokenSftOwnerOfIx
@@ -25042,14 +25773,17 @@ type SftokenApp struct {
 
 var Sftoken = &SftokenApp{
 	CreateSft: &SftokenCreateSftIx{},
-	TransferOwner: &SftokenTransferOwnerIx{},
 	CreateSlot: &SftokenCreateSlotIx{},
-	SetSlotMintAuthority: &SftokenSetSlotMintAuthorityIx{},
-	SetSlotUpdateAuthor: &SftokenSetSlotUpdateAuthorIx{},
-	SetSlotFreezeAuthority: &SftokenSetSlotFreezeAuthorityIx{},
+	TransferOwner: &SftokenTransferOwnerIx{},
+	TransferSlotOwner: &SftokenTransferSlotOwnerIx{},
+	TransferSlotUpdateAuthor: &SftokenTransferSlotUpdateAuthorIx{},
+	TransferSlotFreezeAuthority: &SftokenTransferSlotFreezeAuthorityIx{},
+	TransferRoyaltyRecipient: &SftokenTransferRoyaltyRecipientIx{},
+	SetSlotTransferable: &SftokenSetSlotTransferableIx{},
 	FreezeSlot: &SftokenFreezeSlotIx{},
 	UnfreezeSlot: &SftokenUnfreezeSlotIx{},
 	Mint: &SftokenMintIx{},
+	Burn: &SftokenBurnIx{},
 	Split: &SftokenSplitIx{},
 	Merge: &SftokenMergeIx{},
 	SetAttribute: &SftokenSetAttributeIx{},
@@ -25059,6 +25793,7 @@ var Sftoken = &SftokenApp{
 	TransferFrom: &SftokenTransferFromIx{},
 	SftInfo: &SftokenSftInfoIx{},
 	SlotInfo: &SftokenSlotInfoIx{},
+	RoyaltyInfo: &SftokenRoyaltyInfoIx{},
 	SlotOf: &SftokenSlotOfIx{},
 	Token: &SftokenTokenIx{},
 	OwnerOf: &SftokenOwnerOfIx{},
@@ -25066,7 +25801,6 @@ var Sftoken = &SftokenApp{
 	BalanceOf: &SftokenBalanceOfIx{},
 	AttributeOf: &SftokenAttributeOfIx{},
 	IsSlotFrozen: &SftokenIsSlotFrozenIx{},
-	SlotMintAuthority: &SftokenSlotMintAuthorityIx{},
 	SlotUpdateAuthor: &SftokenSlotUpdateAuthorIx{},
 	SlotFreezeAuthority: &SftokenSlotFreezeAuthorityIx{},
 	SftOwnerOf: &SftokenSftOwnerOfIx{},
@@ -25077,14 +25811,17 @@ var Sftoken = &SftokenApp{
 func (a *SftokenApp) bind(pd *provider.Provider) {
 	a.Pd = pd
 	a.CreateSft.pd = pd
-	a.TransferOwner.pd = pd
 	a.CreateSlot.pd = pd
-	a.SetSlotMintAuthority.pd = pd
-	a.SetSlotUpdateAuthor.pd = pd
-	a.SetSlotFreezeAuthority.pd = pd
+	a.TransferOwner.pd = pd
+	a.TransferSlotOwner.pd = pd
+	a.TransferSlotUpdateAuthor.pd = pd
+	a.TransferSlotFreezeAuthority.pd = pd
+	a.TransferRoyaltyRecipient.pd = pd
+	a.SetSlotTransferable.pd = pd
 	a.FreezeSlot.pd = pd
 	a.UnfreezeSlot.pd = pd
 	a.Mint.pd = pd
+	a.Burn.pd = pd
 	a.Split.pd = pd
 	a.Merge.pd = pd
 	a.SetAttribute.pd = pd
@@ -25094,6 +25831,7 @@ func (a *SftokenApp) bind(pd *provider.Provider) {
 	a.TransferFrom.pd = pd
 	a.SftInfo.pd = pd
 	a.SlotInfo.pd = pd
+	a.RoyaltyInfo.pd = pd
 	a.SlotOf.pd = pd
 	a.Token.pd = pd
 	a.OwnerOf.pd = pd
@@ -25101,7 +25839,6 @@ func (a *SftokenApp) bind(pd *provider.Provider) {
 	a.BalanceOf.pd = pd
 	a.AttributeOf.pd = pd
 	a.IsSlotFrozen.pd = pd
-	a.SlotMintAuthority.pd = pd
 	a.SlotUpdateAuthor.pd = pd
 	a.SlotFreezeAuthority.pd = pd
 	a.SftOwnerOf.pd = pd
@@ -25117,15 +25854,17 @@ type SftokenCreateSftArgs struct {
 	sft *crypto.Address
 	owner *crypto.Address
 	metadata string
+	royalty_bps uint16
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of CreateSft.
-func (ix *SftokenCreateSftIx) Args(sft *crypto.Address, owner *crypto.Address, metadata string) *SftokenCreateSftArgs {
+func (ix *SftokenCreateSftIx) Args(sft *crypto.Address, owner *crypto.Address, metadata string, royalty_bps uint16) *SftokenCreateSftArgs {
 	return &SftokenCreateSftArgs{
 		sft: sft,
 		owner: owner,
 		metadata: metadata,
+		royalty_bps: royalty_bps,
 		pd: ix.pd,
 	}
 }
@@ -25142,7 +25881,81 @@ func (a *SftokenCreateSftArgs) Encode() (api.PackedInstruction, error) {
 	args["owner"] = a.owner
 	// metadata: String
 	args["metadata"] = a.metadata
+	// royalty_bps: u16
+	args["royalty_bps"] = a.royalty_bps
 	wire, err := a.pd.Encode("CreateSft", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenCreateSlotIx struct {
+	pd *provider.Provider
+}
+
+type SftokenCreateSlotArgs struct {
+	sft *crypto.Address
+	creator *crypto.Address
+	metadata string
+	attribute string
+	is_transferable bool
+	slot_owner **crypto.Address
+	update_author **crypto.Address
+	freeze_authority **crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateSlot.
+func (ix *SftokenCreateSlotIx) Args(sft *crypto.Address, creator *crypto.Address, metadata string, attribute string, is_transferable bool, slot_owner **crypto.Address, update_author **crypto.Address, freeze_authority **crypto.Address) *SftokenCreateSlotArgs {
+	return &SftokenCreateSlotArgs{
+		sft: sft,
+		creator: creator,
+		metadata: metadata,
+		attribute: attribute,
+		is_transferable: is_transferable,
+		slot_owner: slot_owner,
+		update_author: update_author,
+		freeze_authority: freeze_authority,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenCreateSlotArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// creator: Signer
+	args["creator"] = a.creator
+	// metadata: String
+	args["metadata"] = a.metadata
+	// attribute: String
+	args["attribute"] = a.attribute
+	// is_transferable: bool
+	args["is_transferable"] = a.is_transferable
+	// slot_owner: option<Address>
+	if a.slot_owner == nil {
+		args["slot_owner"] = nil
+	} else {
+		args["slot_owner"] = *a.slot_owner
+	}
+	// update_author: option<Address>
+	if a.update_author == nil {
+		args["update_author"] = nil
+	} else {
+		args["update_author"] = *a.update_author
+	}
+	// freeze_authority: option<Address>
+	if a.freeze_authority == nil {
+		args["freeze_authority"] = nil
+	} else {
+		args["freeze_authority"] = *a.freeze_authority
+	}
+	wire, err := a.pd.Encode("CreateSlot", args)
 	if err != nil {
 		return nil, err
 	}
@@ -25189,212 +26002,216 @@ func (a *SftokenTransferOwnerArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenCreateSlotIx struct {
+type SftokenTransferSlotOwnerIx struct {
 	pd *provider.Provider
 }
 
-type SftokenCreateSlotArgs struct {
+type SftokenTransferSlotOwnerArgs struct {
 	sft *crypto.Address
-	creator *crypto.Address
-	metadata string
-	attribute string
-	is_transferable bool
-	slot_owner **crypto.Address
-	mint_authority **crypto.Address
-	update_author **crypto.Address
-	freeze_authority **crypto.Address
+	manager *crypto.Address
+	slot_id uint64
+	new_owner *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CreateSlot.
-func (ix *SftokenCreateSlotIx) Args(sft *crypto.Address, creator *crypto.Address, metadata string, attribute string, is_transferable bool, slot_owner **crypto.Address, mint_authority **crypto.Address, update_author **crypto.Address, freeze_authority **crypto.Address) *SftokenCreateSlotArgs {
-	return &SftokenCreateSlotArgs{
+// Args builds the IDL arguments of TransferSlotOwner.
+func (ix *SftokenTransferSlotOwnerIx) Args(sft *crypto.Address, manager *crypto.Address, slot_id uint64, new_owner *crypto.Address) *SftokenTransferSlotOwnerArgs {
+	return &SftokenTransferSlotOwnerArgs{
 		sft: sft,
-		creator: creator,
-		metadata: metadata,
-		attribute: attribute,
-		is_transferable: is_transferable,
-		slot_owner: slot_owner,
-		mint_authority: mint_authority,
-		update_author: update_author,
-		freeze_authority: freeze_authority,
+		manager: manager,
+		slot_id: slot_id,
+		new_owner: new_owner,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenCreateSlotArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenTransferSlotOwnerArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// sft: Address
 	args["sft"] = a.sft
-	// creator: Signer
-	args["creator"] = a.creator
-	// metadata: String
-	args["metadata"] = a.metadata
-	// attribute: String
-	args["attribute"] = a.attribute
+	// manager: Signer
+	args["manager"] = a.manager
+	// slot_id: u64
+	args["slot_id"] = a.slot_id
+	// new_owner: Address
+	args["new_owner"] = a.new_owner
+	wire, err := a.pd.Encode("TransferSlotOwner", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenTransferSlotUpdateAuthorIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTransferSlotUpdateAuthorArgs struct {
+	sft *crypto.Address
+	current_author *crypto.Address
+	slot_id uint64
+	new_author *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TransferSlotUpdateAuthor.
+func (ix *SftokenTransferSlotUpdateAuthorIx) Args(sft *crypto.Address, current_author *crypto.Address, slot_id uint64, new_author *crypto.Address) *SftokenTransferSlotUpdateAuthorArgs {
+	return &SftokenTransferSlotUpdateAuthorArgs{
+		sft: sft,
+		current_author: current_author,
+		slot_id: slot_id,
+		new_author: new_author,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTransferSlotUpdateAuthorArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// current_author: Signer
+	args["current_author"] = a.current_author
+	// slot_id: u64
+	args["slot_id"] = a.slot_id
+	// new_author: Address
+	args["new_author"] = a.new_author
+	wire, err := a.pd.Encode("TransferSlotUpdateAuthor", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenTransferSlotFreezeAuthorityIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTransferSlotFreezeAuthorityArgs struct {
+	sft *crypto.Address
+	current_authority *crypto.Address
+	slot_id uint64
+	new_authority *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TransferSlotFreezeAuthority.
+func (ix *SftokenTransferSlotFreezeAuthorityIx) Args(sft *crypto.Address, current_authority *crypto.Address, slot_id uint64, new_authority *crypto.Address) *SftokenTransferSlotFreezeAuthorityArgs {
+	return &SftokenTransferSlotFreezeAuthorityArgs{
+		sft: sft,
+		current_authority: current_authority,
+		slot_id: slot_id,
+		new_authority: new_authority,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTransferSlotFreezeAuthorityArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// current_authority: Signer
+	args["current_authority"] = a.current_authority
+	// slot_id: u64
+	args["slot_id"] = a.slot_id
+	// new_authority: Address
+	args["new_authority"] = a.new_authority
+	wire, err := a.pd.Encode("TransferSlotFreezeAuthority", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenTransferRoyaltyRecipientIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTransferRoyaltyRecipientArgs struct {
+	sft *crypto.Address
+	current_recipient *crypto.Address
+	new_recipient *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TransferRoyaltyRecipient.
+func (ix *SftokenTransferRoyaltyRecipientIx) Args(sft *crypto.Address, current_recipient *crypto.Address, new_recipient *crypto.Address) *SftokenTransferRoyaltyRecipientArgs {
+	return &SftokenTransferRoyaltyRecipientArgs{
+		sft: sft,
+		current_recipient: current_recipient,
+		new_recipient: new_recipient,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTransferRoyaltyRecipientArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// current_recipient: Signer
+	args["current_recipient"] = a.current_recipient
+	// new_recipient: Address
+	args["new_recipient"] = a.new_recipient
+	wire, err := a.pd.Encode("TransferRoyaltyRecipient", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenSetSlotTransferableIx struct {
+	pd *provider.Provider
+}
+
+type SftokenSetSlotTransferableArgs struct {
+	sft *crypto.Address
+	manager *crypto.Address
+	slot_id uint64
+	is_transferable bool
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetSlotTransferable.
+func (ix *SftokenSetSlotTransferableIx) Args(sft *crypto.Address, manager *crypto.Address, slot_id uint64, is_transferable bool) *SftokenSetSlotTransferableArgs {
+	return &SftokenSetSlotTransferableArgs{
+		sft: sft,
+		manager: manager,
+		slot_id: slot_id,
+		is_transferable: is_transferable,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenSetSlotTransferableArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// manager: Signer
+	args["manager"] = a.manager
+	// slot_id: u64
+	args["slot_id"] = a.slot_id
 	// is_transferable: bool
 	args["is_transferable"] = a.is_transferable
-	// slot_owner: option<Address>
-	if a.slot_owner == nil {
-		args["slot_owner"] = nil
-	} else {
-		args["slot_owner"] = *a.slot_owner
-	}
-	// mint_authority: option<Address>
-	if a.mint_authority == nil {
-		args["mint_authority"] = nil
-	} else {
-		args["mint_authority"] = *a.mint_authority
-	}
-	// update_author: option<Address>
-	if a.update_author == nil {
-		args["update_author"] = nil
-	} else {
-		args["update_author"] = *a.update_author
-	}
-	// freeze_authority: option<Address>
-	if a.freeze_authority == nil {
-		args["freeze_authority"] = nil
-	} else {
-		args["freeze_authority"] = *a.freeze_authority
-	}
-	wire, err := a.pd.Encode("CreateSlot", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type SftokenSetSlotMintAuthorityIx struct {
-	pd *provider.Provider
-}
-
-type SftokenSetSlotMintAuthorityArgs struct {
-	sft *crypto.Address
-	manager *crypto.Address
-	slot_id uint64
-	authority *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SetSlotMintAuthority.
-func (ix *SftokenSetSlotMintAuthorityIx) Args(sft *crypto.Address, manager *crypto.Address, slot_id uint64, authority *crypto.Address) *SftokenSetSlotMintAuthorityArgs {
-	return &SftokenSetSlotMintAuthorityArgs{
-		sft: sft,
-		manager: manager,
-		slot_id: slot_id,
-		authority: authority,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSetSlotMintAuthorityArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// manager: Signer
-	args["manager"] = a.manager
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	// authority: Address
-	args["authority"] = a.authority
-	wire, err := a.pd.Encode("SetSlotMintAuthority", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type SftokenSetSlotUpdateAuthorIx struct {
-	pd *provider.Provider
-}
-
-type SftokenSetSlotUpdateAuthorArgs struct {
-	sft *crypto.Address
-	manager *crypto.Address
-	slot_id uint64
-	author *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SetSlotUpdateAuthor.
-func (ix *SftokenSetSlotUpdateAuthorIx) Args(sft *crypto.Address, manager *crypto.Address, slot_id uint64, author *crypto.Address) *SftokenSetSlotUpdateAuthorArgs {
-	return &SftokenSetSlotUpdateAuthorArgs{
-		sft: sft,
-		manager: manager,
-		slot_id: slot_id,
-		author: author,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSetSlotUpdateAuthorArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// manager: Signer
-	args["manager"] = a.manager
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	// author: Address
-	args["author"] = a.author
-	wire, err := a.pd.Encode("SetSlotUpdateAuthor", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type SftokenSetSlotFreezeAuthorityIx struct {
-	pd *provider.Provider
-}
-
-type SftokenSetSlotFreezeAuthorityArgs struct {
-	sft *crypto.Address
-	manager *crypto.Address
-	slot_id uint64
-	authority *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SetSlotFreezeAuthority.
-func (ix *SftokenSetSlotFreezeAuthorityIx) Args(sft *crypto.Address, manager *crypto.Address, slot_id uint64, authority *crypto.Address) *SftokenSetSlotFreezeAuthorityArgs {
-	return &SftokenSetSlotFreezeAuthorityArgs{
-		sft: sft,
-		manager: manager,
-		slot_id: slot_id,
-		authority: authority,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSetSlotFreezeAuthorityArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// manager: Signer
-	args["manager"] = a.manager
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	// authority: Address
-	args["authority"] = a.authority
-	wire, err := a.pd.Encode("SetSlotFreezeAuthority", args)
+	wire, err := a.pd.Encode("SetSlotTransferable", args)
 	if err != nil {
 		return nil, err
 	}
@@ -25531,6 +26348,46 @@ func (a *SftokenMintArgs) Encode() (api.PackedInstruction, error) {
 	// attribute: String
 	args["attribute"] = a.attribute
 	wire, err := a.pd.Encode("Mint", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenBurnIx struct {
+	pd *provider.Provider
+}
+
+type SftokenBurnArgs struct {
+	sft *crypto.Address
+	owner *crypto.Address
+	token_id uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Burn.
+func (ix *SftokenBurnIx) Args(sft *crypto.Address, owner *crypto.Address, token_id uint64) *SftokenBurnArgs {
+	return &SftokenBurnArgs{
+		sft: sft,
+		owner: owner,
+		token_id: token_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenBurnArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// owner: Signer
+	args["owner"] = a.owner
+	// token_id: u64
+	args["token_id"] = a.token_id
+	wire, err := a.pd.Encode("Burn", args)
 	if err != nil {
 		return nil, err
 	}
@@ -25969,6 +26826,58 @@ func (ix *SftokenSlotInfoIx) DecodeView(body []byte) (out SftokenSlotData, err e
 	return out, nil
 }
 
+type SftokenRoyaltyInfoIx struct {
+	pd *provider.Provider
+}
+
+type SftokenRoyaltyInfoArgs struct {
+	sft *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RoyaltyInfo.
+func (ix *SftokenRoyaltyInfoIx) Args(sft *crypto.Address) *SftokenRoyaltyInfoArgs {
+	return &SftokenRoyaltyInfoArgs{
+		sft: sft,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenRoyaltyInfoArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	wire, err := a.pd.Encode("RoyaltyInfo", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of RoyaltyInfo into SftokenRoyalty.
+func (ix *SftokenRoyaltyInfoIx) DecodeView(body []byte) (out SftokenRoyalty, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("RoyaltyInfo", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view RoyaltyInfo failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := fromSftokenRoyalty(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
 type SftokenSlotOfIx struct {
 	pd *provider.Provider
 }
@@ -26354,62 +27263,6 @@ func (ix *SftokenIsSlotFrozenIx) DecodeView(body []byte) (out bool, err error) {
 		return out, fmt.Errorf("view IsSlotFrozen failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
 	v0, err := toBool(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type SftokenSlotMintAuthorityIx struct {
-	pd *provider.Provider
-}
-
-type SftokenSlotMintAuthorityArgs struct {
-	sft *crypto.Address
-	slot_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SlotMintAuthority.
-func (ix *SftokenSlotMintAuthorityIx) Args(sft *crypto.Address, slot_id uint64) *SftokenSlotMintAuthorityArgs {
-	return &SftokenSlotMintAuthorityArgs{
-		sft: sft,
-		slot_id: slot_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSlotMintAuthorityArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	wire, err := a.pd.Encode("SlotMintAuthority", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of SlotMintAuthority into *crypto.Address.
-func (ix *SftokenSlotMintAuthorityIx) DecodeView(body []byte) (out *crypto.Address, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("SlotMintAuthority", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SlotMintAuthority failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toAddress(v)
 	if err != nil {
 		return out, err
 	}

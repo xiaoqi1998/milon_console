@@ -67,16 +67,16 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 				{
 					ResourceID: api.RsHash{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19},
 					LastWritten: api.PersistedValue{
-						Variant:    0, // Inline(AnySerializeOwned), no length prefix
-						TypeTag:    5563585020063213298, // u64
-						InlineData: amountBytes, // varint-encoded u64 (42)
+						Variant:    0,                    // Inline(AnySerializeOwned), no length prefix
+						TypeTag:    5563585020063213298, // demo _Score/_TierCap (u64)
+						InlineData: amountBytes,          // varint-encoded u64 (42)
 					},
 				},
 				{
 					ResourceID: api.RsHash{3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
 					LastWritten: api.PersistedValue{
 						Variant: 0,                     // Inline(AnySerializeOwned), no length prefix
-						TypeTag: 17390915333023917609, // Account (account.idl.json)
+						TypeTag: 5121685491907179737, // account _Account resource
 						// bitmap=7 (u64 varint), weight=6 (u8), threshold=4 (u8), last_modified_block=183 (u64 varint)
 						InlineData: []byte{7, 6, 4, 0xB7, 0x01},
 					},

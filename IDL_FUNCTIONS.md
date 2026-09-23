@@ -1,6 +1,6 @@
 # Milon IDL 函数清单
 
-> 导出自 `gosdk-develop/provider/IDL/`，共 **11** 个 app、**235** 个函数（view 95 + entry 140）。
+> 导出自 `gosdk-develop/provider/IDL/`，共 **11** 个 app、**238** 个函数（view 95 + entry 143）。
 
 > 表格列：`appname`(应用名) · `meth`(方法名/指令名) · `handler`(链上入口名) · `id`(discriminator 指令编号) · `说明`(中文释义，逻辑移植自 handler/idl_handler.go 的 describeInstruction)
 
@@ -61,6 +61,7 @@
 | identity | CredentialId | credential_id | 63370 | （只读查询）查询身份（DID）的 CredentialId 数据。 |
 | sftoken | SftInfo | sft_info | 57694 | （只读查询）查询半同质化代币（SFT）的 SftInfo 数据。 |
 | sftoken | SlotInfo | slot_info | 48907 | （只读查询）查询半同质化代币（SFT）的 SlotInfo 数据。 |
+| sftoken | RoyaltyInfo | royalty_info | 30311 | （只读查询）查询半同质化代币（SFT）的 RoyaltyInfo 数据。 |
 | sftoken | SlotOf | slot_of | 38850 | （只读查询）查询半同质化代币（SFT）的 SlotOf 数据。 |
 | sftoken | Token | token | 35083 | （只读查询）查询半同质化代币（SFT）的 Token 数据。 |
 | sftoken | OwnerOf | owner_of | 39083 | （只读查询）查询半同质化代币（SFT）的 OwnerOf 数据。 |
@@ -68,7 +69,6 @@
 | sftoken | BalanceOf | balance_of | 63018 | （只读查询）查询半同质化代币（SFT）相关信息（BalanceOf）。 |
 | sftoken | AttributeOf | attribute_of | 45938 | （只读查询）查询半同质化代币（SFT）的 AttributeOf 数据。 |
 | sftoken | IsSlotFrozen | is_slot_frozen | 30630 | （只读查询）查询半同质化代币（SFT）的 IsSlotFrozen 数据。 |
-| sftoken | SlotMintAuthority | slot_mint_authority | 57757 | （只读查询）查询半同质化代币（SFT）的 SlotMintAuthority 数据。 |
 | sftoken | SlotUpdateAuthor | slot_update_author | 59756 | （只读查询）查询半同质化代币（SFT）的 SlotUpdateAuthor 数据。 |
 | sftoken | SlotFreezeAuthority | slot_freeze_authority | 53534 | （只读查询）查询半同质化代币（SFT）的 SlotFreezeAuthority 数据。 |
 | sftoken | SftOwnerOf | sft_owner_of | 46443 | （只读查询）查询半同质化代币（SFT）的 SftOwnerOf 数据。 |
@@ -109,7 +109,7 @@
 
 ## Entry（写操作，kind=entry）
 
-共 **140** 个。
+共 **143** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -184,14 +184,17 @@
 | identity | UpdateOrganizationCapabilities | update_organization_capabilities | 13927 | 更新身份（DID）（handler: update_organization_capabilities）。 |
 | identity | DeactivateOrganization | deactivate_organization | 48597 | 调用 身份（DID） 的 DeactivateOrganization 方法（handler: deactivate_organization）。 |
 | sftoken | CreateSft | create_sft | 5334 | 创建半同质化代币（SFT）（handler: create_sft）。 |
-| sftoken | TransferOwner | transfer_owner | 35617 | 转账半同质化代币（SFT）（handler: transfer_owner）。 |
 | sftoken | CreateSlot | create_slot | 56115 | 创建半同质化代币（SFT）（handler: create_slot）。 |
-| sftoken | SetSlotMintAuthority | set_slot_mint_authority | 3502 | 设置半同质化代币（SFT）（handler: set_slot_mint_authority）。 |
-| sftoken | SetSlotUpdateAuthor | set_slot_update_author | 42421 | 设置半同质化代币（SFT）（handler: set_slot_update_author）。 |
-| sftoken | SetSlotFreezeAuthority | set_slot_freeze_authority | 43329 | 设置半同质化代币（SFT）（handler: set_slot_freeze_authority）。 |
+| sftoken | TransferOwner | transfer_owner | 35617 | 转账半同质化代币（SFT）（handler: transfer_owner）。 |
+| sftoken | TransferSlotOwner | transfer_slot_owner | 26666 | 转账半同质化代币（SFT）（handler: transfer_slot_owner）。 |
+| sftoken | TransferSlotUpdateAuthor | transfer_slot_update_author | 8940 | 转账半同质化代币（SFT）（handler: transfer_slot_update_author）。 |
+| sftoken | TransferSlotFreezeAuthority | transfer_slot_freeze_authority | 10654 | 转账半同质化代币（SFT）（handler: transfer_slot_freeze_authority）。 |
+| sftoken | TransferRoyaltyRecipient | transfer_royalty_recipient | 56414 | 转账半同质化代币（SFT）（handler: transfer_royalty_recipient）。 |
+| sftoken | SetSlotTransferable | set_slot_transferable | 57575 | 设置半同质化代币（SFT）（handler: set_slot_transferable）。 |
 | sftoken | FreezeSlot | freeze_slot | 13370 | 冻结半同质化代币（SFT）（handler: freeze_slot）。 |
 | sftoken | UnfreezeSlot | unfreeze_slot | 61011 | 解冻半同质化代币（SFT）（handler: unfreeze_slot）。 |
 | sftoken | Mint | mint | 43610 | 铸造/增发半同质化代币（SFT）（handler: mint）。 |
+| sftoken | Burn | burn | 7015 | 销毁半同质化代币（SFT）（handler: burn）。 |
 | sftoken | Split | split | 50774 | 调用 半同质化代币（SFT） 的 Split 方法（handler: split）。 |
 | sftoken | Merge | merge | 110 | 调用 半同质化代币（SFT） 的 Merge 方法（handler: merge）。 |
 | sftoken | SetAttribute | set_attribute | 21633 | 设置半同质化代币（SFT）（handler: set_attribute）。 |
@@ -263,10 +266,10 @@
 | token | 2 | 7 | 23 | 30 |
 | staking | 3 | 11 | 12 | 23 |
 | identity | 4 | 25 | 17 | 42 |
-| sftoken | 5 | 15 | 16 | 31 |
+| sftoken | 5 | 15 | 19 | 34 |
 | dex | 6 | 6 | 8 | 14 |
 | keyless | 8 | 8 | 8 | 16 |
 | lucky_box | 9 | 2 | 4 | 6 |
 | social | 10 | 8 | 24 | 32 |
 | demo | 255 | 8 | 10 | 18 |
-| **合计** | — | **95** | **140** | **235** |
+| **合计** | — | **95** | **143** | **238** |

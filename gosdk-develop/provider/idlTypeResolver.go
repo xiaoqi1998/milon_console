@@ -15,14 +15,16 @@ type IDLTypeResolver struct {
 	// indexes are built lazily on first use (thread-safe).
 	Providers map[string]*Provider
 
-	once                   sync.Once
-	providerByTypeTag      map[uint64]*Provider // resource typeTag -> Provider
-	providerByEventTypeTag map[uint64]*Provider // event typeTag -> Provider
+	once                      sync.Once
+	providerByResourceTypeTag map[uint64]*Provider // resource typeTag -> Provider
+	providerByTypeTag         map[uint64]*Provider // IDL type typeTag -> Provider (types section)
+	providerByEventTypeTag    map[uint64]*Provider // event typeTag -> Provider
 }
 
 // buildIndexes precomputes typeTag -> Provider maps for O(1) lookups.
 // On collisions the first registered provider wins (deterministic).
 func (r *IDLTypeResolver) buildIndexes() {
+	r.providerByResourceTypeTag = make(map[uint64]*Provider)
 	r.providerByTypeTag = make(map[uint64]*Provider)
 	r.providerByEventTypeTag = make(map[uint64]*Provider)
 	names := make([]string, 0, len(r.Providers))
@@ -32,6 +34,15 @@ func (r *IDLTypeResolver) buildIndexes() {
 	sort.Strings(names)
 	for _, name := range names {
 		pd := r.Providers[name]
+		for typeTag := range pd.ResourceByTypeTag {
+			if _, ok := r.providerByResourceTypeTag[typeTag]; !ok {
+				r.providerByResourceTypeTag[typeTag] = pd
+			}
+		}
+		// Values may be persisted under their raw value-type tag (e.g. a bare
+		// Address written by the genesis transaction). Builtin tags such as
+		// Address or u64 repeat across IDLs with the same meaning, so
+		// first-wins stays deterministic.
 		for typeTag := range pd.IDLTypeByTypeTag {
 			if _, ok := r.providerByTypeTag[typeTag]; !ok {
 				r.providerByTypeTag[typeTag] = pd
@@ -45,23 +56,37 @@ func (r *IDLTypeResolver) buildIndexes() {
 	}
 }
 
-// DecodeResource returns the consumed bytes of the value registered under
-// typeTag plus the remaining bytes.
+// DecodeResource returns the consumed bytes of the persisted value registered
+// under typeTag plus the remaining bytes. Resource declarations win; when the
+// tag is not declared as a resource the IDL types section is used as fallback,
+// mirroring the Rust SDK which also registers decoders for builtin and legacy
+// type tags.
 func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueBytes []byte, remaining []byte, err error) {
 	r.once.Do(r.buildIndexes)
 
-	targetProvider := r.providerByTypeTag[typeTag]
-	if targetProvider == nil {
-		return nil, bytes, fmt.Errorf("unknown resource type_tag %d (not found in any loaded IDL)", typeTag)
-	}
-	targetIDLType, _ := targetProvider.GetIDLTypeByTypeTag(typeTag)
+	if targetProvider := r.providerByResourceTypeTag[typeTag]; targetProvider != nil {
+		targetResource, _ := targetProvider.GetResourceByTypeTag(typeTag)
 
-	offset := 0
-	if _, err = targetProvider.deserializeValue(targetIDLType.Name, bytes, &offset); err != nil {
-		return nil, bytes, fmt.Errorf("deserialize %s failed: %w", targetIDLType.Name, err)
+		offset := 0
+		if _, err = targetProvider.deserializeValue(targetResource.Type, bytes, &offset); err != nil {
+			return nil, bytes, fmt.Errorf("deserialize resource %s (%s) failed: %w", targetResource.Name, targetResource.Type, err)
+		}
+
+		return bytes[:offset], bytes[offset:], nil
 	}
 
-	return bytes[:offset], bytes[offset:], nil
+	if targetProvider := r.providerByTypeTag[typeTag]; targetProvider != nil {
+		targetType, _ := targetProvider.GetIDLTypeByTypeTag(typeTag)
+
+		offset := 0
+		if _, err = targetProvider.deserializeValue(targetType.Name, bytes, &offset); err != nil {
+			return nil, bytes, fmt.Errorf("deserialize type %s failed: %w", targetType.Name, err)
+		}
+
+		return bytes[:offset], bytes[offset:], nil
+	}
+
+	return nil, bytes, fmt.Errorf("unknown resource type_tag %d (not found in any loaded IDL)", typeTag)
 }
 
 // DecodeEvent returns the consumed bytes of the event registered under

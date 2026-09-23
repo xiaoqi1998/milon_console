@@ -961,6 +961,113 @@
       "typeTag": 5563585020063213298
     }
   ],
+  "resources": [
+    {
+      "name": "_ValidatorMetadata",
+      "type": "ValidatorMetadata",
+      "typeTag": 5113745851405436789
+    },
+    {
+      "name": "_ValidatorByOperator",
+      "type": "Address",
+      "typeTag": 2932656090694604690
+    },
+    {
+      "name": "_ValidatorStatus",
+      "type": "ValidatorStatus",
+      "typeTag": 13064668281266539954
+    },
+    {
+      "name": "_PoolAccounting",
+      "type": "PoolAccounting",
+      "typeTag": 8885911992509280689
+    },
+    {
+      "name": "_StakePosition",
+      "type": "StakePosition",
+      "typeTag": 4315718473348021435
+    },
+    {
+      "name": "_CandidatePool",
+      "type": "CandidatePool",
+      "typeTag": 13697025346691171769
+    },
+    {
+      "name": "_StakeIntent",
+      "type": "StakeIntent",
+      "typeTag": 14197438823968938622
+    },
+    {
+      "name": "_UnstakeIntent",
+      "type": "UnstakeIntent",
+      "typeTag": 16353406510077713387
+    },
+    {
+      "name": "_CandidateIntent",
+      "type": "CandidateIntent",
+      "typeTag": 14589332730925993977
+    },
+    {
+      "name": "_StakeIntentValidatorsByEpoch",
+      "type": "AddressList",
+      "typeTag": 14016723206793154190
+    },
+    {
+      "name": "_UnstakeIntentValidatorsByEpoch",
+      "type": "AddressList",
+      "typeTag": 14016723206793154190
+    },
+    {
+      "name": "_CandidateIntentValidatorsByEpoch",
+      "type": "AddressList",
+      "typeTag": 14016723206793154190
+    },
+    {
+      "name": "_AvailabilityDeclarationByEpochValidator",
+      "type": "ValidatorAvailabilityDeclaration",
+      "typeTag": 11947663504094390661
+    },
+    {
+      "name": "_DeclaredValidatorsByEpoch",
+      "type": "AddressList",
+      "typeTag": 14016723206793154190
+    },
+    {
+      "name": "_StakeIntentPositionsByValidator",
+      "type": "AddressList",
+      "typeTag": 14016723206793154190
+    },
+    {
+      "name": "_UnstakeIntentPositionsByValidator",
+      "type": "AddressList",
+      "typeTag": 14016723206793154190
+    },
+    {
+      "name": "_EpochTransitionByEpoch",
+      "type": "EpochTransition",
+      "typeTag": 4868229573134556260
+    },
+    {
+      "name": "_EpochState",
+      "type": "EpochState",
+      "typeTag": 12288930857070923756
+    },
+    {
+      "name": "_EpochConfig",
+      "type": "StoredEpochConfig",
+      "typeTag": 6676851746566294408
+    },
+    {
+      "name": "_StakingToken",
+      "type": "Address",
+      "typeTag": 2932656090694604690
+    },
+    {
+      "name": "_RewardAccounting",
+      "type": "RewardAccounting",
+      "typeTag": 17782288577908561212
+    }
+  ],
   "constants": [
     {
       "name": "REWARD_INDEX_SCALE",

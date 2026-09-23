@@ -1269,6 +1269,11 @@
     },
     {
       "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
       "name": "PublicKey",
       "typeTag": 12784977254987571496
     },
@@ -1281,16 +1286,6 @@
       "kind": "builtin",
       "name": "String",
       "typeTag": 8566531010829758022
-    },
-    {
-      "kind": "builtin",
-      "name": "vec<AcceptedVcIssuer>",
-      "typeTag": 13839084772846465265
-    },
-    {
-      "kind": "builtin",
-      "name": "vec<String>",
-      "typeTag": 2316261776970198819
     },
     {
       "kind": "builtin",
@@ -1321,6 +1316,103 @@
       "kind": "builtin",
       "name": "u8",
       "typeTag": 631772817358541784
+    }
+  ],
+  "resources": [
+    {
+      "name": "_VcAttestationCore",
+      "type": "VcAttestationCore",
+      "typeTag": 5275629503764841895
+    },
+    {
+      "name": "_VcAttestationLifecycle",
+      "type": "VcAttestationLifecycle",
+      "typeTag": 11310965231460569252
+    },
+    {
+      "name": "_AcceptedVcIssuerIndexMeta",
+      "type": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "name": "_AcceptedVcIssuers",
+      "type": "vec<AcceptedVcIssuer>",
+      "typeTag": 13839084772846465265
+    },
+    {
+      "name": "_DisclosedVcSchemas",
+      "type": "vec<String>",
+      "typeTag": 2316261776970198819
+    },
+    {
+      "name": "_DidCore",
+      "type": "DidCoreState",
+      "typeTag": 9239335515597431984
+    },
+    {
+      "name": "_DidKeyIndex",
+      "type": "DidKeyIndexState",
+      "typeTag": 2872292561178606790
+    },
+    {
+      "name": "_DidKey",
+      "type": "DidKey",
+      "typeTag": 6808078180298008975
+    },
+    {
+      "name": "_DidServiceIndex",
+      "type": "DidServiceIndexState",
+      "typeTag": 15068076793216390618
+    },
+    {
+      "name": "_DidService",
+      "type": "DidService",
+      "typeTag": 9558035208667919587
+    },
+    {
+      "name": "_DidAlias",
+      "type": "DidAliasState",
+      "typeTag": 5069792348825440705
+    },
+    {
+      "name": "_DidAvatar",
+      "type": "DidAvatarState",
+      "typeTag": 17427120674153500170
+    },
+    {
+      "name": "_DidUpdatedAt",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_DidDeactivate",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_NameBinding",
+      "type": "DidNameBinding",
+      "typeTag": 11976108436880291804
+    },
+    {
+      "name": "_OrganizationCapabilities",
+      "type": "OrganizationCapabilities",
+      "typeTag": 16180937054376829620
+    },
+    {
+      "name": "_CredentialDefinition",
+      "type": "CredentialDefinition",
+      "typeTag": 2804905021398639289
+    },
+    {
+      "name": "_OrganizationStatus",
+      "type": "OrganizationStatus",
+      "typeTag": 6886365030236042100
+    },
+    {
+      "name": "_OrganizationUpdatedAt",
+      "type": "u64",
+      "typeTag": 5563585020063213298
     }
   ],
   "errors": [

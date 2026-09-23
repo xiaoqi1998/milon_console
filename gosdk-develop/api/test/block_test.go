@@ -13,6 +13,7 @@ func TestBlock_MarshalPostcard(t *testing.T) {
 		original := api.Block{
 			Number:    1234567890,
 			Epoch:     42,
+			Slot:      100,
 			Hash:      api.TxHash{1, 2, 3, 4, 5},
 			PrevHash:  api.TxHash{6, 7, 8, 9, 10},
 			StateHash: api.TxHash{11, 12, 13, 14, 15},
@@ -39,6 +40,7 @@ func TestBlock_MarshalPostcard(t *testing.T) {
 		original := api.Block{
 			Number:    18446744073709551615,
 			Epoch:     18446744073709551615,
+			Slot:      18446744073709551615,
 			Hash:      api.TxHash{1, 2, 3, 4, 5},
 			PrevHash:  api.TxHash{6, 7, 8, 9, 10},
 			StateHash: api.TxHash{11, 12, 13, 14, 15},
@@ -65,6 +67,7 @@ func TestBlock_MarshalPostcard(t *testing.T) {
 		block1 := api.Block{
 			Number:    999,
 			Epoch:     1,
+			Slot:      11,
 			Hash:      api.TxHash{1, 2, 3},
 			PrevHash:  api.TxHash{4, 5, 6},
 			StateHash: api.TxHash{7, 8, 9},
@@ -76,6 +79,7 @@ func TestBlock_MarshalPostcard(t *testing.T) {
 		block2 := api.Block{
 			Number:    999,
 			Epoch:     1,
+			Slot:      11,
 			Hash:      api.TxHash{1, 2, 3},
 			PrevHash:  api.TxHash{4, 5, 6},
 			StateHash: api.TxHash{7, 8, 9},
@@ -122,6 +126,7 @@ func TestBlock_DeserializeErrors(t *testing.T) {
 		original := api.Block{
 			Number:    1234567890,
 			Epoch:     42,
+			Slot:      100,
 			Hash:      api.TxHash{1, 2, 3},
 			PrevHash:  api.TxHash{4, 5, 6},
 			StateHash: api.TxHash{7, 8, 9},
@@ -149,6 +154,7 @@ func TestBlock_DeserializeErrors(t *testing.T) {
 		original := api.Block{
 			Number:    1234567890,
 			Epoch:     42,
+			Slot:      100,
 			Hash:      api.TxHash{1, 2, 3},
 			PrevHash:  api.TxHash{4, 5, 6},
 			StateHash: api.TxHash{7, 8, 9},

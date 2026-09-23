@@ -528,6 +528,53 @@
       "typeTag": 631772817358541784
     }
   ],
+  "resources": [
+    {
+      "name": "_Admin",
+      "type": "Address",
+      "typeTag": 8066144737129915696
+    },
+    {
+      "name": "_Label",
+      "type": "Label",
+      "typeTag": 4454442085531989710
+    },
+    {
+      "name": "_Score",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_TierCap",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_Order",
+      "type": "OrderState",
+      "typeTag": 12174282691231125773
+    },
+    {
+      "name": "_NextOrderSeed",
+      "type": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "name": "_NextSponsorSeed",
+      "type": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "name": "_SponsorPool",
+      "type": "Address",
+      "typeTag": 8066144737129915696
+    },
+    {
+      "name": "_PoolSponsor",
+      "type": "u16",
+      "typeTag": 5558799945458185151
+    }
+  ],
   "events": [
     {
       "fields": [

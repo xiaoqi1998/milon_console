@@ -1026,6 +1026,11 @@
     },
     {
       "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
       "name": "PublicKey",
       "typeTag": 12784977254987571496
     },
@@ -1063,6 +1068,93 @@
       "kind": "builtin",
       "name": "u8",
       "typeTag": 631772817358541784
+    }
+  ],
+  "resources": [
+    {
+      "name": "_MarketTokens",
+      "type": "MarketTokensState",
+      "typeTag": 5654559684954199973
+    },
+    {
+      "name": "_MarketRules",
+      "type": "MarketRulesState",
+      "typeTag": 11123398268661740058
+    },
+    {
+      "name": "_MarketAuthority",
+      "type": "Address",
+      "typeTag": 7718767688299500702
+    },
+    {
+      "name": "_MarketStatus",
+      "type": "u8",
+      "typeTag": 631772817358541784
+    },
+    {
+      "name": "_BookBestTick",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_BookTotals",
+      "type": "BookTotalsState",
+      "typeTag": 16631658590519238925
+    },
+    {
+      "name": "_PriceBitmap",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_PriceLevelLinks",
+      "type": "PriceLevelLinkState",
+      "typeTag": 15822207962510117388
+    },
+    {
+      "name": "_PriceLevelQueue",
+      "type": "PriceLevelQueueState",
+      "typeTag": 11467908556707130883
+    },
+    {
+      "name": "_OrderStatic",
+      "type": "OrderStaticState",
+      "typeTag": 17960764635315497153
+    },
+    {
+      "name": "_OrderMutable",
+      "type": "OrderMutableState",
+      "typeTag": 9595926857480671517
+    },
+    {
+      "name": "_OrderLinks",
+      "type": "OrderLinkState",
+      "typeTag": 17455953695198391291
+    },
+    {
+      "name": "_ClientOrder",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_VaultLiability",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_MarketSequence",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_NextMarketSeed",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_MarketSeedOwner",
+      "type": "Address",
+      "typeTag": 7718767688299500702
     }
   ],
   "constants": [

@@ -312,6 +312,28 @@
       "typeTag": 631772817358541784
     }
   ],
+  "resources": [
+    {
+      "name": "_Box",
+      "type": "BoxState",
+      "typeTag": 5257330722607027646
+    },
+    {
+      "name": "_AssetPool",
+      "type": "AssetPoolState",
+      "typeTag": 3332345046324256743
+    },
+    {
+      "name": "_EligibilityBloom",
+      "type": "EligibilityBloom",
+      "typeTag": 12069729471053596772
+    },
+    {
+      "name": "_ClaimedBloom",
+      "type": "ClaimedBloom",
+      "typeTag": 96439039821236184
+    }
+  ],
   "constants": [
     {
       "name": "MAX_CLAIMS_PER_BOX",
