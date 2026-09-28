@@ -136,11 +136,11 @@ func buildAppMeta(name string, pd *provider.Provider) idlAppMeta {
 				Name:        a.Name,
 				Type:        a.Type,
 				Role:        a.Role,
-				Description: describeArg(a.Name, a.Role),
+				Description: idlArgDoc(name, ix.Name, a.Name, a.Role),
 			})
 		}
 
-		ixDesc := describeInstruction(name, ix.Name, ix.Handler, ix.Kind)
+		ixDesc := idlMethodDoc(name, ix.Name, ix.Handler, ix.Kind)
 
 		meta := idlInstructionMeta{
 			Name:          ix.Name,
@@ -216,6 +216,22 @@ func buildAppMeta(name string, pd *provider.Provider) idlAppMeta {
 		Constants:    constants,
 		Errors:       errors,
 	}
+}
+
+// idlMethodDoc 优先取人工整理的方法文档（idl_method_docs.go），缺省回退到启发式 describeInstruction。
+func idlMethodDoc(app, name, handler, kind string) string {
+	if d, ok := idlMethodDocs[app+"."+name]; ok && d != "" {
+		return d
+	}
+	return describeInstruction(app, name, handler, kind)
+}
+
+// idlArgDoc 优先取参数文档映射，缺省回退到启发式 describeArg。
+func idlArgDoc(app, method, argName, role string) string {
+	if d, ok := idlArgDocs[app+"."+method+":"+argName]; ok && d != "" {
+		return d
+	}
+	return describeArg(argName, role)
 }
 
 // describeInstruction 根据 app/方法名/handler/kind 推断方法的中文说明。

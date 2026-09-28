@@ -2115,6 +2115,8 @@ body::before {
   font-size: 13px;
   line-height: 1.6;
   margin-bottom: 8px;
+  /* 说明含【功能】/【限制】/【返回】多段（\n 分隔），按换行渲染 */
+  white-space: pre-line;
 }
 .idl-doc-params {
   display: flex;
@@ -3229,6 +3231,14 @@ body::before {
   padding: 8px 0;
   color: var(--text-secondary, #8a94a6);
   font-size: 12px;
+}
+
+/* 批量卡片顶部的方法功能简述（取说明首段） */
+.idl-batch-desc {
+  padding: 2px 14px 0;
+  color: var(--text-secondary, #8a94a6);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .idl-batch-card .param-label {

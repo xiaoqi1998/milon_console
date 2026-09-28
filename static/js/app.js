@@ -4406,6 +4406,11 @@ function buildIDLBatchCard(item, i, preset) {
     return card;
   }
 
+  // 方法中文说明（只取【功能】首段保持紧凑，完整【限制】见单方法表单）
+  if (ix.description) {
+    card.appendChild(el('div', { class: 'idl-batch-desc', text: String(ix.description).split('\n')[0] }));
+  }
+
   var inputArgs = ix.args.filter(function (a) {
     return a.role === 'input' || a.role === 'signer' || a.role === 'any_signer';
   });
