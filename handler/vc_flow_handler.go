@@ -56,11 +56,15 @@ type vcFlowRequest struct {
 	ValidUntilMs     *int64 `json:"validUntilMs"`     // 凭证有效期毫秒时间戳;null=永久
 }
 
-// validateVcFlowRequest 校验请求体必填约束(纯函数,便于单测)。
+// validateVcFlowRequest 校验请求体必填约束与有效期(纯函数,便于单测)。
 // userAddress 必填:同一 32 字节私钥按 ed25519/secp256k1/bls12381 解释会派生
 // 不同地址,不显式传地址时服务端只能默认按 Ed25519 解释,secp256k1 账户会被
 // 静默派生成错误地址——显式地址配合曲线回退才能锁定正确公钥。
-func validateVcFlowRequest(req vcFlowRequest) error {
+// validUntilMs 必须是未来毫秒时间戳:链端拒绝披露已过期凭证(错误 1067
+// "Only a currently valid VC attestation can be accepted"),提前拦截避免
+// 白跑领水/DID/组织注册等链上步骤;0 与 null 同义(不过期,对齐
+// /api/util/vc-attestation 的语义)。
+func validateVcFlowRequest(req vcFlowRequest, nowMs int64) error {
 	if strings.TrimSpace(req.IssuerPrivateKey) == "" {
 		return fmt.Errorf("issuerPrivateKey is required")
 	}
@@ -69,6 +73,9 @@ func validateVcFlowRequest(req vcFlowRequest) error {
 	}
 	if strings.TrimSpace(req.UserAddress) == "" {
 		return fmt.Errorf("userAddress is required(必填:32字节私钥在不同曲线下派生不同地址,请传账户生成时返回的地址,服务端按其自动匹配曲线)")
+	}
+	if req.ValidUntilMs != nil && *req.ValidUntilMs != 0 && *req.ValidUntilMs <= nowMs {
+		return fmt.Errorf("validUntilMs 已过期(%d):链端拒绝披露已过期的凭证(错误 1067 Only a currently valid VC attestation can be accepted),请传未来的毫秒时间戳;null/0 表示永久有效", *req.ValidUntilMs)
 	}
 	return nil
 }
@@ -157,8 +164,10 @@ func buildVcFlowCredentials(chainID int, issuerAddr, subjectAddr crypto.Address,
 			subjectAddr.ToBase58(), schema, i, issuerAddr.ToBase58(), schema)
 		hash := sha256.Sum256([]byte(credentialJSON))
 
+		// 0 与 null 同义 = 不过期(对齐 /api/util/vc-attestation 语义);
+		// Some(0) 是 1970 年的过期时间,链端会以 1067 拒绝披露
 		var vUntil *int64
-		if validUntil != nil {
+		if validUntil != nil && *validUntil != 0 {
 			v := *validUntil
 			vUntil = &v
 		}
@@ -276,7 +285,7 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 		return
 	}
 	req = normalizeVcFlowRequest(req)
-	if err := validateVcFlowRequest(req); err != nil {
+	if err := validateVcFlowRequest(req, time.Now().UnixMilli()); err != nil {
 		logParamError(c, "VcFlow", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 		return

@@ -85,7 +85,7 @@ const ENDPOINTS = [
       userAddress: 'base58地址(必填!取账户生成时返回的address,服务端按其匹配曲线,防止私钥曲线歧义派生错地址)',
       credentialPrefix: 'Test',
       credentialCount: 5,
-      validUntilMs: null
+      validUntilMs: '毫秒时间戳(必须为未来时间,链端拒绝披露过期凭证);null=永久'
     }, null, 2) },
   { id: 'view-single', method: 'POST', path: '/api/view/single', summary: '底层单指令视图', group: '合约',
     bodyTemplate: JSON.stringify({ transactionPostcard: 'base64编码' }, null, 2) },
@@ -2943,7 +2943,7 @@ var API_DOCS = {
       { name: 'userAddress', type: 'string', required: true, desc: '用户地址（必填），取 /api/accounts/generate 返回的 address；服务端按其自动匹配曲线，防止私钥曲线歧义派生错地址' },
       { name: 'credentialPrefix', type: 'string', required: false, desc: '凭证 schema 前缀（缺省 Test）' },
       { name: 'credentialCount', type: 'int', required: false, desc: '凭证张数（缺省 5，上限 20）' },
-      { name: 'validUntilMs', type: 'int', required: false, desc: '凭证有效期毫秒时间戳；null=永久有效' },
+      { name: 'validUntilMs', type: 'int', required: false, desc: '凭证有效期毫秒时间戳，必须为未来时间（链端拒绝披露过期凭证，错误 1067）；null/0=永久有效' },
     ],
     response: { success: true, code: 0, message: 'ok', data: {
       issuer: { address: '2pwKY...', faucet: { skipped: true, claimed: false, balanceBefore: '9980000000', balanceAfter: '9980000000', detail: 'balance is sufficient, skip faucet' }, did: { skipped: false, txHash: '0x3b3b...' }, organization: { skipped: false, txHash: '0xb7e8...' } },

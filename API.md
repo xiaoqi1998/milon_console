@@ -2177,7 +2177,7 @@ curl http://localhost:8080/api/idl/metadata
 | `userAddress` | string | 是 | 用户地址（base58），取 `/api/accounts/generate` 返回的 `address`。必填：同一 32 字节私钥按 ed25519/secp256k1/bls12381 解释会派生**不同地址**，服务端按显式地址自动匹配曲线并锁定正确公钥；与私钥任何曲线派生都不一致时报 400 |
 | `credentialPrefix` | string | 否 | 凭证 schema 前缀，缺省 `Test`（生成 `Test1`、`Test2`…） |
 | `credentialCount` | number | 否 | 凭证张数，缺省 `5`，上限 `20` |
-| `validUntilMs` | number | 否 | 凭证有效期毫秒时间戳；`null` 或不传 = 永久有效 |
+| `validUntilMs` | number | 否 | 凭证有效期毫秒时间戳，**必须为未来时间**——链端拒绝披露已过期凭证（错误 1067 Only a currently valid VC attestation can be accepted），过期值在开工前即被 400 拦截；`null`/`0`/不传 = 永久有效 |
 
 **请求示例**
 

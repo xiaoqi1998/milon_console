@@ -113,6 +113,69 @@ func TestBuildVcFlowCredentialsValidUntil(t *testing.T) {
 	}
 }
 
+// TestBuildVcFlowCredentialsZeroMeansNoExpiry validUntilMs=0 与 /api/util/vc-attestation
+// 语义对齐:0 表示不过期(摘要不含 expiry,输出 null),而非 1970 年的 Some(0)
+// —— 链端拒绝披露已过期凭证(1067),Some(0) 必然失败。
+func TestBuildVcFlowCredentialsZeroMeansNoExpiry(t *testing.T) {
+	issuerSK, issuerPub, issuerAddr, _, _, userAddr := vcFlowTestKeys(t)
+	zero := int64(0)
+
+	creds, err := buildVcFlowCredentials(900_000_001, *issuerAddr, *userAddr, issuerSK, issuerPub, "Z", 1, &zero)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if creds[0].ValidUntilMs != nil {
+		t.Fatalf("ValidUntilMs should be nil for 0, got %d", *creds[0].ValidUntilMs)
+	}
+
+	sum := sha256.Sum256([]byte(creds[0].CredentialJSON))
+	sigBytes, _ := hex.DecodeString(creds[0].IssuerSignature)
+	// 摘要须按「不过期」(nil)计算——若按 Some(0) 计算,链上验签会失败
+	digest := vcAttestationDigest(900_000_001, userAddr.Bytes[:], issuerAddr.Bytes[:], 0, creds[0].Schema, sum[:], nil)
+	sig := &crypto.Signature{Variant: crypto.SignatureTypeEd25519, Bytes: sigBytes}
+	if err := sig.Verify(digest[:], issuerPub); err != nil {
+		t.Errorf("zero validUntil signature should verify against no-expiry digest: %v", err)
+	}
+}
+
+// TestValidateVcFlowRequestValidUntil 已过期有效期必须在开工前拦下
+// (链端拒绝披露过期凭证,错误 1067)。
+func TestValidateVcFlowRequestValidUntil(t *testing.T) {
+	now := int64(1_700_000_000_000) // 2023-11
+	base := vcFlowRequest{
+		IssuerPrivateKey: "aa",
+		UserPrivateKey:   "bb",
+		UserAddress:      "2MLJXUc5gMuV4L4UXNuQjMxaHWf6",
+	}
+
+	past := base
+	pastMs := now - 1000
+	past.ValidUntilMs = &pastMs
+	if err := validateVcFlowRequest(past, now); err == nil || !strings.Contains(err.Error(), "1067") {
+		t.Errorf("past validUntilMs should fail mentioning 1067, got: %v", err)
+	}
+
+	future := base
+	futureMs := now + 1000
+	future.ValidUntilMs = &futureMs
+	if err := validateVcFlowRequest(future, now); err != nil {
+		t.Errorf("future validUntilMs should pass, got: %v", err)
+	}
+
+	zero := base
+	zeroMs := int64(0)
+	zero.ValidUntilMs = &zeroMs
+	if err := validateVcFlowRequest(zero, now); err != nil {
+		t.Errorf("validUntilMs=0 means no-expiry and should pass, got: %v", err)
+	}
+
+	nilUntil := base
+	nilUntil.ValidUntilMs = nil
+	if err := validateVcFlowRequest(nilUntil, now); err != nil {
+		t.Errorf("nil validUntilMs should pass, got: %v", err)
+	}
+}
+
 // TestNormalizeVcFlowRequest prefix/count 缺省值与上限裁剪。
 func TestNormalizeVcFlowRequest(t *testing.T) {
 	got := normalizeVcFlowRequest(vcFlowRequest{})
@@ -220,32 +283,32 @@ func TestValidateVcFlowRequest(t *testing.T) {
 		UserPrivateKey:   "bb",
 		UserAddress:      "2MLJXUc5gMuV4L4UXNuQjMxaHWf6",
 	}
-	if err := validateVcFlowRequest(full); err != nil {
+	if err := validateVcFlowRequest(full, 0); err != nil {
 		t.Errorf("full request should pass, got: %v", err)
 	}
 
 	missingUserAddr := full
 	missingUserAddr.UserAddress = ""
-	err := validateVcFlowRequest(missingUserAddr)
+	err := validateVcFlowRequest(missingUserAddr, 0)
 	if err == nil || !strings.Contains(err.Error(), "userAddress") {
 		t.Errorf("missing userAddress should fail with clear message, got: %v", err)
 	}
 
 	noIssuer := full
 	noIssuer.IssuerPrivateKey = ""
-	if err := validateVcFlowRequest(noIssuer); err == nil || !strings.Contains(err.Error(), "issuerPrivateKey") {
+	if err := validateVcFlowRequest(noIssuer, 0); err == nil || !strings.Contains(err.Error(), "issuerPrivateKey") {
 		t.Errorf("missing issuerPrivateKey should fail, got: %v", err)
 	}
 
 	noUser := full
 	noUser.UserPrivateKey = ""
-	if err := validateVcFlowRequest(noUser); err == nil || !strings.Contains(err.Error(), "userPrivateKey") {
+	if err := validateVcFlowRequest(noUser, 0); err == nil || !strings.Contains(err.Error(), "userPrivateKey") {
 		t.Errorf("missing userPrivateKey should fail, got: %v", err)
 	}
 
 	blankAddr := full
 	blankAddr.UserAddress = "   "
-	if err := validateVcFlowRequest(blankAddr); err == nil {
+	if err := validateVcFlowRequest(blankAddr, 0); err == nil {
 		t.Error("whitespace-only userAddress should fail")
 	}
 }
