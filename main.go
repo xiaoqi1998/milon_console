@@ -43,6 +43,7 @@ func main() {
 	resourcePathHandler := handler.NewResourcePathHandler(nm)
 	idlHandler := handler.NewIDLHandler(nm)
 	bulkTransferHandler := handler.NewBulkTransferHandler(nm)
+	vcFlowHandler := handler.NewVcFlowHandler(nm)
 	savedInstructionHandler, err := handler.NewSavedInstructionHandler(nm, "./data")
 	if err != nil {
 		log.Fatalf("failed to init saved instruction store: %v", err)
@@ -126,6 +127,9 @@ func main() {
 		api.POST("/tool/bulk-transfer", bulkTransferHandler.BulkTransfer)
 		api.GET("/tool/bulk-transfer/:id", bulkTransferHandler.GetBulkTransferStatus)
 
+		// VC flow (faucet + DID + credentials issuance + disclosure, end-to-end)
+		api.POST("/tool/vc-flow", vcFlowHandler.VcFlow)
+
 		// Saved instructions (store & replay IDL method calls)
 		savedGroup := api.Group("/saved-instructions")
 		{
@@ -195,6 +199,7 @@ func main() {
 	fmt.Println("    GET  /api/idl/metadata            - IDL 方法元数据（app/方法/参数 schema）")
 	fmt.Println("    POST /api/tool/bulk-transfer      - 批量生成账户并归集 MIL（异步任务）")
 	fmt.Println("    GET  /api/tool/bulk-transfer/:id  - 查询批量归集任务进度")
+	fmt.Println("    POST /api/tool/vc-flow            - VC 签发披露全流程（领水+DID+组织+凭证，同步）")
 	fmt.Println("    GET  /                            - Web console")
 	fmt.Println("    GET  /static/*                    - Static files")
 	fmt.Println("========================================")

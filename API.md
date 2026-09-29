@@ -2157,6 +2157,83 @@ curl http://localhost:8080/api/idl/metadata
 
 ---
 
+### 十、VC 全流程工具
+
+#### 40. VC 签发披露全流程
+
+- **方法**: `POST`
+- **路径**: `/api/tool/vc-flow`
+- **说明**: 给定证书颁发者（issuer）与个人用户（user）两方的私钥，**同步**自动完成整个 VC 链路：双方领水 → issuer 创建 Organization 型 DID → issuer 注册组织（`VcIssuer` 角色 + 声明凭证 schema）→ user 创建 Personal 型 DID → issuer 链下签发 N 张键值对凭证（schema 名 `prefix+序号`，缺省 `Test1~Test5`）→ user 逐张披露上链（`identity.DiscloseVcAttestation`）→ view 回读验证（`DisclosedVcs` + `HasValidVcFromIssuer`）。全流程约 10 笔交易，devNet 上预计 30 秒~2 分钟。**所有步骤幂等**：DID 已创建 / 组织已注册 / 凭证已披露时自动跳过（余额充足也跳过领水），可直接重跑。
+
+**请求参数**
+
+| 字段 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `issuerPrivateKey` | string | 是 | 颁发者私钥（hex/base58）：32 字节为经典 Ed25519；1281 字节为 FN-DSA-512（须同时传 `issuerPublicKey`） |
+| `issuerPublicKey` | string | 条件必填 | 颁发者公钥，issuer 为 FN-DSA-512 私钥时必填 |
+| `issuerAddress` | string | 否 | 颁发者地址；显式传入时须与私钥派生地址一致（防呆校验） |
+| `userPrivateKey` | string | 是 | 个人用户私钥，格式同 issuer |
+| `userPublicKey` | string | 条件必填 | 用户公钥，FN-DSA-512 私钥时必填 |
+| `userAddress` | string | 否 | 用户地址，同 `issuerAddress` |
+| `credentialPrefix` | string | 否 | 凭证 schema 前缀，缺省 `Test`（生成 `Test1`、`Test2`…） |
+| `credentialCount` | number | 否 | 凭证张数，缺省 `5`，上限 `20` |
+| `validUntilMs` | number | 否 | 凭证有效期毫秒时间戳；`null` 或不传 = 永久有效 |
+
+**请求示例**
+
+```bash
+curl -X POST http://localhost:8080/api/tool/vc-flow \
+  -H "Content-Type: application/json" \
+  -d '{
+    "issuerPrivateKey":"<颁发者私钥 hex>",
+    "userPrivateKey":"<用户私钥 hex>"
+  }'
+```
+
+**响应示例（data 字段）**
+
+```json
+{
+  "issuer": {
+    "address": "3pHqrfVpw4ziiWZ2S6graADk8sXu",
+    "faucet": { "skipped": false, "claimed": true, "txHash": "0x…", "balanceBefore": "0", "balanceAfter": "10000000000" },
+    "did":    { "skipped": false, "txHash": "0x…" },
+    "organization": { "skipped": false, "txHash": "0x…" }
+  },
+  "user": {
+    "address": "48QWpGsZpXJV3rdRvsiQb4iGzBW",
+    "faucet": { "skipped": true, "claimed": false, "balanceBefore": "9800000000", "balanceAfter": "9800000000", "detail": "balance is sufficient, skip faucet" },
+    "did":    { "skipped": false, "txHash": "0x…" }
+  },
+  "credentials": [
+    {
+      "index": 1,
+      "schema": "Test1",
+      "credentialJson": "{\"credentialSubject\":{\"id\":\"did:milon:…\",\"name\":\"Test1\",\"level\":1},…}",
+      "credentialHash": "0x…",
+      "validUntilMs": null,
+      "issuerSignature": "…",
+      "alreadyDisclosed": false,
+      "disclosed": true,
+      "discloseTxHash": "0x…"
+    }
+  ],
+  "verification": [
+    { "schema": "Test1", "onChain": true, "valid": true }
+  ]
+}
+```
+
+**使用说明**
+
+- 幂等重跑：任一步已完成时对应步骤返回 `skipped: true` 并附 `detail`；链端报 `DidAlreadyExists(1024)` / `OrganizationAlreadyExists(1032)` / `VcAttestationAlreadyExists(1072)` 亦视为已完成。
+- 领水策略：余额 ≥ 100 MIL 直接跳过；24h 冷却被拒但余额足够时放行并在 `detail` 说明。
+- 中途失败：返回 500，`message` 标明失败阶段（如 `disclose credential Test3: …`），`data` 携带已完成步骤明细，可修复后直接重跑（幂等）。
+- 凭证内容为确定性 JSON（不含时间戳），同参数重跑生成的 `credentialHash` 一致，满足链上幂等披露。
+- 验证结果 `verification[]` 中 `onChain` 表示出现在 `DisclosedVcs` 列表，`valid` 为 `HasValidVcFromIssuer` 当前判定；验证失败不中断流程。
+
+---
+
 ## 错误码
 
 | 错误码 | 常量名 | HTTP 状态码 | 说明 |
@@ -2217,5 +2294,6 @@ curl http://localhost:8080/api/idl/metadata
 | 37 | POST | `/api/util/mock/set` | 设置 Mock 返回内容，返回专属链接（测试用） |
 | 38 | GET | `/api/util/mock/:id` | 按 ID 返回 Mock 内容（原样返回） |
 | 39 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
+| 40 | POST | `/api/tool/vc-flow` | VC 签发披露全流程（领水+DID+组织+凭证+披露，同步幂等） |
 
 **统计**：共 39 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 7、合约 9、RPC 4、水龙头 2、工具 7、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
