@@ -75,6 +75,15 @@ const ENDPOINTS = [
     bodyTemplate: JSON.stringify({ count: 1000, toAddress: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', concurrency: 16 }, null, 2) },
   { id: 'bulk-transfer-status', method: 'GET', path: '/api/tool/bulk-transfer/:id', summary: '查询归集任务进度', group: '工具',
     pathParams: [{ name: 'id', ph: '任务ID (jobId)' }] },
+  { id: 'vc-flow', method: 'POST', path: '/api/tool/vc-flow', summary: 'VC签发披露全流程(领水+DID+组织+凭证)', group: '工具',
+    bodyTemplate: JSON.stringify({
+      issuerPrivateKey: 'hex或base58私钥(颁发者,仅Ed25519/FN-DSA-512,可用 /api/accounts/generate?keyType=ed25519 生成)',
+      issuerPublicKey: '(仅FN-DSA-512必填)hex或base58公钥',
+      userPrivateKey: 'hex或base58私钥(个人用户,任意类型)',
+      credentialPrefix: 'Test',
+      credentialCount: 5,
+      validUntilMs: null
+    }, null, 2) },
   { id: 'view-single', method: 'POST', path: '/api/view/single', summary: '底层单指令视图', group: '合约',
     bodyTemplate: JSON.stringify({ transactionPostcard: 'base64编码' }, null, 2) },
   { id: 'view-multi', method: 'POST', path: '/api/view/multi', summary: '底层多指令视图', group: '合约',
@@ -743,6 +752,10 @@ async function sendRequest() {
   state.loading = true;
   setSendLoading(true);
   showResponseLoading();
+  // vc-flow 为同步全流程接口（约 10 笔交易逐笔等待确认），提前提示耗时避免误以为卡死
+  if (state.currentEndpoint.id === 'vc-flow') {
+    showToast('VC 全流程执行中：领水 + DID + 组织注册 + 凭证签发披露，约 30s~2min，请耐心等待', 'info');
+  }
   var start = performance.now();
   try {
     var opt = { method: req.method, headers: {} };
@@ -2915,6 +2928,30 @@ var API_DOCS = {
       { name: 'concurrency', type: 'int', required: false, desc: '并发数（默认 16，最大 128）' },
     ],
     response: { success: true, code: 0, message: 'ok', data: { count: 1000, toAddress: 'RqcF...', successCount: 1000, failedCount: 0, totalTransferred: 10000000000, elapsedMs: 123456, results: [] } },
+  },
+  'vc-flow': {
+    desc: 'VC 签发披露全流程（同步，约 30s~2min）：双方领水（余额充足自动跳过）→ issuer 创建 Organization 型 DID → 注册 VcIssuer 组织角色并声明凭证 schema → user 创建 Personal 型 DID → issuer 链下签发 N 张键值对凭证（schema 名 prefix+序号，缺省 Test1~Test5）→ user 逐张披露上链（DiscloseVcAttestation）→ view 回读验证。全步骤幂等，已完成的步骤自动跳过，可重复调用。颁发者私钥仅支持 Ed25519（32字节）/ FN-DSA-512（1281字节，须同时传 issuerPublicKey）；user 私钥任意类型，显式传地址时自动匹配曲线。',
+    params: [
+      { name: 'issuerPrivateKey', type: 'string', required: true, desc: '颁发者私钥（hex/base58），仅 Ed25519 / FN-DSA-512' },
+      { name: 'issuerPublicKey', type: 'string', required: false, desc: '颁发者公钥，FN-DSA-512 私钥时必填' },
+      { name: 'issuerAddress', type: 'string', required: false, desc: '颁发者地址，显式传入时须与私钥派生地址一致（自动尝试 ed25519/secp256k1/bls12381 曲线）' },
+      { name: 'userPrivateKey', type: 'string', required: true, desc: '个人用户私钥（hex/base58）' },
+      { name: 'userPublicKey', type: 'string', required: false, desc: '用户公钥，FN-DSA-512 私钥时必填' },
+      { name: 'userAddress', type: 'string', required: false, desc: '用户地址，同 issuerAddress' },
+      { name: 'credentialPrefix', type: 'string', required: false, desc: '凭证 schema 前缀（缺省 Test）' },
+      { name: 'credentialCount', type: 'int', required: false, desc: '凭证张数（缺省 5，上限 20）' },
+      { name: 'validUntilMs', type: 'int', required: false, desc: '凭证有效期毫秒时间戳；null=永久有效' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: {
+      issuer: { address: '2pwKY...', faucet: { skipped: true, claimed: false, balanceBefore: '9980000000', balanceAfter: '9980000000', detail: 'balance is sufficient, skip faucet' }, did: { skipped: false, txHash: '0x3b3b...' }, organization: { skipped: false, txHash: '0xb7e8...' } },
+      user: { address: '2MLJX...', faucet: { skipped: false, claimed: true, txHash: '0x...', balanceBefore: '0', balanceAfter: '10000000000' }, did: { skipped: false, txHash: '0x1758...' } },
+      credentials: [
+        { index: 1, schema: 'Test1', credentialJson: '{"credentialSubject":{"id":"did:milon:2MLJX...","name":"Test1","level":1},...}', credentialHash: '0x5fcf...', validUntilMs: null, issuerSignature: 'a1b2...', disclosed: true, alreadyDisclosed: false, discloseTxHash: '0x7a0d...' },
+      ],
+      verification: [
+        { schema: 'Test1', onChain: true, valid: true },
+      ],
+    } },
   },
   'derive-addr': {
     desc: '从公钥派生账户地址。',
