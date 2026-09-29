@@ -3,6 +3,7 @@ package handler
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -180,14 +181,26 @@ func buildVcFlowCredentials(chainID int, issuerAddr, subjectAddr crypto.Address,
 }
 
 // resolveVcFlowParty 解析一方(issuer/user)身份:私钥必填。
+// role 用于错误信息区分角色("issuer"/"user")——同一错误在两方身上措辞不同,
+// 避免出现「user 传 FN-DSA-512 私钥缺公钥,报错却让补 issuerPublicKey」的误导。
 // 32 字节经典私钥默认按 Ed25519 解释(与 /api/util/vc-attestation 一致);
 // 显式传入的地址与 Ed25519 派生地址不一致时,自动尝试 secp256k1 / bls12381
 // 曲线解释(同一 32 字节私钥在不同曲线下派生不同地址,以显式地址为准)。
 // FN-DSA-512(1281 字节)私钥须额外传公钥(SDK 无法从签名密钥反推)。
-func resolveVcFlowParty(privKey, pubKey, addrStr string) (crypto.SecretKeyer, *crypto.PublicKey, crypto.Address, error) {
+func resolveVcFlowParty(role, privKey, pubKey, addrStr string) (crypto.SecretKeyer, *crypto.PublicKey, crypto.Address, error) {
+	// FN-DSA-512 缺公钥的前置检查:resolveIssuerIdentity 的错误措辞固定为 issuer,
+	// 这里按角色先行给出准确报错
+	if fk, err := crypto.SecretKeyerFromStringRelaxed(privKey); err == nil && crypto.AsFnDsa512SecretKey(fk) != nil && strings.TrimSpace(pubKey) == "" {
+		return nil, nil, crypto.Address{}, fmt.Errorf(
+			"%sPublicKey is required when %s private key is FN-DSA-512(1281字节后量子私钥无法反推公钥,请传账户生成时返回的 %sPublicKey)",
+			role, role, role)
+	}
+
 	sk, pub, addr, err := resolveIssuerIdentity(privKey, pubKey)
 	if err != nil {
-		return nil, nil, crypto.Address{}, err
+		// 其余错误措辞同样按角色改写(resolveIssuerIdentity 的文案均以 issuer 主语)
+		rewritten := strings.ReplaceAll(err.Error(), "issuer", role)
+		return nil, nil, crypto.Address{}, errors.New(rewritten)
 	}
 	explicit := strings.TrimSpace(addrStr)
 	if explicit == "" {
@@ -269,13 +282,13 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 		return
 	}
 
-	issuerSK, issuerPub, issuerAddr, err := resolveVcFlowParty(req.IssuerPrivateKey, req.IssuerPublicKey, req.IssuerAddress)
+	issuerSK, issuerPub, issuerAddr, err := resolveVcFlowParty("issuer", req.IssuerPrivateKey, req.IssuerPublicKey, req.IssuerAddress)
 	if err != nil {
 		logParamError(c, "VcFlow", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid issuer identity: "+err.Error(), nil))
 		return
 	}
-	userSK, userPub, userAddr, err := resolveVcFlowParty(req.UserPrivateKey, req.UserPublicKey, req.UserAddress)
+	userSK, userPub, userAddr, err := resolveVcFlowParty("user", req.UserPrivateKey, req.UserPublicKey, req.UserAddress)
 	if err != nil {
 		logParamError(c, "VcFlow", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid user identity: "+err.Error(), nil))

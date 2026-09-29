@@ -78,8 +78,10 @@ const ENDPOINTS = [
   { id: 'vc-flow', method: 'POST', path: '/api/tool/vc-flow', summary: 'VC签发披露全流程(领水+DID+组织+凭证)', group: '工具',
     bodyTemplate: JSON.stringify({
       issuerPrivateKey: 'hex或base58私钥(颁发者,仅Ed25519/FN-DSA-512,可用 /api/accounts/generate?keyType=ed25519 生成)',
+      issuerPublicKey: '颁发者公钥(仅FN-DSA-512私钥时必填,取账户生成返回的publicKey)',
       issuerAddress: 'base58地址(可选,与issuerPrivateKey派生地址一致)',
       userPrivateKey: 'hex或base58私钥(个人用户,任意类型)',
+      userPublicKey: '用户公钥(仅FN-DSA-512私钥时必填,取账户生成返回的publicKey)',
       userAddress: 'base58地址(必填!取账户生成时返回的address,服务端按其匹配曲线,防止私钥曲线歧义派生错地址)',
       credentialPrefix: 'Test',
       credentialCount: 5,

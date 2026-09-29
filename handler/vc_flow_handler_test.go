@@ -143,7 +143,7 @@ func TestResolveVcFlowParty(t *testing.T) {
 	_, _, issuerAddr, _, _, userAddr := vcFlowTestKeys(t)
 
 	// 未显式传地址:由私钥推导
-	_, _, addr, err := resolveVcFlowParty(vcFlowTestIssuerSKHex, "", "")
+	_, _, addr, err := resolveVcFlowParty("issuer", vcFlowTestIssuerSKHex, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +152,7 @@ func TestResolveVcFlowParty(t *testing.T) {
 	}
 
 	// 显式传地址且匹配
-	_, _, addr, err = resolveVcFlowParty(vcFlowTestUserSKHex, "", userAddr.ToBase58())
+	_, _, addr, err = resolveVcFlowParty("user", vcFlowTestUserSKHex, "", userAddr.ToBase58())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,12 +161,12 @@ func TestResolveVcFlowParty(t *testing.T) {
 	}
 
 	// 显式传地址但不匹配 → 报错
-	if _, _, _, err := resolveVcFlowParty(vcFlowTestIssuerSKHex, "", userAddr.ToBase58()); err == nil {
+	if _, _, _, err := resolveVcFlowParty("issuer", vcFlowTestIssuerSKHex, "", userAddr.ToBase58()); err == nil {
 		t.Error("expected error when explicit address mismatches derived address")
 	}
 
 	// 私钥缺失 → 报错
-	if _, _, _, err := resolveVcFlowParty("", "", ""); err == nil {
+	if _, _, _, err := resolveVcFlowParty("user", "", "", ""); err == nil {
 		t.Error("expected error when private key is empty")
 	}
 }
@@ -188,7 +188,7 @@ func TestResolveVcFlowPartyCurveFallback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sk, pub, addr, err := resolveVcFlowParty(vcFlowTestIssuerSKHex, "", secpAddr.ToBase58())
+	sk, pub, addr, err := resolveVcFlowParty("issuer", vcFlowTestIssuerSKHex, "", secpAddr.ToBase58())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +203,7 @@ func TestResolveVcFlowPartyCurveFallback(t *testing.T) {
 	}
 
 	// 不传地址:默认 Ed25519 解释
-	_, pub, _, err = resolveVcFlowParty(vcFlowTestIssuerSKHex, "", "")
+	_, pub, _, err = resolveVcFlowParty("issuer", vcFlowTestIssuerSKHex, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,6 +247,37 @@ func TestValidateVcFlowRequest(t *testing.T) {
 	blankAddr.UserAddress = "   "
 	if err := validateVcFlowRequest(blankAddr); err == nil {
 		t.Error("whitespace-only userAddress should fail")
+	}
+}
+
+// TestResolveVcFlowPartyRoleAwareErrors 身份解析错误按角色区分:
+// user 传 FN-DSA-512 私钥但缺公钥时,报错应说 userPublicKey 而非 issuerPublicKey。
+func TestResolveVcFlowPartyRoleAwareErrors(t *testing.T) {
+	// 1281 字节 FN-DSA-512 私钥(内容随意,只验长度分支)
+	fnSk := strings.Repeat("ab", 1281)
+
+	_, _, _, err := resolveVcFlowParty("user", fnSk, "", "")
+	if err == nil {
+		t.Fatal("expected error for FN-DSA-512 user key without public key")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "userPublicKey") {
+		t.Errorf("error should mention userPublicKey, got: %s", msg)
+	}
+	if strings.Contains(msg, "issuerPublicKey is required") {
+		t.Errorf("error should not blame issuerPublicKey for user role, got: %s", msg)
+	}
+
+	// issuer 角色同样场景:报错说 issuerPublicKey
+	_, _, _, err = resolveVcFlowParty("issuer", fnSk, "", "")
+	if err == nil || !strings.Contains(err.Error(), "issuerPublicKey") {
+		t.Errorf("issuer role error should mention issuerPublicKey, got: %v", err)
+	}
+
+	// 私钥非法:报错带角色前缀
+	_, _, _, err = resolveVcFlowParty("user", "not-a-key", "", "")
+	if err == nil || !strings.Contains(err.Error(), "user") {
+		t.Errorf("invalid user key error should mention user, got: %v", err)
 	}
 }
 
