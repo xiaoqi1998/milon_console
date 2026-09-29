@@ -49,10 +49,27 @@ type vcFlowRequest struct {
 	IssuerAddress    string `json:"issuerAddress"`    // 可选;显式传入时须与私钥派生地址一致
 	UserPrivateKey   string `json:"userPrivateKey"`   // 个人用户私钥,必填
 	UserPublicKey    string `json:"userPublicKey"`    // 用户公钥;FN-DSA-512 私钥时必填
-	UserAddress      string `json:"userAddress"`      // 可选;同 issuerAddress
+	UserAddress      string `json:"userAddress"`      // 必填;32字节私钥在不同曲线下派生不同地址,显式地址用于锁定正确公钥
 	CredentialPrefix string `json:"credentialPrefix"` // 凭证 schema 前缀,缺省 Test
 	CredentialCount  int    `json:"credentialCount"`  // 凭证张数,缺省 5,上限 20
 	ValidUntilMs     *int64 `json:"validUntilMs"`     // 凭证有效期毫秒时间戳;null=永久
+}
+
+// validateVcFlowRequest 校验请求体必填约束(纯函数,便于单测)。
+// userAddress 必填:同一 32 字节私钥按 ed25519/secp256k1/bls12381 解释会派生
+// 不同地址,不显式传地址时服务端只能默认按 Ed25519 解释,secp256k1 账户会被
+// 静默派生成错误地址——显式地址配合曲线回退才能锁定正确公钥。
+func validateVcFlowRequest(req vcFlowRequest) error {
+	if strings.TrimSpace(req.IssuerPrivateKey) == "" {
+		return fmt.Errorf("issuerPrivateKey is required")
+	}
+	if strings.TrimSpace(req.UserPrivateKey) == "" {
+		return fmt.Errorf("userPrivateKey is required")
+	}
+	if strings.TrimSpace(req.UserAddress) == "" {
+		return fmt.Errorf("userAddress is required(必填:32字节私钥在不同曲线下派生不同地址,请传账户生成时返回的地址,服务端按其自动匹配曲线)")
+	}
+	return nil
 }
 
 // normalizeVcFlowRequest 填充缺省值并裁剪越界值。
@@ -246,6 +263,11 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 		return
 	}
 	req = normalizeVcFlowRequest(req)
+	if err := validateVcFlowRequest(req); err != nil {
+		logParamError(c, "VcFlow", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
 
 	issuerSK, issuerPub, issuerAddr, err := resolveVcFlowParty(req.IssuerPrivateKey, req.IssuerPublicKey, req.IssuerAddress)
 	if err != nil {

@@ -212,6 +212,44 @@ func TestResolveVcFlowPartyCurveFallback(t *testing.T) {
 	}
 }
 
+// TestValidateVcFlowRequest 必填字段校验:userAddress 必填
+// (32 字节私钥在不同曲线下派生不同地址,不显式传地址会默认按 Ed25519 解释)。
+func TestValidateVcFlowRequest(t *testing.T) {
+	full := vcFlowRequest{
+		IssuerPrivateKey: "aa",
+		UserPrivateKey:   "bb",
+		UserAddress:      "2MLJXUc5gMuV4L4UXNuQjMxaHWf6",
+	}
+	if err := validateVcFlowRequest(full); err != nil {
+		t.Errorf("full request should pass, got: %v", err)
+	}
+
+	missingUserAddr := full
+	missingUserAddr.UserAddress = ""
+	err := validateVcFlowRequest(missingUserAddr)
+	if err == nil || !strings.Contains(err.Error(), "userAddress") {
+		t.Errorf("missing userAddress should fail with clear message, got: %v", err)
+	}
+
+	noIssuer := full
+	noIssuer.IssuerPrivateKey = ""
+	if err := validateVcFlowRequest(noIssuer); err == nil || !strings.Contains(err.Error(), "issuerPrivateKey") {
+		t.Errorf("missing issuerPrivateKey should fail, got: %v", err)
+	}
+
+	noUser := full
+	noUser.UserPrivateKey = ""
+	if err := validateVcFlowRequest(noUser); err == nil || !strings.Contains(err.Error(), "userPrivateKey") {
+		t.Errorf("missing userPrivateKey should fail, got: %v", err)
+	}
+
+	blankAddr := full
+	blankAddr.UserAddress = "   "
+	if err := validateVcFlowRequest(blankAddr); err == nil {
+		t.Error("whitespace-only userAddress should fail")
+	}
+}
+
 // TestIsAccountNotFoundErr 全新账户首次查余额的预期错误判定(code=512)。
 func TestIsAccountNotFoundErr(t *testing.T) {
 	yes := []string{

@@ -78,8 +78,9 @@ const ENDPOINTS = [
   { id: 'vc-flow', method: 'POST', path: '/api/tool/vc-flow', summary: 'VC签发披露全流程(领水+DID+组织+凭证)', group: '工具',
     bodyTemplate: JSON.stringify({
       issuerPrivateKey: 'hex或base58私钥(颁发者,仅Ed25519/FN-DSA-512,可用 /api/accounts/generate?keyType=ed25519 生成)',
-      issuerPublicKey: '(仅FN-DSA-512必填)hex或base58公钥',
+      issuerAddress: 'base58地址(可选,与issuerPrivateKey派生地址一致)',
       userPrivateKey: 'hex或base58私钥(个人用户,任意类型)',
+      userAddress: 'base58地址(必填!取账户生成时返回的address,服务端按其匹配曲线,防止私钥曲线歧义派生错地址)',
       credentialPrefix: 'Test',
       credentialCount: 5,
       validUntilMs: null
@@ -2930,14 +2931,14 @@ var API_DOCS = {
     response: { success: true, code: 0, message: 'ok', data: { count: 1000, toAddress: 'RqcF...', successCount: 1000, failedCount: 0, totalTransferred: 10000000000, elapsedMs: 123456, results: [] } },
   },
   'vc-flow': {
-    desc: 'VC 签发披露全流程（同步，约 30s~2min）：双方领水（余额充足自动跳过）→ issuer 创建 Organization 型 DID → 注册 VcIssuer 组织角色并声明凭证 schema → user 创建 Personal 型 DID → issuer 链下签发 N 张键值对凭证（schema 名 prefix+序号，缺省 Test1~Test5）→ user 逐张披露上链（DiscloseVcAttestation）→ view 回读验证。全步骤幂等，已完成的步骤自动跳过，可重复调用。颁发者私钥仅支持 Ed25519（32字节）/ FN-DSA-512（1281字节，须同时传 issuerPublicKey）；user 私钥任意类型，显式传地址时自动匹配曲线。',
+    desc: 'VC 签发披露全流程（同步，约 30s~2min）：双方领水（余额充足自动跳过）→ issuer 创建 Organization 型 DID → 注册 VcIssuer 组织角色并声明凭证 schema → user 创建 Personal 型 DID → issuer 链下签发 N 张键值对凭证（schema 名 prefix+序号，缺省 Test1~Test5）→ user 逐张披露上链（DiscloseVcAttestation）→ view 回读验证。全步骤幂等，已完成的步骤自动跳过，可重复调用。颁发者私钥仅支持 Ed25519（32字节）/ FN-DSA-512（1281字节，须同时传 issuerPublicKey）；userAddress 必填——同一 32 字节私钥按 ed25519/secp256k1/bls12381 解释会派生不同地址，必须显式传账户生成时返回的地址，服务端按其自动匹配曲线。',
     params: [
       { name: 'issuerPrivateKey', type: 'string', required: true, desc: '颁发者私钥（hex/base58），仅 Ed25519 / FN-DSA-512' },
       { name: 'issuerPublicKey', type: 'string', required: false, desc: '颁发者公钥，FN-DSA-512 私钥时必填' },
       { name: 'issuerAddress', type: 'string', required: false, desc: '颁发者地址，显式传入时须与私钥派生地址一致（自动尝试 ed25519/secp256k1/bls12381 曲线）' },
       { name: 'userPrivateKey', type: 'string', required: true, desc: '个人用户私钥（hex/base58）' },
       { name: 'userPublicKey', type: 'string', required: false, desc: '用户公钥，FN-DSA-512 私钥时必填' },
-      { name: 'userAddress', type: 'string', required: false, desc: '用户地址，同 issuerAddress' },
+      { name: 'userAddress', type: 'string', required: true, desc: '用户地址（必填），取 /api/accounts/generate 返回的 address；服务端按其自动匹配曲线，防止私钥曲线歧义派生错地址' },
       { name: 'credentialPrefix', type: 'string', required: false, desc: '凭证 schema 前缀（缺省 Test）' },
       { name: 'credentialCount', type: 'int', required: false, desc: '凭证张数（缺省 5，上限 20）' },
       { name: 'validUntilMs', type: 'int', required: false, desc: '凭证有效期毫秒时间戳；null=永久有效' },

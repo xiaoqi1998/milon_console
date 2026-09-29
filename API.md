@@ -2174,7 +2174,7 @@ curl http://localhost:8080/api/idl/metadata
 | `issuerAddress` | string | 否 | 颁发者地址；显式传入时须与私钥派生地址一致（防呆校验） |
 | `userPrivateKey` | string | 是 | 个人用户私钥，格式同 issuer |
 | `userPublicKey` | string | 条件必填 | 用户公钥，FN-DSA-512 私钥时必填 |
-| `userAddress` | string | 否 | 用户地址，同 `issuerAddress` |
+| `userAddress` | string | 是 | 用户地址（base58），取 `/api/accounts/generate` 返回的 `address`。必填：同一 32 字节私钥按 ed25519/secp256k1/bls12381 解释会派生**不同地址**，服务端按显式地址自动匹配曲线并锁定正确公钥；与私钥任何曲线派生都不一致时报 400 |
 | `credentialPrefix` | string | 否 | 凭证 schema 前缀，缺省 `Test`（生成 `Test1`、`Test2`…） |
 | `credentialCount` | number | 否 | 凭证张数，缺省 `5`，上限 `20` |
 | `validUntilMs` | number | 否 | 凭证有效期毫秒时间戳；`null` 或不传 = 永久有效 |
@@ -2186,7 +2186,8 @@ curl -X POST http://localhost:8080/api/tool/vc-flow \
   -H "Content-Type: application/json" \
   -d '{
     "issuerPrivateKey":"<颁发者私钥 hex>",
-    "userPrivateKey":"<用户私钥 hex>"
+    "userPrivateKey":"<用户私钥 hex>",
+    "userAddress":"<用户地址 base58,取账户生成接口返回的 address>"
   }'
 ```
 
