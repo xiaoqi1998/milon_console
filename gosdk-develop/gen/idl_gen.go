@@ -1579,9 +1579,9 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "credential_id",
+						Name: "credential_ids",
 						Role: "input",
-						Type: "String",
+						Type: "vec<String>",
 					},
 				},
 				Discriminator: 59302,
@@ -1606,9 +1606,9 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "credential_id",
+						Name: "credential_ids",
 						Role: "input",
-						Type: "String",
+						Type: "vec<String>",
 					},
 				},
 				Discriminator: 14909,
@@ -3363,6 +3363,52 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "issuer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "subject",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "credential_id",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 52523,
+				Handler: "freeze_vc_attestation",
+				Kind: "entry",
+				Name: "FreezeVcAttestation",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "issuer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "subject",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "credential_id",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 10634,
+				Handler: "unfreeze_vc_attestation",
+				Kind: "entry",
+				Name: "UnfreezeVcAttestation",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "subject",
 						Role: "signer",
 						Type: "Signer",
@@ -4109,6 +4155,11 @@ provider.IDL{
 					},
 					provider.EnumVariant{
 						Name: "Revoked",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Frozen",
 						Kind: "unit",
 						Fields: nil,
 					},
@@ -4932,6 +4983,16 @@ provider.IDL{
 				Message: "VC attestation has been permanently revoked",
 				Name: "VcAttestationRevoked",
 			},
+			provider.ErrorDef{
+				Code: 1074,
+				Message: "VC attestation is already frozen",
+				Name: "VcAttestationAlreadyFrozen",
+			},
+			provider.ErrorDef{
+				Code: 1075,
+				Message: "VC attestation is not frozen",
+				Name: "VcAttestationNotFrozen",
+			},
 		},
 	},
 provider.IDL{
@@ -4956,7 +5017,7 @@ provider.IDL{
 					provider.Arg{
 						Name: "metadata",
 						Role: "input",
-						Type: "String",
+						Type: "Metadata",
 					},
 					provider.Arg{
 						Name: "royalty_bps",
@@ -4972,62 +5033,45 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
 						Name: "creator",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "metadata",
+						Name: "sft",
 						Role: "input",
-						Type: "String",
+						Type: "Address",
 					},
 					provider.Arg{
-						Name: "attribute",
+						Name: "slot",
 						Role: "input",
-						Type: "String",
+						Type: "SlotData",
 					},
 					provider.Arg{
 						Name: "is_transferable",
 						Role: "input",
 						Type: "bool",
 					},
-					provider.Arg{
-						Name: "slot_owner",
-						Role: "input",
-						Type: "option<Address>",
-					},
-					provider.Arg{
-						Name: "update_author",
-						Role: "input",
-						Type: "option<Address>",
-					},
-					provider.Arg{
-						Name: "freeze_authority",
-						Role: "input",
-						Type: "option<Address>",
-					},
 				},
 				Discriminator: 56115,
 				Handler: "create_slot",
 				Kind: "entry",
 				Name: "CreateSlot",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
 						Name: "current_owner",
 						Role: "signer",
 						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
 					},
 					provider.Arg{
 						Name: "new_owner",
@@ -5043,98 +5087,129 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "manager",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "slot_id",
+						Name: "cover_url",
 						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "new_owner",
-						Role: "input",
-						Type: "Address",
+						Type: "String",
 					},
 				},
-				Discriminator: 26666,
-				Handler: "transfer_slot_owner",
+				Discriminator: 480,
+				Handler: "set_cover_url",
 				Kind: "entry",
-				Name: "TransferSlotOwner",
+				Name: "SetCoverUrl",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "current_author",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "slot_id",
+						Name: "uri",
 						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "new_author",
-						Role: "input",
-						Type: "Address",
+						Type: "String",
 					},
 				},
-				Discriminator: 8940,
-				Handler: "transfer_slot_update_author",
+				Discriminator: 4819,
+				Handler: "set_uri",
 				Kind: "entry",
-				Name: "TransferSlotUpdateAuthor",
+				Name: "SetUri",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "current",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "current_authority",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "slot_id",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "new_authority",
+						Name: "new",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 10654,
-				Handler: "transfer_slot_freeze_authority",
+				Discriminator: 33676,
+				Handler: "transfer_mint_authority",
 				Kind: "entry",
-				Name: "TransferSlotFreezeAuthority",
+				Name: "TransferMintAuthority",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
+					provider.Arg{
+						Name: "current",
+						Role: "signer",
+						Type: "Signer",
+					},
 					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "current_recipient",
+						Name: "new",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 57787,
+				Handler: "transfer_update_author",
+				Kind: "entry",
+				Name: "TransferUpdateAuthor",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "current",
 						Role: "signer",
 						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "new",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 26719,
+				Handler: "transfer_freeze_authority",
+				Kind: "entry",
+				Name: "TransferFreezeAuthority",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "current",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
 					},
 					provider.Arg{
 						Name: "new_recipient",
@@ -5150,14 +5225,14 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
-					},
-					provider.Arg{
-						Name: "manager",
-						Role: "signer",
-						Type: "Signer",
 					},
 					provider.Arg{
 						Name: "slot_id",
@@ -5165,7 +5240,7 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.Arg{
-						Name: "is_transferable",
+						Name: "transferable",
 						Role: "input",
 						Type: "bool",
 					},
@@ -5178,85 +5253,118 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "author",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
-					},
-					provider.Arg{
-						Name: "freezer",
-						Role: "signer",
-						Type: "Signer",
 					},
 					provider.Arg{
 						Name: "slot_id",
 						Role: "input",
 						Type: "u64",
 					},
+					provider.Arg{
+						Name: "attribute",
+						Role: "input",
+						Type: "String",
+					},
 				},
-				Discriminator: 13370,
-				Handler: "freeze_slot",
+				Discriminator: 3272,
+				Handler: "set_slot_attribute",
 				Kind: "entry",
-				Name: "FreezeSlot",
+				Name: "SetSlotAttribute",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "author",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
-					},
-					provider.Arg{
-						Name: "freezer",
-						Role: "signer",
-						Type: "Signer",
 					},
 					provider.Arg{
 						Name: "slot_id",
 						Role: "input",
 						Type: "u64",
 					},
+					provider.Arg{
+						Name: "cover_url",
+						Role: "input",
+						Type: "String",
+					},
 				},
-				Discriminator: 61011,
-				Handler: "unfreeze_slot",
+				Discriminator: 15677,
+				Handler: "set_slot_cover_url",
 				Kind: "entry",
-				Name: "UnfreezeSlot",
+				Name: "SetSlotCoverUrl",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
+					provider.Arg{
+						Name: "author",
+						Role: "signer",
+						Type: "Signer",
+					},
 					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
 					},
+					provider.Arg{
+						Name: "slot_id",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "uri",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 28914,
+				Handler: "set_slot_uri",
+				Kind: "entry",
+				Name: "SetSlotUri",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
 					provider.Arg{
 						Name: "minter",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
 						Name: "slot_id",
 						Role: "input",
 						Type: "u64",
 					},
 					provider.Arg{
-						Name: "to_address",
+						Name: "to",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "initial_value",
+						Name: "amount",
 						Role: "input",
 						Type: "u64",
 					},
 					provider.Arg{
 						Name: "metadata",
 						Role: "input",
-						Type: "String",
-					},
-					provider.Arg{
-						Name: "attribute",
-						Role: "input",
-						Type: "String",
+						Type: "option<MetadataOverride>",
 					},
 				},
 				Discriminator: 43610,
@@ -5270,17 +5378,22 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
 						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
 						Name: "token_id",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "amount",
 						Role: "input",
 						Type: "u64",
 					},
@@ -5293,78 +5406,70 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "freezer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "signer",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "from_token_id",
+						Name: "token_id",
 						Role: "input",
 						Type: "u64",
 					},
 					provider.Arg{
-						Name: "to_address",
+						Name: "owner",
 						Role: "input",
 						Type: "Address",
 					},
-					provider.Arg{
-						Name: "split_value",
-						Role: "input",
-						Type: "u64",
-					},
 				},
-				Discriminator: 50774,
-				Handler: "split",
+				Discriminator: 36565,
+				Handler: "freeze",
 				Kind: "entry",
-				Name: "Split",
-				Returns: provider.ReturnValue{
-					Type: "u64",
-				},
+				Name: "Freeze",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "freezer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "signer",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "from_token_id",
+						Name: "token_id",
 						Role: "input",
 						Type: "u64",
 					},
 					provider.Arg{
-						Name: "to_token_id",
+						Name: "owner",
 						Role: "input",
-						Type: "u64",
+						Type: "Address",
 					},
 				},
-				Discriminator: 110,
-				Handler: "merge",
+				Discriminator: 49498,
+				Handler: "unfreeze",
 				Kind: "entry",
-				Name: "Merge",
+				Name: "Unfreeze",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "author",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
-					},
-					provider.Arg{
-						Name: "signer",
-						Role: "signer",
-						Type: "Signer",
 					},
 					provider.Arg{
 						Name: "token_id",
@@ -5377,22 +5482,78 @@ provider.IDL{
 						Type: "String",
 					},
 				},
-				Discriminator: 21633,
-				Handler: "set_attribute",
+				Discriminator: 50607,
+				Handler: "set_token_attribute",
 				Kind: "entry",
-				Name: "SetAttribute",
+				Name: "SetTokenAttribute",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
+					provider.Arg{
+						Name: "author",
+						Role: "signer",
+						Type: "Signer",
+					},
 					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
+						Name: "token_id",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "cover_url",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 58854,
+				Handler: "set_token_cover_url",
+				Kind: "entry",
+				Name: "SetTokenCoverUrl",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "author",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "token_id",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "uri",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 50621,
+				Handler: "set_token_uri",
+				Kind: "entry",
+				Name: "SetTokenUri",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
 					},
 					provider.Arg{
 						Name: "token_id",
@@ -5418,14 +5579,14 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
 						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
 					},
 					provider.Arg{
 						Name: "token_id",
@@ -5446,14 +5607,78 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "sft",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
+						Name: "from_token_id",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "to",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "amount",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 50774,
+				Handler: "split",
+				Kind: "entry",
+				Name: "Split",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "from_token_id",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "to_token_id",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 110,
+				Handler: "merge",
+				Kind: "entry",
+				Name: "Merge",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
 					},
 					provider.Arg{
 						Name: "token_id",
@@ -5466,7 +5691,7 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "value",
+						Name: "amount",
 						Role: "input",
 						Type: "u64",
 					},
@@ -5475,21 +5700,18 @@ provider.IDL{
 				Handler: "transfer",
 				Kind: "entry",
 				Name: "Transfer",
-				Returns: provider.ReturnValue{
-					Type: "u64",
-				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
 						Name: "spender",
 						Role: "signer",
 						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
 					},
 					provider.Arg{
 						Name: "token_id",
@@ -5497,12 +5719,17 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.Arg{
+						Name: "from",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
 						Name: "to",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "value",
+						Name: "amount",
 						Role: "input",
 						Type: "u64",
 					},
@@ -5511,8 +5738,21 @@ provider.IDL{
 				Handler: "transfer_from",
 				Kind: "entry",
 				Name: "TransferFrom",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 46443,
+				Handler: "sft_owner_of",
+				Kind: "view",
+				Name: "SftOwnerOf",
 				Returns: provider.ReturnValue{
-					Type: "u64",
+					Type: "Address",
 				},
 			},
 			provider.Instruction{
@@ -5523,12 +5763,12 @@ provider.IDL{
 						Type: "Address",
 					},
 				},
-				Discriminator: 57694,
-				Handler: "sft_info",
+				Discriminator: 12747,
+				Handler: "sft_metadata",
 				Kind: "view",
-				Name: "SftInfo",
+				Name: "SftMetadata",
 				Returns: provider.ReturnValue{
-					Type: "Sft",
+					Type: "Metadata",
 				},
 			},
 			provider.Instruction{
@@ -5559,13 +5799,60 @@ provider.IDL{
 						Role: "input",
 						Type: "Address",
 					},
+					provider.Arg{
+						Name: "slot_id",
+						Role: "input",
+						Type: "u64",
+					},
 				},
-				Discriminator: 30311,
-				Handler: "royalty_info",
+				Discriminator: 26530,
+				Handler: "slot_metadata",
 				Kind: "view",
-				Name: "RoyaltyInfo",
+				Name: "SlotMetadata",
 				Returns: provider.ReturnValue{
-					Type: "Royalty",
+					Type: "Metadata",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "slot_id",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 16363,
+				Handler: "is_slot_transferable",
+				Kind: "view",
+				Name: "IsSlotTransferable",
+				Returns: provider.ReturnValue{
+					Type: "bool",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "token_id",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 35083,
+				Handler: "token",
+				Kind: "view",
+				Name: "Token",
+				Returns: provider.ReturnValue{
+					Type: "Metadata",
 				},
 			},
 			provider.Instruction{
@@ -5601,68 +5888,10 @@ provider.IDL{
 						Role: "input",
 						Type: "u64",
 					},
-				},
-				Discriminator: 35083,
-				Handler: "token",
-				Kind: "view",
-				Name: "Token",
-				Returns: provider.ReturnValue{
-					Type: "Token",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
 					provider.Arg{
-						Name: "sft",
+						Name: "owner",
 						Role: "input",
 						Type: "Address",
-					},
-					provider.Arg{
-						Name: "token_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 39083,
-				Handler: "owner_of",
-				Kind: "view",
-				Name: "OwnerOf",
-				Returns: provider.ReturnValue{
-					Type: "Address",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "token_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 20993,
-				Handler: "value_of",
-				Kind: "view",
-				Name: "ValueOf",
-				Returns: provider.ReturnValue{
-					Type: "u64",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "token_id",
-						Role: "input",
-						Type: "u64",
 					},
 				},
 				Discriminator: 63018,
@@ -5685,113 +5914,18 @@ provider.IDL{
 						Role: "input",
 						Type: "u64",
 					},
-				},
-				Discriminator: 45938,
-				Handler: "attribute_of",
-				Kind: "view",
-				Name: "AttributeOf",
-				Returns: provider.ReturnValue{
-					Type: "String",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
 					provider.Arg{
-						Name: "sft",
+						Name: "owner",
 						Role: "input",
 						Type: "Address",
 					},
-					provider.Arg{
-						Name: "slot_id",
-						Role: "input",
-						Type: "u64",
-					},
 				},
-				Discriminator: 30630,
-				Handler: "is_slot_frozen",
+				Discriminator: 59068,
+				Handler: "frozen_of",
 				Kind: "view",
-				Name: "IsSlotFrozen",
+				Name: "FrozenOf",
 				Returns: provider.ReturnValue{
 					Type: "bool",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "slot_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 59756,
-				Handler: "slot_update_author",
-				Kind: "view",
-				Name: "SlotUpdateAuthor",
-				Returns: provider.ReturnValue{
-					Type: "Address",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "slot_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 53534,
-				Handler: "slot_freeze_authority",
-				Kind: "view",
-				Name: "SlotFreezeAuthority",
-				Returns: provider.ReturnValue{
-					Type: "Address",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-				},
-				Discriminator: 46443,
-				Handler: "sft_owner_of",
-				Kind: "view",
-				Name: "SftOwnerOf",
-				Returns: provider.ReturnValue{
-					Type: "Address",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "sft",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "slot_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 39122,
-				Handler: "slot_owner_of",
-				Kind: "view",
-				Name: "SlotOwnerOf",
-				Returns: provider.ReturnValue{
-					Type: "Address",
 				},
 			},
 			provider.Instruction{
@@ -5805,6 +5939,11 @@ provider.IDL{
 						Name: "token_id",
 						Role: "input",
 						Type: "u64",
+					},
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
 					},
 					provider.Arg{
 						Name: "spender",
@@ -5820,48 +5959,131 @@ provider.IDL{
 					Type: "u64",
 				},
 			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 30311,
+				Handler: "royalty_info",
+				Kind: "view",
+				Name: "RoyaltyInfo",
+				Returns: provider.ReturnValue{
+					Type: "Royalty",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 57868,
+				Handler: "mint_authority",
+				Kind: "view",
+				Name: "MintAuthority",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 6459,
+				Handler: "update_author",
+				Kind: "view",
+				Name: "UpdateAuthor",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 10975,
+				Handler: "freeze_authority",
+				Kind: "view",
+				Name: "FreezeAuthority",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
 		},
 		Types: []provider.IDLType{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "owner",
-						Type: "Address",
+						Name: "name",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "symbol",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "cover_url",
+						Type: "String",
 					},
 					provider.StructField{
 						Name: "metadata",
 						Type: "String",
 					},
+					provider.StructField{
+						Name: "attribute",
+						Type: "option<String>",
+					},
 				},
 				Kind: "struct",
-				Name: "Sft",
-				TypeTag: 18301298814640865719,
+				Name: "Metadata",
+				TypeTag: 16597600053100423329,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "token_id",
-						Type: "u64",
+						Name: "name",
+						Type: "option<String>",
 					},
 					provider.StructField{
-						Name: "slot_id",
-						Type: "u64",
+						Name: "symbol",
+						Type: "option<String>",
 					},
 					provider.StructField{
-						Name: "owner",
-						Type: "Address",
+						Name: "cover_url",
+						Type: "option<String>",
 					},
 					provider.StructField{
 						Name: "metadata",
-						Type: "String",
-					},
-					provider.StructField{
-						Name: "value",
-						Type: "u64",
+						Type: "option<String>",
 					},
 					provider.StructField{
 						Name: "attribute",
-						Type: "String",
+						Type: "option<String>",
+					},
+				},
+				Kind: "struct",
+				Name: "MetadataOverride",
+				TypeTag: 1521786355183284625,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "metadata",
+						Type: "option<MetadataOverride>",
 					},
 				},
 				Kind: "struct",
@@ -5872,15 +6094,7 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "metadata",
-						Type: "String",
-					},
-					provider.StructField{
-						Name: "attribute",
-						Type: "String",
-					},
-					provider.StructField{
-						Name: "is_transferable",
-						Type: "bool",
+						Type: "option<MetadataOverride>",
 					},
 				},
 				Kind: "struct",
@@ -5930,9 +6144,19 @@ provider.IDL{
 		},
 		Resources: []provider.Resource{
 			provider.Resource{
-				Name: "_Sft",
-				Type: "Sft",
-				TypeTag: 7460940398751880426,
+				Name: "_SftOwner",
+				Type: "Address",
+				TypeTag: 15146535206056819577,
+			},
+			provider.Resource{
+				Name: "_SftMetadata",
+				Type: "Metadata",
+				TypeTag: 3119835375849690086,
+			},
+			provider.Resource{
+				Name: "_SftRoyalty",
+				Type: "Royalty",
+				TypeTag: 16416299771797568401,
 			},
 			provider.Resource{
 				Name: "_SftNextSlotId",
@@ -5945,39 +6169,54 @@ provider.IDL{
 				TypeTag: 5563585020063213298,
 			},
 			provider.Resource{
+				Name: "_SftMintPermission",
+				Type: "Address",
+				TypeTag: 15146535206056819577,
+			},
+			provider.Resource{
+				Name: "_SftUpdatePermission",
+				Type: "Address",
+				TypeTag: 15146535206056819577,
+			},
+			provider.Resource{
+				Name: "_SftFreezePermission",
+				Type: "Address",
+				TypeTag: 15146535206056819577,
+			},
+			provider.Resource{
 				Name: "_Slot",
 				Type: "SlotData",
 				TypeTag: 6310559783402314447,
 			},
 			provider.Resource{
-				Name: "_SlotOwner",
-				Type: "Address",
-				TypeTag: 15146535206056819577,
-			},
-			provider.Resource{
-				Name: "_SlotUpdateAuthor",
-				Type: "Address",
-				TypeTag: 15146535206056819577,
-			},
-			provider.Resource{
-				Name: "_SlotFreezeAuthority",
-				Type: "Address",
-				TypeTag: 15146535206056819577,
-			},
-			provider.Resource{
-				Name: "_SlotFrozen",
+				Name: "_SlotExists",
 				Type: "bool",
 				TypeTag: 14785269867199075517,
 			},
 			provider.Resource{
-				Name: "_SftRoyalty",
-				Type: "Royalty",
-				TypeTag: 16416299771797568401,
+				Name: "_SlotTransferable",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
 			},
 			provider.Resource{
 				Name: "_Token",
 				Type: "Token",
 				TypeTag: 7491257169663686040,
+			},
+			provider.Resource{
+				Name: "_TokenSlotId",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_TokenBalance",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_TokenFrozen",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
 			},
 			provider.Resource{
 				Name: "_Approval",
@@ -6001,7 +6240,7 @@ provider.IDL{
 					},
 					provider.EventField{
 						Name: "metadata",
-						Type: "String",
+						Type: "Metadata",
 					},
 				},
 				TypeTag: 14598215378642513979,
@@ -6020,23 +6259,8 @@ provider.IDL{
 						Indexed: true,
 					},
 					provider.EventField{
-						Name: "owner",
-						Type: "Address",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "update_author",
-						Type: "Address",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "freeze_authority",
-						Type: "Address",
-						Indexed: true,
-					},
-					provider.EventField{
 						Name: "metadata",
-						Type: "String",
+						Type: "SlotData",
 					},
 				},
 				TypeTag: 1769434390890356512,
@@ -6065,7 +6289,7 @@ provider.IDL{
 						Indexed: true,
 					},
 					provider.EventField{
-						Name: "value",
+						Name: "amount",
 						Type: "u64",
 					},
 				},
@@ -6095,7 +6319,7 @@ provider.IDL{
 						Indexed: true,
 					},
 					provider.EventField{
-						Name: "value",
+						Name: "amount",
 						Type: "u64",
 					},
 				},
@@ -6110,7 +6334,12 @@ provider.IDL{
 						Indexed: true,
 					},
 					provider.EventField{
-						Name: "token_id",
+						Name: "from_token_id",
+						Type: "u64",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "to_token_id",
 						Type: "u64",
 						Indexed: true,
 					},
@@ -6124,103 +6353,12 @@ provider.IDL{
 						Type: "Address",
 						Indexed: true,
 					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
 				},
 				TypeTag: 4473315672219730635,
-			},
-			provider.Event{
-				Name: "TokenSplitEvent",
-				Fields: []provider.EventField{
-					provider.EventField{
-						Name: "sft",
-						Type: "Address",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "from_token_id",
-						Type: "u64",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "new_token_id",
-						Type: "u64",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "slot_id",
-						Type: "u64",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "split_value",
-						Type: "u64",
-					},
-					provider.EventField{
-						Name: "recipient",
-						Type: "Address",
-						Indexed: true,
-					},
-				},
-				TypeTag: 15460065878293345685,
-			},
-			provider.Event{
-				Name: "ValueTransferredEvent",
-				Fields: []provider.EventField{
-					provider.EventField{
-						Name: "sft",
-						Type: "Address",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "from_token_id",
-						Type: "u64",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "to_token_id",
-						Type: "u64",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "slot_id",
-						Type: "u64",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "value",
-						Type: "u64",
-					},
-				},
-				TypeTag: 3867269546031763695,
-			},
-			provider.Event{
-				Name: "TokensMergedEvent",
-				Fields: []provider.EventField{
-					provider.EventField{
-						Name: "sft",
-						Type: "Address",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "from_token_id",
-						Type: "u64",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "to_token_id",
-						Type: "u64",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "slot_id",
-						Type: "u64",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "value",
-						Type: "u64",
-					},
-				},
-				TypeTag: 6095286300968241666,
 			},
 			provider.Event{
 				Name: "AttributeSetEvent",
@@ -6277,7 +6415,7 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 1282,
-				Message: "insufficient token value (token: {0}, available: {1}, required: {2})",
+				Message: "insufficient token amount (token: {0}, available: {1}, required: {2})",
 				Name: "InsufficientBalance",
 			},
 			provider.ErrorDef{
@@ -6297,51 +6435,61 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 1286,
-				Message: "value must be greater than zero",
+				Message: "amount must be greater than zero",
 				Name: "ZeroValueOperation",
 			},
 			provider.ErrorDef{
 				Code: 1287,
-				Message: "slot is frozen: {0}",
-				Name: "SlotFrozen",
+				Message: "source and destination must differ",
+				Name: "SelfTransfer",
 			},
 			provider.ErrorDef{
 				Code: 1288,
-				Message: "slot already exists: {0}",
-				Name: "SlotAlreadyExists",
+				Message: "split amount must be less than source balance (token: {0}, balance: {1})",
+				Name: "FullBalanceSplit",
 			},
 			provider.ErrorDef{
 				Code: 1289,
-				Message: "SFT already exists",
-				Name: "SftAlreadyExists",
-			},
-			provider.ErrorDef{
-				Code: 1290,
-				Message: "invalid SFT parameters: {0}",
-				Name: "InvalidParameters",
-			},
-			provider.ErrorDef{
-				Code: 1291,
-				Message: "token id sequence is exhausted",
-				Name: "TokenIdExhausted",
-			},
-			provider.ErrorDef{
-				Code: 1292,
-				Message: "slot id sequence is exhausted",
-				Name: "SlotIdExhausted",
-			},
-			provider.ErrorDef{
-				Code: 1293,
-				Message: "arithmetic overflow",
-				Name: "Overflow",
-			},
-			provider.ErrorDef{
-				Code: 1294,
 				Message: "a token cannot be merged into itself",
 				Name: "SelfMerge",
 			},
 			provider.ErrorDef{
+				Code: 1290,
+				Message: "token balance is frozen (token: {0}, owner: {1:?})",
+				Name: "TokenFrozen",
+			},
+			provider.ErrorDef{
+				Code: 1291,
+				Message: "SFT already exists",
+				Name: "SftAlreadyExists",
+			},
+			provider.ErrorDef{
+				Code: 1292,
+				Message: "invalid SFT parameters: {0}",
+				Name: "InvalidParameters",
+			},
+			provider.ErrorDef{
+				Code: 1293,
+				Message: "token id sequence is exhausted",
+				Name: "TokenIdExhausted",
+			},
+			provider.ErrorDef{
+				Code: 1294,
+				Message: "slot id sequence is exhausted",
+				Name: "SlotIdExhausted",
+			},
+			provider.ErrorDef{
 				Code: 1295,
+				Message: "arithmetic overflow",
+				Name: "Overflow",
+			},
+			provider.ErrorDef{
+				Code: 1296,
+				Message: "insufficient approval (token: {0}, owner: {1:?}, spender: {2:?}, available: {3}, required: {4})",
+				Name: "InsufficientApproval",
+			},
+			provider.ErrorDef{
+				Code: 1297,
 				Message: "address not signed in current transaction: {0:?}",
 				Name: "AddressNotSignatured",
 			},
@@ -9798,14 +9946,24 @@ provider.IDL{
 						Type: "u32",
 					},
 					provider.Arg{
-						Name: "dataset_kind",
+						Name: "object_type",
 						Role: "input",
-						Type: "DatasetKind",
+						Type: "ObjectType",
 					},
 					provider.Arg{
-						Name: "scope_key",
+						Name: "object_id",
 						Role: "input",
 						Type: "String",
+					},
+					provider.Arg{
+						Name: "subject",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "content_hash",
+						Role: "input",
+						Type: "B256",
 					},
 					provider.Arg{
 						Name: "uri",
@@ -9813,10 +9971,10 @@ provider.IDL{
 						Type: "String",
 					},
 				},
-				Discriminator: 445,
-				Handler: "upsert_public_data_uri",
+				Discriminator: 32627,
+				Handler: "upsert_reference",
 				Kind: "entry",
-				Name: "UpsertPublicDataUri",
+				Name: "UpsertReference",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -9831,53 +9989,20 @@ provider.IDL{
 						Type: "u32",
 					},
 					provider.Arg{
-						Name: "dataset_kind",
+						Name: "object_type",
 						Role: "input",
-						Type: "DatasetKind",
+						Type: "ObjectType",
 					},
 					provider.Arg{
-						Name: "scope_key",
-						Role: "input",
-						Type: "String",
-					},
-				},
-				Discriminator: 17929,
-				Handler: "retire_public_data_uri",
-				Kind: "entry",
-				Name: "RetirePublicDataUri",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "publisher",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "source_app_id",
-						Role: "input",
-						Type: "u32",
-					},
-					provider.Arg{
-						Name: "dataset_kind",
-						Role: "input",
-						Type: "DatasetKind",
-					},
-					provider.Arg{
-						Name: "scope_key",
-						Role: "input",
-						Type: "String",
-					},
-					provider.Arg{
-						Name: "uri",
+						Name: "object_id",
 						Role: "input",
 						Type: "String",
 					},
 				},
-				Discriminator: 25488,
-				Handler: "restore_public_data_uri",
+				Discriminator: 41015,
+				Handler: "retire_reference",
 				Kind: "entry",
-				Name: "RestorePublicDataUri",
+				Name: "RetireReference",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -10240,22 +10365,22 @@ provider.IDL{
 						Type: "u32",
 					},
 					provider.Arg{
-						Name: "dataset_kind",
+						Name: "object_type",
 						Role: "input",
-						Type: "DatasetKind",
+						Type: "ObjectType",
 					},
 					provider.Arg{
-						Name: "scope_key",
+						Name: "object_id",
 						Role: "input",
 						Type: "String",
 					},
 				},
-				Discriminator: 63112,
-				Handler: "public_data_anchor",
+				Discriminator: 7408,
+				Handler: "get_reference",
 				Kind: "view",
-				Name: "PublicDataAnchor",
+				Name: "GetReference",
 				Returns: provider.ReturnValue{
-					Type: "PublicDataAnchor",
+					Type: "Reference",
 				},
 			},
 			provider.Instruction{
@@ -10368,8 +10493,8 @@ provider.IDL{
 					},
 				},
 				Kind: "enum",
-				Name: "DatasetKind",
-				TypeTag: 17428762375069664538,
+				Name: "ObjectType",
+				TypeTag: 6776125531577280399,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -10404,19 +10529,48 @@ provider.IDL{
 				TypeTag: 8914166003957741580,
 			},
 			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Active",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Retired",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "ReferenceStatus",
+				TypeTag: 7940954906745129895,
+			},
+			provider.IDLType{
 				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "subject",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "content_hash",
+						Type: "B256",
+					},
 					provider.StructField{
 						Name: "uri",
 						Type: "String",
 					},
 					provider.StructField{
-						Name: "retired",
-						Type: "bool",
+						Name: "status",
+						Type: "ReferenceStatus",
+					},
+					provider.StructField{
+						Name: "revision",
+						Type: "u64",
 					},
 				},
 				Kind: "struct",
-				Name: "PublicDataAnchor",
-				TypeTag: 12104690320851153008,
+				Name: "Reference",
+				TypeTag: 5198236407389515229,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -10452,6 +10606,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "String",
 				TypeTag: 8566531010829758022,
 			},
@@ -10464,6 +10623,11 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u32",
 				TypeTag: 5560783464435099345,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u64",
+				TypeTag: 5563585020063213298,
 			},
 		},
 		Resources: []provider.Resource{
@@ -10488,9 +10652,9 @@ provider.IDL{
 				TypeTag: 14785269867199075517,
 			},
 			provider.Resource{
-				Name: "_PublicDataAnchor",
-				Type: "PublicDataAnchor",
-				TypeTag: 12104690320851153008,
+				Name: "_Reference",
+				Type: "Reference",
+				TypeTag: 5198236407389515229,
 			},
 			provider.Resource{
 				Name: "_CommunityControl",
@@ -10591,116 +10755,121 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 2573,
-				Message: "dataset scope key is invalid",
-				Name: "InvalidScopeKey",
+				Message: "stable object ID is invalid",
+				Name: "InvalidObjectId",
 			},
 			provider.ErrorDef{
 				Code: 2574,
-				Message: "public data anchor not found",
-				Name: "DataAnchorNotFound",
+				Message: "reference not found",
+				Name: "ReferenceNotFound",
 			},
 			provider.ErrorDef{
 				Code: 2575,
-				Message: "public data anchor is retired",
-				Name: "DataAnchorRetired",
+				Message: "reference is retired",
+				Name: "ReferenceRetired",
 			},
 			provider.ErrorDef{
 				Code: 2576,
-				Message: "public data anchor is not retired",
-				Name: "DataAnchorNotRetired",
+				Message: "reference is not retired",
+				Name: "ReferenceNotRetired",
 			},
 			provider.ErrorDef{
 				Code: 2577,
+				Message: "reference revision is exhausted",
+				Name: "ReferenceRevisionExhausted",
+			},
+			provider.ErrorDef{
+				Code: 2578,
 				Message: "community not found: {0}",
 				Name: "CommunityNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2578,
+				Code: 2579,
 				Message: "community already exists: {0}",
 				Name: "CommunityAlreadyExists",
 			},
 			provider.ErrorDef{
-				Code: 2579,
+				Code: 2580,
 				Message: "community mutations are disabled: {0}",
 				Name: "CommunityMutationsDisabled",
 			},
 			provider.ErrorDef{
-				Code: 2580,
+				Code: 2581,
 				Message: "community owner required: {0:?}",
 				Name: "CommunityOwnerRequired",
 			},
 			provider.ErrorDef{
-				Code: 2581,
+				Code: 2582,
 				Message: "community administrator required: {0:?}",
 				Name: "CommunityAdminRequired",
 			},
 			provider.ErrorDef{
-				Code: 2582,
+				Code: 2583,
 				Message: "the community owner cannot be removed",
 				Name: "CannotRemoveCommunityOwner",
 			},
 			provider.ErrorDef{
-				Code: 2583,
+				Code: 2584,
 				Message: "community administrator already exists: {0:?}",
 				Name: "CommunityAdminAlreadyExists",
 			},
 			provider.ErrorDef{
-				Code: 2584,
+				Code: 2585,
 				Message: "community administrator not found: {0:?}",
 				Name: "CommunityAdminNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2585,
+				Code: 2586,
 				Message: "join mode does not allow this operation",
 				Name: "InvalidJoinMode",
 			},
 			provider.ErrorDef{
-				Code: 2586,
+				Code: 2587,
 				Message: "membership is already active: {0:?}",
 				Name: "MembershipAlreadyActive",
 			},
 			provider.ErrorDef{
-				Code: 2587,
+				Code: 2588,
 				Message: "active membership was not found: {0:?}",
 				Name: "MembershipNotActive",
 			},
 			provider.ErrorDef{
-				Code: 2588,
+				Code: 2589,
 				Message: "a join request is already pending: {0:?}",
 				Name: "JoinRequestAlreadyPending",
 			},
 			provider.ErrorDef{
-				Code: 2589,
+				Code: 2590,
 				Message: "pending join request was not found: {0:?}",
 				Name: "JoinRequestNotPending",
 			},
 			provider.ErrorDef{
-				Code: 2590,
+				Code: 2591,
 				Message: "Transparent IdentityError",
 				Name: "IdentityError",
 			},
 			provider.ErrorDef{
-				Code: 2591,
+				Code: 2592,
 				Message: "Transparent ContextError",
 				Name: "ContextError",
 			},
 			provider.ErrorDef{
-				Code: 2592,
+				Code: 2593,
 				Message: "community creation limit reached for DID: {0:?}",
 				Name: "CommunityCreationLimitReached",
 			},
 			provider.ErrorDef{
-				Code: 2593,
+				Code: 2594,
 				Message: "community member limit reached: {0}",
 				Name: "CommunityMemberLimitReached",
 			},
 			provider.ErrorDef{
-				Code: 2594,
+				Code: 2595,
 				Message: "community member count invariant failed: {0}",
 				Name: "CommunityMemberCountInvariant",
 			},
 			provider.ErrorDef{
-				Code: 2595,
+				Code: 2596,
 				Message: "the community owner cannot leave",
 				Name: "CannotLeaveCommunityOwner",
 			},
@@ -12125,6 +12294,8 @@ func (v IdentityVcStatus) ToValue() (map[string]any, error) {
 		return map[string]any{"variant": "Active"}, nil
 	case "Revoked":
 		return map[string]any{"variant": "Revoked"}, nil
+	case "Frozen":
+		return map[string]any{"variant": "Frozen"}, nil
 	}
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
@@ -12665,66 +12836,119 @@ func (v IdentityCredentialDefinition) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// SftokenSft matches the IDL struct Sft.
-type SftokenSft struct {
-	Owner *crypto.Address
+// SftokenMetadata matches the IDL struct Metadata.
+type SftokenMetadata struct {
+	Name string
+	Symbol string
+	CoverUrl string
 	Metadata string
+	Attribute *string
 }
 
-// ToValue converts SftokenSft into the provider wire value (map[string]any).
-func (v SftokenSft) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 2)
-	// owner: Address
-	out["owner"] = v.Owner
+// ToValue converts SftokenMetadata into the provider wire value (map[string]any).
+func (v SftokenMetadata) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 5)
+	// name: String
+	out["name"] = v.Name
+	// symbol: String
+	out["symbol"] = v.Symbol
+	// cover_url: String
+	out["cover_url"] = v.CoverUrl
 	// metadata: String
 	out["metadata"] = v.Metadata
+	// attribute: option<String>
+	if v.Attribute == nil {
+		out["attribute"] = nil
+	} else {
+		out["attribute"] = *v.Attribute
+	}
+	return out, nil
+}
+
+// SftokenMetadataOverride matches the IDL struct MetadataOverride.
+type SftokenMetadataOverride struct {
+	Name *string
+	Symbol *string
+	CoverUrl *string
+	Metadata *string
+	Attribute *string
+}
+
+// ToValue converts SftokenMetadataOverride into the provider wire value (map[string]any).
+func (v SftokenMetadataOverride) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 5)
+	// name: option<String>
+	if v.Name == nil {
+		out["name"] = nil
+	} else {
+		out["name"] = *v.Name
+	}
+	// symbol: option<String>
+	if v.Symbol == nil {
+		out["symbol"] = nil
+	} else {
+		out["symbol"] = *v.Symbol
+	}
+	// cover_url: option<String>
+	if v.CoverUrl == nil {
+		out["cover_url"] = nil
+	} else {
+		out["cover_url"] = *v.CoverUrl
+	}
+	// metadata: option<String>
+	if v.Metadata == nil {
+		out["metadata"] = nil
+	} else {
+		out["metadata"] = *v.Metadata
+	}
+	// attribute: option<String>
+	if v.Attribute == nil {
+		out["attribute"] = nil
+	} else {
+		out["attribute"] = *v.Attribute
+	}
 	return out, nil
 }
 
 // SftokenToken matches the IDL struct Token.
 type SftokenToken struct {
-	TokenId uint64
-	SlotId uint64
-	Owner *crypto.Address
-	Metadata string
-	Value uint64
-	Attribute string
+	Metadata *SftokenMetadataOverride
 }
 
 // ToValue converts SftokenToken into the provider wire value (map[string]any).
 func (v SftokenToken) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 6)
-	// token_id: u64
-	out["token_id"] = v.TokenId
-	// slot_id: u64
-	out["slot_id"] = v.SlotId
-	// owner: Address
-	out["owner"] = v.Owner
-	// metadata: String
-	out["metadata"] = v.Metadata
-	// value: u64
-	out["value"] = v.Value
-	// attribute: String
-	out["attribute"] = v.Attribute
+	out := make(map[string]any, 1)
+	// metadata: option<MetadataOverride>
+	if v.Metadata == nil {
+		out["metadata"] = nil
+	} else {
+		v0, err := toSftokenMetadataOverrideValue(*v.Metadata)
+		if err != nil {
+			return nil, err
+		}
+		out["metadata"] = v0
+	}
 	return out, nil
 }
 
 // SftokenSlotData matches the IDL struct SlotData.
 type SftokenSlotData struct {
-	Metadata string
-	Attribute string
-	IsTransferable bool
+	Metadata *SftokenMetadataOverride
 }
 
 // ToValue converts SftokenSlotData into the provider wire value (map[string]any).
 func (v SftokenSlotData) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 3)
-	// metadata: String
-	out["metadata"] = v.Metadata
-	// attribute: String
-	out["attribute"] = v.Attribute
-	// is_transferable: bool
-	out["is_transferable"] = v.IsTransferable
+	out := make(map[string]any, 1)
+	// metadata: option<MetadataOverride>
+	if v.Metadata == nil {
+		out["metadata"] = nil
+	} else {
+		v0, err := toSftokenMetadataOverrideValue(*v.Metadata)
+		if err != nil {
+			return nil, err
+		}
+		out["metadata"] = v0
+	}
 	return out, nil
 }
 
@@ -13915,17 +14139,17 @@ func (v LuckyBoxAssetPoolState) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// SocialDatasetKind matches the IDL enum DatasetKind.
-type SocialDatasetKind struct {
+// SocialObjectType matches the IDL enum ObjectType.
+type SocialObjectType struct {
 	Variant string // Active variant name
 	Index   uint64 // Active variant index
 	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
 }
 
-// ToValue converts SocialDatasetKind into the provider wire value (map[string]any).
-func (v SocialDatasetKind) ToValue() (map[string]any, error) {
+// ToValue converts SocialObjectType into the provider wire value (map[string]any).
+func (v SocialObjectType) ToValue() (map[string]any, error) {
 	if v.Variant == "" {
-		return nil, fmt.Errorf("enum DatasetKind: empty variant")
+		return nil, fmt.Errorf("enum ObjectType: empty variant")
 	}
 	switch v.Variant {
 	case "Profile":
@@ -13979,19 +14203,53 @@ func (v SocialSourceApp) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// SocialPublicDataAnchor matches the IDL struct PublicDataAnchor.
-type SocialPublicDataAnchor struct {
-	Uri string
-	Retired bool
+// SocialReferenceStatus matches the IDL enum ReferenceStatus.
+type SocialReferenceStatus struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
 }
 
-// ToValue converts SocialPublicDataAnchor into the provider wire value (map[string]any).
-func (v SocialPublicDataAnchor) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 2)
+// ToValue converts SocialReferenceStatus into the provider wire value (map[string]any).
+func (v SocialReferenceStatus) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum ReferenceStatus: empty variant")
+	}
+	switch v.Variant {
+	case "Active":
+		return map[string]any{"variant": "Active"}, nil
+	case "Retired":
+		return map[string]any{"variant": "Retired"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// SocialReference matches the IDL struct Reference.
+type SocialReference struct {
+	Subject *crypto.Address
+	ContentHash [32]byte
+	Uri string
+	Status SocialReferenceStatus
+	Revision uint64
+}
+
+// ToValue converts SocialReference into the provider wire value (map[string]any).
+func (v SocialReference) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 5)
+	// subject: Address
+	out["subject"] = v.Subject
+	// content_hash: B256
+	out["content_hash"] = v.ContentHash
 	// uri: String
 	out["uri"] = v.Uri
-	// retired: bool
-	out["retired"] = v.Retired
+	// status: ReferenceStatus
+	v0, err := toSocialReferenceStatusValue(v.Status)
+	if err != nil {
+		return nil, err
+	}
+	out["status"] = v0
+	// revision: u64
+	out["revision"] = v.Revision
 	return out, nil
 }
 
@@ -16071,27 +16329,136 @@ func fromIdentityCredentialDefinition(v any) (out IdentityCredentialDefinition, 
 	return out, nil
 }
 
-// fromSftokenSft converts a decoded IDL value into SftokenSft.
-func fromSftokenSft(v any) (out SftokenSft, err error) {
+// fromSftokenMetadata converts a decoded IDL value into SftokenMetadata.
+func fromSftokenMetadata(v any) (out SftokenMetadata, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// owner: Address
+	// name: String
 	{
-		v0, err := toAddress(m["owner"])
+		v0, err := toString(m["name"])
 		if err != nil {
 			return out, err
 		}
-		out.Owner = v0
+		out.Name = v0
+	}
+	// symbol: String
+	{
+		v1, err := toString(m["symbol"])
+		if err != nil {
+			return out, err
+		}
+		out.Symbol = v1
+	}
+	// cover_url: String
+	{
+		v2, err := toString(m["cover_url"])
+		if err != nil {
+			return out, err
+		}
+		out.CoverUrl = v2
 	}
 	// metadata: String
 	{
-		v1, err := toString(m["metadata"])
+		v3, err := toString(m["metadata"])
 		if err != nil {
 			return out, err
 		}
-		out.Metadata = v1
+		out.Metadata = v3
+	}
+	// attribute: option<String>
+	{
+		if m["attribute"] == nil {
+			out.Attribute = nil
+		} else {
+			var v4 string
+			v5, err := toString(m["attribute"])
+			if err != nil {
+				return out, err
+			}
+			v4 = v5
+			out.Attribute = &v4
+		}
+	}
+	return out, nil
+}
+
+// fromSftokenMetadataOverride converts a decoded IDL value into SftokenMetadataOverride.
+func fromSftokenMetadataOverride(v any) (out SftokenMetadataOverride, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// name: option<String>
+	{
+		if m["name"] == nil {
+			out.Name = nil
+		} else {
+			var v0 string
+			v1, err := toString(m["name"])
+			if err != nil {
+				return out, err
+			}
+			v0 = v1
+			out.Name = &v0
+		}
+	}
+	// symbol: option<String>
+	{
+		if m["symbol"] == nil {
+			out.Symbol = nil
+		} else {
+			var v2 string
+			v3, err := toString(m["symbol"])
+			if err != nil {
+				return out, err
+			}
+			v2 = v3
+			out.Symbol = &v2
+		}
+	}
+	// cover_url: option<String>
+	{
+		if m["cover_url"] == nil {
+			out.CoverUrl = nil
+		} else {
+			var v4 string
+			v5, err := toString(m["cover_url"])
+			if err != nil {
+				return out, err
+			}
+			v4 = v5
+			out.CoverUrl = &v4
+		}
+	}
+	// metadata: option<String>
+	{
+		if m["metadata"] == nil {
+			out.Metadata = nil
+		} else {
+			var v6 string
+			v7, err := toString(m["metadata"])
+			if err != nil {
+				return out, err
+			}
+			v6 = v7
+			out.Metadata = &v6
+		}
+	}
+	// attribute: option<String>
+	{
+		if m["attribute"] == nil {
+			out.Attribute = nil
+		} else {
+			var v8 string
+			v9, err := toString(m["attribute"])
+			if err != nil {
+				return out, err
+			}
+			v8 = v9
+			out.Attribute = &v8
+		}
 	}
 	return out, nil
 }
@@ -16102,53 +16469,19 @@ func fromSftokenToken(v any) (out SftokenToken, err error) {
 	if err != nil {
 		return out, err
 	}
-	// token_id: u64
+	// metadata: option<MetadataOverride>
 	{
-		v0, err := toUint64(m["token_id"])
-		if err != nil {
-			return out, err
+		if m["metadata"] == nil {
+			out.Metadata = nil
+		} else {
+			var v0 SftokenMetadataOverride
+			v1, err := fromSftokenMetadataOverride(m["metadata"])
+			if err != nil {
+				return out, err
+			}
+			v0 = v1
+			out.Metadata = &v0
 		}
-		out.TokenId = v0
-	}
-	// slot_id: u64
-	{
-		v1, err := toUint64(m["slot_id"])
-		if err != nil {
-			return out, err
-		}
-		out.SlotId = v1
-	}
-	// owner: Address
-	{
-		v2, err := toAddress(m["owner"])
-		if err != nil {
-			return out, err
-		}
-		out.Owner = v2
-	}
-	// metadata: String
-	{
-		v3, err := toString(m["metadata"])
-		if err != nil {
-			return out, err
-		}
-		out.Metadata = v3
-	}
-	// value: u64
-	{
-		v4, err := toUint64(m["value"])
-		if err != nil {
-			return out, err
-		}
-		out.Value = v4
-	}
-	// attribute: String
-	{
-		v5, err := toString(m["attribute"])
-		if err != nil {
-			return out, err
-		}
-		out.Attribute = v5
 	}
 	return out, nil
 }
@@ -16159,29 +16492,19 @@ func fromSftokenSlotData(v any) (out SftokenSlotData, err error) {
 	if err != nil {
 		return out, err
 	}
-	// metadata: String
+	// metadata: option<MetadataOverride>
 	{
-		v0, err := toString(m["metadata"])
-		if err != nil {
-			return out, err
+		if m["metadata"] == nil {
+			out.Metadata = nil
+		} else {
+			var v0 SftokenMetadataOverride
+			v1, err := fromSftokenMetadataOverride(m["metadata"])
+			if err != nil {
+				return out, err
+			}
+			v0 = v1
+			out.Metadata = &v0
 		}
-		out.Metadata = v0
-	}
-	// attribute: String
-	{
-		v1, err := toString(m["attribute"])
-		if err != nil {
-			return out, err
-		}
-		out.Attribute = v1
-	}
-	// is_transferable: bool
-	{
-		v2, err := toBool(m["is_transferable"])
-		if err != nil {
-			return out, err
-		}
-		out.IsTransferable = v2
 	}
 	return out, nil
 }
@@ -17997,15 +18320,15 @@ func fromLuckyBoxAssetPoolState(v any) (out LuckyBoxAssetPoolState, err error) {
 	return out, nil
 }
 
-// fromSocialDatasetKind converts a decoded IDL value into SocialDatasetKind.
-func fromSocialDatasetKind(v any) (out SocialDatasetKind, err error) {
+// fromSocialObjectType converts a decoded IDL value into SocialObjectType.
+func fromSocialObjectType(v any) (out SocialObjectType, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
 	s, ok := m["variant"].(string)
 	if !ok {
-		return out, fmt.Errorf("enum DatasetKind: missing variant")
+		return out, fmt.Errorf("enum ObjectType: missing variant")
 	}
 	out.Variant = s
 	n, err := toUint(m["index"])
@@ -18060,27 +18383,70 @@ func fromSocialSourceApp(v any) (out SocialSourceApp, err error) {
 	return out, nil
 }
 
-// fromSocialPublicDataAnchor converts a decoded IDL value into SocialPublicDataAnchor.
-func fromSocialPublicDataAnchor(v any) (out SocialPublicDataAnchor, err error) {
+// fromSocialReferenceStatus converts a decoded IDL value into SocialReferenceStatus.
+func fromSocialReferenceStatus(v any) (out SocialReferenceStatus, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum ReferenceStatus: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromSocialReference converts a decoded IDL value into SocialReference.
+func fromSocialReference(v any) (out SocialReference, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// subject: Address
+	{
+		v0, err := toAddress(m["subject"])
+		if err != nil {
+			return out, err
+		}
+		out.Subject = v0
+	}
+	// content_hash: B256
+	{
+		v1, err := toFixed32(m["content_hash"])
+		if err != nil {
+			return out, err
+		}
+		out.ContentHash = v1
+	}
 	// uri: String
 	{
-		v0, err := toString(m["uri"])
+		v2, err := toString(m["uri"])
 		if err != nil {
 			return out, err
 		}
-		out.Uri = v0
+		out.Uri = v2
 	}
-	// retired: bool
+	// status: ReferenceStatus
 	{
-		v1, err := toBool(m["retired"])
+		v3, err := fromSocialReferenceStatus(m["status"])
 		if err != nil {
 			return out, err
 		}
-		out.Retired = v1
+		out.Status = v3
+	}
+	// revision: u64
+	{
+		v4, err := toUint64(m["revision"])
+		if err != nil {
+			return out, err
+		}
+		out.Revision = v4
 	}
 	return out, nil
 }
@@ -19060,18 +19426,33 @@ func toIdentityCredentialDefinitionValue(v any) (map[string]any, error) {
 	}
 }
 
-// toSftokenSftValue converts any into SftokenSft for provider serialization.
-func toSftokenSftValue(v any) (map[string]any, error) {
+// toSftokenMetadataValue converts any into SftokenMetadata for provider serialization.
+func toSftokenMetadataValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case SftokenSft:
+	case SftokenMetadata:
 		return x.ToValue()
-	case *SftokenSft:
+	case *SftokenMetadata:
 		if x == nil {
-			return nil, fmt.Errorf("nil SftokenSft")
+			return nil, fmt.Errorf("nil SftokenMetadata")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected SftokenSft, got %T", v)
+		return nil, fmt.Errorf("expected SftokenMetadata, got %T", v)
+	}
+}
+
+// toSftokenMetadataOverrideValue converts any into SftokenMetadataOverride for provider serialization.
+func toSftokenMetadataOverrideValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SftokenMetadataOverride:
+		return x.ToValue()
+	case *SftokenMetadataOverride:
+		if x == nil {
+			return nil, fmt.Errorf("nil SftokenMetadataOverride")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SftokenMetadataOverride, got %T", v)
 	}
 }
 
@@ -19810,18 +20191,18 @@ func toLuckyBoxAssetPoolStateValue(v any) (map[string]any, error) {
 	}
 }
 
-// toSocialDatasetKindValue converts any into SocialDatasetKind for provider serialization.
-func toSocialDatasetKindValue(v any) (map[string]any, error) {
+// toSocialObjectTypeValue converts any into SocialObjectType for provider serialization.
+func toSocialObjectTypeValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case SocialDatasetKind:
+	case SocialObjectType:
 		return x.ToValue()
-	case *SocialDatasetKind:
+	case *SocialObjectType:
 		if x == nil {
-			return nil, fmt.Errorf("nil SocialDatasetKind")
+			return nil, fmt.Errorf("nil SocialObjectType")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected SocialDatasetKind, got %T", v)
+		return nil, fmt.Errorf("expected SocialObjectType, got %T", v)
 	}
 }
 
@@ -19855,18 +20236,33 @@ func toSocialSourceAppValue(v any) (map[string]any, error) {
 	}
 }
 
-// toSocialPublicDataAnchorValue converts any into SocialPublicDataAnchor for provider serialization.
-func toSocialPublicDataAnchorValue(v any) (map[string]any, error) {
+// toSocialReferenceStatusValue converts any into SocialReferenceStatus for provider serialization.
+func toSocialReferenceStatusValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case SocialPublicDataAnchor:
+	case SocialReferenceStatus:
 		return x.ToValue()
-	case *SocialPublicDataAnchor:
+	case *SocialReferenceStatus:
 		if x == nil {
-			return nil, fmt.Errorf("nil SocialPublicDataAnchor")
+			return nil, fmt.Errorf("nil SocialReferenceStatus")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected SocialPublicDataAnchor, got %T", v)
+		return nil, fmt.Errorf("expected SocialReferenceStatus, got %T", v)
+	}
+}
+
+// toSocialReferenceValue converts any into SocialReference for provider serialization.
+func toSocialReferenceValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SocialReference:
+		return x.ToValue()
+	case *SocialReference:
+		if x == nil {
+			return nil, fmt.Errorf("nil SocialReference")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SocialReference, got %T", v)
 	}
 }
 
@@ -22153,15 +22549,15 @@ type TokenAddComplianceRequirementIx struct {
 
 type TokenAddComplianceRequirementArgs struct {
 	token *crypto.Address
-	credential_id string
+	credential_ids []string
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of AddComplianceRequirement.
-func (ix *TokenAddComplianceRequirementIx) Args(token *crypto.Address, credential_id string) *TokenAddComplianceRequirementArgs {
+func (ix *TokenAddComplianceRequirementIx) Args(token *crypto.Address, credential_ids []string) *TokenAddComplianceRequirementArgs {
 	return &TokenAddComplianceRequirementArgs{
 		token: token,
-		credential_id: credential_id,
+		credential_ids: credential_ids,
 		pd: ix.pd,
 	}
 }
@@ -22174,8 +22570,12 @@ func (a *TokenAddComplianceRequirementArgs) Encode() (api.PackedInstruction, err
 	args := provider.Args{}
 	// token: Address
 	args["token"] = a.token
-	// credential_id: String
-	args["credential_id"] = a.credential_id
+	// credential_ids: vec<String>
+	v0 := make([]any, len(a.credential_ids))
+	for v1, v2 := range a.credential_ids {
+		v0[v1] = v2
+	}
+	args["credential_ids"] = v0
 	wire, err := a.pd.Encode("AddComplianceRequirement", args)
 	if err != nil {
 		return nil, err
@@ -22189,15 +22589,15 @@ type TokenRemoveComplianceRequirementIx struct {
 
 type TokenRemoveComplianceRequirementArgs struct {
 	token *crypto.Address
-	credential_id string
+	credential_ids []string
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of RemoveComplianceRequirement.
-func (ix *TokenRemoveComplianceRequirementIx) Args(token *crypto.Address, credential_id string) *TokenRemoveComplianceRequirementArgs {
+func (ix *TokenRemoveComplianceRequirementIx) Args(token *crypto.Address, credential_ids []string) *TokenRemoveComplianceRequirementArgs {
 	return &TokenRemoveComplianceRequirementArgs{
 		token: token,
-		credential_id: credential_id,
+		credential_ids: credential_ids,
 		pd: ix.pd,
 	}
 }
@@ -22210,8 +22610,12 @@ func (a *TokenRemoveComplianceRequirementArgs) Encode() (api.PackedInstruction, 
 	args := provider.Args{}
 	// token: Address
 	args["token"] = a.token
-	// credential_id: String
-	args["credential_id"] = a.credential_id
+	// credential_ids: vec<String>
+	v0 := make([]any, len(a.credential_ids))
+	for v1, v2 := range a.credential_ids {
+		v0[v1] = v2
+	}
+	args["credential_ids"] = v0
 	wire, err := a.pd.Encode("RemoveComplianceRequirement", args)
 	if err != nil {
 		return nil, err
@@ -23497,6 +23901,8 @@ type IdentityApp struct {
 	DiscloseVcAttestation *IdentityDiscloseVcAttestationIx
 	RemoveVcDisclosure *IdentityRemoveVcDisclosureIx
 	RevokeVcAttestation *IdentityRevokeVcAttestationIx
+	FreezeVcAttestation *IdentityFreezeVcAttestationIx
+	UnfreezeVcAttestation *IdentityUnfreezeVcAttestationIx
 	Create *IdentityCreateIx
 	CreateWithAlias *IdentityCreateWithAliasIx
 	AddKey *IdentityAddKeyIx
@@ -23542,6 +23948,8 @@ var Identity = &IdentityApp{
 	DiscloseVcAttestation: &IdentityDiscloseVcAttestationIx{},
 	RemoveVcDisclosure: &IdentityRemoveVcDisclosureIx{},
 	RevokeVcAttestation: &IdentityRevokeVcAttestationIx{},
+	FreezeVcAttestation: &IdentityFreezeVcAttestationIx{},
+	UnfreezeVcAttestation: &IdentityUnfreezeVcAttestationIx{},
 	Create: &IdentityCreateIx{},
 	CreateWithAlias: &IdentityCreateWithAliasIx{},
 	AddKey: &IdentityAddKeyIx{},
@@ -23588,6 +23996,8 @@ func (a *IdentityApp) bind(pd *provider.Provider) {
 	a.DiscloseVcAttestation.pd = pd
 	a.RemoveVcDisclosure.pd = pd
 	a.RevokeVcAttestation.pd = pd
+	a.FreezeVcAttestation.pd = pd
+	a.UnfreezeVcAttestation.pd = pd
 	a.Create.pd = pd
 	a.CreateWithAlias.pd = pd
 	a.AddKey.pd = pd
@@ -23763,6 +24173,86 @@ func (a *IdentityRevokeVcAttestationArgs) Encode() (api.PackedInstruction, error
 	// credential_schema: String
 	args["credential_schema"] = a.credential_schema
 	wire, err := a.pd.Encode("RevokeVcAttestation", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type IdentityFreezeVcAttestationIx struct {
+	pd *provider.Provider
+}
+
+type IdentityFreezeVcAttestationArgs struct {
+	issuer *crypto.Address
+	subject *crypto.Address
+	credential_id string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of FreezeVcAttestation.
+func (ix *IdentityFreezeVcAttestationIx) Args(issuer *crypto.Address, subject *crypto.Address, credential_id string) *IdentityFreezeVcAttestationArgs {
+	return &IdentityFreezeVcAttestationArgs{
+		issuer: issuer,
+		subject: subject,
+		credential_id: credential_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *IdentityFreezeVcAttestationArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// issuer: Signer
+	args["issuer"] = a.issuer
+	// subject: Address
+	args["subject"] = a.subject
+	// credential_id: String
+	args["credential_id"] = a.credential_id
+	wire, err := a.pd.Encode("FreezeVcAttestation", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type IdentityUnfreezeVcAttestationIx struct {
+	pd *provider.Provider
+}
+
+type IdentityUnfreezeVcAttestationArgs struct {
+	issuer *crypto.Address
+	subject *crypto.Address
+	credential_id string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of UnfreezeVcAttestation.
+func (ix *IdentityUnfreezeVcAttestationIx) Args(issuer *crypto.Address, subject *crypto.Address, credential_id string) *IdentityUnfreezeVcAttestationArgs {
+	return &IdentityUnfreezeVcAttestationArgs{
+		issuer: issuer,
+		subject: subject,
+		credential_id: credential_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *IdentityUnfreezeVcAttestationArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// issuer: Signer
+	args["issuer"] = a.issuer
+	// subject: Address
+	args["subject"] = a.subject
+	// credential_id: String
+	args["credential_id"] = a.credential_id
+	wire, err := a.pd.Encode("UnfreezeVcAttestation", args)
 	if err != nil {
 		return nil, err
 	}
@@ -25738,74 +26228,86 @@ type SftokenApp struct {
 	CreateSft *SftokenCreateSftIx
 	CreateSlot *SftokenCreateSlotIx
 	TransferOwner *SftokenTransferOwnerIx
-	TransferSlotOwner *SftokenTransferSlotOwnerIx
-	TransferSlotUpdateAuthor *SftokenTransferSlotUpdateAuthorIx
-	TransferSlotFreezeAuthority *SftokenTransferSlotFreezeAuthorityIx
+	SetCoverUrl *SftokenSetCoverUrlIx
+	SetUri *SftokenSetUriIx
+	TransferMintAuthority *SftokenTransferMintAuthorityIx
+	TransferUpdateAuthor *SftokenTransferUpdateAuthorIx
+	TransferFreezeAuthority *SftokenTransferFreezeAuthorityIx
 	TransferRoyaltyRecipient *SftokenTransferRoyaltyRecipientIx
 	SetSlotTransferable *SftokenSetSlotTransferableIx
-	FreezeSlot *SftokenFreezeSlotIx
-	UnfreezeSlot *SftokenUnfreezeSlotIx
+	SetSlotAttribute *SftokenSetSlotAttributeIx
+	SetSlotCoverUrl *SftokenSetSlotCoverUrlIx
+	SetSlotUri *SftokenSetSlotUriIx
 	Mint *SftokenMintIx
 	Burn *SftokenBurnIx
-	Split *SftokenSplitIx
-	Merge *SftokenMergeIx
-	SetAttribute *SftokenSetAttributeIx
+	Freeze *SftokenFreezeIx
+	Unfreeze *SftokenUnfreezeIx
+	SetTokenAttribute *SftokenSetTokenAttributeIx
+	SetTokenCoverUrl *SftokenSetTokenCoverUrlIx
+	SetTokenUri *SftokenSetTokenUriIx
 	Approve *SftokenApproveIx
 	RevokeApproval *SftokenRevokeApprovalIx
+	Split *SftokenSplitIx
+	Merge *SftokenMergeIx
 	Transfer *SftokenTransferIx
 	TransferFrom *SftokenTransferFromIx
-	SftInfo *SftokenSftInfoIx
-	SlotInfo *SftokenSlotInfoIx
-	RoyaltyInfo *SftokenRoyaltyInfoIx
-	SlotOf *SftokenSlotOfIx
-	Token *SftokenTokenIx
-	OwnerOf *SftokenOwnerOfIx
-	ValueOf *SftokenValueOfIx
-	BalanceOf *SftokenBalanceOfIx
-	AttributeOf *SftokenAttributeOfIx
-	IsSlotFrozen *SftokenIsSlotFrozenIx
-	SlotUpdateAuthor *SftokenSlotUpdateAuthorIx
-	SlotFreezeAuthority *SftokenSlotFreezeAuthorityIx
 	SftOwnerOf *SftokenSftOwnerOfIx
-	SlotOwnerOf *SftokenSlotOwnerOfIx
+	SftMetadata *SftokenSftMetadataIx
+	SlotInfo *SftokenSlotInfoIx
+	SlotMetadata *SftokenSlotMetadataIx
+	IsSlotTransferable *SftokenIsSlotTransferableIx
+	Token *SftokenTokenIx
+	SlotOf *SftokenSlotOfIx
+	BalanceOf *SftokenBalanceOfIx
+	FrozenOf *SftokenFrozenOfIx
 	ApprovalOf *SftokenApprovalOfIx
+	RoyaltyInfo *SftokenRoyaltyInfoIx
+	MintAuthority *SftokenMintAuthorityIx
+	UpdateAuthor *SftokenUpdateAuthorIx
+	FreezeAuthority *SftokenFreezeAuthorityIx
 }
 
 var Sftoken = &SftokenApp{
 	CreateSft: &SftokenCreateSftIx{},
 	CreateSlot: &SftokenCreateSlotIx{},
 	TransferOwner: &SftokenTransferOwnerIx{},
-	TransferSlotOwner: &SftokenTransferSlotOwnerIx{},
-	TransferSlotUpdateAuthor: &SftokenTransferSlotUpdateAuthorIx{},
-	TransferSlotFreezeAuthority: &SftokenTransferSlotFreezeAuthorityIx{},
+	SetCoverUrl: &SftokenSetCoverUrlIx{},
+	SetUri: &SftokenSetUriIx{},
+	TransferMintAuthority: &SftokenTransferMintAuthorityIx{},
+	TransferUpdateAuthor: &SftokenTransferUpdateAuthorIx{},
+	TransferFreezeAuthority: &SftokenTransferFreezeAuthorityIx{},
 	TransferRoyaltyRecipient: &SftokenTransferRoyaltyRecipientIx{},
 	SetSlotTransferable: &SftokenSetSlotTransferableIx{},
-	FreezeSlot: &SftokenFreezeSlotIx{},
-	UnfreezeSlot: &SftokenUnfreezeSlotIx{},
+	SetSlotAttribute: &SftokenSetSlotAttributeIx{},
+	SetSlotCoverUrl: &SftokenSetSlotCoverUrlIx{},
+	SetSlotUri: &SftokenSetSlotUriIx{},
 	Mint: &SftokenMintIx{},
 	Burn: &SftokenBurnIx{},
-	Split: &SftokenSplitIx{},
-	Merge: &SftokenMergeIx{},
-	SetAttribute: &SftokenSetAttributeIx{},
+	Freeze: &SftokenFreezeIx{},
+	Unfreeze: &SftokenUnfreezeIx{},
+	SetTokenAttribute: &SftokenSetTokenAttributeIx{},
+	SetTokenCoverUrl: &SftokenSetTokenCoverUrlIx{},
+	SetTokenUri: &SftokenSetTokenUriIx{},
 	Approve: &SftokenApproveIx{},
 	RevokeApproval: &SftokenRevokeApprovalIx{},
+	Split: &SftokenSplitIx{},
+	Merge: &SftokenMergeIx{},
 	Transfer: &SftokenTransferIx{},
 	TransferFrom: &SftokenTransferFromIx{},
-	SftInfo: &SftokenSftInfoIx{},
-	SlotInfo: &SftokenSlotInfoIx{},
-	RoyaltyInfo: &SftokenRoyaltyInfoIx{},
-	SlotOf: &SftokenSlotOfIx{},
-	Token: &SftokenTokenIx{},
-	OwnerOf: &SftokenOwnerOfIx{},
-	ValueOf: &SftokenValueOfIx{},
-	BalanceOf: &SftokenBalanceOfIx{},
-	AttributeOf: &SftokenAttributeOfIx{},
-	IsSlotFrozen: &SftokenIsSlotFrozenIx{},
-	SlotUpdateAuthor: &SftokenSlotUpdateAuthorIx{},
-	SlotFreezeAuthority: &SftokenSlotFreezeAuthorityIx{},
 	SftOwnerOf: &SftokenSftOwnerOfIx{},
-	SlotOwnerOf: &SftokenSlotOwnerOfIx{},
+	SftMetadata: &SftokenSftMetadataIx{},
+	SlotInfo: &SftokenSlotInfoIx{},
+	SlotMetadata: &SftokenSlotMetadataIx{},
+	IsSlotTransferable: &SftokenIsSlotTransferableIx{},
+	Token: &SftokenTokenIx{},
+	SlotOf: &SftokenSlotOfIx{},
+	BalanceOf: &SftokenBalanceOfIx{},
+	FrozenOf: &SftokenFrozenOfIx{},
 	ApprovalOf: &SftokenApprovalOfIx{},
+	RoyaltyInfo: &SftokenRoyaltyInfoIx{},
+	MintAuthority: &SftokenMintAuthorityIx{},
+	UpdateAuthor: &SftokenUpdateAuthorIx{},
+	FreezeAuthority: &SftokenFreezeAuthorityIx{},
 }
 
 func (a *SftokenApp) bind(pd *provider.Provider) {
@@ -25813,37 +26315,43 @@ func (a *SftokenApp) bind(pd *provider.Provider) {
 	a.CreateSft.pd = pd
 	a.CreateSlot.pd = pd
 	a.TransferOwner.pd = pd
-	a.TransferSlotOwner.pd = pd
-	a.TransferSlotUpdateAuthor.pd = pd
-	a.TransferSlotFreezeAuthority.pd = pd
+	a.SetCoverUrl.pd = pd
+	a.SetUri.pd = pd
+	a.TransferMintAuthority.pd = pd
+	a.TransferUpdateAuthor.pd = pd
+	a.TransferFreezeAuthority.pd = pd
 	a.TransferRoyaltyRecipient.pd = pd
 	a.SetSlotTransferable.pd = pd
-	a.FreezeSlot.pd = pd
-	a.UnfreezeSlot.pd = pd
+	a.SetSlotAttribute.pd = pd
+	a.SetSlotCoverUrl.pd = pd
+	a.SetSlotUri.pd = pd
 	a.Mint.pd = pd
 	a.Burn.pd = pd
-	a.Split.pd = pd
-	a.Merge.pd = pd
-	a.SetAttribute.pd = pd
+	a.Freeze.pd = pd
+	a.Unfreeze.pd = pd
+	a.SetTokenAttribute.pd = pd
+	a.SetTokenCoverUrl.pd = pd
+	a.SetTokenUri.pd = pd
 	a.Approve.pd = pd
 	a.RevokeApproval.pd = pd
+	a.Split.pd = pd
+	a.Merge.pd = pd
 	a.Transfer.pd = pd
 	a.TransferFrom.pd = pd
-	a.SftInfo.pd = pd
-	a.SlotInfo.pd = pd
-	a.RoyaltyInfo.pd = pd
-	a.SlotOf.pd = pd
-	a.Token.pd = pd
-	a.OwnerOf.pd = pd
-	a.ValueOf.pd = pd
-	a.BalanceOf.pd = pd
-	a.AttributeOf.pd = pd
-	a.IsSlotFrozen.pd = pd
-	a.SlotUpdateAuthor.pd = pd
-	a.SlotFreezeAuthority.pd = pd
 	a.SftOwnerOf.pd = pd
-	a.SlotOwnerOf.pd = pd
+	a.SftMetadata.pd = pd
+	a.SlotInfo.pd = pd
+	a.SlotMetadata.pd = pd
+	a.IsSlotTransferable.pd = pd
+	a.Token.pd = pd
+	a.SlotOf.pd = pd
+	a.BalanceOf.pd = pd
+	a.FrozenOf.pd = pd
 	a.ApprovalOf.pd = pd
+	a.RoyaltyInfo.pd = pd
+	a.MintAuthority.pd = pd
+	a.UpdateAuthor.pd = pd
+	a.FreezeAuthority.pd = pd
 }
 
 type SftokenCreateSftIx struct {
@@ -25853,13 +26361,13 @@ type SftokenCreateSftIx struct {
 type SftokenCreateSftArgs struct {
 	sft *crypto.Address
 	owner *crypto.Address
-	metadata string
+	metadata SftokenMetadata
 	royalty_bps uint16
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of CreateSft.
-func (ix *SftokenCreateSftIx) Args(sft *crypto.Address, owner *crypto.Address, metadata string, royalty_bps uint16) *SftokenCreateSftArgs {
+func (ix *SftokenCreateSftIx) Args(sft *crypto.Address, owner *crypto.Address, metadata SftokenMetadata, royalty_bps uint16) *SftokenCreateSftArgs {
 	return &SftokenCreateSftArgs{
 		sft: sft,
 		owner: owner,
@@ -25879,8 +26387,12 @@ func (a *SftokenCreateSftArgs) Encode() (api.PackedInstruction, error) {
 	args["sft"] = a.sft
 	// owner: Address
 	args["owner"] = a.owner
-	// metadata: String
-	args["metadata"] = a.metadata
+	// metadata: Metadata
+	v0, err := toSftokenMetadataValue(a.metadata)
+	if err != nil {
+		return nil, err
+	}
+	args["metadata"] = v0
 	// royalty_bps: u16
 	args["royalty_bps"] = a.royalty_bps
 	wire, err := a.pd.Encode("CreateSft", args)
@@ -25895,28 +26407,20 @@ type SftokenCreateSlotIx struct {
 }
 
 type SftokenCreateSlotArgs struct {
-	sft *crypto.Address
 	creator *crypto.Address
-	metadata string
-	attribute string
+	sft *crypto.Address
+	slot SftokenSlotData
 	is_transferable bool
-	slot_owner **crypto.Address
-	update_author **crypto.Address
-	freeze_authority **crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of CreateSlot.
-func (ix *SftokenCreateSlotIx) Args(sft *crypto.Address, creator *crypto.Address, metadata string, attribute string, is_transferable bool, slot_owner **crypto.Address, update_author **crypto.Address, freeze_authority **crypto.Address) *SftokenCreateSlotArgs {
+func (ix *SftokenCreateSlotIx) Args(creator *crypto.Address, sft *crypto.Address, slot SftokenSlotData, is_transferable bool) *SftokenCreateSlotArgs {
 	return &SftokenCreateSlotArgs{
-		sft: sft,
 		creator: creator,
-		metadata: metadata,
-		attribute: attribute,
+		sft: sft,
+		slot: slot,
 		is_transferable: is_transferable,
-		slot_owner: slot_owner,
-		update_author: update_author,
-		freeze_authority: freeze_authority,
 		pd: ix.pd,
 	}
 }
@@ -25927,34 +26431,18 @@ func (a *SftokenCreateSlotArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
 	// creator: Signer
 	args["creator"] = a.creator
-	// metadata: String
-	args["metadata"] = a.metadata
-	// attribute: String
-	args["attribute"] = a.attribute
+	// sft: Address
+	args["sft"] = a.sft
+	// slot: SlotData
+	v0, err := toSftokenSlotDataValue(a.slot)
+	if err != nil {
+		return nil, err
+	}
+	args["slot"] = v0
 	// is_transferable: bool
 	args["is_transferable"] = a.is_transferable
-	// slot_owner: option<Address>
-	if a.slot_owner == nil {
-		args["slot_owner"] = nil
-	} else {
-		args["slot_owner"] = *a.slot_owner
-	}
-	// update_author: option<Address>
-	if a.update_author == nil {
-		args["update_author"] = nil
-	} else {
-		args["update_author"] = *a.update_author
-	}
-	// freeze_authority: option<Address>
-	if a.freeze_authority == nil {
-		args["freeze_authority"] = nil
-	} else {
-		args["freeze_authority"] = *a.freeze_authority
-	}
 	wire, err := a.pd.Encode("CreateSlot", args)
 	if err != nil {
 		return nil, err
@@ -25967,17 +26455,17 @@ type SftokenTransferOwnerIx struct {
 }
 
 type SftokenTransferOwnerArgs struct {
-	sft *crypto.Address
 	current_owner *crypto.Address
+	sft *crypto.Address
 	new_owner *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of TransferOwner.
-func (ix *SftokenTransferOwnerIx) Args(sft *crypto.Address, current_owner *crypto.Address, new_owner *crypto.Address) *SftokenTransferOwnerArgs {
+func (ix *SftokenTransferOwnerIx) Args(current_owner *crypto.Address, sft *crypto.Address, new_owner *crypto.Address) *SftokenTransferOwnerArgs {
 	return &SftokenTransferOwnerArgs{
-		sft: sft,
 		current_owner: current_owner,
+		sft: sft,
 		new_owner: new_owner,
 		pd: ix.pd,
 	}
@@ -25989,10 +26477,10 @@ func (a *SftokenTransferOwnerArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
 	// current_owner: Signer
 	args["current_owner"] = a.current_owner
+	// sft: Address
+	args["sft"] = a.sft
 	// new_owner: Address
 	args["new_owner"] = a.new_owner
 	wire, err := a.pd.Encode("TransferOwner", args)
@@ -26002,132 +26490,200 @@ func (a *SftokenTransferOwnerArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenTransferSlotOwnerIx struct {
+type SftokenSetCoverUrlIx struct {
 	pd *provider.Provider
 }
 
-type SftokenTransferSlotOwnerArgs struct {
+type SftokenSetCoverUrlArgs struct {
+	owner *crypto.Address
 	sft *crypto.Address
-	manager *crypto.Address
-	slot_id uint64
-	new_owner *crypto.Address
+	cover_url string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of TransferSlotOwner.
-func (ix *SftokenTransferSlotOwnerIx) Args(sft *crypto.Address, manager *crypto.Address, slot_id uint64, new_owner *crypto.Address) *SftokenTransferSlotOwnerArgs {
-	return &SftokenTransferSlotOwnerArgs{
+// Args builds the IDL arguments of SetCoverUrl.
+func (ix *SftokenSetCoverUrlIx) Args(owner *crypto.Address, sft *crypto.Address, cover_url string) *SftokenSetCoverUrlArgs {
+	return &SftokenSetCoverUrlArgs{
+		owner: owner,
 		sft: sft,
-		manager: manager,
-		slot_id: slot_id,
-		new_owner: new_owner,
+		cover_url: cover_url,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenTransferSlotOwnerArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenSetCoverUrlArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
 	// sft: Address
 	args["sft"] = a.sft
-	// manager: Signer
-	args["manager"] = a.manager
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	// new_owner: Address
-	args["new_owner"] = a.new_owner
-	wire, err := a.pd.Encode("TransferSlotOwner", args)
+	// cover_url: String
+	args["cover_url"] = a.cover_url
+	wire, err := a.pd.Encode("SetCoverUrl", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenTransferSlotUpdateAuthorIx struct {
+type SftokenSetUriIx struct {
 	pd *provider.Provider
 }
 
-type SftokenTransferSlotUpdateAuthorArgs struct {
+type SftokenSetUriArgs struct {
+	owner *crypto.Address
 	sft *crypto.Address
-	current_author *crypto.Address
-	slot_id uint64
-	new_author *crypto.Address
+	uri string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of TransferSlotUpdateAuthor.
-func (ix *SftokenTransferSlotUpdateAuthorIx) Args(sft *crypto.Address, current_author *crypto.Address, slot_id uint64, new_author *crypto.Address) *SftokenTransferSlotUpdateAuthorArgs {
-	return &SftokenTransferSlotUpdateAuthorArgs{
+// Args builds the IDL arguments of SetUri.
+func (ix *SftokenSetUriIx) Args(owner *crypto.Address, sft *crypto.Address, uri string) *SftokenSetUriArgs {
+	return &SftokenSetUriArgs{
+		owner: owner,
 		sft: sft,
-		current_author: current_author,
-		slot_id: slot_id,
-		new_author: new_author,
+		uri: uri,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenTransferSlotUpdateAuthorArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenSetUriArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
 	// sft: Address
 	args["sft"] = a.sft
-	// current_author: Signer
-	args["current_author"] = a.current_author
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	// new_author: Address
-	args["new_author"] = a.new_author
-	wire, err := a.pd.Encode("TransferSlotUpdateAuthor", args)
+	// uri: String
+	args["uri"] = a.uri
+	wire, err := a.pd.Encode("SetUri", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenTransferSlotFreezeAuthorityIx struct {
+type SftokenTransferMintAuthorityIx struct {
 	pd *provider.Provider
 }
 
-type SftokenTransferSlotFreezeAuthorityArgs struct {
+type SftokenTransferMintAuthorityArgs struct {
+	current *crypto.Address
 	sft *crypto.Address
-	current_authority *crypto.Address
-	slot_id uint64
-	new_authority *crypto.Address
+	new *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of TransferSlotFreezeAuthority.
-func (ix *SftokenTransferSlotFreezeAuthorityIx) Args(sft *crypto.Address, current_authority *crypto.Address, slot_id uint64, new_authority *crypto.Address) *SftokenTransferSlotFreezeAuthorityArgs {
-	return &SftokenTransferSlotFreezeAuthorityArgs{
+// Args builds the IDL arguments of TransferMintAuthority.
+func (ix *SftokenTransferMintAuthorityIx) Args(current *crypto.Address, sft *crypto.Address, new *crypto.Address) *SftokenTransferMintAuthorityArgs {
+	return &SftokenTransferMintAuthorityArgs{
+		current: current,
 		sft: sft,
-		current_authority: current_authority,
-		slot_id: slot_id,
-		new_authority: new_authority,
+		new: new,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenTransferSlotFreezeAuthorityArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenTransferMintAuthorityArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// current: Signer
+	args["current"] = a.current
 	// sft: Address
 	args["sft"] = a.sft
-	// current_authority: Signer
-	args["current_authority"] = a.current_authority
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	// new_authority: Address
-	args["new_authority"] = a.new_authority
-	wire, err := a.pd.Encode("TransferSlotFreezeAuthority", args)
+	// new: Address
+	args["new"] = a.new
+	wire, err := a.pd.Encode("TransferMintAuthority", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenTransferUpdateAuthorIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTransferUpdateAuthorArgs struct {
+	current *crypto.Address
+	sft *crypto.Address
+	new *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TransferUpdateAuthor.
+func (ix *SftokenTransferUpdateAuthorIx) Args(current *crypto.Address, sft *crypto.Address, new *crypto.Address) *SftokenTransferUpdateAuthorArgs {
+	return &SftokenTransferUpdateAuthorArgs{
+		current: current,
+		sft: sft,
+		new: new,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTransferUpdateAuthorArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// current: Signer
+	args["current"] = a.current
+	// sft: Address
+	args["sft"] = a.sft
+	// new: Address
+	args["new"] = a.new
+	wire, err := a.pd.Encode("TransferUpdateAuthor", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenTransferFreezeAuthorityIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTransferFreezeAuthorityArgs struct {
+	current *crypto.Address
+	sft *crypto.Address
+	new *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TransferFreezeAuthority.
+func (ix *SftokenTransferFreezeAuthorityIx) Args(current *crypto.Address, sft *crypto.Address, new *crypto.Address) *SftokenTransferFreezeAuthorityArgs {
+	return &SftokenTransferFreezeAuthorityArgs{
+		current: current,
+		sft: sft,
+		new: new,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTransferFreezeAuthorityArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// current: Signer
+	args["current"] = a.current
+	// sft: Address
+	args["sft"] = a.sft
+	// new: Address
+	args["new"] = a.new
+	wire, err := a.pd.Encode("TransferFreezeAuthority", args)
 	if err != nil {
 		return nil, err
 	}
@@ -26139,17 +26695,17 @@ type SftokenTransferRoyaltyRecipientIx struct {
 }
 
 type SftokenTransferRoyaltyRecipientArgs struct {
+	current *crypto.Address
 	sft *crypto.Address
-	current_recipient *crypto.Address
 	new_recipient *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of TransferRoyaltyRecipient.
-func (ix *SftokenTransferRoyaltyRecipientIx) Args(sft *crypto.Address, current_recipient *crypto.Address, new_recipient *crypto.Address) *SftokenTransferRoyaltyRecipientArgs {
+func (ix *SftokenTransferRoyaltyRecipientIx) Args(current *crypto.Address, sft *crypto.Address, new_recipient *crypto.Address) *SftokenTransferRoyaltyRecipientArgs {
 	return &SftokenTransferRoyaltyRecipientArgs{
+		current: current,
 		sft: sft,
-		current_recipient: current_recipient,
 		new_recipient: new_recipient,
 		pd: ix.pd,
 	}
@@ -26161,10 +26717,10 @@ func (a *SftokenTransferRoyaltyRecipientArgs) Encode() (api.PackedInstruction, e
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// current: Signer
+	args["current"] = a.current
 	// sft: Address
 	args["sft"] = a.sft
-	// current_recipient: Signer
-	args["current_recipient"] = a.current_recipient
 	// new_recipient: Address
 	args["new_recipient"] = a.new_recipient
 	wire, err := a.pd.Encode("TransferRoyaltyRecipient", args)
@@ -26179,20 +26735,20 @@ type SftokenSetSlotTransferableIx struct {
 }
 
 type SftokenSetSlotTransferableArgs struct {
+	owner *crypto.Address
 	sft *crypto.Address
-	manager *crypto.Address
 	slot_id uint64
-	is_transferable bool
+	transferable bool
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of SetSlotTransferable.
-func (ix *SftokenSetSlotTransferableIx) Args(sft *crypto.Address, manager *crypto.Address, slot_id uint64, is_transferable bool) *SftokenSetSlotTransferableArgs {
+func (ix *SftokenSetSlotTransferableIx) Args(owner *crypto.Address, sft *crypto.Address, slot_id uint64, transferable bool) *SftokenSetSlotTransferableArgs {
 	return &SftokenSetSlotTransferableArgs{
+		owner: owner,
 		sft: sft,
-		manager: manager,
 		slot_id: slot_id,
-		is_transferable: is_transferable,
+		transferable: transferable,
 		pd: ix.pd,
 	}
 }
@@ -26203,14 +26759,14 @@ func (a *SftokenSetSlotTransferableArgs) Encode() (api.PackedInstruction, error)
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
 	// sft: Address
 	args["sft"] = a.sft
-	// manager: Signer
-	args["manager"] = a.manager
 	// slot_id: u64
 	args["slot_id"] = a.slot_id
-	// is_transferable: bool
-	args["is_transferable"] = a.is_transferable
+	// transferable: bool
+	args["transferable"] = a.transferable
 	wire, err := a.pd.Encode("SetSlotTransferable", args)
 	if err != nil {
 		return nil, err
@@ -26218,80 +26774,132 @@ func (a *SftokenSetSlotTransferableArgs) Encode() (api.PackedInstruction, error)
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenFreezeSlotIx struct {
+type SftokenSetSlotAttributeIx struct {
 	pd *provider.Provider
 }
 
-type SftokenFreezeSlotArgs struct {
+type SftokenSetSlotAttributeArgs struct {
+	author *crypto.Address
 	sft *crypto.Address
-	freezer *crypto.Address
 	slot_id uint64
+	attribute string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of FreezeSlot.
-func (ix *SftokenFreezeSlotIx) Args(sft *crypto.Address, freezer *crypto.Address, slot_id uint64) *SftokenFreezeSlotArgs {
-	return &SftokenFreezeSlotArgs{
+// Args builds the IDL arguments of SetSlotAttribute.
+func (ix *SftokenSetSlotAttributeIx) Args(author *crypto.Address, sft *crypto.Address, slot_id uint64, attribute string) *SftokenSetSlotAttributeArgs {
+	return &SftokenSetSlotAttributeArgs{
+		author: author,
 		sft: sft,
-		freezer: freezer,
 		slot_id: slot_id,
+		attribute: attribute,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenFreezeSlotArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenSetSlotAttributeArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// author: Signer
+	args["author"] = a.author
 	// sft: Address
 	args["sft"] = a.sft
-	// freezer: Signer
-	args["freezer"] = a.freezer
 	// slot_id: u64
 	args["slot_id"] = a.slot_id
-	wire, err := a.pd.Encode("FreezeSlot", args)
+	// attribute: String
+	args["attribute"] = a.attribute
+	wire, err := a.pd.Encode("SetSlotAttribute", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenUnfreezeSlotIx struct {
+type SftokenSetSlotCoverUrlIx struct {
 	pd *provider.Provider
 }
 
-type SftokenUnfreezeSlotArgs struct {
+type SftokenSetSlotCoverUrlArgs struct {
+	author *crypto.Address
 	sft *crypto.Address
-	freezer *crypto.Address
 	slot_id uint64
+	cover_url string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of UnfreezeSlot.
-func (ix *SftokenUnfreezeSlotIx) Args(sft *crypto.Address, freezer *crypto.Address, slot_id uint64) *SftokenUnfreezeSlotArgs {
-	return &SftokenUnfreezeSlotArgs{
+// Args builds the IDL arguments of SetSlotCoverUrl.
+func (ix *SftokenSetSlotCoverUrlIx) Args(author *crypto.Address, sft *crypto.Address, slot_id uint64, cover_url string) *SftokenSetSlotCoverUrlArgs {
+	return &SftokenSetSlotCoverUrlArgs{
+		author: author,
 		sft: sft,
-		freezer: freezer,
 		slot_id: slot_id,
+		cover_url: cover_url,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenUnfreezeSlotArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenSetSlotCoverUrlArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// author: Signer
+	args["author"] = a.author
 	// sft: Address
 	args["sft"] = a.sft
-	// freezer: Signer
-	args["freezer"] = a.freezer
 	// slot_id: u64
 	args["slot_id"] = a.slot_id
-	wire, err := a.pd.Encode("UnfreezeSlot", args)
+	// cover_url: String
+	args["cover_url"] = a.cover_url
+	wire, err := a.pd.Encode("SetSlotCoverUrl", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenSetSlotUriIx struct {
+	pd *provider.Provider
+}
+
+type SftokenSetSlotUriArgs struct {
+	author *crypto.Address
+	sft *crypto.Address
+	slot_id uint64
+	uri string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetSlotUri.
+func (ix *SftokenSetSlotUriIx) Args(author *crypto.Address, sft *crypto.Address, slot_id uint64, uri string) *SftokenSetSlotUriArgs {
+	return &SftokenSetSlotUriArgs{
+		author: author,
+		sft: sft,
+		slot_id: slot_id,
+		uri: uri,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenSetSlotUriArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// author: Signer
+	args["author"] = a.author
+	// sft: Address
+	args["sft"] = a.sft
+	// slot_id: u64
+	args["slot_id"] = a.slot_id
+	// uri: String
+	args["uri"] = a.uri
+	wire, err := a.pd.Encode("SetSlotUri", args)
 	if err != nil {
 		return nil, err
 	}
@@ -26303,26 +26911,24 @@ type SftokenMintIx struct {
 }
 
 type SftokenMintArgs struct {
-	sft *crypto.Address
 	minter *crypto.Address
+	sft *crypto.Address
 	slot_id uint64
-	to_address *crypto.Address
-	initial_value uint64
-	metadata string
-	attribute string
+	to *crypto.Address
+	amount uint64
+	metadata *SftokenMetadataOverride
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Mint.
-func (ix *SftokenMintIx) Args(sft *crypto.Address, minter *crypto.Address, slot_id uint64, to_address *crypto.Address, initial_value uint64, metadata string, attribute string) *SftokenMintArgs {
+func (ix *SftokenMintIx) Args(minter *crypto.Address, sft *crypto.Address, slot_id uint64, to *crypto.Address, amount uint64, metadata *SftokenMetadataOverride) *SftokenMintArgs {
 	return &SftokenMintArgs{
-		sft: sft,
 		minter: minter,
+		sft: sft,
 		slot_id: slot_id,
-		to_address: to_address,
-		initial_value: initial_value,
+		to: to,
+		amount: amount,
 		metadata: metadata,
-		attribute: attribute,
 		pd: ix.pd,
 	}
 }
@@ -26333,20 +26939,26 @@ func (a *SftokenMintArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
 	// minter: Signer
 	args["minter"] = a.minter
+	// sft: Address
+	args["sft"] = a.sft
 	// slot_id: u64
 	args["slot_id"] = a.slot_id
-	// to_address: Address
-	args["to_address"] = a.to_address
-	// initial_value: u64
-	args["initial_value"] = a.initial_value
-	// metadata: String
-	args["metadata"] = a.metadata
-	// attribute: String
-	args["attribute"] = a.attribute
+	// to: Address
+	args["to"] = a.to
+	// amount: u64
+	args["amount"] = a.amount
+	// metadata: option<MetadataOverride>
+	if a.metadata == nil {
+		args["metadata"] = nil
+	} else {
+		v0, err := toSftokenMetadataOverrideValue(*a.metadata)
+		if err != nil {
+			return nil, err
+		}
+		args["metadata"] = v0
+	}
 	wire, err := a.pd.Encode("Mint", args)
 	if err != nil {
 		return nil, err
@@ -26359,18 +26971,20 @@ type SftokenBurnIx struct {
 }
 
 type SftokenBurnArgs struct {
-	sft *crypto.Address
 	owner *crypto.Address
+	sft *crypto.Address
 	token_id uint64
+	amount uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Burn.
-func (ix *SftokenBurnIx) Args(sft *crypto.Address, owner *crypto.Address, token_id uint64) *SftokenBurnArgs {
+func (ix *SftokenBurnIx) Args(owner *crypto.Address, sft *crypto.Address, token_id uint64, amount uint64) *SftokenBurnArgs {
 	return &SftokenBurnArgs{
-		sft: sft,
 		owner: owner,
+		sft: sft,
 		token_id: token_id,
+		amount: amount,
 		pd: ix.pd,
 	}
 }
@@ -26381,12 +26995,14 @@ func (a *SftokenBurnArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
 	// owner: Signer
 	args["owner"] = a.owner
+	// sft: Address
+	args["sft"] = a.sft
 	// token_id: u64
 	args["token_id"] = a.token_id
+	// amount: u64
+	args["amount"] = a.amount
 	wire, err := a.pd.Encode("Burn", args)
 	if err != nil {
 		return nil, err
@@ -26394,115 +27010,111 @@ func (a *SftokenBurnArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenSplitIx struct {
+type SftokenFreezeIx struct {
 	pd *provider.Provider
 }
 
-type SftokenSplitArgs struct {
+type SftokenFreezeArgs struct {
+	freezer *crypto.Address
 	sft *crypto.Address
-	signer *crypto.Address
-	from_token_id uint64
-	to_address *crypto.Address
-	split_value uint64
+	token_id uint64
+	owner *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of Split.
-func (ix *SftokenSplitIx) Args(sft *crypto.Address, signer *crypto.Address, from_token_id uint64, to_address *crypto.Address, split_value uint64) *SftokenSplitArgs {
-	return &SftokenSplitArgs{
+// Args builds the IDL arguments of Freeze.
+func (ix *SftokenFreezeIx) Args(freezer *crypto.Address, sft *crypto.Address, token_id uint64, owner *crypto.Address) *SftokenFreezeArgs {
+	return &SftokenFreezeArgs{
+		freezer: freezer,
 		sft: sft,
-		signer: signer,
-		from_token_id: from_token_id,
-		to_address: to_address,
-		split_value: split_value,
+		token_id: token_id,
+		owner: owner,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSplitArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenFreezeArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// freezer: Signer
+	args["freezer"] = a.freezer
 	// sft: Address
 	args["sft"] = a.sft
-	// signer: Signer
-	args["signer"] = a.signer
-	// from_token_id: u64
-	args["from_token_id"] = a.from_token_id
-	// to_address: Address
-	args["to_address"] = a.to_address
-	// split_value: u64
-	args["split_value"] = a.split_value
-	wire, err := a.pd.Encode("Split", args)
+	// token_id: u64
+	args["token_id"] = a.token_id
+	// owner: Address
+	args["owner"] = a.owner
+	wire, err := a.pd.Encode("Freeze", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenMergeIx struct {
+type SftokenUnfreezeIx struct {
 	pd *provider.Provider
 }
 
-type SftokenMergeArgs struct {
+type SftokenUnfreezeArgs struct {
+	freezer *crypto.Address
 	sft *crypto.Address
-	signer *crypto.Address
-	from_token_id uint64
-	to_token_id uint64
+	token_id uint64
+	owner *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of Merge.
-func (ix *SftokenMergeIx) Args(sft *crypto.Address, signer *crypto.Address, from_token_id uint64, to_token_id uint64) *SftokenMergeArgs {
-	return &SftokenMergeArgs{
+// Args builds the IDL arguments of Unfreeze.
+func (ix *SftokenUnfreezeIx) Args(freezer *crypto.Address, sft *crypto.Address, token_id uint64, owner *crypto.Address) *SftokenUnfreezeArgs {
+	return &SftokenUnfreezeArgs{
+		freezer: freezer,
 		sft: sft,
-		signer: signer,
-		from_token_id: from_token_id,
-		to_token_id: to_token_id,
+		token_id: token_id,
+		owner: owner,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenMergeArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenUnfreezeArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// freezer: Signer
+	args["freezer"] = a.freezer
 	// sft: Address
 	args["sft"] = a.sft
-	// signer: Signer
-	args["signer"] = a.signer
-	// from_token_id: u64
-	args["from_token_id"] = a.from_token_id
-	// to_token_id: u64
-	args["to_token_id"] = a.to_token_id
-	wire, err := a.pd.Encode("Merge", args)
+	// token_id: u64
+	args["token_id"] = a.token_id
+	// owner: Address
+	args["owner"] = a.owner
+	wire, err := a.pd.Encode("Unfreeze", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenSetAttributeIx struct {
+type SftokenSetTokenAttributeIx struct {
 	pd *provider.Provider
 }
 
-type SftokenSetAttributeArgs struct {
+type SftokenSetTokenAttributeArgs struct {
+	author *crypto.Address
 	sft *crypto.Address
-	signer *crypto.Address
 	token_id uint64
 	attribute string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of SetAttribute.
-func (ix *SftokenSetAttributeIx) Args(sft *crypto.Address, signer *crypto.Address, token_id uint64, attribute string) *SftokenSetAttributeArgs {
-	return &SftokenSetAttributeArgs{
+// Args builds the IDL arguments of SetTokenAttribute.
+func (ix *SftokenSetTokenAttributeIx) Args(author *crypto.Address, sft *crypto.Address, token_id uint64, attribute string) *SftokenSetTokenAttributeArgs {
+	return &SftokenSetTokenAttributeArgs{
+		author: author,
 		sft: sft,
-		signer: signer,
 		token_id: token_id,
 		attribute: attribute,
 		pd: ix.pd,
@@ -26510,20 +27122,108 @@ func (ix *SftokenSetAttributeIx) Args(sft *crypto.Address, signer *crypto.Addres
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSetAttributeArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenSetTokenAttributeArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// author: Signer
+	args["author"] = a.author
 	// sft: Address
 	args["sft"] = a.sft
-	// signer: Signer
-	args["signer"] = a.signer
 	// token_id: u64
 	args["token_id"] = a.token_id
 	// attribute: String
 	args["attribute"] = a.attribute
-	wire, err := a.pd.Encode("SetAttribute", args)
+	wire, err := a.pd.Encode("SetTokenAttribute", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenSetTokenCoverUrlIx struct {
+	pd *provider.Provider
+}
+
+type SftokenSetTokenCoverUrlArgs struct {
+	author *crypto.Address
+	sft *crypto.Address
+	token_id uint64
+	cover_url string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetTokenCoverUrl.
+func (ix *SftokenSetTokenCoverUrlIx) Args(author *crypto.Address, sft *crypto.Address, token_id uint64, cover_url string) *SftokenSetTokenCoverUrlArgs {
+	return &SftokenSetTokenCoverUrlArgs{
+		author: author,
+		sft: sft,
+		token_id: token_id,
+		cover_url: cover_url,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenSetTokenCoverUrlArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// author: Signer
+	args["author"] = a.author
+	// sft: Address
+	args["sft"] = a.sft
+	// token_id: u64
+	args["token_id"] = a.token_id
+	// cover_url: String
+	args["cover_url"] = a.cover_url
+	wire, err := a.pd.Encode("SetTokenCoverUrl", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenSetTokenUriIx struct {
+	pd *provider.Provider
+}
+
+type SftokenSetTokenUriArgs struct {
+	author *crypto.Address
+	sft *crypto.Address
+	token_id uint64
+	uri string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetTokenUri.
+func (ix *SftokenSetTokenUriIx) Args(author *crypto.Address, sft *crypto.Address, token_id uint64, uri string) *SftokenSetTokenUriArgs {
+	return &SftokenSetTokenUriArgs{
+		author: author,
+		sft: sft,
+		token_id: token_id,
+		uri: uri,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenSetTokenUriArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// author: Signer
+	args["author"] = a.author
+	// sft: Address
+	args["sft"] = a.sft
+	// token_id: u64
+	args["token_id"] = a.token_id
+	// uri: String
+	args["uri"] = a.uri
+	wire, err := a.pd.Encode("SetTokenUri", args)
 	if err != nil {
 		return nil, err
 	}
@@ -26535,8 +27235,8 @@ type SftokenApproveIx struct {
 }
 
 type SftokenApproveArgs struct {
-	sft *crypto.Address
 	owner *crypto.Address
+	sft *crypto.Address
 	token_id uint64
 	spender *crypto.Address
 	amount uint64
@@ -26544,10 +27244,10 @@ type SftokenApproveArgs struct {
 }
 
 // Args builds the IDL arguments of Approve.
-func (ix *SftokenApproveIx) Args(sft *crypto.Address, owner *crypto.Address, token_id uint64, spender *crypto.Address, amount uint64) *SftokenApproveArgs {
+func (ix *SftokenApproveIx) Args(owner *crypto.Address, sft *crypto.Address, token_id uint64, spender *crypto.Address, amount uint64) *SftokenApproveArgs {
 	return &SftokenApproveArgs{
-		sft: sft,
 		owner: owner,
+		sft: sft,
 		token_id: token_id,
 		spender: spender,
 		amount: amount,
@@ -26561,10 +27261,10 @@ func (a *SftokenApproveArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
 	// owner: Signer
 	args["owner"] = a.owner
+	// sft: Address
+	args["sft"] = a.sft
 	// token_id: u64
 	args["token_id"] = a.token_id
 	// spender: Address
@@ -26583,18 +27283,18 @@ type SftokenRevokeApprovalIx struct {
 }
 
 type SftokenRevokeApprovalArgs struct {
-	sft *crypto.Address
 	owner *crypto.Address
+	sft *crypto.Address
 	token_id uint64
 	spender *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of RevokeApproval.
-func (ix *SftokenRevokeApprovalIx) Args(sft *crypto.Address, owner *crypto.Address, token_id uint64, spender *crypto.Address) *SftokenRevokeApprovalArgs {
+func (ix *SftokenRevokeApprovalIx) Args(owner *crypto.Address, sft *crypto.Address, token_id uint64, spender *crypto.Address) *SftokenRevokeApprovalArgs {
 	return &SftokenRevokeApprovalArgs{
-		sft: sft,
 		owner: owner,
+		sft: sft,
 		token_id: token_id,
 		spender: spender,
 		pd: ix.pd,
@@ -26607,10 +27307,10 @@ func (a *SftokenRevokeApprovalArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
 	// owner: Signer
 	args["owner"] = a.owner
+	// sft: Address
+	args["sft"] = a.sft
 	// token_id: u64
 	args["token_id"] = a.token_id
 	// spender: Address
@@ -26622,27 +27322,119 @@ func (a *SftokenRevokeApprovalArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type SftokenSplitIx struct {
+	pd *provider.Provider
+}
+
+type SftokenSplitArgs struct {
+	owner *crypto.Address
+	sft *crypto.Address
+	from_token_id uint64
+	to *crypto.Address
+	amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Split.
+func (ix *SftokenSplitIx) Args(owner *crypto.Address, sft *crypto.Address, from_token_id uint64, to *crypto.Address, amount uint64) *SftokenSplitArgs {
+	return &SftokenSplitArgs{
+		owner: owner,
+		sft: sft,
+		from_token_id: from_token_id,
+		to: to,
+		amount: amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenSplitArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// sft: Address
+	args["sft"] = a.sft
+	// from_token_id: u64
+	args["from_token_id"] = a.from_token_id
+	// to: Address
+	args["to"] = a.to
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("Split", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenMergeIx struct {
+	pd *provider.Provider
+}
+
+type SftokenMergeArgs struct {
+	owner *crypto.Address
+	sft *crypto.Address
+	from_token_id uint64
+	to_token_id uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Merge.
+func (ix *SftokenMergeIx) Args(owner *crypto.Address, sft *crypto.Address, from_token_id uint64, to_token_id uint64) *SftokenMergeArgs {
+	return &SftokenMergeArgs{
+		owner: owner,
+		sft: sft,
+		from_token_id: from_token_id,
+		to_token_id: to_token_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenMergeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// sft: Address
+	args["sft"] = a.sft
+	// from_token_id: u64
+	args["from_token_id"] = a.from_token_id
+	// to_token_id: u64
+	args["to_token_id"] = a.to_token_id
+	wire, err := a.pd.Encode("Merge", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type SftokenTransferIx struct {
 	pd *provider.Provider
 }
 
 type SftokenTransferArgs struct {
-	sft *crypto.Address
 	owner *crypto.Address
+	sft *crypto.Address
 	token_id uint64
 	to *crypto.Address
-	value uint64
+	amount uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Transfer.
-func (ix *SftokenTransferIx) Args(sft *crypto.Address, owner *crypto.Address, token_id uint64, to *crypto.Address, value uint64) *SftokenTransferArgs {
+func (ix *SftokenTransferIx) Args(owner *crypto.Address, sft *crypto.Address, token_id uint64, to *crypto.Address, amount uint64) *SftokenTransferArgs {
 	return &SftokenTransferArgs{
-		sft: sft,
 		owner: owner,
+		sft: sft,
 		token_id: token_id,
 		to: to,
-		value: value,
+		amount: amount,
 		pd: ix.pd,
 	}
 }
@@ -26653,16 +27445,16 @@ func (a *SftokenTransferArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
 	// owner: Signer
 	args["owner"] = a.owner
+	// sft: Address
+	args["sft"] = a.sft
 	// token_id: u64
 	args["token_id"] = a.token_id
 	// to: Address
 	args["to"] = a.to
-	// value: u64
-	args["value"] = a.value
+	// amount: u64
+	args["amount"] = a.amount
 	wire, err := a.pd.Encode("Transfer", args)
 	if err != nil {
 		return nil, err
@@ -26675,22 +27467,24 @@ type SftokenTransferFromIx struct {
 }
 
 type SftokenTransferFromArgs struct {
-	sft *crypto.Address
 	spender *crypto.Address
+	sft *crypto.Address
 	token_id uint64
+	from *crypto.Address
 	to *crypto.Address
-	value uint64
+	amount uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of TransferFrom.
-func (ix *SftokenTransferFromIx) Args(sft *crypto.Address, spender *crypto.Address, token_id uint64, to *crypto.Address, value uint64) *SftokenTransferFromArgs {
+func (ix *SftokenTransferFromIx) Args(spender *crypto.Address, sft *crypto.Address, token_id uint64, from *crypto.Address, to *crypto.Address, amount uint64) *SftokenTransferFromArgs {
 	return &SftokenTransferFromArgs{
-		sft: sft,
 		spender: spender,
+		sft: sft,
 		token_id: token_id,
+		from: from,
 		to: to,
-		value: value,
+		amount: amount,
 		pd: ix.pd,
 	}
 }
@@ -26701,16 +27495,18 @@ func (a *SftokenTransferFromArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
 	// spender: Signer
 	args["spender"] = a.spender
+	// sft: Address
+	args["sft"] = a.sft
 	// token_id: u64
 	args["token_id"] = a.token_id
+	// from: Address
+	args["from"] = a.from
 	// to: Address
 	args["to"] = a.to
-	// value: u64
-	args["value"] = a.value
+	// amount: u64
+	args["amount"] = a.amount
 	wire, err := a.pd.Encode("TransferFrom", args)
 	if err != nil {
 		return nil, err
@@ -26718,51 +27514,103 @@ func (a *SftokenTransferFromArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-type SftokenSftInfoIx struct {
+type SftokenSftOwnerOfIx struct {
 	pd *provider.Provider
 }
 
-type SftokenSftInfoArgs struct {
+type SftokenSftOwnerOfArgs struct {
 	sft *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of SftInfo.
-func (ix *SftokenSftInfoIx) Args(sft *crypto.Address) *SftokenSftInfoArgs {
-	return &SftokenSftInfoArgs{
+// Args builds the IDL arguments of SftOwnerOf.
+func (ix *SftokenSftOwnerOfIx) Args(sft *crypto.Address) *SftokenSftOwnerOfArgs {
+	return &SftokenSftOwnerOfArgs{
 		sft: sft,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSftInfoArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenSftOwnerOfArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// sft: Address
 	args["sft"] = a.sft
-	wire, err := a.pd.Encode("SftInfo", args)
+	wire, err := a.pd.Encode("SftOwnerOf", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of SftInfo into SftokenSft.
-func (ix *SftokenSftInfoIx) DecodeView(body []byte) (out SftokenSft, err error) {
+// DecodeView decodes the raw view response body of SftOwnerOf into *crypto.Address.
+func (ix *SftokenSftOwnerOfIx) DecodeView(body []byte) (out *crypto.Address, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SftInfo", body)
+	v, err := ix.pd.DecodeViewData("SftOwnerOf", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SftInfo failed: code=%d msg=%q", failure.Code, failure.Message)
+		return out, fmt.Errorf("view SftOwnerOf failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
-	v0, err := fromSftokenSft(v)
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenSftMetadataIx struct {
+	pd *provider.Provider
+}
+
+type SftokenSftMetadataArgs struct {
+	sft *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SftMetadata.
+func (ix *SftokenSftMetadataIx) Args(sft *crypto.Address) *SftokenSftMetadataArgs {
+	return &SftokenSftMetadataArgs{
+		sft: sft,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenSftMetadataArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	wire, err := a.pd.Encode("SftMetadata", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of SftMetadata into SftokenMetadata.
+func (ix *SftokenSftMetadataIx) DecodeView(body []byte) (out SftokenMetadata, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("SftMetadata", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view SftMetadata failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := fromSftokenMetadata(v)
 	if err != nil {
 		return out, err
 	}
@@ -26826,51 +27674,167 @@ func (ix *SftokenSlotInfoIx) DecodeView(body []byte) (out SftokenSlotData, err e
 	return out, nil
 }
 
-type SftokenRoyaltyInfoIx struct {
+type SftokenSlotMetadataIx struct {
 	pd *provider.Provider
 }
 
-type SftokenRoyaltyInfoArgs struct {
+type SftokenSlotMetadataArgs struct {
 	sft *crypto.Address
+	slot_id uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of RoyaltyInfo.
-func (ix *SftokenRoyaltyInfoIx) Args(sft *crypto.Address) *SftokenRoyaltyInfoArgs {
-	return &SftokenRoyaltyInfoArgs{
+// Args builds the IDL arguments of SlotMetadata.
+func (ix *SftokenSlotMetadataIx) Args(sft *crypto.Address, slot_id uint64) *SftokenSlotMetadataArgs {
+	return &SftokenSlotMetadataArgs{
 		sft: sft,
+		slot_id: slot_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenRoyaltyInfoArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenSlotMetadataArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// sft: Address
 	args["sft"] = a.sft
-	wire, err := a.pd.Encode("RoyaltyInfo", args)
+	// slot_id: u64
+	args["slot_id"] = a.slot_id
+	wire, err := a.pd.Encode("SlotMetadata", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of RoyaltyInfo into SftokenRoyalty.
-func (ix *SftokenRoyaltyInfoIx) DecodeView(body []byte) (out SftokenRoyalty, err error) {
+// DecodeView decodes the raw view response body of SlotMetadata into SftokenMetadata.
+func (ix *SftokenSlotMetadataIx) DecodeView(body []byte) (out SftokenMetadata, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("RoyaltyInfo", body)
+	v, err := ix.pd.DecodeViewData("SlotMetadata", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view RoyaltyInfo failed: code=%d msg=%q", failure.Code, failure.Message)
+		return out, fmt.Errorf("view SlotMetadata failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
-	v0, err := fromSftokenRoyalty(v)
+	v0, err := fromSftokenMetadata(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenIsSlotTransferableIx struct {
+	pd *provider.Provider
+}
+
+type SftokenIsSlotTransferableArgs struct {
+	sft *crypto.Address
+	slot_id uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of IsSlotTransferable.
+func (ix *SftokenIsSlotTransferableIx) Args(sft *crypto.Address, slot_id uint64) *SftokenIsSlotTransferableArgs {
+	return &SftokenIsSlotTransferableArgs{
+		sft: sft,
+		slot_id: slot_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenIsSlotTransferableArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// slot_id: u64
+	args["slot_id"] = a.slot_id
+	wire, err := a.pd.Encode("IsSlotTransferable", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of IsSlotTransferable into bool.
+func (ix *SftokenIsSlotTransferableIx) DecodeView(body []byte) (out bool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("IsSlotTransferable", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view IsSlotTransferable failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := toBool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenTokenIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTokenArgs struct {
+	sft *crypto.Address
+	token_id uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Token.
+func (ix *SftokenTokenIx) Args(sft *crypto.Address, token_id uint64) *SftokenTokenArgs {
+	return &SftokenTokenArgs{
+		sft: sft,
+		token_id: token_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTokenArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// token_id: u64
+	args["token_id"] = a.token_id
+	wire, err := a.pd.Encode("Token", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of Token into SftokenMetadata.
+func (ix *SftokenTokenIx) DecodeView(body []byte) (out SftokenMetadata, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("Token", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view Token failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := fromSftokenMetadata(v)
 	if err != nil {
 		return out, err
 	}
@@ -26934,174 +27898,6 @@ func (ix *SftokenSlotOfIx) DecodeView(body []byte) (out uint64, err error) {
 	return out, nil
 }
 
-type SftokenTokenIx struct {
-	pd *provider.Provider
-}
-
-type SftokenTokenArgs struct {
-	sft *crypto.Address
-	token_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of Token.
-func (ix *SftokenTokenIx) Args(sft *crypto.Address, token_id uint64) *SftokenTokenArgs {
-	return &SftokenTokenArgs{
-		sft: sft,
-		token_id: token_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenTokenArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// token_id: u64
-	args["token_id"] = a.token_id
-	wire, err := a.pd.Encode("Token", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of Token into SftokenToken.
-func (ix *SftokenTokenIx) DecodeView(body []byte) (out SftokenToken, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("Token", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Token failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := fromSftokenToken(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type SftokenOwnerOfIx struct {
-	pd *provider.Provider
-}
-
-type SftokenOwnerOfArgs struct {
-	sft *crypto.Address
-	token_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of OwnerOf.
-func (ix *SftokenOwnerOfIx) Args(sft *crypto.Address, token_id uint64) *SftokenOwnerOfArgs {
-	return &SftokenOwnerOfArgs{
-		sft: sft,
-		token_id: token_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenOwnerOfArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// token_id: u64
-	args["token_id"] = a.token_id
-	wire, err := a.pd.Encode("OwnerOf", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of OwnerOf into *crypto.Address.
-func (ix *SftokenOwnerOfIx) DecodeView(body []byte) (out *crypto.Address, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("OwnerOf", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view OwnerOf failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toAddress(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type SftokenValueOfIx struct {
-	pd *provider.Provider
-}
-
-type SftokenValueOfArgs struct {
-	sft *crypto.Address
-	token_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ValueOf.
-func (ix *SftokenValueOfIx) Args(sft *crypto.Address, token_id uint64) *SftokenValueOfArgs {
-	return &SftokenValueOfArgs{
-		sft: sft,
-		token_id: token_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenValueOfArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// token_id: u64
-	args["token_id"] = a.token_id
-	wire, err := a.pd.Encode("ValueOf", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of ValueOf into uint64.
-func (ix *SftokenValueOfIx) DecodeView(body []byte) (out uint64, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("ValueOf", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ValueOf failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toUint64(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
 type SftokenBalanceOfIx struct {
 	pd *provider.Provider
 }
@@ -27109,14 +27905,16 @@ type SftokenBalanceOfIx struct {
 type SftokenBalanceOfArgs struct {
 	sft *crypto.Address
 	token_id uint64
+	owner *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of BalanceOf.
-func (ix *SftokenBalanceOfIx) Args(sft *crypto.Address, token_id uint64) *SftokenBalanceOfArgs {
+func (ix *SftokenBalanceOfIx) Args(sft *crypto.Address, token_id uint64, owner *crypto.Address) *SftokenBalanceOfArgs {
 	return &SftokenBalanceOfArgs{
 		sft: sft,
 		token_id: token_id,
+		owner: owner,
 		pd: ix.pd,
 	}
 }
@@ -27131,6 +27929,8 @@ func (a *SftokenBalanceOfArgs) Encode() (api.PackedInstruction, error) {
 	args["sft"] = a.sft
 	// token_id: u64
 	args["token_id"] = a.token_id
+	// owner: Address
+	args["owner"] = a.owner
 	wire, err := a.pd.Encode("BalanceOf", args)
 	if err != nil {
 		return nil, err
@@ -27158,27 +27958,29 @@ func (ix *SftokenBalanceOfIx) DecodeView(body []byte) (out uint64, err error) {
 	return out, nil
 }
 
-type SftokenAttributeOfIx struct {
+type SftokenFrozenOfIx struct {
 	pd *provider.Provider
 }
 
-type SftokenAttributeOfArgs struct {
+type SftokenFrozenOfArgs struct {
 	sft *crypto.Address
 	token_id uint64
+	owner *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of AttributeOf.
-func (ix *SftokenAttributeOfIx) Args(sft *crypto.Address, token_id uint64) *SftokenAttributeOfArgs {
-	return &SftokenAttributeOfArgs{
+// Args builds the IDL arguments of FrozenOf.
+func (ix *SftokenFrozenOfIx) Args(sft *crypto.Address, token_id uint64, owner *crypto.Address) *SftokenFrozenOfArgs {
+	return &SftokenFrozenOfArgs{
 		sft: sft,
 		token_id: token_id,
+		owner: owner,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenAttributeOfArgs) Encode() (api.PackedInstruction, error) {
+func (a *SftokenFrozenOfArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
@@ -27187,302 +27989,28 @@ func (a *SftokenAttributeOfArgs) Encode() (api.PackedInstruction, error) {
 	args["sft"] = a.sft
 	// token_id: u64
 	args["token_id"] = a.token_id
-	wire, err := a.pd.Encode("AttributeOf", args)
+	// owner: Address
+	args["owner"] = a.owner
+	wire, err := a.pd.Encode("FrozenOf", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of AttributeOf into string.
-func (ix *SftokenAttributeOfIx) DecodeView(body []byte) (out string, err error) {
+// DecodeView decodes the raw view response body of FrozenOf into bool.
+func (ix *SftokenFrozenOfIx) DecodeView(body []byte) (out bool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("AttributeOf", body)
+	v, err := ix.pd.DecodeViewData("FrozenOf", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view AttributeOf failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toString(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type SftokenIsSlotFrozenIx struct {
-	pd *provider.Provider
-}
-
-type SftokenIsSlotFrozenArgs struct {
-	sft *crypto.Address
-	slot_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of IsSlotFrozen.
-func (ix *SftokenIsSlotFrozenIx) Args(sft *crypto.Address, slot_id uint64) *SftokenIsSlotFrozenArgs {
-	return &SftokenIsSlotFrozenArgs{
-		sft: sft,
-		slot_id: slot_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenIsSlotFrozenArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	wire, err := a.pd.Encode("IsSlotFrozen", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of IsSlotFrozen into bool.
-func (ix *SftokenIsSlotFrozenIx) DecodeView(body []byte) (out bool, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("IsSlotFrozen", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view IsSlotFrozen failed: code=%d msg=%q", failure.Code, failure.Message)
+		return out, fmt.Errorf("view FrozenOf failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
 	v0, err := toBool(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type SftokenSlotUpdateAuthorIx struct {
-	pd *provider.Provider
-}
-
-type SftokenSlotUpdateAuthorArgs struct {
-	sft *crypto.Address
-	slot_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SlotUpdateAuthor.
-func (ix *SftokenSlotUpdateAuthorIx) Args(sft *crypto.Address, slot_id uint64) *SftokenSlotUpdateAuthorArgs {
-	return &SftokenSlotUpdateAuthorArgs{
-		sft: sft,
-		slot_id: slot_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSlotUpdateAuthorArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	wire, err := a.pd.Encode("SlotUpdateAuthor", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of SlotUpdateAuthor into *crypto.Address.
-func (ix *SftokenSlotUpdateAuthorIx) DecodeView(body []byte) (out *crypto.Address, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("SlotUpdateAuthor", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SlotUpdateAuthor failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toAddress(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type SftokenSlotFreezeAuthorityIx struct {
-	pd *provider.Provider
-}
-
-type SftokenSlotFreezeAuthorityArgs struct {
-	sft *crypto.Address
-	slot_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SlotFreezeAuthority.
-func (ix *SftokenSlotFreezeAuthorityIx) Args(sft *crypto.Address, slot_id uint64) *SftokenSlotFreezeAuthorityArgs {
-	return &SftokenSlotFreezeAuthorityArgs{
-		sft: sft,
-		slot_id: slot_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSlotFreezeAuthorityArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	wire, err := a.pd.Encode("SlotFreezeAuthority", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of SlotFreezeAuthority into *crypto.Address.
-func (ix *SftokenSlotFreezeAuthorityIx) DecodeView(body []byte) (out *crypto.Address, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("SlotFreezeAuthority", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SlotFreezeAuthority failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toAddress(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type SftokenSftOwnerOfIx struct {
-	pd *provider.Provider
-}
-
-type SftokenSftOwnerOfArgs struct {
-	sft *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SftOwnerOf.
-func (ix *SftokenSftOwnerOfIx) Args(sft *crypto.Address) *SftokenSftOwnerOfArgs {
-	return &SftokenSftOwnerOfArgs{
-		sft: sft,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSftOwnerOfArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	wire, err := a.pd.Encode("SftOwnerOf", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of SftOwnerOf into *crypto.Address.
-func (ix *SftokenSftOwnerOfIx) DecodeView(body []byte) (out *crypto.Address, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("SftOwnerOf", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SftOwnerOf failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toAddress(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type SftokenSlotOwnerOfIx struct {
-	pd *provider.Provider
-}
-
-type SftokenSlotOwnerOfArgs struct {
-	sft *crypto.Address
-	slot_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SlotOwnerOf.
-func (ix *SftokenSlotOwnerOfIx) Args(sft *crypto.Address, slot_id uint64) *SftokenSlotOwnerOfArgs {
-	return &SftokenSlotOwnerOfArgs{
-		sft: sft,
-		slot_id: slot_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SftokenSlotOwnerOfArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sft: Address
-	args["sft"] = a.sft
-	// slot_id: u64
-	args["slot_id"] = a.slot_id
-	wire, err := a.pd.Encode("SlotOwnerOf", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of SlotOwnerOf into *crypto.Address.
-func (ix *SftokenSlotOwnerOfIx) DecodeView(body []byte) (out *crypto.Address, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("SlotOwnerOf", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SlotOwnerOf failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toAddress(v)
 	if err != nil {
 		return out, err
 	}
@@ -27497,15 +28025,17 @@ type SftokenApprovalOfIx struct {
 type SftokenApprovalOfArgs struct {
 	sft *crypto.Address
 	token_id uint64
+	owner *crypto.Address
 	spender *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of ApprovalOf.
-func (ix *SftokenApprovalOfIx) Args(sft *crypto.Address, token_id uint64, spender *crypto.Address) *SftokenApprovalOfArgs {
+func (ix *SftokenApprovalOfIx) Args(sft *crypto.Address, token_id uint64, owner *crypto.Address, spender *crypto.Address) *SftokenApprovalOfArgs {
 	return &SftokenApprovalOfArgs{
 		sft: sft,
 		token_id: token_id,
+		owner: owner,
 		spender: spender,
 		pd: ix.pd,
 	}
@@ -27521,6 +28051,8 @@ func (a *SftokenApprovalOfArgs) Encode() (api.PackedInstruction, error) {
 	args["sft"] = a.sft
 	// token_id: u64
 	args["token_id"] = a.token_id
+	// owner: Address
+	args["owner"] = a.owner
 	// spender: Address
 	args["spender"] = a.spender
 	wire, err := a.pd.Encode("ApprovalOf", args)
@@ -27543,6 +28075,214 @@ func (ix *SftokenApprovalOfIx) DecodeView(body []byte) (out uint64, err error) {
 		return out, fmt.Errorf("view ApprovalOf failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
 	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenRoyaltyInfoIx struct {
+	pd *provider.Provider
+}
+
+type SftokenRoyaltyInfoArgs struct {
+	sft *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RoyaltyInfo.
+func (ix *SftokenRoyaltyInfoIx) Args(sft *crypto.Address) *SftokenRoyaltyInfoArgs {
+	return &SftokenRoyaltyInfoArgs{
+		sft: sft,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenRoyaltyInfoArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	wire, err := a.pd.Encode("RoyaltyInfo", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of RoyaltyInfo into SftokenRoyalty.
+func (ix *SftokenRoyaltyInfoIx) DecodeView(body []byte) (out SftokenRoyalty, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("RoyaltyInfo", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view RoyaltyInfo failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := fromSftokenRoyalty(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenMintAuthorityIx struct {
+	pd *provider.Provider
+}
+
+type SftokenMintAuthorityArgs struct {
+	sft *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of MintAuthority.
+func (ix *SftokenMintAuthorityIx) Args(sft *crypto.Address) *SftokenMintAuthorityArgs {
+	return &SftokenMintAuthorityArgs{
+		sft: sft,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenMintAuthorityArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	wire, err := a.pd.Encode("MintAuthority", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of MintAuthority into *crypto.Address.
+func (ix *SftokenMintAuthorityIx) DecodeView(body []byte) (out *crypto.Address, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("MintAuthority", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view MintAuthority failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenUpdateAuthorIx struct {
+	pd *provider.Provider
+}
+
+type SftokenUpdateAuthorArgs struct {
+	sft *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of UpdateAuthor.
+func (ix *SftokenUpdateAuthorIx) Args(sft *crypto.Address) *SftokenUpdateAuthorArgs {
+	return &SftokenUpdateAuthorArgs{
+		sft: sft,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenUpdateAuthorArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	wire, err := a.pd.Encode("UpdateAuthor", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of UpdateAuthor into *crypto.Address.
+func (ix *SftokenUpdateAuthorIx) DecodeView(body []byte) (out *crypto.Address, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("UpdateAuthor", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view UpdateAuthor failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenFreezeAuthorityIx struct {
+	pd *provider.Provider
+}
+
+type SftokenFreezeAuthorityArgs struct {
+	sft *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of FreezeAuthority.
+func (ix *SftokenFreezeAuthorityIx) Args(sft *crypto.Address) *SftokenFreezeAuthorityArgs {
+	return &SftokenFreezeAuthorityArgs{
+		sft: sft,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenFreezeAuthorityArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	wire, err := a.pd.Encode("FreezeAuthority", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of FreezeAuthority into *crypto.Address.
+func (ix *SftokenFreezeAuthorityIx) DecodeView(body []byte) (out *crypto.Address, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("FreezeAuthority", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.TxFailurePayload); ok {
+		return out, fmt.Errorf("view FreezeAuthority failed: code=%d msg=%q", failure.Code, failure.Message)
+	}
+	v0, err := toAddress(v)
 	if err != nil {
 		return out, err
 	}
@@ -29542,9 +30282,8 @@ type SocialApp struct {
 	TransferSourceAppOwner *SocialTransferSourceAppOwnerIx
 	DeactivateSourceApp *SocialDeactivateSourceAppIx
 	ReactivateSourceApp *SocialReactivateSourceAppIx
-	UpsertPublicDataUri *SocialUpsertPublicDataUriIx
-	RetirePublicDataUri *SocialRetirePublicDataUriIx
-	RestorePublicDataUri *SocialRestorePublicDataUriIx
+	UpsertReference *SocialUpsertReferenceIx
+	RetireReference *SocialRetireReferenceIx
 	CreateCommunity *SocialCreateCommunityIx
 	UpdateCommunityUri *SocialUpdateCommunityUriIx
 	SetCommunityJoinMode *SocialSetCommunityJoinModeIx
@@ -29562,7 +30301,7 @@ type SocialApp struct {
 	SocialProfile *SocialSocialProfileIx
 	SourceApp *SocialSourceAppIx
 	IsSourceAppPublisher *SocialIsSourceAppPublisherIx
-	PublicDataAnchor *SocialPublicDataAnchorIx
+	GetReference *SocialGetReferenceIx
 	Community *SocialCommunityIx
 	IsCommunityAdmin *SocialIsCommunityAdminIx
 	JoinRequest *SocialJoinRequestIx
@@ -29577,9 +30316,8 @@ var Social = &SocialApp{
 	TransferSourceAppOwner: &SocialTransferSourceAppOwnerIx{},
 	DeactivateSourceApp: &SocialDeactivateSourceAppIx{},
 	ReactivateSourceApp: &SocialReactivateSourceAppIx{},
-	UpsertPublicDataUri: &SocialUpsertPublicDataUriIx{},
-	RetirePublicDataUri: &SocialRetirePublicDataUriIx{},
-	RestorePublicDataUri: &SocialRestorePublicDataUriIx{},
+	UpsertReference: &SocialUpsertReferenceIx{},
+	RetireReference: &SocialRetireReferenceIx{},
 	CreateCommunity: &SocialCreateCommunityIx{},
 	UpdateCommunityUri: &SocialUpdateCommunityUriIx{},
 	SetCommunityJoinMode: &SocialSetCommunityJoinModeIx{},
@@ -29597,7 +30335,7 @@ var Social = &SocialApp{
 	SocialProfile: &SocialSocialProfileIx{},
 	SourceApp: &SocialSourceAppIx{},
 	IsSourceAppPublisher: &SocialIsSourceAppPublisherIx{},
-	PublicDataAnchor: &SocialPublicDataAnchorIx{},
+	GetReference: &SocialGetReferenceIx{},
 	Community: &SocialCommunityIx{},
 	IsCommunityAdmin: &SocialIsCommunityAdminIx{},
 	JoinRequest: &SocialJoinRequestIx{},
@@ -29613,9 +30351,8 @@ func (a *SocialApp) bind(pd *provider.Provider) {
 	a.TransferSourceAppOwner.pd = pd
 	a.DeactivateSourceApp.pd = pd
 	a.ReactivateSourceApp.pd = pd
-	a.UpsertPublicDataUri.pd = pd
-	a.RetirePublicDataUri.pd = pd
-	a.RestorePublicDataUri.pd = pd
+	a.UpsertReference.pd = pd
+	a.RetireReference.pd = pd
 	a.CreateCommunity.pd = pd
 	a.UpdateCommunityUri.pd = pd
 	a.SetCommunityJoinMode.pd = pd
@@ -29633,7 +30370,7 @@ func (a *SocialApp) bind(pd *provider.Provider) {
 	a.SocialProfile.pd = pd
 	a.SourceApp.pd = pd
 	a.IsSourceAppPublisher.pd = pd
-	a.PublicDataAnchor.pd = pd
+	a.GetReference.pd = pd
 	a.Community.pd = pd
 	a.IsCommunityAdmin.pd = pd
 	a.JoinRequest.pd = pd
@@ -29900,33 +30637,37 @@ func (a *SocialReactivateSourceAppArgs) Encode() (api.PackedInstruction, error) 
 	return api.PackedInstruction(wire), nil
 }
 
-type SocialUpsertPublicDataUriIx struct {
+type SocialUpsertReferenceIx struct {
 	pd *provider.Provider
 }
 
-type SocialUpsertPublicDataUriArgs struct {
+type SocialUpsertReferenceArgs struct {
 	publisher *crypto.Address
 	source_app_id uint32
-	dataset_kind SocialDatasetKind
-	scope_key string
+	object_type SocialObjectType
+	object_id string
+	subject *crypto.Address
+	content_hash [32]byte
 	uri string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of UpsertPublicDataUri.
-func (ix *SocialUpsertPublicDataUriIx) Args(publisher *crypto.Address, source_app_id uint32, dataset_kind SocialDatasetKind, scope_key string, uri string) *SocialUpsertPublicDataUriArgs {
-	return &SocialUpsertPublicDataUriArgs{
+// Args builds the IDL arguments of UpsertReference.
+func (ix *SocialUpsertReferenceIx) Args(publisher *crypto.Address, source_app_id uint32, object_type SocialObjectType, object_id string, subject *crypto.Address, content_hash [32]byte, uri string) *SocialUpsertReferenceArgs {
+	return &SocialUpsertReferenceArgs{
 		publisher: publisher,
 		source_app_id: source_app_id,
-		dataset_kind: dataset_kind,
-		scope_key: scope_key,
+		object_type: object_type,
+		object_id: object_id,
+		subject: subject,
+		content_hash: content_hash,
 		uri: uri,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SocialUpsertPublicDataUriArgs) Encode() (api.PackedInstruction, error) {
+func (a *SocialUpsertReferenceArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
@@ -29935,48 +30676,52 @@ func (a *SocialUpsertPublicDataUriArgs) Encode() (api.PackedInstruction, error) 
 	args["publisher"] = a.publisher
 	// source_app_id: u32
 	args["source_app_id"] = a.source_app_id
-	// dataset_kind: DatasetKind
-	v0, err := toSocialDatasetKindValue(a.dataset_kind)
+	// object_type: ObjectType
+	v0, err := toSocialObjectTypeValue(a.object_type)
 	if err != nil {
 		return nil, err
 	}
-	args["dataset_kind"] = v0
-	// scope_key: String
-	args["scope_key"] = a.scope_key
+	args["object_type"] = v0
+	// object_id: String
+	args["object_id"] = a.object_id
+	// subject: Address
+	args["subject"] = a.subject
+	// content_hash: B256
+	args["content_hash"] = a.content_hash
 	// uri: String
 	args["uri"] = a.uri
-	wire, err := a.pd.Encode("UpsertPublicDataUri", args)
+	wire, err := a.pd.Encode("UpsertReference", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type SocialRetirePublicDataUriIx struct {
+type SocialRetireReferenceIx struct {
 	pd *provider.Provider
 }
 
-type SocialRetirePublicDataUriArgs struct {
+type SocialRetireReferenceArgs struct {
 	publisher *crypto.Address
 	source_app_id uint32
-	dataset_kind SocialDatasetKind
-	scope_key string
+	object_type SocialObjectType
+	object_id string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of RetirePublicDataUri.
-func (ix *SocialRetirePublicDataUriIx) Args(publisher *crypto.Address, source_app_id uint32, dataset_kind SocialDatasetKind, scope_key string) *SocialRetirePublicDataUriArgs {
-	return &SocialRetirePublicDataUriArgs{
+// Args builds the IDL arguments of RetireReference.
+func (ix *SocialRetireReferenceIx) Args(publisher *crypto.Address, source_app_id uint32, object_type SocialObjectType, object_id string) *SocialRetireReferenceArgs {
+	return &SocialRetireReferenceArgs{
 		publisher: publisher,
 		source_app_id: source_app_id,
-		dataset_kind: dataset_kind,
-		scope_key: scope_key,
+		object_type: object_type,
+		object_id: object_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SocialRetirePublicDataUriArgs) Encode() (api.PackedInstruction, error) {
+func (a *SocialRetireReferenceArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
@@ -29985,67 +30730,15 @@ func (a *SocialRetirePublicDataUriArgs) Encode() (api.PackedInstruction, error) 
 	args["publisher"] = a.publisher
 	// source_app_id: u32
 	args["source_app_id"] = a.source_app_id
-	// dataset_kind: DatasetKind
-	v0, err := toSocialDatasetKindValue(a.dataset_kind)
+	// object_type: ObjectType
+	v0, err := toSocialObjectTypeValue(a.object_type)
 	if err != nil {
 		return nil, err
 	}
-	args["dataset_kind"] = v0
-	// scope_key: String
-	args["scope_key"] = a.scope_key
-	wire, err := a.pd.Encode("RetirePublicDataUri", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type SocialRestorePublicDataUriIx struct {
-	pd *provider.Provider
-}
-
-type SocialRestorePublicDataUriArgs struct {
-	publisher *crypto.Address
-	source_app_id uint32
-	dataset_kind SocialDatasetKind
-	scope_key string
-	uri string
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of RestorePublicDataUri.
-func (ix *SocialRestorePublicDataUriIx) Args(publisher *crypto.Address, source_app_id uint32, dataset_kind SocialDatasetKind, scope_key string, uri string) *SocialRestorePublicDataUriArgs {
-	return &SocialRestorePublicDataUriArgs{
-		publisher: publisher,
-		source_app_id: source_app_id,
-		dataset_kind: dataset_kind,
-		scope_key: scope_key,
-		uri: uri,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SocialRestorePublicDataUriArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// publisher: Signer
-	args["publisher"] = a.publisher
-	// source_app_id: u32
-	args["source_app_id"] = a.source_app_id
-	// dataset_kind: DatasetKind
-	v0, err := toSocialDatasetKindValue(a.dataset_kind)
-	if err != nil {
-		return nil, err
-	}
-	args["dataset_kind"] = v0
-	// scope_key: String
-	args["scope_key"] = a.scope_key
-	// uri: String
-	args["uri"] = a.uri
-	wire, err := a.pd.Encode("RestorePublicDataUri", args)
+	args["object_type"] = v0
+	// object_id: String
+	args["object_id"] = a.object_id
+	wire, err := a.pd.Encode("RetireReference", args)
 	if err != nil {
 		return nil, err
 	}
@@ -30760,63 +31453,63 @@ func (ix *SocialIsSourceAppPublisherIx) DecodeView(body []byte) (out bool, err e
 	return out, nil
 }
 
-type SocialPublicDataAnchorIx struct {
+type SocialGetReferenceIx struct {
 	pd *provider.Provider
 }
 
-type SocialPublicDataAnchorArgs struct {
+type SocialGetReferenceArgs struct {
 	source_app_id uint32
-	dataset_kind SocialDatasetKind
-	scope_key string
+	object_type SocialObjectType
+	object_id string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of PublicDataAnchor.
-func (ix *SocialPublicDataAnchorIx) Args(source_app_id uint32, dataset_kind SocialDatasetKind, scope_key string) *SocialPublicDataAnchorArgs {
-	return &SocialPublicDataAnchorArgs{
+// Args builds the IDL arguments of GetReference.
+func (ix *SocialGetReferenceIx) Args(source_app_id uint32, object_type SocialObjectType, object_id string) *SocialGetReferenceArgs {
+	return &SocialGetReferenceArgs{
 		source_app_id: source_app_id,
-		dataset_kind: dataset_kind,
-		scope_key: scope_key,
+		object_type: object_type,
+		object_id: object_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SocialPublicDataAnchorArgs) Encode() (api.PackedInstruction, error) {
+func (a *SocialGetReferenceArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// source_app_id: u32
 	args["source_app_id"] = a.source_app_id
-	// dataset_kind: DatasetKind
-	v0, err := toSocialDatasetKindValue(a.dataset_kind)
+	// object_type: ObjectType
+	v0, err := toSocialObjectTypeValue(a.object_type)
 	if err != nil {
 		return nil, err
 	}
-	args["dataset_kind"] = v0
-	// scope_key: String
-	args["scope_key"] = a.scope_key
-	wire, err := a.pd.Encode("PublicDataAnchor", args)
+	args["object_type"] = v0
+	// object_id: String
+	args["object_id"] = a.object_id
+	wire, err := a.pd.Encode("GetReference", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of PublicDataAnchor into SocialPublicDataAnchor.
-func (ix *SocialPublicDataAnchorIx) DecodeView(body []byte) (out SocialPublicDataAnchor, err error) {
+// DecodeView decodes the raw view response body of GetReference into SocialReference.
+func (ix *SocialGetReferenceIx) DecodeView(body []byte) (out SocialReference, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("PublicDataAnchor", body)
+	v, err := ix.pd.DecodeViewData("GetReference", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view PublicDataAnchor failed: code=%d msg=%q", failure.Code, failure.Message)
+		return out, fmt.Errorf("view GetReference failed: code=%d msg=%q", failure.Code, failure.Message)
 	}
-	v0, err := fromSocialPublicDataAnchor(v)
+	v0, err := fromSocialReference(v)
 	if err != nil {
 		return out, err
 	}

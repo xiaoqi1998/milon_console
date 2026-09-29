@@ -20,7 +20,7 @@
         {
           "name": "metadata",
           "role": "input",
-          "type": "String"
+          "type": "Metadata"
         },
         {
           "name": "royalty_bps",
@@ -36,62 +36,45 @@
     {
       "args": [
         {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
           "name": "creator",
           "role": "signer",
           "type": "Signer"
         },
         {
-          "name": "metadata",
-          "role": "input",
-          "type": "String"
-        },
-        {
-          "name": "attribute",
-          "role": "input",
-          "type": "String"
-        },
-        {
-          "name": "is_transferable",
-          "role": "input",
-          "type": "bool"
-        },
-        {
-          "name": "slot_owner",
-          "role": "input",
-          "type": "option<Address>"
-        },
-        {
-          "name": "update_author",
-          "role": "input",
-          "type": "option<Address>"
-        },
-        {
-          "name": "freeze_authority",
-          "role": "input",
-          "type": "option<Address>"
-        }
-      ],
-      "discriminator": 56115,
-      "handler": "create_slot",
-      "kind": "entry",
-      "name": "CreateSlot"
-    },
-    {
-      "args": [
-        {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
         {
+          "name": "slot",
+          "role": "input",
+          "type": "SlotData"
+        },
+        {
+          "name": "is_transferable",
+          "role": "input",
+          "type": "bool"
+        }
+      ],
+      "discriminator": 56115,
+      "handler": "create_slot",
+      "kind": "entry",
+      "name": "CreateSlot",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
           "name": "current_owner",
           "role": "signer",
           "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
         },
         {
           "name": "new_owner",
@@ -107,98 +90,129 @@
     {
       "args": [
         {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
         {
-          "name": "manager",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "slot_id",
+          "name": "cover_url",
           "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "new_owner",
-          "role": "input",
-          "type": "Address"
+          "type": "String"
         }
       ],
-      "discriminator": 26666,
-      "handler": "transfer_slot_owner",
+      "discriminator": 480,
+      "handler": "set_cover_url",
       "kind": "entry",
-      "name": "TransferSlotOwner"
+      "name": "SetCoverUrl"
     },
     {
       "args": [
         {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
         {
-          "name": "current_author",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "slot_id",
+          "name": "uri",
           "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "new_author",
-          "role": "input",
-          "type": "Address"
+          "type": "String"
         }
       ],
-      "discriminator": 8940,
-      "handler": "transfer_slot_update_author",
+      "discriminator": 4819,
+      "handler": "set_uri",
       "kind": "entry",
-      "name": "TransferSlotUpdateAuthor"
+      "name": "SetUri"
     },
     {
       "args": [
         {
+          "name": "current",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
         {
-          "name": "current_authority",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "slot_id",
-          "role": "input",
-          "type": "u64"
-        },
-        {
-          "name": "new_authority",
+          "name": "new",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 10654,
-      "handler": "transfer_slot_freeze_authority",
+      "discriminator": 33676,
+      "handler": "transfer_mint_authority",
       "kind": "entry",
-      "name": "TransferSlotFreezeAuthority"
+      "name": "TransferMintAuthority"
     },
     {
       "args": [
+        {
+          "name": "current",
+          "role": "signer",
+          "type": "Signer"
+        },
         {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
         {
-          "name": "current_recipient",
+          "name": "new",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 57787,
+      "handler": "transfer_update_author",
+      "kind": "entry",
+      "name": "TransferUpdateAuthor"
+    },
+    {
+      "args": [
+        {
+          "name": "current",
           "role": "signer",
           "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "new",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 26719,
+      "handler": "transfer_freeze_authority",
+      "kind": "entry",
+      "name": "TransferFreezeAuthority"
+    },
+    {
+      "args": [
+        {
+          "name": "current",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
         },
         {
           "name": "new_recipient",
@@ -214,14 +228,14 @@
     {
       "args": [
         {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
-        },
-        {
-          "name": "manager",
-          "role": "signer",
-          "type": "Signer"
         },
         {
           "name": "slot_id",
@@ -229,7 +243,7 @@
           "type": "u64"
         },
         {
-          "name": "is_transferable",
+          "name": "transferable",
           "role": "input",
           "type": "bool"
         }
@@ -242,85 +256,118 @@
     {
       "args": [
         {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
-        },
-        {
-          "name": "freezer",
-          "role": "signer",
-          "type": "Signer"
         },
         {
           "name": "slot_id",
           "role": "input",
           "type": "u64"
+        },
+        {
+          "name": "attribute",
+          "role": "input",
+          "type": "String"
         }
       ],
-      "discriminator": 13370,
-      "handler": "freeze_slot",
+      "discriminator": 3272,
+      "handler": "set_slot_attribute",
       "kind": "entry",
-      "name": "FreezeSlot"
+      "name": "SetSlotAttribute"
     },
     {
       "args": [
         {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
-        },
-        {
-          "name": "freezer",
-          "role": "signer",
-          "type": "Signer"
         },
         {
           "name": "slot_id",
           "role": "input",
           "type": "u64"
+        },
+        {
+          "name": "cover_url",
+          "role": "input",
+          "type": "String"
         }
       ],
-      "discriminator": 61011,
-      "handler": "unfreeze_slot",
+      "discriminator": 15677,
+      "handler": "set_slot_cover_url",
       "kind": "entry",
-      "name": "UnfreezeSlot"
+      "name": "SetSlotCoverUrl"
     },
     {
       "args": [
+        {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
         {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 28914,
+      "handler": "set_slot_uri",
+      "kind": "entry",
+      "name": "SetSlotUri"
+    },
+    {
+      "args": [
         {
           "name": "minter",
           "role": "signer",
           "type": "Signer"
         },
         {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
           "name": "slot_id",
           "role": "input",
           "type": "u64"
         },
         {
-          "name": "to_address",
+          "name": "to",
           "role": "input",
           "type": "Address"
         },
         {
-          "name": "initial_value",
+          "name": "amount",
           "role": "input",
           "type": "u64"
         },
         {
           "name": "metadata",
           "role": "input",
-          "type": "String"
-        },
-        {
-          "name": "attribute",
-          "role": "input",
-          "type": "String"
+          "type": "option<MetadataOverride>"
         }
       ],
       "discriminator": 43610,
@@ -334,17 +381,22 @@
     {
       "args": [
         {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
           "name": "owner",
           "role": "signer",
           "type": "Signer"
         },
         {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
           "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
           "role": "input",
           "type": "u64"
         }
@@ -357,78 +409,70 @@
     {
       "args": [
         {
+          "name": "freezer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
         {
-          "name": "signer",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "from_token_id",
+          "name": "token_id",
           "role": "input",
           "type": "u64"
         },
         {
-          "name": "to_address",
+          "name": "owner",
           "role": "input",
           "type": "Address"
-        },
-        {
-          "name": "split_value",
-          "role": "input",
-          "type": "u64"
         }
       ],
-      "discriminator": 50774,
-      "handler": "split",
+      "discriminator": 36565,
+      "handler": "freeze",
       "kind": "entry",
-      "name": "Split",
-      "returns": {
-        "type": "u64"
-      }
+      "name": "Freeze"
     },
     {
       "args": [
         {
+          "name": "freezer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
         {
-          "name": "signer",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "from_token_id",
+          "name": "token_id",
           "role": "input",
           "type": "u64"
         },
         {
-          "name": "to_token_id",
+          "name": "owner",
           "role": "input",
-          "type": "u64"
+          "type": "Address"
         }
       ],
-      "discriminator": 110,
-      "handler": "merge",
+      "discriminator": 49498,
+      "handler": "unfreeze",
       "kind": "entry",
-      "name": "Merge"
+      "name": "Unfreeze"
     },
     {
       "args": [
         {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
-        },
-        {
-          "name": "signer",
-          "role": "signer",
-          "type": "Signer"
         },
         {
           "name": "token_id",
@@ -441,22 +485,78 @@
           "type": "String"
         }
       ],
-      "discriminator": 21633,
-      "handler": "set_attribute",
+      "discriminator": 50607,
+      "handler": "set_token_attribute",
       "kind": "entry",
-      "name": "SetAttribute"
+      "name": "SetTokenAttribute"
     },
     {
       "args": [
+        {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
         {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
         {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "cover_url",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 58854,
+      "handler": "set_token_cover_url",
+      "kind": "entry",
+      "name": "SetTokenCoverUrl"
+    },
+    {
+      "args": [
+        {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 50621,
+      "handler": "set_token_uri",
+      "kind": "entry",
+      "name": "SetTokenUri"
+    },
+    {
+      "args": [
+        {
           "name": "owner",
           "role": "signer",
           "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
         },
         {
           "name": "token_id",
@@ -482,14 +582,14 @@
     {
       "args": [
         {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
           "name": "owner",
           "role": "signer",
           "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
         },
         {
           "name": "token_id",
@@ -510,14 +610,78 @@
     {
       "args": [
         {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "sft",
           "role": "input",
           "type": "Address"
         },
         {
+          "name": "from_token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 50774,
+      "handler": "split",
+      "kind": "entry",
+      "name": "Split",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
           "name": "owner",
           "role": "signer",
           "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "from_token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "to_token_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 110,
+      "handler": "merge",
+      "kind": "entry",
+      "name": "Merge"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
         },
         {
           "name": "token_id",
@@ -530,7 +694,7 @@
           "type": "Address"
         },
         {
-          "name": "value",
+          "name": "amount",
           "role": "input",
           "type": "u64"
         }
@@ -538,22 +702,19 @@
       "discriminator": 48437,
       "handler": "transfer",
       "kind": "entry",
-      "name": "Transfer",
-      "returns": {
-        "type": "u64"
-      }
+      "name": "Transfer"
     },
     {
       "args": [
         {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
           "name": "spender",
           "role": "signer",
           "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
         },
         {
           "name": "token_id",
@@ -561,12 +722,17 @@
           "type": "u64"
         },
         {
+          "name": "from",
+          "role": "input",
+          "type": "Address"
+        },
+        {
           "name": "to",
           "role": "input",
           "type": "Address"
         },
         {
-          "name": "value",
+          "name": "amount",
           "role": "input",
           "type": "u64"
         }
@@ -574,9 +740,22 @@
       "discriminator": 19098,
       "handler": "transfer_from",
       "kind": "entry",
-      "name": "TransferFrom",
+      "name": "TransferFrom"
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 46443,
+      "handler": "sft_owner_of",
+      "kind": "view",
+      "name": "SftOwnerOf",
       "returns": {
-        "type": "u64"
+        "type": "Address"
       }
     },
     {
@@ -587,12 +766,12 @@
           "type": "Address"
         }
       ],
-      "discriminator": 57694,
-      "handler": "sft_info",
+      "discriminator": 12747,
+      "handler": "sft_metadata",
       "kind": "view",
-      "name": "SftInfo",
+      "name": "SftMetadata",
       "returns": {
-        "type": "Sft"
+        "type": "Metadata"
       }
     },
     {
@@ -622,14 +801,61 @@
           "name": "sft",
           "role": "input",
           "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
         }
       ],
-      "discriminator": 30311,
-      "handler": "royalty_info",
+      "discriminator": 26530,
+      "handler": "slot_metadata",
       "kind": "view",
-      "name": "RoyaltyInfo",
+      "name": "SlotMetadata",
       "returns": {
-        "type": "Royalty"
+        "type": "Metadata"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 16363,
+      "handler": "is_slot_transferable",
+      "kind": "view",
+      "name": "IsSlotTransferable",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 35083,
+      "handler": "token",
+      "kind": "view",
+      "name": "Token",
+      "returns": {
+        "type": "Metadata"
       }
     },
     {
@@ -664,69 +890,11 @@
           "name": "token_id",
           "role": "input",
           "type": "u64"
-        }
-      ],
-      "discriminator": 35083,
-      "handler": "token",
-      "kind": "view",
-      "name": "Token",
-      "returns": {
-        "type": "Token"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
         },
         {
-          "name": "token_id",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 39083,
-      "handler": "owner_of",
-      "kind": "view",
-      "name": "OwnerOf",
-      "returns": {
-        "type": "Address"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
+          "name": "owner",
           "role": "input",
           "type": "Address"
-        },
-        {
-          "name": "token_id",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 20993,
-      "handler": "value_of",
-      "kind": "view",
-      "name": "ValueOf",
-      "returns": {
-        "type": "u64"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "token_id",
-          "role": "input",
-          "type": "u64"
         }
       ],
       "discriminator": 63018,
@@ -748,114 +916,19 @@
           "name": "token_id",
           "role": "input",
           "type": "u64"
-        }
-      ],
-      "discriminator": 45938,
-      "handler": "attribute_of",
-      "kind": "view",
-      "name": "AttributeOf",
-      "returns": {
-        "type": "String"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
         },
         {
-          "name": "slot_id",
+          "name": "owner",
           "role": "input",
-          "type": "u64"
+          "type": "Address"
         }
       ],
-      "discriminator": 30630,
-      "handler": "is_slot_frozen",
+      "discriminator": 59068,
+      "handler": "frozen_of",
       "kind": "view",
-      "name": "IsSlotFrozen",
+      "name": "FrozenOf",
       "returns": {
         "type": "bool"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "slot_id",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 59756,
-      "handler": "slot_update_author",
-      "kind": "view",
-      "name": "SlotUpdateAuthor",
-      "returns": {
-        "type": "Address"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "slot_id",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 53534,
-      "handler": "slot_freeze_authority",
-      "kind": "view",
-      "name": "SlotFreezeAuthority",
-      "returns": {
-        "type": "Address"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        }
-      ],
-      "discriminator": 46443,
-      "handler": "sft_owner_of",
-      "kind": "view",
-      "name": "SftOwnerOf",
-      "returns": {
-        "type": "Address"
-      }
-    },
-    {
-      "args": [
-        {
-          "name": "sft",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "slot_id",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 39122,
-      "handler": "slot_owner_of",
-      "kind": "view",
-      "name": "SlotOwnerOf",
-      "returns": {
-        "type": "Address"
       }
     },
     {
@@ -869,6 +942,11 @@
           "name": "token_id",
           "role": "input",
           "type": "u64"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
         },
         {
           "name": "spender",
@@ -883,49 +961,132 @@
       "returns": {
         "type": "u64"
       }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 30311,
+      "handler": "royalty_info",
+      "kind": "view",
+      "name": "RoyaltyInfo",
+      "returns": {
+        "type": "Royalty"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 57868,
+      "handler": "mint_authority",
+      "kind": "view",
+      "name": "MintAuthority",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 6459,
+      "handler": "update_author",
+      "kind": "view",
+      "name": "UpdateAuthor",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 10975,
+      "handler": "freeze_authority",
+      "kind": "view",
+      "name": "FreezeAuthority",
+      "returns": {
+        "type": "Address"
+      }
     }
   ],
   "types": [
     {
       "fields": [
         {
-          "name": "owner",
-          "type": "Address"
+          "name": "name",
+          "type": "String"
+        },
+        {
+          "name": "symbol",
+          "type": "String"
+        },
+        {
+          "name": "cover_url",
+          "type": "String"
         },
         {
           "name": "metadata",
           "type": "String"
+        },
+        {
+          "name": "attribute",
+          "type": "option<String>"
         }
       ],
       "kind": "struct",
-      "name": "Sft",
-      "typeTag": 18301298814640865719
+      "name": "Metadata",
+      "typeTag": 16597600053100423329
     },
     {
       "fields": [
         {
-          "name": "token_id",
-          "type": "u64"
+          "name": "name",
+          "type": "option<String>"
         },
         {
-          "name": "slot_id",
-          "type": "u64"
+          "name": "symbol",
+          "type": "option<String>"
         },
         {
-          "name": "owner",
-          "type": "Address"
+          "name": "cover_url",
+          "type": "option<String>"
         },
         {
           "name": "metadata",
-          "type": "String"
-        },
-        {
-          "name": "value",
-          "type": "u64"
+          "type": "option<String>"
         },
         {
           "name": "attribute",
-          "type": "String"
+          "type": "option<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "MetadataOverride",
+      "typeTag": 1521786355183284625
+    },
+    {
+      "fields": [
+        {
+          "name": "metadata",
+          "type": "option<MetadataOverride>"
         }
       ],
       "kind": "struct",
@@ -936,15 +1097,7 @@
       "fields": [
         {
           "name": "metadata",
-          "type": "String"
-        },
-        {
-          "name": "attribute",
-          "type": "String"
-        },
-        {
-          "name": "is_transferable",
-          "type": "bool"
+          "type": "option<MetadataOverride>"
         }
       ],
       "kind": "struct",
@@ -994,9 +1147,19 @@
   ],
   "resources": [
     {
-      "name": "_Sft",
-      "type": "Sft",
-      "typeTag": 7460940398751880426
+      "name": "_SftOwner",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_SftMetadata",
+      "type": "Metadata",
+      "typeTag": 3119835375849690086
+    },
+    {
+      "name": "_SftRoyalty",
+      "type": "Royalty",
+      "typeTag": 16416299771797568401
     },
     {
       "name": "_SftNextSlotId",
@@ -1009,39 +1172,54 @@
       "typeTag": 5563585020063213298
     },
     {
+      "name": "_SftMintPermission",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_SftUpdatePermission",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_SftFreezePermission",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
       "name": "_Slot",
       "type": "SlotData",
       "typeTag": 6310559783402314447
     },
     {
-      "name": "_SlotOwner",
-      "type": "Address",
-      "typeTag": 15146535206056819577
-    },
-    {
-      "name": "_SlotUpdateAuthor",
-      "type": "Address",
-      "typeTag": 15146535206056819577
-    },
-    {
-      "name": "_SlotFreezeAuthority",
-      "type": "Address",
-      "typeTag": 15146535206056819577
-    },
-    {
-      "name": "_SlotFrozen",
+      "name": "_SlotExists",
       "type": "bool",
       "typeTag": 14785269867199075517
     },
     {
-      "name": "_SftRoyalty",
-      "type": "Royalty",
-      "typeTag": 16416299771797568401
+      "name": "_SlotTransferable",
+      "type": "bool",
+      "typeTag": 14785269867199075517
     },
     {
       "name": "_Token",
       "type": "Token",
       "typeTag": 7491257169663686040
+    },
+    {
+      "name": "_TokenSlotId",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_TokenBalance",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_TokenFrozen",
+      "type": "bool",
+      "typeTag": 14785269867199075517
     },
     {
       "name": "_Approval",
@@ -1065,7 +1243,7 @@
         {
           "indexed": false,
           "name": "metadata",
-          "type": "String"
+          "type": "Metadata"
         }
       ],
       "name": "SftCreatedEvent",
@@ -1084,24 +1262,9 @@
           "type": "u64"
         },
         {
-          "indexed": true,
-          "name": "owner",
-          "type": "Address"
-        },
-        {
-          "indexed": true,
-          "name": "update_author",
-          "type": "Address"
-        },
-        {
-          "indexed": true,
-          "name": "freeze_authority",
-          "type": "Address"
-        },
-        {
           "indexed": false,
           "name": "metadata",
-          "type": "String"
+          "type": "SlotData"
         }
       ],
       "name": "SlotCreatedEvent",
@@ -1131,7 +1294,7 @@
         },
         {
           "indexed": false,
-          "name": "value",
+          "name": "amount",
           "type": "u64"
         }
       ],
@@ -1162,7 +1325,7 @@
         },
         {
           "indexed": false,
-          "name": "value",
+          "name": "amount",
           "type": "u64"
         }
       ],
@@ -1178,7 +1341,12 @@
         },
         {
           "indexed": true,
-          "name": "token_id",
+          "name": "from_token_id",
+          "type": "u64"
+        },
+        {
+          "indexed": true,
+          "name": "to_token_id",
           "type": "u64"
         },
         {
@@ -1190,108 +1358,15 @@
           "indexed": true,
           "name": "to",
           "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
         }
       ],
       "name": "TokenTransferredEvent",
       "typeTag": 4473315672219730635
-    },
-    {
-      "fields": [
-        {
-          "indexed": true,
-          "name": "sft",
-          "type": "Address"
-        },
-        {
-          "indexed": true,
-          "name": "from_token_id",
-          "type": "u64"
-        },
-        {
-          "indexed": true,
-          "name": "new_token_id",
-          "type": "u64"
-        },
-        {
-          "indexed": true,
-          "name": "slot_id",
-          "type": "u64"
-        },
-        {
-          "indexed": false,
-          "name": "split_value",
-          "type": "u64"
-        },
-        {
-          "indexed": true,
-          "name": "recipient",
-          "type": "Address"
-        }
-      ],
-      "name": "TokenSplitEvent",
-      "typeTag": 15460065878293345685
-    },
-    {
-      "fields": [
-        {
-          "indexed": true,
-          "name": "sft",
-          "type": "Address"
-        },
-        {
-          "indexed": true,
-          "name": "from_token_id",
-          "type": "u64"
-        },
-        {
-          "indexed": true,
-          "name": "to_token_id",
-          "type": "u64"
-        },
-        {
-          "indexed": true,
-          "name": "slot_id",
-          "type": "u64"
-        },
-        {
-          "indexed": false,
-          "name": "value",
-          "type": "u64"
-        }
-      ],
-      "name": "ValueTransferredEvent",
-      "typeTag": 3867269546031763695
-    },
-    {
-      "fields": [
-        {
-          "indexed": true,
-          "name": "sft",
-          "type": "Address"
-        },
-        {
-          "indexed": true,
-          "name": "from_token_id",
-          "type": "u64"
-        },
-        {
-          "indexed": true,
-          "name": "to_token_id",
-          "type": "u64"
-        },
-        {
-          "indexed": true,
-          "name": "slot_id",
-          "type": "u64"
-        },
-        {
-          "indexed": false,
-          "name": "value",
-          "type": "u64"
-        }
-      ],
-      "name": "TokensMergedEvent",
-      "typeTag": 6095286300968241666
     },
     {
       "fields": [
@@ -1349,7 +1424,7 @@
     },
     {
       "code": 1282,
-      "message": "insufficient token value (token: {0}, available: {1}, required: {2})",
+      "message": "insufficient token amount (token: {0}, available: {1}, required: {2})",
       "name": "InsufficientBalance"
     },
     {
@@ -1369,51 +1444,61 @@
     },
     {
       "code": 1286,
-      "message": "value must be greater than zero",
+      "message": "amount must be greater than zero",
       "name": "ZeroValueOperation"
     },
     {
       "code": 1287,
-      "message": "slot is frozen: {0}",
-      "name": "SlotFrozen"
+      "message": "source and destination must differ",
+      "name": "SelfTransfer"
     },
     {
       "code": 1288,
-      "message": "slot already exists: {0}",
-      "name": "SlotAlreadyExists"
+      "message": "split amount must be less than source balance (token: {0}, balance: {1})",
+      "name": "FullBalanceSplit"
     },
     {
       "code": 1289,
-      "message": "SFT already exists",
-      "name": "SftAlreadyExists"
-    },
-    {
-      "code": 1290,
-      "message": "invalid SFT parameters: {0}",
-      "name": "InvalidParameters"
-    },
-    {
-      "code": 1291,
-      "message": "token id sequence is exhausted",
-      "name": "TokenIdExhausted"
-    },
-    {
-      "code": 1292,
-      "message": "slot id sequence is exhausted",
-      "name": "SlotIdExhausted"
-    },
-    {
-      "code": 1293,
-      "message": "arithmetic overflow",
-      "name": "Overflow"
-    },
-    {
-      "code": 1294,
       "message": "a token cannot be merged into itself",
       "name": "SelfMerge"
     },
     {
+      "code": 1290,
+      "message": "token balance is frozen (token: {0}, owner: {1:?})",
+      "name": "TokenFrozen"
+    },
+    {
+      "code": 1291,
+      "message": "SFT already exists",
+      "name": "SftAlreadyExists"
+    },
+    {
+      "code": 1292,
+      "message": "invalid SFT parameters: {0}",
+      "name": "InvalidParameters"
+    },
+    {
+      "code": 1293,
+      "message": "token id sequence is exhausted",
+      "name": "TokenIdExhausted"
+    },
+    {
+      "code": 1294,
+      "message": "slot id sequence is exhausted",
+      "name": "SlotIdExhausted"
+    },
+    {
       "code": 1295,
+      "message": "arithmetic overflow",
+      "name": "Overflow"
+    },
+    {
+      "code": 1296,
+      "message": "insufficient approval (token: {0}, owner: {1:?}, spender: {2:?}, available: {3}, required: {4})",
+      "name": "InsufficientApproval"
+    },
+    {
+      "code": 1297,
       "message": "address not signed in current transaction: {0:?}",
       "name": "AddressNotSignatured"
     }

@@ -3210,8 +3210,8 @@ var IDL_EXAMPLE_ARGS = {
     credential_id: 'schema_id_xxx'
   },
   'token.SetComplianceMode': { token: 'M11on1111111111111111111111', mode: 'Any' },
-  'token.AddComplianceRequirement': { token: 'M11on1111111111111111111111', credential_id: 'schema_id_xxx' },
-  'token.RemoveComplianceRequirement': { token: 'M11on1111111111111111111111', credential_id: 'schema_id_xxx' },
+  'token.AddComplianceRequirement': { token: 'M11on1111111111111111111111', credential_ids: ['schema_id_xxx'] },
+  'token.RemoveComplianceRequirement': { token: 'M11on1111111111111111111111', credential_ids: ['schema_id_xxx'] },
   'token.ClearComplianceRequirements': { token: 'M11on1111111111111111111111' },
   'token.ClaimFaucet': { claimer: 'gKzpjpfWVvwgDs26DTCFFA9eRxb' },
   'token.BalanceOf': { token: 'M11on1111111111111111111111', account: '2T2u6f4znq3ps3XvBPQYUtNH4DKx' },
@@ -3279,7 +3279,7 @@ var IDL_EXAMPLE_ARGS = {
     pair: [1, 2]
   },
 
-  // ==================== identity 模块（app_id=4，42 个方法：17 entry + 25 view）====================
+  // ==================== identity 模块（app_id=4，44 个方法：19 entry + 25 view）====================
   'identity.Create': {
     subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     doc: {
@@ -3355,6 +3355,16 @@ var IDL_EXAMPLE_ARGS = {
     subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     credential_schema: 'TestSchemaV1'
   },
+  'identity.FreezeVcAttestation': {
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
+    credential_id: 'TestSchemaV1',
+  },
+  'identity.UnfreezeVcAttestation': {
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
+    subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
+    credential_id: 'TestSchemaV1',
+  },
   'identity.Core': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
   'identity.Document': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
   'identity.KeyIndex': { subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA' },
@@ -3377,8 +3387,7 @@ var IDL_EXAMPLE_ARGS = {
   'identity.HasValidVcFromIssuer': {
     subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
     issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
-    credential_schema: 'TestSchemaV1',
-    now_ms: 1723382400000
+    credential_schema: 'TestSchemaV1'
   },
   'identity.VcAttestationCore': {
     subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA',
@@ -3395,152 +3404,105 @@ var IDL_EXAMPLE_ARGS = {
   'identity.CredentialId': { issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19', credential_schema: 'TestSchemaV1' },
 
 
-  // ==================== sftoken 模块（app_id=5，34 个方法：19 entry + 15 view）====================
+  // ==================== sftoken 模块（app_id=5，40 个方法：26 entry + 14 view）====================
+  // 2026-09 模型重构：份额按 (token_id, owner) 记账；mint/update/freeze 权限人提升为 SFT 集合级；元数据逐级覆盖继承。
 
-  'sftoken.ApprovalOf': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-    spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
-  },
-  'sftoken.Approve': {
+  'sftoken.CreateSft': {
     sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-    spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
-    amount: 1000000000,
+    metadata: {name: 'sft-name', symbol: 'SNFT', cover_url: 'https://example.com/cover.png', metadata: 'https://example.com/meta.json', attribute: 'attr-value'},
+    royalty_bps: 500,
   },
-  'sftoken.AttributeOf': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-  },
-  'sftoken.BalanceOf': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-  },
-  'sftoken.CreateSft': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', metadata: 'metadata-value', royalty_bps: 500},
+
   'sftoken.CreateSlot': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     creator: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    metadata: 'metadata-value',
-    attribute: 'attribute-value',
-    is_transferable: true,
-    slot_owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    update_author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    freeze_authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-  },
-  'sftoken.FreezeSlot': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', freezer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
-  'sftoken.IsSlotFrozen': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
-  'sftoken.Merge': {
     sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    signer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    from_token_id: 1000,
-    to_token_id: 1000,
+    slot: {metadata: null},
+    is_transferable: true,
   },
+
+  'sftoken.TransferOwner': {current_owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', new_owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+
+  'sftoken.SetCoverUrl': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', cover_url: 'cover-uri-value'},
+
+  'sftoken.SetUri': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', uri: 'uri-value'},
+
+  'sftoken.TransferMintAuthority': {current: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', new: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+
+  'sftoken.TransferUpdateAuthor': {current: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', new: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+
+  'sftoken.TransferFreezeAuthority': {current: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', new: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+
+  'sftoken.TransferRoyaltyRecipient': {current: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', new_recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+
+  'sftoken.SetSlotTransferable': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000, transferable: true},
+
+  'sftoken.SetSlotAttribute': {author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000, attribute: 'attribute-value'},
+
+  'sftoken.SetSlotCoverUrl': {author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000, cover_url: 'cover-uri-value'},
+
+  'sftoken.SetSlotUri': {author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000, uri: 'uri-value'},
+
   'sftoken.Mint': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     minter: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     slot_id: 1000,
-    to_address: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    initial_value: 1000,
-    metadata: 'metadata-value',
-    attribute: 'attribute-value',
+    to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
+    amount: 1000,
+    metadata: null,
   },
-  'sftoken.OwnerOf': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-  },
-  'sftoken.RevokeApproval': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-    spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
-  },
-  'sftoken.SetAttribute': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    signer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-    attribute: 'attribute-value',
-  },
-  'sftoken.SftInfo': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+
+  'sftoken.Burn': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, amount: 100},
+
+  'sftoken.Freeze': {freezer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+
+  'sftoken.Unfreeze': {freezer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+
+  'sftoken.SetTokenAttribute': {author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, attribute: 'attribute-value'},
+
+  'sftoken.SetTokenCoverUrl': {author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, cover_url: 'cover-uri-value'},
+
+  'sftoken.SetTokenUri': {author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, uri: 'uri-value'},
+
+  'sftoken.Approve': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 1000000000},
+
+  'sftoken.RevokeApproval': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH'},
+
+  'sftoken.Split': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', from_token_id: 1000, to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 100},
+
+  'sftoken.Merge': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', from_token_id: 1000, to_token_id: 1001},
+
+  'sftoken.Transfer': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 100},
+
+  'sftoken.TransferFrom': {spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, from: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH', amount: 100},
+
   'sftoken.SftOwnerOf': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
-  'sftoken.SlotFreezeAuthority': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
+
+  'sftoken.SftMetadata': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+
   'sftoken.SlotInfo': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
-  'sftoken.SlotOf': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-  },
-  'sftoken.SlotOwnerOf': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
-  'sftoken.SlotUpdateAuthor': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
-  'sftoken.Split': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    signer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    from_token_id: 1000,
-    to_address: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    split_value: 1000,
-  },
-  'sftoken.Token': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-  },
-  'sftoken.Transfer': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-    to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
-    value: 1000,
-  },
-  'sftoken.TransferFrom': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-    to: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
-    value: 1000,
-  },
-  'sftoken.TransferOwner': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    current_owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    new_owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
-  },
-  'sftoken.UnfreezeSlot': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', freezer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
-  'sftoken.ValueOf': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-  },
-  'sftoken.Burn': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    token_id: '0x65d01b54c870182ca3365564dbc7677a196f72a52f1ec15fdbf2da5efd013345',
-  },
+
+  'sftoken.SlotMetadata': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
+
+  'sftoken.IsSlotTransferable': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', slot_id: 1000},
+
+  'sftoken.Token': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000},
+
+  'sftoken.SlotOf': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000},
+
+  'sftoken.BalanceOf': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+
+  'sftoken.FrozenOf': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+
+  'sftoken.ApprovalOf': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', token_id: 1000, owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', spender: '3tamDhFSgAdAAFZP7pwoCpNAZzFH'},
+
   'sftoken.RoyaltyInfo': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
-  'sftoken.SetSlotTransferable': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    manager: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    slot_id: 1000,
-    is_transferable: true,
-  },
-  'sftoken.TransferRoyaltyRecipient': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    current_recipient: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    new_recipient: 'gKzpjpfWVvwgDs26DTCFFA9eRxb',
-  },
-  'sftoken.TransferSlotFreezeAuthority': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    current_authority: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    slot_id: 1000,
-    new_authority: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
-  },
-  'sftoken.TransferSlotOwner': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    manager: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    slot_id: 1000,
-    new_owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
-  },
-  'sftoken.TransferSlotUpdateAuthor': {
-    sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    current_author: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    slot_id: 1000,
-    new_author: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
-  },
+
+  'sftoken.MintAuthority': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+
+  'sftoken.UpdateAuthor': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+
+  'sftoken.FreezeAuthority': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   // ==================== staking 模块（app_id=3，23 个方法：12 entry + 11 view）====================
   'staking.CreateValidator': {
     operator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
@@ -3579,7 +3541,7 @@ var IDL_EXAMPLE_ARGS = {
   // ==================== system 模块（app_id=0，8 个方法：8 entry + 0 view）====================
   'system.Noop': {},
   'system.BootstrapEpochClock': { start_timestamp_ms: 0, min_duration_ms: 60000 },
-  'system.BootstrapValidatorSetConfig': { max_validator_set_size: 100 },
+  'system.BootstrapValidatorSetConfig': { max_validator_set_size: 100, group_threshold_ratio_num: 2, group_threshold_ratio_den: 3, block_threshold_ratio_num: 2, block_threshold_ratio_den: 3, batch_committee_ratio_num: 2, batch_committee_ratio_den: 3 },
   'system.RegisterValidatorIdentity': {
     validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e',
     consensus_account: '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
@@ -3744,7 +3706,7 @@ var IDL_EXAMPLE_ARGS = {
   'lucky_box.Claim': {claimant: 'gKzpjpfWVvwgDs26DTCFFA9eRxb', box_id: 1},
   'lucky_box.Refund': {box_id: 1},
   'lucky_box.BoxView': {box_id: 1},
-  // ==================== social 模块（app_id=10，32 个方法：24 entry + 8 view）====================
+  // ==================== social 模块（app_id=10，31 个方法：23 entry + 8 view）====================
 
   'social.AddSourceAppPublisher': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', source_app_id: 3, publisher: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.ApproveJoinRequest': {admin: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3, member: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
@@ -3755,31 +3717,19 @@ var IDL_EXAMPLE_ARGS = {
   'social.DeactivateCommunity': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3},
   'social.DeactivateSourceApp': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', source_app_id: 3},
   'social.GrantCommunityAdmin': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3, admin: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+  'social.GetReference': {source_app_id: 3, object_type: 'Profile', object_id: 'object-id-value'},
   'social.IsCommunityAdmin': {community_id: 3, admin: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.IsSourceAppPublisher': {source_app_id: 3, publisher: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.JoinCommunity': {member: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3},
   'social.JoinRequest': {community_id: 3, member: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.LeaveCommunity': {member: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3},
-  'social.PublicDataAnchor': {source_app_id: 3, dataset_kind: 'Profile', scope_key: 'scope-key-value'},
   'social.ReactivateSourceApp': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', source_app_id: 3},
   'social.RegisterSourceApp': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.RejectJoinRequest': {admin: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3, member: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.RemoveCommunityMember': {admin: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3, member: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.RemoveSourceAppPublisher': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', source_app_id: 3, publisher: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.RequestJoinCommunity': {member: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3},
-  'social.RestorePublicDataUri': {
-    publisher: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    source_app_id: 3,
-    dataset_kind: 'Profile',
-    scope_key: 'scope-key-value',
-    uri: 'uri-value',
-  },
-  'social.RetirePublicDataUri': {
-    publisher: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    source_app_id: 3,
-    dataset_kind: 'Profile',
-    scope_key: 'scope-key-value',
-  },
+  'social.RetireReference': {publisher: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', source_app_id: 3, object_type: 'Profile', object_id: 'object-id-value'},
   'social.RevokeCommunityAdmin': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3, admin: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.SetCommunityJoinMode': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3, join_mode: 'Open'},
   'social.SocialProfile': {subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA'},
@@ -3787,13 +3737,7 @@ var IDL_EXAMPLE_ARGS = {
   'social.TransferCommunityOwner': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3, new_owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
   'social.TransferSourceAppOwner': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', source_app_id: 3, new_owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
   'social.UpdateCommunityUri': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', community_id: 3, uri: 'uri-value'},
-  'social.UpsertPublicDataUri': {
-    publisher: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
-    source_app_id: 3,
-    dataset_kind: 'Profile',
-    scope_key: 'scope-key-value',
-    uri: 'uri-value',
-  },
+  'social.UpsertReference': {publisher: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', source_app_id: 3, object_type: 'Profile', object_id: 'object-id-value', subject: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', content_hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', uri: 'uri-value'},
   'social.UpsertSocialProfile': {subject: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', uri: 'uri-value'},
   'lucky_box.AssetPool': {box_id: 1},
 };
@@ -3850,7 +3794,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'demo.BatchCredit': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
   'demo.SetTierCap': { paymentMode: 'unified_payer_all', payerRole: 'pool' },
 
-  // identity 模块（17 entry）
+  // identity 模块（19 entry）
   'identity.Create': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
   'identity.CreateWithAlias': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
   'identity.AddKey': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
@@ -3868,29 +3812,38 @@ var IDL_EXAMPLE_PAYMENT = {
   'identity.DiscloseVcAttestation': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
   'identity.RemoveVcDisclosure': { paymentMode: 'unified_payer_all', payerRole: 'subject' },
   'identity.RevokeVcAttestation': { paymentMode: 'unified_payer_all', payerRole: 'issuer' },
+  'identity.FreezeVcAttestation': { paymentMode: 'unified_payer_all', payerRole: 'issuer' },
+  'identity.UnfreezeVcAttestation': { paymentMode: 'unified_payer_all', payerRole: 'issuer' },
 
 
-  // sftoken 模块（19 entry）
+  // sftoken 模块（26 entry）
 
-  'sftoken.Approve': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'sftoken.CreateSft': {paymentMode: 'unified_payer_all', payerRole: 'sft'},
   'sftoken.CreateSlot': {paymentMode: 'unified_payer_all', payerRole: 'creator'},
-  'sftoken.FreezeSlot': {paymentMode: 'unified_payer_all', payerRole: 'freezer'},
-  'sftoken.Merge': {paymentMode: 'unified_payer_all', payerRole: 'signer'},
+  'sftoken.TransferOwner': {paymentMode: 'unified_payer_all', payerRole: 'current_owner'},
+  'sftoken.SetCoverUrl': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'sftoken.SetUri': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'sftoken.TransferMintAuthority': {paymentMode: 'unified_payer_all', payerRole: 'current'},
+  'sftoken.TransferUpdateAuthor': {paymentMode: 'unified_payer_all', payerRole: 'current'},
+  'sftoken.TransferFreezeAuthority': {paymentMode: 'unified_payer_all', payerRole: 'current'},
+  'sftoken.TransferRoyaltyRecipient': {paymentMode: 'unified_payer_all', payerRole: 'current'},
+  'sftoken.SetSlotTransferable': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'sftoken.SetSlotAttribute': {paymentMode: 'unified_payer_all', payerRole: 'author'},
+  'sftoken.SetSlotCoverUrl': {paymentMode: 'unified_payer_all', payerRole: 'author'},
+  'sftoken.SetSlotUri': {paymentMode: 'unified_payer_all', payerRole: 'author'},
   'sftoken.Mint': {paymentMode: 'unified_payer_all', payerRole: 'minter'},
+  'sftoken.Burn': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'sftoken.Freeze': {paymentMode: 'unified_payer_all', payerRole: 'freezer'},
+  'sftoken.Unfreeze': {paymentMode: 'unified_payer_all', payerRole: 'freezer'},
+  'sftoken.SetTokenAttribute': {paymentMode: 'unified_payer_all', payerRole: 'author'},
+  'sftoken.SetTokenCoverUrl': {paymentMode: 'unified_payer_all', payerRole: 'author'},
+  'sftoken.SetTokenUri': {paymentMode: 'unified_payer_all', payerRole: 'author'},
+  'sftoken.Approve': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'sftoken.RevokeApproval': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
-  'sftoken.SetAttribute': {paymentMode: 'unified_payer_all', payerRole: 'signer'},
-  'sftoken.Split': {paymentMode: 'unified_payer_all', payerRole: 'signer'},
+  'sftoken.Split': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'sftoken.Merge': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'sftoken.Transfer': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'sftoken.TransferFrom': {paymentMode: 'unified_payer_all', payerRole: 'spender'},
-  'sftoken.TransferOwner': {paymentMode: 'unified_payer_all', payerRole: 'current_owner'},
-  'sftoken.UnfreezeSlot': {paymentMode: 'unified_payer_all', payerRole: 'freezer'},
-  'sftoken.Burn': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
-  'sftoken.SetSlotTransferable': {paymentMode: 'unified_payer_all', payerRole: 'manager'},
-  'sftoken.TransferRoyaltyRecipient': {paymentMode: 'unified_payer_all', payerRole: 'current_recipient'},
-  'sftoken.TransferSlotFreezeAuthority': {paymentMode: 'unified_payer_all', payerRole: 'current_authority'},
-  'sftoken.TransferSlotOwner': {paymentMode: 'unified_payer_all', payerRole: 'manager'},
-  'sftoken.TransferSlotUpdateAuthor': {paymentMode: 'unified_payer_all', payerRole: 'current_author'},
   // staking 模块（12 entry）
   'staking.CreateValidator': { paymentMode: 'multi_signer', payerRole: 'operator', signerHint: '该方法需 operator + consensus_account 双签，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用。注：consensus_pubkey/bls_pubkey 为 bytes 类型，JSON REST API 可能无法正确序列化' },
   'staking.JoinCandidatePool': { paymentMode: 'unified_payer_all', payerRole: 'operator' },
@@ -3939,7 +3892,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'lucky_box.CreateEqual': {paymentMode: 'unified_payer_all', payerRole: 'creator'},
   'lucky_box.CreateLucky': {paymentMode: 'unified_payer_all', payerRole: 'creator'},
   'lucky_box.Claim': {paymentMode: 'unified_payer_all', payerRole: 'claimant'},
-  // social 模块（24 entry）
+  // social 模块（23 entry）
 
   'social.AddSourceAppPublisher': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'social.ApproveJoinRequest': {paymentMode: 'unified_payer_all', payerRole: 'admin'},
@@ -3956,14 +3909,13 @@ var IDL_EXAMPLE_PAYMENT = {
   'social.RemoveCommunityMember': {paymentMode: 'unified_payer_all', payerRole: 'admin'},
   'social.RemoveSourceAppPublisher': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'social.RequestJoinCommunity': {paymentMode: 'unified_payer_all', payerRole: 'member'},
-  'social.RestorePublicDataUri': {paymentMode: 'unified_payer_all', payerRole: 'publisher'},
-  'social.RetirePublicDataUri': {paymentMode: 'unified_payer_all', payerRole: 'publisher'},
+  'social.RetireReference': {paymentMode: 'unified_payer_all', payerRole: 'publisher'},
   'social.RevokeCommunityAdmin': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'social.SetCommunityJoinMode': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'social.TransferCommunityOwner': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'social.TransferSourceAppOwner': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'social.UpdateCommunityUri': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
-  'social.UpsertPublicDataUri': {paymentMode: 'unified_payer_all', payerRole: 'publisher'},
+  'social.UpsertReference': {paymentMode: 'unified_payer_all', payerRole: 'publisher'},
   'social.UpsertSocialProfile': {paymentMode: 'unified_payer_all', payerRole: 'subject'},
   'lucky_box.Refund': {paymentMode: 'unified_payer_all'},
 };

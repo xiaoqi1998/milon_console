@@ -48,8 +48,13 @@ func main() {
 ├── client.go              客户端入口: NewClient, 统一封装 RPC 调用
 ├── go.mod                 模块定义与依赖
 ├── go.sum                 依赖校验
-├── network.go             网络配置 (LocalNet / DevNet)
+├── network.go             网络配置 (LocalNet / DevNet, 含 gRPC 区块流地址)
 ├── rpcClientV1.go         RPC 客户端实现 (HTTP 通信、IDL 加载、交易提交)
+│
+├── blockStream.go         gRPC 区块流: NewBlockStream 双向流 + Client.StreamBlocks
+├── framedHistory.go       区块流交易帧 FramedHistory 解析 (Postcard)
+├── printFramedHistory.go  PrintFramedHistory: 打印交易帧完整明细
+├── resolveResourcePaths.go ResolveResourcePaths: 批量解析资源路径
 │
 ├── api/                   RPC 响应反序列化结构体
 │   ├── accountView.go     账户视图结构体
@@ -91,9 +96,11 @@ func main() {
 │   ├── create_multisig_demo        多签账户创建
 │   ├── create_multisig_vote        多签投票与执行（拆分付款）
 │   ├── create_multisig_vote2       多签投票与执行（统一付款）
+│   ├── grpc_demo                   gRPC 区块流订阅（StreamBlocks + PrintFramedHistory）
 │   ├── identity_demo               链上身份：DID / 机构注册 / VC 合规
 │   ├── multi_ix_demo               多条指令交易
-│   ├── sft_demo                    SFT 集合创建与铸造
+│   ├── sft_demo                    SFT 完整生命周期：create_sft/slot/mint/split/transfer/approve/transfer_from/freeze/merge
+│   ├── sft_demo2                   SFT 简单场景：一次 mint，同一 token_id 由三人共持（transfer 搬运份额）
 │   ├── pubkey_signature_mode_demo  签名模式
 │   ├── token_demo                  代币使用
 │   └── view_demo                   视图查询
@@ -316,6 +323,7 @@ Provider 基于 IDL JSON 实现合约方法的序列化与反序列化，支持�
 | | `GetTxHistoryProof(txHashOrTxId, opts...)` | 查询交易历史证明 |
 | | `GetAccount(address, opts...)` | 查询账户详情 |
 | | `EventsByTxHash(txHash, typeTagFilter, opts...)` | 查询交易事件（可按 type_tag 过滤） |
+| 区块流 | `StreamBlocks(startBlock, onBlockDone)` | gRPC 订阅区块流：逐块回调，返回 false 停止获取 / true 继续获取并自动 Ack |
 | 资源 | `GetResource(rsHash, opts...)` | 查询资源 |
 | | `GetResourcePathByHash(rsHash, opts...)` | 按哈希查询资源路径 |
 | | `BatchGetResourcePathByHash(rsHashList, opts...)` | 批量查询资源路径 |
@@ -325,6 +333,8 @@ Provider 基于 IDL JSON 实现合约方法的序列化与反序列化，支持�
 | | `GetProviderManager()` | 获取 IDLRegistry（指令/事件解码） |
 
 > `opts...` 为 `RequestOption`（类型安全的函数式选项），详见 [请求选项](#请求选项requestoption--waitoption)。
+>
+> 区块流配套：`milon.ResolveResourcePaths(client, rsHashSet)` 批量解析资源路径（PrintFramedHistory 展示 access path 需要）、`milon.PrintFramedHistory(client, idx, fh, pathMap)` 打印交易帧完整明细（指令/资源 before-after/事件）。
 
 ## 高级用法
 

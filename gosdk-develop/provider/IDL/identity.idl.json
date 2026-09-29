@@ -97,6 +97,52 @@
     {
       "args": [
         {
+          "name": "issuer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_id",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 52523,
+      "handler": "freeze_vc_attestation",
+      "kind": "entry",
+      "name": "FreezeVcAttestation"
+    },
+    {
+      "args": [
+        {
+          "name": "issuer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "credential_id",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 10634,
+      "handler": "unfreeze_vc_attestation",
+      "kind": "entry",
+      "name": "UnfreezeVcAttestation"
+    },
+    {
+      "args": [
+        {
           "name": "subject",
           "role": "signer",
           "type": "Signer"
@@ -848,6 +894,11 @@
           "fields": [],
           "kind": "unit",
           "name": "Revoked"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Frozen"
         }
       ]
     },
@@ -1665,6 +1716,16 @@
       "code": 1073,
       "message": "VC attestation has been permanently revoked",
       "name": "VcAttestationRevoked"
+    },
+    {
+      "code": 1074,
+      "message": "VC attestation is already frozen",
+      "name": "VcAttestationAlreadyFrozen"
+    },
+    {
+      "code": 1075,
+      "message": "VC attestation is not frozen",
+      "name": "VcAttestationNotFrozen"
     }
   ]
 }

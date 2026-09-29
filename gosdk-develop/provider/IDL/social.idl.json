@@ -157,14 +157,24 @@
           "type": "u32"
         },
         {
-          "name": "dataset_kind",
+          "name": "object_type",
           "role": "input",
-          "type": "DatasetKind"
+          "type": "ObjectType"
         },
         {
-          "name": "scope_key",
+          "name": "object_id",
           "role": "input",
           "type": "String"
+        },
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "content_hash",
+          "role": "input",
+          "type": "B256"
         },
         {
           "name": "uri",
@@ -172,10 +182,10 @@
           "type": "String"
         }
       ],
-      "discriminator": 445,
-      "handler": "upsert_public_data_uri",
+      "discriminator": 32627,
+      "handler": "upsert_reference",
       "kind": "entry",
-      "name": "UpsertPublicDataUri"
+      "name": "UpsertReference"
     },
     {
       "args": [
@@ -190,53 +200,20 @@
           "type": "u32"
         },
         {
-          "name": "dataset_kind",
+          "name": "object_type",
           "role": "input",
-          "type": "DatasetKind"
+          "type": "ObjectType"
         },
         {
-          "name": "scope_key",
+          "name": "object_id",
           "role": "input",
           "type": "String"
         }
       ],
-      "discriminator": 17929,
-      "handler": "retire_public_data_uri",
+      "discriminator": 41015,
+      "handler": "retire_reference",
       "kind": "entry",
-      "name": "RetirePublicDataUri"
-    },
-    {
-      "args": [
-        {
-          "name": "publisher",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "source_app_id",
-          "role": "input",
-          "type": "u32"
-        },
-        {
-          "name": "dataset_kind",
-          "role": "input",
-          "type": "DatasetKind"
-        },
-        {
-          "name": "scope_key",
-          "role": "input",
-          "type": "String"
-        },
-        {
-          "name": "uri",
-          "role": "input",
-          "type": "String"
-        }
-      ],
-      "discriminator": 25488,
-      "handler": "restore_public_data_uri",
-      "kind": "entry",
-      "name": "RestorePublicDataUri"
+      "name": "RetireReference"
     },
     {
       "args": [
@@ -599,22 +576,22 @@
           "type": "u32"
         },
         {
-          "name": "dataset_kind",
+          "name": "object_type",
           "role": "input",
-          "type": "DatasetKind"
+          "type": "ObjectType"
         },
         {
-          "name": "scope_key",
+          "name": "object_id",
           "role": "input",
           "type": "String"
         }
       ],
-      "discriminator": 63112,
-      "handler": "public_data_anchor",
+      "discriminator": 7408,
+      "handler": "get_reference",
       "kind": "view",
-      "name": "PublicDataAnchor",
+      "name": "GetReference",
       "returns": {
-        "type": "PublicDataAnchor"
+        "type": "Reference"
       }
     },
     {
@@ -700,8 +677,8 @@
   "types": [
     {
       "kind": "enum",
-      "name": "DatasetKind",
-      "typeTag": 17428762375069664538,
+      "name": "ObjectType",
+      "typeTag": 6776125531577280399,
       "variants": [
         {
           "fields": [],
@@ -763,19 +740,48 @@
       "typeTag": 8914166003957741580
     },
     {
+      "kind": "enum",
+      "name": "ReferenceStatus",
+      "typeTag": 7940954906745129895,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Active"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Retired"
+        }
+      ]
+    },
+    {
       "fields": [
+        {
+          "name": "subject",
+          "type": "Address"
+        },
+        {
+          "name": "content_hash",
+          "type": "B256"
+        },
         {
           "name": "uri",
           "type": "String"
         },
         {
-          "name": "retired",
-          "type": "bool"
+          "name": "status",
+          "type": "ReferenceStatus"
+        },
+        {
+          "name": "revision",
+          "type": "u64"
         }
       ],
       "kind": "struct",
-      "name": "PublicDataAnchor",
-      "typeTag": 12104690320851153008
+      "name": "Reference",
+      "typeTag": 5198236407389515229
     },
     {
       "fields": [
@@ -811,6 +817,11 @@
     },
     {
       "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
       "name": "String",
       "typeTag": 8566531010829758022
     },
@@ -823,6 +834,11 @@
       "kind": "builtin",
       "name": "u32",
       "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
     }
   ],
   "resources": [
@@ -847,9 +863,9 @@
       "typeTag": 14785269867199075517
     },
     {
-      "name": "_PublicDataAnchor",
-      "type": "PublicDataAnchor",
-      "typeTag": 12104690320851153008
+      "name": "_Reference",
+      "type": "Reference",
+      "typeTag": 5198236407389515229
     },
     {
       "name": "_CommunityControl",
@@ -962,118 +978,123 @@
     },
     {
       "code": 2573,
-      "message": "dataset scope key is invalid",
-      "name": "InvalidScopeKey"
+      "message": "stable object ID is invalid",
+      "name": "InvalidObjectId"
     },
     {
       "code": 2574,
-      "message": "public data anchor not found",
-      "name": "DataAnchorNotFound"
+      "message": "reference not found",
+      "name": "ReferenceNotFound"
     },
     {
       "code": 2575,
-      "message": "public data anchor is retired",
-      "name": "DataAnchorRetired"
+      "message": "reference is retired",
+      "name": "ReferenceRetired"
     },
     {
       "code": 2576,
-      "message": "public data anchor is not retired",
-      "name": "DataAnchorNotRetired"
+      "message": "reference is not retired",
+      "name": "ReferenceNotRetired"
     },
     {
       "code": 2577,
+      "message": "reference revision is exhausted",
+      "name": "ReferenceRevisionExhausted"
+    },
+    {
+      "code": 2578,
       "message": "community not found: {0}",
       "name": "CommunityNotFound"
     },
     {
-      "code": 2578,
+      "code": 2579,
       "message": "community already exists: {0}",
       "name": "CommunityAlreadyExists"
     },
     {
-      "code": 2579,
+      "code": 2580,
       "message": "community mutations are disabled: {0}",
       "name": "CommunityMutationsDisabled"
     },
     {
-      "code": 2580,
+      "code": 2581,
       "message": "community owner required: {0:?}",
       "name": "CommunityOwnerRequired"
     },
     {
-      "code": 2581,
+      "code": 2582,
       "message": "community administrator required: {0:?}",
       "name": "CommunityAdminRequired"
     },
     {
-      "code": 2582,
+      "code": 2583,
       "message": "the community owner cannot be removed",
       "name": "CannotRemoveCommunityOwner"
     },
     {
-      "code": 2583,
+      "code": 2584,
       "message": "community administrator already exists: {0:?}",
       "name": "CommunityAdminAlreadyExists"
     },
     {
-      "code": 2584,
+      "code": 2585,
       "message": "community administrator not found: {0:?}",
       "name": "CommunityAdminNotFound"
     },
     {
-      "code": 2585,
+      "code": 2586,
       "message": "join mode does not allow this operation",
       "name": "InvalidJoinMode"
     },
     {
-      "code": 2586,
+      "code": 2587,
       "message": "membership is already active: {0:?}",
       "name": "MembershipAlreadyActive"
     },
     {
-      "code": 2587,
+      "code": 2588,
       "message": "active membership was not found: {0:?}",
       "name": "MembershipNotActive"
     },
     {
-      "code": 2588,
+      "code": 2589,
       "message": "a join request is already pending: {0:?}",
       "name": "JoinRequestAlreadyPending"
     },
     {
-      "code": 2589,
+      "code": 2590,
       "message": "pending join request was not found: {0:?}",
       "name": "JoinRequestNotPending"
     },
     {
-      "code": 2590,
+      "code": 2591,
       "message": "Transparent IdentityError",
       "name": "IdentityError",
       "transparent": true
     },
     {
-      "code": 2591,
+      "code": 2592,
       "message": "Transparent ContextError",
       "name": "ContextError",
       "transparent": true
     },
     {
-      "code": 2592,
+      "code": 2593,
       "message": "community creation limit reached for DID: {0:?}",
       "name": "CommunityCreationLimitReached"
     },
     {
-      "code": 2593,
+      "code": 2594,
       "message": "community member limit reached: {0}",
       "name": "CommunityMemberLimitReached"
     },
     {
-      "code": 2594,
+      "code": 2595,
       "message": "community member count invariant failed: {0}",
       "name": "CommunityMemberCountInvariant"
     },
     {
-      "code": 2595,
+      "code": 2596,
       "message": "the community owner cannot leave",
       "name": "CannotLeaveCommunityOwner"
     }

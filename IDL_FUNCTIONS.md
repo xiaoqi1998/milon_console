@@ -1,12 +1,13 @@
 # Milon IDL 函数清单
 
-> 导出自 `gosdk-develop/provider/IDL/`，共 **11** 个 app、**238** 个函数（view 95 + entry 143）。
+> 导出自 `gosdk-develop/provider/IDL/`，共 **11** 个 app、**245** 个函数（view 94 + entry 151）。
 
 > 表格列：`appname`(应用名) · `meth`(方法名/指令名) · `handler`(链上入口名) · `id`(discriminator 指令编号) · `说明`(中文释义，来自 handler/idl_method_docs.go 的文档映射，与 /api/idl/metadata 输出一致)
 
+
 ## View（只读查询，kind=view）
 
-共 **95** 个。
+共 **94** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -34,7 +35,7 @@
 | staking | HeldPrincipal | held_principal | 45674 | 【功能】查询某地址被质押模块托管的本金总额（含 pending 与待释放部分）。<br>【返回】u64（最小单位）。 |
 | staking | ListDeclaredValidatorsForEpoch | list_declared_validators_for_epoch | 13153 | 【功能】查询某 epoch 已声明可用性的验证人列表。<br>【返回】地址 JSON 数组。 |
 | identity | VcAttestationCore | vc_attestation_core | 18681 | 【功能】查询某 (subject, schema, issuer) 组合下 VC 凭证的不可变核心内容。<br>【返回】VcAttestationCore：{credential_schema, credential_hash, valid_until_ms}；不存在报 1033。 |
-| identity | VcAttestationLifecycle | vc_attestation_lifecycle | 41850 | 【功能】查询 VC 的生命周期状态（是否被撤销、最近变更时间）。<br>【返回】VcAttestationLifecycle：{status: "Active"\|"Revoked", updated_at_ms}。 |
+| identity | VcAttestationLifecycle | vc_attestation_lifecycle | 41850 | 【功能】查询 VC 的生命周期状态（是否被撤销/冻结、最近变更时间）。<br>【返回】VcAttestationLifecycle：{status: "Active"\|"Revoked"\|"Frozen", updated_at_ms}。 |
 | identity | AcceptedVcIssuerIndexMeta | accepted_vc_issuer_index_meta | 57307 | 【功能】查询 subject 某 schema 下「已接受 VC 签发方索引」的元信息。<br>【返回】String；索引不存在报 VcAcceptanceIndexNotFound（1068）。 |
 | identity | AcceptedVcIssuers | accepted_vc_issuers | 6419 | 【功能】列出 subject 某 schema 下已接受凭证的签发方及凭证哈希。<br>【返回】[{issuer, credential_hash}]；数量有上限（TooManyAcceptedVcIssuers 1065）。 |
 | identity | DisclosedVcSchemas | disclosed_vc_schemas | 48906 | 【功能】列出 subject 已披露 VC 的全部 schema。<br>【返回】字符串 JSON 数组；种类数有上限（TooManyDisclosedVcSchemas 1066）。 |
@@ -58,21 +59,20 @@
 | identity | OrganizationStatus | organization_status | 39483 | 【功能】查询组织状态。<br>【返回】"Active" 或 "Deactivated"。 |
 | identity | OrganizationUpdatedAt | organization_updated_at | 23820 | 【功能】查询组织注册信息最近一次更新的毫秒时间戳。<br>【返回】u64。 |
 | identity | CredentialId | credential_id | 63370 | 【功能】由 issuer 地址与 credential_schema 派生全局凭证 ID（用于 CredentialDefinition 等查询）。<br>【返回】String。 |
-| sftoken | SftInfo | sft_info | 57694 | 【功能】查询 SFT 集合信息。<br>【返回】Sft：{owner, metadata}；未创建报 SftNotFound（1285）。 |
-| sftoken | SlotInfo | slot_info | 48907 | 【功能】查询指定槽位的信息。<br>【返回】SlotData：{metadata, attribute, is_transferable}；不存在报 1284。 |
-| sftoken | RoyaltyInfo | royalty_info | 30311 | 【功能】查询 SFT 的版税配置。<br>【返回】Royalty：{recipient, bps}（bps 为万分比）。 |
-| sftoken | SlotOf | slot_of | 38850 | 【功能】查询指定 token 属于哪个槽位。<br>【返回】u64 slot_id。 |
-| sftoken | Token | token | 35083 | 【功能】查询 token 的完整链上状态。<br>【返回】Token：{token_id, slot_id, owner, metadata, value, attribute}。 |
-| sftoken | OwnerOf | owner_of | 39083 | 【功能】查询指定 token 的当前持有者地址。<br>【返回】Address。 |
-| sftoken | ValueOf | value_of | 20993 | 【功能】查询指定 token 的当前价值。<br>【返回】u64。 |
-| sftoken | BalanceOf | balance_of | 63018 | 【功能】查询指定 token 的价值余额（注意第二参数是 token_id 而非账户地址）。<br>【返回】u64（与 ValueOf 同口径）。 |
-| sftoken | AttributeOf | attribute_of | 45938 | 【功能】查询指定 token 的 attribute 属性字符串。<br>【返回】String。 |
-| sftoken | IsSlotFrozen | is_slot_frozen | 30630 | 【功能】查询指定槽位是否处于冻结状态。<br>【返回】bool。 |
-| sftoken | SlotUpdateAuthor | slot_update_author | 59756 | 【功能】查询指定槽位的内容更新权限人。<br>【返回】Address。 |
-| sftoken | SlotFreezeAuthority | slot_freeze_authority | 53534 | 【功能】查询指定槽位的冻结权限人。<br>【返回】Address。 |
 | sftoken | SftOwnerOf | sft_owner_of | 46443 | 【功能】查询 SFT 集合的 owner 地址。<br>【返回】Address。 |
-| sftoken | SlotOwnerOf | slot_owner_of | 39122 | 【功能】查询指定槽位的 slot_owner 地址。<br>【返回】Address。 |
-| sftoken | ApprovalOf | approval_of | 63999 | 【功能】查询 spender 在指定 token 上的剩余授权额度。<br>【返回】u64（未授权为 0）。 |
+| sftoken | SftMetadata | sft_metadata | 12747 | 【功能】查询 SFT 集合的元数据。<br>【返回】Metadata：{name, symbol, cover_url, metadata, attribute}；未创建报 SftNotFound（1285）。 |
+| sftoken | SlotInfo | slot_info | 48907 | 【功能】查询指定槽位的信息。<br>【返回】SlotData：{metadata}（槽位元数据覆盖项）；不存在报 SlotNotFound（1284）。 |
+| sftoken | SlotMetadata | slot_metadata | 26530 | 【功能】查询槽位生效的完整元数据（集合值 + 槽位覆盖项合成）。<br>【返回】Metadata；不存在报 1284。 |
+| sftoken | IsSlotTransferable | is_slot_transferable | 16363 | 【功能】查询槽位下份额是否允许转移。<br>【返回】bool。 |
+| sftoken | Token | token | 35083 | 【功能】查询 token 生效的完整元数据（集合/槽位/token 覆盖项逐级合成）。<br>【返回】Metadata；不存在报 TokenNotFound（1283）。 |
+| sftoken | SlotOf | slot_of | 38850 | 【功能】查询指定 token 属于哪个槽位。<br>【返回】u64 slot_id。 |
+| sftoken | BalanceOf | balance_of | 63018 | 【功能】查询 owner 在指定 token 上的持有数量（份额按 (token, owner) 记账，第二参数是 token_id）。<br>【返回】u64。 |
+| sftoken | FrozenOf | frozen_of | 59068 | 【功能】查询 owner 在指定 token 上的份额是否被冻结。<br>【返回】bool。 |
+| sftoken | ApprovalOf | approval_of | 63999 | 【功能】查询 spender 在 owner 的指定 token 份额上的剩余授权额度。<br>【返回】u64（未授权为 0）。 |
+| sftoken | RoyaltyInfo | royalty_info | 30311 | 【功能】查询 SFT 的版税配置。<br>【返回】Royalty：{recipient, bps}（bps 为万分比）。 |
+| sftoken | MintAuthority | mint_authority | 57868 | 【功能】查询 SFT 的铸造权限人地址。<br>【返回】Address。 |
+| sftoken | UpdateAuthor | update_author | 6459 | 【功能】查询 SFT 的内容更新权限人地址。<br>【返回】Address。 |
+| sftoken | FreezeAuthority | freeze_authority | 10975 | 【功能】查询 SFT 的冻结权限人地址。<br>【返回】Address。 |
 | dex | MarketInfo | market_info | 2326 | 【功能】查询市场完整配置。<br>【返回】Market：{base_token, quote_token, base_lot_atoms, quote_atoms_per_lot_tick, min_tick, max_tick, max_order_lots, max_fills_per_action, maker_fee_ppm, taker_fee_ppm, authority, status}。 |
 | dex | OrderInfoView | order_info_view | 23456 | 【功能】按 order_id 查询订单实时状态（含锁定量 reserved_amount）。<br>【返回】OrderInfo。 |
 | dex | BestBidAsk | best_bid_ask | 12137 | 【功能】查询订单簿最优买价/卖价档。<br>【返回】{bid: {tick, order_count, total_base_lots} 或 null, ask: 同}；空簿一侧为 null。 |
@@ -92,7 +92,7 @@
 | social | SocialProfile | social_profile | 5863 | 【功能】查询某地址的 profile URI。<br>【返回】String。 |
 | social | SourceApp | source_app | 2147 | 【功能】查询源应用信息。<br>【返回】SourceApp：{owner, publishing_enabled}；不存在报 2564。 |
 | social | IsSourceAppPublisher | is_source_app_publisher | 14357 | 【功能】判断某地址是否为源应用的发布者。<br>【返回】bool。 |
-| social | PublicDataAnchor | public_data_anchor | 63112 | 【功能】查询公共数据锚点。<br>【返回】PublicDataAnchor：{uri, retired}；不存在报 2574。 |
+| social | GetReference | get_reference | 7408 | 【功能】查询对象引用记录。<br>【返回】Reference：{subject, content_hash, uri, status("Active"\|"Retired")}；不存在报 ReferenceNotFound（2574）。 |
 | social | Community | community | 59279 | 【功能】查询社区控制信息。<br>【返回】CommunityControl：{owner, join_mode, mutations_enabled, member_count, uri}。 |
 | social | IsCommunityAdmin | is_community_admin | 56720 | 【功能】判断某地址是否为社区管理员（含 owner）。<br>【返回】bool。 |
 | social | JoinRequest | join_request | 38404 | 【功能】查询某成员是否有 pending 的加入申请。<br>【返回】bool。 |
@@ -108,7 +108,7 @@
 
 ## Entry（写操作，kind=entry）
 
-共 **143** 个。
+共 **151** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -149,8 +149,8 @@
 | token | SetUri | set_uri | 52758 | 【功能】设置/更新代币元数据 URI。<br>【限制】仅 owner 生效。 |
 | token | CreateWithCompliance | create_with_compliance | 62196 | 【功能】创建带合规要求的代币：创建同时登记必需凭证（VC）ID，接收方须持有满足合规策略的凭证才能收到币（受监管资产发行用）。<br>【限制】同 token.Create（地址占用/签名）；后续转账会被合规校验拦截（521/522）。 |
 | token | SetComplianceMode | set_compliance_mode | 33931 | 【功能】设置合规策略模式：All=接收方须持有全部已列凭证；Any=持有其中任意一个即可。<br>【限制】仅 owner 生效。 |
-| token | AddComplianceRequirement | add_compliance_requirement | 59302 | 【功能】向合规要求列表添加一个必需凭证 ID。<br>【限制】仅 owner 生效。 |
-| token | RemoveComplianceRequirement | remove_compliance_requirement | 14909 | 【功能】从合规要求列表移除一个凭证 ID。<br>【限制】仅 owner 生效。 |
+| token | AddComplianceRequirement | add_compliance_requirement | 59302 | 【功能】向合规要求列表批量添加必需凭证 ID（credential_ids 可一次加多个）。<br>【限制】仅 owner 生效。 |
+| token | RemoveComplianceRequirement | remove_compliance_requirement | 14909 | 【功能】从合规要求列表批量移除凭证 ID（credential_ids 可一次移除多个）。<br>【限制】仅 owner 生效。 |
 | token | ClearComplianceRequirements | clear_compliance_requirements | 50437 | 【功能】清空全部合规凭证要求，代币恢复为无合规限制。<br>【限制】仅 owner 生效。 |
 | token | ClaimFaucet | claim_faucet | 63796 | 【功能】从水龙头领取原生 MIL 代币（新账户获取 gas 费用）。本指令 gas 由链上赞助池代付（sponsor）。<br>【限制】每次领取 10^10 最小单位（6 位精度下 10,000 token）；每地址 24 小时冷却，冷却期内任何尝试（含失败）都会触发/续期冷却（FaucetCooldownActive 524），脚本领水务必单次尝试；低链 ID 下水龙头禁用（FaucetDisabled 523）。 |
 | staking | CreateValidator | create_validator | 16533 | 【功能】注册验证人：绑定 validator 地址与 operator、共识账户、共识公钥、BLS 公钥并设定佣金率（参与候选池/出块的基础）。<br>【限制】validator/operator/共识账户三者须互不相同（771）；地址与公钥均不可被其他验证人占用（772-776）；不可重复注册（767）；佣金率 ≤10000 基点。 |
@@ -168,6 +168,8 @@
 | identity | DiscloseVcAttestation | disclose_vc_attestation | 23078 | 【功能】凭证持有人将 issuer 签发的可验证凭证（VC）披露上链：登记 issuer、schema、凭证哈希与 issuer 签名（issuer 只提供签名、不作为交易签名者）。组织 KYC 链路第三步。<br>【限制】subject 须有 DID；issuer 的 DID 须存在且未停用（IssuerDidNotActive 1034）；issuer_signature 由链上验签（InvalidVcIssuerSignature 1070）；同一 (subject, issuer, schema) 不可重复披露不同内容（1072）；已撤销凭证不可再披露（1073）。 |
 | identity | RemoveVcDisclosure | remove_vc_disclosure | 51077 | 【功能】subject 撤下一条自己已披露的 VC（不影响 issuer 侧凭证状态）。<br>【限制】该披露须存在（VcAttestationNotFound 1033）。 |
 | identity | RevokeVcAttestation | revoke_vc_attestation | 38692 | 【功能】issuer 永久撤销其签发给某 subject 的 VC（状态变为 Revoked，不可恢复）。<br>【限制】仅原 issuer 可撤销（issuer 为签名者）；凭证须存在（1033）；撤销后再披露报 VcAttestationRevoked（1073）。 |
+| identity | FreezeVcAttestation | freeze_vc_attestation | 52523 | 【功能】issuer 临时冻结其签发给某 subject 的 VC（状态变为 Frozen，可解冻恢复——与 Revoke 的永久不可恢复区别）。<br>【限制】仅原 issuer（issuer 为签名者）；凭证须存在（1033）；已冻结再冻结报 VcAttestationAlreadyFrozen（1074）；已撤销的凭证不可冻结。 |
+| identity | UnfreezeVcAttestation | unfreeze_vc_attestation | 10634 | 【功能】issuer 解除已冻结 VC 的冻结（状态恢复 Active）。<br>【限制】仅原 issuer（issuer 为签名者）；凭证须存在（1033）；未处于冻结状态报 VcAttestationNotFrozen（1075）。 |
 | identity | Create | create | 28587 | 【功能】为地址创建 DID（去中心化身份）文档：主体类型（个人/组织）、密钥列表、服务端点、头像。identity 全部后续操作的前置。<br>【限制】同一 subject 只能创建一次（DidAlreadyExists 1024）；后续要注册组织必须以 subject_type="Organization" 创建（OrganizationDidRequired 1053）；密钥/服务数量与长度有上限校验（1040/1044/1046-1050）；avatar_uri 长度 1-512 字节（1045）。 |
 | identity | CreateWithAlias | create_with_alias | 48723 | 【功能】创建 DID 并同时绑定全局唯一别名（等价 Create + SetAlias 一步完成）。<br>【限制】同 Create；别名须为「alias-数字」格式（NameInvalidFormat 1036）、各段长度校验（1035/1037/1038）、不可与已绑定名冲突（NameAlreadyBound 1028）。 |
 | identity | AddKey | add_key | 24314 | 【功能】向 DID 文档添加一把新公钥。<br>【返回】u8 新密钥 id。<br>【限制】DID 须已创建且未停用（1025/1026）；密钥数量有上限（1040）；label 非空且不超长（1044）。 |
@@ -182,25 +184,32 @@
 | identity | RegisterOrganization | register_organization | 36868 | 【功能】为组织型 DID 注册能力声明：角色（VC 签发方 VcIssuer / KYC 服务方 KycProvider）与接受的凭证 schema 列表。组织 KYC 链路第二步（前置：subject_type=Organization 的 DID，见 ORG_KYC_GUIDE）。<br>【限制】必须先创建组织型 DID（OrganizationDidRequired 1053）；不可重复注册（1032）；声明任一角色必须至少带一个 credential_schema（IssuerCredentialSchemaRequired 1060）；角色/schema 数量与重复校验（1055-1059）。 |
 | identity | UpdateOrganizationCapabilities | update_organization_capabilities | 13927 | 【功能】更新已注册组织的角色与凭证 schema 列表。<br>【限制】组织须已注册（OrganizationNotFound 1031）；已停用不可更新（1054）；roles/schemas 校验同 RegisterOrganization。 |
 | identity | DeactivateOrganization | deactivate_organization | 48597 | 【功能】永久停用组织注册（不可恢复）。<br>【限制】组织须已注册（1031）；已停用再操作报 OrganizationDeactivated（1054）。 |
-| sftoken | CreateSft | create_sft | 5334 | 【功能】创建 SFT（半同质化代币）集合：登记元数据、初始 owner 与版税比例。SFT 为「集合 + 槽位(slot) + token」三层模型的最上层。<br>【限制】由 sft 资源账户私钥签名；同一地址只能创建一次（SftAlreadyExists 1289）。 |
-| sftoken | CreateSlot | create_slot | 56115 | 【功能】在 SFT 下创建槽位（slot）：设定元数据/属性、是否可转移，以及槽位 owner（即铸造权限）、内容更新人、冻结权限人三个可选角色。slot_id 由链上从 1 递增分配。<br>【限制】仅 SFT owner 可创建（creator 签名）；SFT 须已存在（SftNotFound 1285）；slot_id 不可自选，从回执事件 SlotCreatedEvent.slot_id 获取；id 耗尽报 SlotIdExhausted（1292）。 |
-| sftoken | TransferOwner | transfer_owner | 35617 | 【功能】转让 SFT 集合 owner（集合管理权，不含 token 资产）。<br>【限制】仅现任 owner（Unauthorized 1280）；SFT 须存在（1285）。 |
-| sftoken | TransferSlotOwner | transfer_slot_owner | 26666 | 【功能】转让槽位的 slot_owner（槽位所有/铸造权限）。<br>【限制】仅现任 slot_owner（1280）；slot 须存在（SlotNotFound 1284）。 |
-| sftoken | TransferSlotUpdateAuthor | transfer_slot_update_author | 8940 | 【功能】转让槽位的内容更新权限（update_author）。<br>【限制】仅现任 update_author（1280）；slot 须存在（1284）。 |
-| sftoken | TransferSlotFreezeAuthority | transfer_slot_freeze_authority | 10654 | 【功能】转让槽位的冻结权限（freeze_authority）。<br>【限制】仅现任 freeze_authority（1280）；slot 须存在（1284）。 |
+| sftoken | CreateSft | create_sft | 5334 | 【功能】创建 SFT（半同质化代币）集合：登记元数据（name/symbol 必填，cover_url/metadata 为 URI，attribute 可选）、初始 owner 与版税比例。SFT 为「集合 + 槽位(slot) + token 份额」三层模型的最上层。<br>【限制】由 sft 资源账户私钥签名（gas 由 owner 代付）；同一地址只能创建一次（SftAlreadyExists 1291）；name/symbol 等参数校验（InvalidParameters 1292）。 |
+| sftoken | CreateSlot | create_slot | 56115 | 【功能】在 SFT 下创建槽位（slot）：登记槽位元数据覆盖项（SlotData.metadata，缺省继承集合）与份额可转移标志。slot_id 由链上递增分配。<br>【返回】u64 新 slot_id（也从回执 SlotCreatedEvent.slot_id 获取）。<br>【限制】仅 SFT owner 可创建（creator 签名）；SFT 须已存在（SftNotFound 1285）；id 耗尽报 SlotIdExhausted（1294）。 |
+| sftoken | TransferOwner | transfer_owner | 35617 | 【功能】转让 SFT 集合 owner（集合管理权，也是 mint/update/freeze 三个权限的默认持有人；不含 token 份额）。<br>【限制】仅现任 owner（Unauthorized 1280）；SFT 须存在（1285）。 |
+| sftoken | SetCoverUrl | set_cover_url | 480 | 【功能】设置/更新 SFT 集合的封面 URI。<br>【限制】仅 SFT owner（1280）；SFT 须存在（1285）。 |
+| sftoken | SetUri | set_uri | 4819 | 【功能】设置/更新 SFT 集合的元数据 URI。<br>【限制】仅 SFT owner（1280）；SFT 须存在（1285）。 |
+| sftoken | TransferMintAuthority | transfer_mint_authority | 33676 | 【功能】转让 SFT 的铸造权限人（mint authority，初始为 SFT owner）。<br>【限制】仅现任 mint authority（1280）；SFT 须存在（1285）。 |
+| sftoken | TransferUpdateAuthor | transfer_update_author | 57787 | 【功能】转让 SFT 的内容更新权限人（update author，可改 slot/token 的元数据）。<br>【限制】仅现任 update author（1280）；SFT 须存在（1285）。 |
+| sftoken | TransferFreezeAuthority | transfer_freeze_authority | 26719 | 【功能】转让 SFT 的冻结权限人（freeze authority，可冻结/解冻份额）。<br>【限制】仅现任 freeze authority（1280）；SFT 须存在（1285）。 |
 | sftoken | TransferRoyaltyRecipient | transfer_royalty_recipient | 56414 | 【功能】修改 SFT 的版税接收人地址。<br>【限制】仅现任版税接收人（1280）。 |
-| sftoken | SetSlotTransferable | set_slot_transferable | 57575 | 【功能】设置槽位 is_transferable 标志（开/关该槽位 token 的部分转移与合并能力）。<br>【限制】须槽位管理权限（1280）；slot 须存在（1284）。 |
-| sftoken | FreezeSlot | freeze_slot | 13370 | 【功能】冻结槽位（冻结后该槽位 token 的转移/合并类操作被拒）。<br>【限制】仅 freeze_authority 生效；冻结后相关操作报 SlotFrozen（1287）。 |
-| sftoken | UnfreezeSlot | unfreeze_slot | 61011 | 【功能】解除槽位冻结。<br>【限制】仅 freeze_authority 生效；slot 须存在（1284）。 |
-| sftoken | Mint | mint | 43610 | 【功能】向目标地址铸造一个属于指定槽位的新 token（含初始价值/元数据/属性）。token_id 由链上从 1 递增分配。<br>【返回】u64 新 token_id（也从回执 TokenMintedEvent.token_id 获取）。<br>【限制】须槽位铸造权限人（slot_owner）签名；SFT/slot 须存在（1285/1284）；initial_value 必须 >0（ZeroValueOperation 1286）；id 耗尽报 1291；溢出报 Overflow（1293）。 |
-| sftoken | Burn | burn | 7015 | 【功能】销毁指定 token（其价值随之消失）。<br>【限制】仅 token 现任 owner；token 须存在（TokenNotFound 1283）。 |
-| sftoken | Split | split | 50774 | 【功能】把源 token 的一部分价值拆给接收者，产生一个新 token（继承槽位/元数据/属性），源 token 保留剩余价值。<br>【返回】u64 新 token_id（回执 TokenSplitEvent.new_token_id）。<br>【限制】签名者为源 token owner（不要求槽位可转移）；split_value 必须 >0（1286）且不得超过源 token 价值（InsufficientBalance 1282）。 |
-| sftoken | Merge | merge | 110 | 【功能】把源 token 的全部价值并入目标 token 并销毁源 token（同槽位价值合并）。<br>【限制】两个 token 必须属于同一槽位（SlotMismatch 1281）；要求槽位 is_transferable=true；不可自我合并（SelfMerge 1294）；token/slot 须存在（1283/1284）。 |
-| sftoken | SetAttribute | set_attribute | 21633 | 【功能】更新指定 token 的 attribute 属性字符串。<br>【限制】须相应权限（token owner / 槽位 update_author）；token 须存在（1283）。 |
-| sftoken | Approve | approve | 34407 | 【功能】token owner 给 spender 授予该 token 上的可花费额度（额度记录在 (token_id, spender) 上）。<br>【限制】仅 token owner；token 须存在（1283）。 |
-| sftoken | RevokeApproval | revoke_approval | 57842 | 【功能】撤销 spender 在指定 token 上的授权额度。<br>【限制】仅 token owner。 |
-| sftoken | Transfer | transfer | 48437 | 【功能】转移 token 价值：全量转移保留 token_id 仅改 owner（不要求可转移）；部分转移走拆分路径（为接收者新建 token，要求槽位 is_transferable=true）。<br>【返回】u64（部分转移时为新 token_id）。<br>【限制】value 必须 >0（1286）；不得超过持有量（1282）；槽位冻结报 1287。 |
-| sftoken | TransferFrom | transfer_from | 19098 | 【功能】被授权方（spender）动用 Approve 额度转移他人 token 价值（始终走拆分路径，要求槽位可转移；额度按转移量扣减）。<br>【返回】u64 新 token_id。<br>【限制】spender 须有足额授权；value >0（1286）；槽位冻结/不可转移则失败（1287）。 |
+| sftoken | SetSlotTransferable | set_slot_transferable | 57575 | 【功能】设置槽位 transferable 标志（开/关该槽位下份额的转移能力）。<br>【限制】仅 SFT owner（1280）；slot 须存在（SlotNotFound 1284）。 |
+| sftoken | SetSlotAttribute | set_slot_attribute | 3272 | 【功能】更新槽位的 attribute 属性字符串（覆盖集合继承值）。<br>【限制】仅 update author（1280）；slot 须存在（1284）。 |
+| sftoken | SetSlotCoverUrl | set_slot_cover_url | 15677 | 【功能】更新槽位的封面 URI。<br>【限制】仅 update author（1280）；slot 须存在（1284）。 |
+| sftoken | SetSlotUri | set_slot_uri | 28914 | 【功能】更新槽位的元数据 URI。<br>【限制】仅 update author（1280）；slot 须存在（1284）。 |
+| sftoken | Mint | mint | 43610 | 【功能】向目标地址铸造 amount 数量的份额，记入指定槽位下的一个新 token（metadata 可传覆盖项，缺省继承槽位/集合元数据）。token_id 由链上递增分配。<br>【返回】u64 新 token_id（也从回执 TokenMintedEvent.token_id 获取）。<br>【限制】仅 mint authority 签名；SFT/slot 须存在（1285/1284）；amount 必须 >0（ZeroValueOperation 1286）；id 耗尽报 TokenIdExhausted（1293）；溢出报 Overflow（1295）。 |
+| sftoken | Burn | burn | 7015 | 【功能】销毁持有人在指定 token 上的 amount 数量份额（价值随之消失）。<br>【限制】由份额持有人签名；token 须存在（TokenNotFound 1283）；amount >0（1286）且不得超过持有量（InsufficientBalance 1282）。 |
+| sftoken | Freeze | freeze | 36565 | 【功能】冻结某地址在指定 token 上的份额（冻结后该份额的转移/合并类操作被拒）。<br>【限制】仅 freeze authority；token 须存在（1283）；已冻结再冻结报 TokenFrozen（1290）。 |
+| sftoken | Unfreeze | unfreeze | 49498 | 【功能】解除地址在指定 token 上份额的冻结。<br>【限制】仅 freeze authority；token 须存在（1283）；未处于冻结状态时操作失败。 |
+| sftoken | SetTokenAttribute | set_token_attribute | 50607 | 【功能】更新 token 的 attribute 属性字符串（覆盖槽位/集合继承值）。<br>【限制】仅 update author（1280）；token 须存在（1283）。 |
+| sftoken | SetTokenCoverUrl | set_token_cover_url | 58854 | 【功能】更新 token 的封面 URI。<br>【限制】仅 update author（1280）；token 须存在（1283）。 |
+| sftoken | SetTokenUri | set_token_uri | 50621 | 【功能】更新 token 的元数据 URI。<br>【限制】仅 update author（1280）；token 须存在（1283）。 |
+| sftoken | Approve | approve | 34407 | 【功能】份额持有人给 spender 授予其在指定 token 份额上的可花费额度（额度按 (token, owner, spender) 记账）。<br>【限制】仅份额持有人；token 须存在（1283）；amount >0（1286）。 |
+| sftoken | RevokeApproval | revoke_approval | 57842 | 【功能】撤销 spender 对持有人在指定 token 份额上的授权额度。<br>【限制】仅份额持有人。 |
+| sftoken | Split | split | 50774 | 【功能】把源 token 的部分份额拆给接收者并派生一个新 token（同槽位、继承元数据）。仅当业务需要独立 token_id 时使用——同一 token_id 多人持有本就是链上原生状态，一般转移用 Transfer 即可。<br>【返回】u64 新 token_id。<br>【限制】由源份额持有人签名；amount >0（1286）、必须小于源余额（FullBalanceSplit 1288）且不超过持有量（InsufficientBalance 1282）；接收者不得为本人（SelfTransfer 1287）。 |
+| sftoken | Merge | merge | 110 | 【功能】把源 token 的全部份额并入目标 token 并删除源 token（同槽位份额合并）。<br>【限制】由源份额持有人签名；两个 token 必须属于同一槽位（SlotMismatch 1281）；不可自我合并（SelfMerge 1289）；token/slot 须存在（1283/1284）；被冻结份额报 TokenFrozen（1290）。 |
+| sftoken | Transfer | transfer | 48437 | 【功能】转移份额：把持有人的 amount 数量记到接收方名下（token_id 不变，同一 token 可多人持有；全量转出后持有人余额记录清零）。<br>【限制】由份额持有人签名；amount >0（1286）且不超过持有量（InsufficientBalance 1282）；要求槽位 transferable=true；接收者不得为本人（SelfTransfer 1287）；被冻结份额报 TokenFrozen（1290）。 |
+| sftoken | TransferFrom | transfer_from | 19098 | 【功能】被授权方（spender）动用 Approve 额度，把持有人 from 的份额转给接收者 to（额度按转移量扣减）。<br>【限制】spender 须有足额授权（InsufficientApproval 1296）；amount >0（1286）；其余同 Transfer：槽位可转移、不可自转（1287）、冻结报 1290。 |
 | dex | CreateMarket | create_market | 122 | 【功能】创建订单簿交易市场（base/quote 代币对），调用者成为市场 authority（管理员）。maker/taker 费率由链上常量固定为 0.3%/0.5%。<br>【返回】Address 新市场地址（由链上种子派生）。<br>【限制】base≠quote（SameTokenPair 1536）；所有数值参数非 0（ZeroMarketParameter 1537）；同代币对不可重复建市场（MarketAlreadyExists 1541）。 |
 | dex | InitializeMarketDid | initialize_market_did | 27598 | 【功能】为市场初始化 DID 文档（市场身份/资质展示）。<br>【限制】须市场 authority 签名（MarketAuthorityMismatch 1546）；市场须存在（MarketNotFound 1542）；subject_type 必须为 Organization（MarketDidMustBeOrganization 1562）。 |
 | dex | DiscloseMarketVcAttestation | disclose_market_vc_attestation | 47697 | 【功能】为市场披露一条 VC 凭证：登记签发方、schema、凭证哈希与签发方签名，供合规展示。<br>【限制】须市场 authority 签名；签发方身份须可解析（IdentityFailure 1561）。 |
@@ -228,23 +237,22 @@
 | social | TransferSourceAppOwner | transfer_source_app_owner | 21283 | 【功能】转让源应用所有权。<br>【限制】仅当前 owner（2567）。 |
 | social | DeactivateSourceApp | deactivate_source_app | 52796 | 【功能】停用源应用（暂停其数据发布；停用后发布报 SourceAppPublishingDisabled 2566）。<br>【限制】仅 owner。 |
 | social | ReactivateSourceApp | reactivate_source_app | 55074 | 【功能】重新启用已停用的源应用。<br>【限制】仅 owner。 |
-| social | UpsertPublicDataUri | upsert_public_data_uri | 445 | 【功能】发布者为 (source_app_id, dataset_kind, scope_key) 三元组写入/更新公共数据 URI（链上数据锚点）。<br>【限制】调用者须是该应用发布者（SourceAppPublisherRequired 2568）；应用须存在且未停用发布（2564/2566）；scope_key/URI 须合法（2573/2563）。 |
-| social | RetirePublicDataUri | retire_public_data_uri | 17929 | 【功能】将数据锚点下线（retired 标记，URI 保留）。<br>【限制】仅发布者；锚点须存在（DataAnchorNotFound 2574）且未下线（DataAnchorRetired 2575）。 |
-| social | RestorePublicDataUri | restore_public_data_uri | 25488 | 【功能】恢复已下线的数据锚点并更新 URI。<br>【限制】仅发布者；锚点须存在且处于 retired 状态（2574/2576）。 |
-| social | CreateCommunity | create_community | 18868 | 【功能】创建社区，链上分配自增 community_id。<br>【返回】u32 community_id。<br>【限制】每 creator 最多 8 个社区（CommunityCreationLimitReached 2592）；URI 须合法（2563）。 |
-| social | UpdateCommunityUri | update_community_uri | 63564 | 【功能】社区 owner 更新社区元数据 URI。<br>【限制】仅 owner（CommunityOwnerRequired 2580）；社区须存在（2577）且未停用（2579）。 |
+| social | UpsertReference | upsert_reference | 32627 | 【功能】发布者为跨应用对象引用写入/更新记录：(source_app_id, object_type, object_id) 定位对象，绑定 subject 地址与内容哈希（B256）、数据 URI。取代旧 PublicDataUri 系列的数据锚点能力。<br>【限制】调用者须是该应用发布者（SourceAppPublisherRequired 2568）；应用须存在且未停用发布（2564/2566）；object_id 须为合法稳定对象 ID（InvalidObjectId 2573）。 |
+| social | RetireReference | retire_reference | 41015 | 【功能】将对象引用记录下线（retired 标记，记录保留）。<br>【限制】仅发布者；引用须存在（ReferenceNotFound 2574）；已下线再操作报 ReferenceRetired（2575）；修订号耗尽报 2577。 |
+| social | CreateCommunity | create_community | 18868 | 【功能】创建社区，链上分配自增 community_id。<br>【返回】u32 community_id。<br>【限制】每 creator 最多 8 个社区（CommunityCreationLimitReached 2593）；URI 须合法（2563）。 |
+| social | UpdateCommunityUri | update_community_uri | 63564 | 【功能】社区 owner 更新社区元数据 URI。<br>【限制】仅 owner（CommunityOwnerRequired 2581）；社区须存在（2578）且未停用（2580）。 |
 | social | SetCommunityJoinMode | set_community_join_mode | 20649 | 【功能】owner 切换社区加入模式（Open/Approval）。<br>【限制】仅 owner；社区须存在且未停用。 |
 | social | TransferCommunityOwner | transfer_community_owner | 5543 | 【功能】转让社区所有权。<br>【限制】仅当前 owner。 |
 | social | DeactivateCommunity | deactivate_community | 32318 | 【功能】停用社区（成员与管理变更冻结）。<br>【限制】仅 owner。 |
-| social | GrantCommunityAdmin | grant_community_admin | 10690 | 【功能】owner 授予某地址社区管理员权限。<br>【限制】仅 owner；已是管理员报 CommunityAdminAlreadyExists（2583）。 |
-| social | RevokeCommunityAdmin | revoke_community_admin | 62146 | 【功能】owner 撤销某地址的社区管理员权限。<br>【限制】仅 owner；目标须是管理员（CommunityAdminNotFound 2584）。 |
-| social | JoinCommunity | join_community | 39196 | 【功能】直接加入社区（仅 Open 模式；Approval 模式须走申请审批）。<br>【限制】模式须为 Open（InvalidJoinMode 2585）；成员数不超 10000（CommunityMemberLimitReached 2593）；不可重复加入（2586）。 |
-| social | RequestJoinCommunity | request_join_community | 57790 | 【功能】在 Approval 模式社区提交加入申请。<br>【限制】模式须为 Approval（2585）；不可重复申请（JoinRequestAlreadyPending 2588）；不可已是成员（2586）。 |
-| social | CancelJoinRequest | cancel_join_request | 33199 | 【功能】撤回自己的加入申请。<br>【限制】须有 pending 申请（JoinRequestNotPending 2589）。 |
-| social | ApproveJoinRequest | approve_join_request | 2182 | 【功能】管理员批准某用户的加入申请（成员数 +1）。<br>【限制】须管理员或 owner（CommunityAdminRequired 2581）；须有 pending 申请（2589）；成员数不超 10000（2593）。 |
+| social | GrantCommunityAdmin | grant_community_admin | 10690 | 【功能】owner 授予某地址社区管理员权限。<br>【限制】仅 owner；已是管理员报 CommunityAdminAlreadyExists（2584）。 |
+| social | RevokeCommunityAdmin | revoke_community_admin | 62146 | 【功能】owner 撤销某地址的社区管理员权限。<br>【限制】仅 owner；目标须是管理员（CommunityAdminNotFound 2585）。 |
+| social | JoinCommunity | join_community | 39196 | 【功能】直接加入社区（仅 Open 模式；Approval 模式须走申请审批）。<br>【限制】模式须为 Open（InvalidJoinMode 2586）；成员数不超 10000（CommunityMemberLimitReached 2594）；不可重复加入（MembershipAlreadyActive 2587）。 |
+| social | RequestJoinCommunity | request_join_community | 57790 | 【功能】在 Approval 模式社区提交加入申请。<br>【限制】模式须为 Approval（2586）；不可重复申请（JoinRequestAlreadyPending 2589）；不可已是成员（2587）。 |
+| social | CancelJoinRequest | cancel_join_request | 33199 | 【功能】撤回自己的加入申请。<br>【限制】须有 pending 申请（JoinRequestNotPending 2590）。 |
+| social | ApproveJoinRequest | approve_join_request | 2182 | 【功能】管理员批准某用户的加入申请（成员数 +1）。<br>【限制】须管理员或 owner（CommunityAdminRequired 2582）；须有 pending 申请（2590）；成员数不超 10000（2594）。 |
 | social | RejectJoinRequest | reject_join_request | 21924 | 【功能】管理员拒绝某用户的加入申请。<br>【限制】同 ApproveJoinRequest：管理员权限 + pending 申请存在。 |
-| social | LeaveCommunity | leave_community | 7711 | 【功能】成员主动退出社区。<br>【限制】须是活跃成员（MembershipNotActive 2587）；owner 不能退出（CannotLeaveCommunityOwner 2595，须先转让）。 |
-| social | RemoveCommunityMember | remove_community_member | 7071 | 【功能】管理员移除某成员。<br>【限制】须管理员（2581）；目标须是成员（2587）；不能移除 owner（CannotRemoveCommunityOwner 2582）。 |
+| social | LeaveCommunity | leave_community | 7711 | 【功能】成员主动退出社区。<br>【限制】须是活跃成员（MembershipNotActive 2588）；owner 不能退出（CannotLeaveCommunityOwner 2596，须先转让）。 |
+| social | RemoveCommunityMember | remove_community_member | 7071 | 【功能】管理员移除某成员。<br>【限制】须管理员（2582）；目标须是成员（2588）；不能移除 owner（CannotRemoveCommunityOwner 2583）。 |
 | demo | OpenOrder | open_order | 57564 | 【功能】演示订单支付流第一步：operator 开一个演示订单（收款托管户头）。<br>【限制】order_id 不可重复（OrderAlreadyExists 65285）。 |
 | demo | PayOrder | pay_order | 58464 | 【功能】演示订单支付流第二步：付款人向订单打入指定代币与数量（进订单托管）。<br>【限制】订单须存在（OrderNotFound 65284）；付款人余额须充足。 |
 | demo | SettleOrder | settle_order | 1751 | 【功能】演示订单支付流第三步：operator 把订单托管余额结算转出给指定收款地址。<br>【限制】须与开单相同的 operator（OrderOperatorMismatch 65286）；订单须存在（65284）；结算额不得超过托管余额。 |
@@ -264,11 +272,11 @@
 | account | 1 | 5 | 10 | 15 |
 | token | 2 | 7 | 23 | 30 |
 | staking | 3 | 11 | 12 | 23 |
-| identity | 4 | 25 | 17 | 42 |
-| sftoken | 5 | 15 | 19 | 34 |
+| identity | 4 | 25 | 19 | 44 |
+| sftoken | 5 | 14 | 26 | 40 |
 | dex | 6 | 6 | 8 | 14 |
 | keyless | 8 | 8 | 8 | 16 |
 | lucky_box | 9 | 2 | 4 | 6 |
-| social | 10 | 8 | 24 | 32 |
+| social | 10 | 8 | 23 | 31 |
 | demo | 255 | 8 | 10 | 18 |
-| **合计** | — | **95** | **143** | **238** |
+| **合计** | — | **94** | **151** | **245** |

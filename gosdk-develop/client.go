@@ -47,6 +47,7 @@ type RpcClientImpl interface {
 
 type Client struct {
 	RpcClient RpcClientImpl
+	network   Network // 区块流 gRPC 等连接配置(来自 NewClient 入参)
 }
 
 // ========================================
@@ -98,6 +99,7 @@ func NewClient(config Network, options ...ClientOption) *Client {
 
 	return &Client{
 		RpcClient: rpc,
+		network:   config,
 	}
 }
 

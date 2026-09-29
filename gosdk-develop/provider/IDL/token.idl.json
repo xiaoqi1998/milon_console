@@ -629,9 +629,9 @@
           "type": "Address"
         },
         {
-          "name": "credential_id",
+          "name": "credential_ids",
           "role": "input",
-          "type": "String"
+          "type": "vec<String>"
         }
       ],
       "discriminator": 59302,
@@ -656,9 +656,9 @@
           "type": "Address"
         },
         {
-          "name": "credential_id",
+          "name": "credential_ids",
           "role": "input",
-          "type": "String"
+          "type": "vec<String>"
         }
       ],
       "discriminator": 14909,
