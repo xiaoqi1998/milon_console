@@ -38,6 +38,13 @@ vendor/
 # Trae IDE working directory
 .trae/
 
+# AI assistant tool state
+.mimosa/
+.workbuddy/
+
+# Runtime logs
+*.log
+
 # Temporary scripts
 _write_js.py
 _verify_e2e.ps1

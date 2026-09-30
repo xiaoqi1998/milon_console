@@ -2232,6 +2232,281 @@ curl -X POST http://localhost:8080/api/tool/vc-flow \
 - 中途失败：返回 500，`message` 标明失败阶段（如 `disclose credential Test3: …`），`data` 携带已完成步骤明细，可修复后直接重跑（幂等）。
 - 凭证内容为确定性 JSON（不含时间戳），同参数重跑生成的 `credentialHash` 一致，满足链上幂等披露。
 - 验证结果 `verification[]` 中 `onChain` 表示出现在 `DisclosedVcs` 列表，`valid` 为 `HasValidVcFromIssuer` 当前判定；验证失败不中断流程。
+- **DID 默认完整创建**：双方建 DID 默认走 `CreateWithAlias` 完整创建——未显式给别名时服务端自动生成全局唯一别名（issuer 为 `org+地址前8位`、user 为 `user+地址前8位`，数字后缀随机代填，撞名自动换号重试），头像使用占位 URI；即**不传任何 DID 参数，产出的也是带别名的完整 DID**。
+- **DID 选项透传**（可选）：请求体可带 `issuerDid` / `userDid` 对象覆盖默认行为——`alias` 显式指定别名主体；`autoAlias: false` 关闭自动别名；`services` 登记服务端点；`avatarUri` 自定义头像。幂等重跑时按差异补齐。示例：
+
+```json
+{
+  "issuerPrivateKey": "<hex>",
+  "userPrivateKey": "<hex>",
+  "userAddress": "<base58>",
+  "issuerDid": { "alias": "myorg", "services": [{ "label": "portal", "serviceEndpoint": "https://org.example.com" }] },
+  "userDid": { "autoAlias": true, "avatarUri": "https://cdn.example.com/me.png" }
+}
+```
+
+**DID 选项字段**
+
+| 字段 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `alias` | string | 否 | 别名主体（不含数字后缀）；缺省自动生成（`org/user`+地址前 8 位） |
+| `autoAlias` | bool | 否 | 缺省 `true`；显式 `false` 且未给 `alias` 时该方 DID 不绑定别名 |
+| `suffix` | number | 否 | 显式数字后缀，缺省随机代填（撞名自动换号重试至多 3 次） |
+| `services` | array | 否 | 服务端点列表 `[{ "label", "serviceEndpoint" }]` |
+| `avatarUri` | string | 否 | 头像 URI（1-512 字节），缺省占位 URI |
+
+---
+
+### 十一、SFT 全流程工具
+
+#### 41. SFT 创建-分发-合并-转移全流程
+
+- **方法**: `POST`
+- **路径**: `/api/tool/sft-flow`
+- **说明**: 给定 owner 私钥，**同步**自动完成 sftoken 全生命周期：owner 领水（余额 ≥ 100 MIL 跳过；SFT 资源账户与份额接收者无需 gas）→ 创建 SFT（缺省服务端生成 Ed25519 资源账户并在响应中返回私钥；传 `sft.address` 且链上已存在则跳过创建）→ 创建 slot（slot_id 链上递增分配，从 `SlotCreatedEvent` 回执提取；传 `slot.slotId` 则复用已有 slot）→ 分发（对 `distributions` 逐笔 Mint 直发，每笔 `(to, amount)` 铸出独立 token_id，从 `TokenMintedEvent` 回执提取）→ 合并（`merge.fromTokenId → toTokenId`，仅合并 owner 自己持有的份额，合并数量从 `TokenTransferredEvent` 提取）→ 转移（`transfer.tokenId → to`，`amount` 缺省为该 token 全额份额）→ 回读验证（`SftMetadata` / `SlotInfo` / `BalanceOf`）。**步骤开关 = 参数存在性**：不传某步参数即跳过该步，可自由组合（如仅对已有 SFT 做一次转移）。
+
+**请求参数**
+
+| 字段 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `ownerPrivateKey` | string | 是 | owner 私钥（hex/base58）：32 字节为经典 Ed25519；1281 字节为 FN-DSA-512（须同时传 `ownerPublicKey`）。slot/mint/merge/transfer 均由 owner 签名并支付 gas |
+| `ownerPublicKey` | string | 条件必填 | owner 公钥，owner 为 FN-DSA-512 私钥时必填 |
+| `ownerAddress` | string | 是 | owner 地址（base58）。必填：同一 32 字节私钥按 ed25519/secp256k1/bls12381 解释会派生**不同地址**，服务端按显式地址自动匹配曲线并锁定正确公钥 |
+| `sft` | object | 否 | SFT 资源账户选项；缺省由服务端生成新资源账户（Ed25519，私钥随响应返回） |
+| `sft.address` | string | 否 | 已有 SFT 地址：链上已存在（`SftOwnerOf` 可读）则跳过创建；不存在则须传 `sft.privateKey` 签名创建 |
+| `sft.privateKey` | string | 条件必填 | SFT 资源账户私钥——仅在 `sft.address` 指向的 SFT 链上不存在时必填；资源账户仅签 `create_sft` 指令，gas 由 owner 代付 |
+| `sft.publicKey` | string | 条件必填 | SFT 资源账户公钥，其为 FN-DSA-512 私钥时必填 |
+| `sftMetadata` | object | 条件必填 | 创建新 SFT 时的元数据（需要创建时必填）；`name`（1..=128 字符）与 `symbol`（1..=32 字符）链端强制必填；`coverUrl` / `metadata` 为 URI 字符串；`attribute` 可选字符串。复用已有 SFT 时可省略 |
+| `royaltyBps` | number | 否 | 二级市场版税万分比（u16），缺省 `0`；版税接收人初始为 owner |
+| `slot` | object | 否 | slot 选项；缺省跳过 slot 步骤。`slotId > 0` 表示复用已有 slot（与 `metadata`/`isTransferable` 互斥）；否则创建新 slot |
+| `slot.slotId` | number | 否 | 复用的 slot_id |
+| `slot.metadata` | object | 否 | slot 元数据覆盖 `{ "name", "symbol", "coverUrl", "metadata", "attribute" }`，全可选；未提供的字段动态继承 SFT metadata |
+| `slot.isTransferable` | bool | 否 | slot 下 token 是否可转移，缺省 `true` |
+| `distributions` | array | 否 | 分发列表，每笔 `{ "to", "amount", "metadata?" }` 一次 Mint 直发（独立 token_id），上限 20 笔。依赖 slot（复用或新建） |
+| `merge` | object | 否 | 合并选项 `{ "fromTokenId", "toTokenId" }`，两字段必须同时提供；源与目标不能相同。**仅合并 owner 自己持有的份额**（链端语义） |
+| `transfer` | object | 否 | 转移选项 `{ "tokenId", "to", "amount?" }`；`amount` 缺省（不传）= 该 token 在 owner 名下的全额份额（链上回读），显式传必须为正数 |
+| `steps` | - | - | 无此参数——步骤开关即各参数是否存在：不传 `sft` 建新 SFT、传 `sft.address` 复用；不传 `slot` 跳过 slot；`distributions` 空不分发；`merge`/`transfer` 缺省不执行 |
+
+**请求示例（全流程一把梭）**
+
+```bash
+curl -X POST http://localhost:8080/api/tool/sft-flow   -H "Content-Type: application/json"   -d '{
+    "ownerPrivateKey": "<owner 私钥 hex>",
+    "ownerAddress": "<owner 地址 base58>",
+    "sftMetadata": { "name": "Milon SFT Demo", "symbol": "MSFT", "coverUrl": "https://milon.test/sft.png", "attribute": "series=2026" },
+    "royaltyBps": 50,
+    "slot": { "metadata": { "name": "Level-1 VIP Card" }, "isTransferable": true },
+    "distributions": [
+      { "to": "<接收者A地址>", "amount": 40 },
+      { "to": "<接收者B地址>", "amount": 60, "metadata": { "attribute": "batch=b1" } },
+      { "to": "<owner自己地址>", "amount": 30 }
+    ],
+    "merge": { "fromTokenId": 3, "toTokenId": 1 },
+    "transfer": { "tokenId": 1, "to": "<接收者C地址>" }
+  }'
+```
+
+**响应示例（data 字段）**
+
+```json
+{
+  "owner": "3pHqrfVpw4ziiWZ2S6graADk8sXu",
+  "faucet": { "skipped": true, "claimed": false, "balanceBefore": "9800000000", "balanceAfter": "9800000000", "detail": "balance is sufficient, skip faucet" },
+  "sft": {
+    "address": "5FsdeLbnTcHmYpqT8ubYb5yLpYjmaxrfVPyD7Ky3ky6rKxgN",
+    "owner": "3pHqrfVpw4ziiWZ2S6graADk8sXu",
+    "privateKey": "0x…",
+    "created": true,
+    "skipped": false,
+    "txHash": "0x…",
+    "detail": "generated new sft resource account (ed25519)"
+  },
+  "slot": { "slotId": 1, "created": true, "reused": false, "txHash": "0x…" },
+  "distributions": [
+    { "to": "5DhThCgzEw3qTQNTGwcgpPWyQmEMGcB3mcLqMsZRE4AcdSUf", "amount": 40, "tokenId": 1, "txHash": "0x…" },
+    { "to": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", "amount": 60, "tokenId": 2, "txHash": "0x…" },
+    { "to": "3pHqrfVpw4ziiWZ2S6graADk8sXu", "amount": 30, "tokenId": 3, "txHash": "0x…" }
+  ],
+  "merge": { "fromTokenId": 3, "toTokenId": 1, "mergedAmount": 30, "txHash": "0x…" },
+  "transfer": { "tokenId": 1, "to": "5DAQdpPavkNQAwj4p7cYRmH3DmZVJVk9RW5L8cEYdPvWbpHKmQL5", "amount": 30, "txHash": "0x…" },
+  "verification": {
+    "sftMetadata": { "name": "Milon SFT Demo", "symbol": "MSFT", "cover_url": "https://milon.test/sft.png", "metadata": "", "attribute": "series=2026" },
+    "slotInfo": { "metadata": { "name": "Level-1 VIP Card" } },
+    "balances": [
+      { "tokenId": 1, "holder": "5DhThCgzEw3qTQNTGwcgpPWyQmEMGcB3mcLqMsZRE4AcdSUf", "balance": 100 },
+      { "tokenId": 2, "holder": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", "balance": 0 }
+    ]
+  }
+}
+```
+
+**使用说明**
+
+- **步骤组合**：参数存在性即开关——只传 `sft.address` + `transfer` 即是对存量 SFT 的一次转移；只传 `sftMetadata` + `slot` 则只建 SFT 和 slot 不分发。
+- **幂等边界**：`sft.address` 链上已存在则跳过创建、`slot.slotId` 复用、领水余额充足跳过，可幂等重跑；**分发/合并/转移是链上状态变更操作，重复调用会重复生效**，重跑前须确认（merge 的源 token 份额并空后链端会报错兜底）。
+- **资源账户私钥**：服务端新生成的 SFT 资源账户私钥在 `sft.privateKey` 返回，请妥善保存——后续对该 SFT 重跑创建（如链上回滚后）需要它；仅复用已有 SFT 时无需私钥。
+- **分发语义**：每笔 Mint 直发产生独立 token_id（份额按 `(token_id, owner)` 独立记账，同一 token_id 可被多地址同时持有）；如需「先整铸再拆分」请用 `/api/write` 直接调用 `Split` 指令（拆出量必须严格小于签名者份额）。
+- **合并方向**：`merge` 把 owner 在 `fromTokenId` 的**全部**份额并入 `toTokenId`（同 slot），链端执行后源 token 份额归零。注意：分发直发给其他接收者的 token，owner 在其上份额为 0，无法作为 `fromTokenId`（链端报 1286 amount must be greater than zero）——请让 `distributions` 里包含一笔发给 owner 自己，或对存量 token 操作。
+- **中途失败**：返回 500，`message` 标明失败阶段（如 `distributions[1]: …`），`data` 携带已完成步骤明细（含各步 txHash 与已生成的 `sft.privateKey` / `slotId`），修复后把 `sft.address`、`slot.slotId` 显式传回即可续跑，无需重复已完成步骤。
+- **gas**：全程仅 owner 支付 gas（领水/创建 SFT/slot/mint/merge/transfer），SFT 资源账户与份额接收者均无需余额。
+
+---
+
+### 十二、DID 工具
+
+把「建 DID」补成一整套：创建 + 别名（`identity.CreateWithAlias`/`SetAlias`）+ 服务 URI（`AddService` 等）+ 头像（`SetAvatarUri`）+ 密钥管理（`AddKey` 等）+ 停用（`Deactivate`）+ 文档查询（`Document`/`NameBinding`）。
+
+**别名规则**：链上别名为「`alias-数字`」格式（如 `alice-1024`），**完整 DidName（alias+suffix 整体）全局唯一**；`suffix` 未指定时由服务端随机代填（4 位数字），代填撞上已占名（链端 1028）时自动换号重试至多 3 次，显式 `suffix` 撞名则直接报错。`address` 一律必填：同一 32 字节私钥按不同曲线解释会派生不同地址，显式地址用于锁定正确公钥（与 vc-flow 的 `userAddress` 同理）。
+
+#### 42. DID 一键创建（聚合）
+
+- **方法**: `POST`
+- **路径**: `/api/tool/did/create`
+- **说明**: 一步完成 DID 创建 + 别名绑定 + 服务登记 + 头像设置（有别名走链上 `CreateWithAlias`，否则 `Create`）。**幂等**：链上已有 DID 则跳过创建，按请求**补齐差异**——别名不同→`SetAlias`、缺失服务→逐条 `AddService`、显式头像与链上不同→`SetAvatarUri`（未传头像绝不覆盖链上值），可直接重跑。
+
+**请求参数**
+
+| 字段 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `privateKey` | string | 是 | 私钥（hex/base58）；FN-DSA-512 私钥须同时传 `publicKey` |
+| `publicKey` | string | 条件必填 | 公钥，FN-DSA-512 私钥时必填 |
+| `address` | string | 是 | 账户地址（base58），曲线消歧 |
+| `subjectType` | string | 否 | `Personal`（缺省）/ `Organization`（后续注册组织必须为 Organization） |
+| `alias` | string | 否 | 别名字符串（不含数字后缀）；非空时创建即绑定别名 |
+| `suffix` | number | 否 | 显式指定别名数字后缀；缺省服务端随机代填 |
+| `services` | array | 否 | 服务端点列表，元素 `{ "label": "website", "serviceEndpoint": "https://…" }`，endpoint 须为绝对 URI |
+| `avatarUri` | string | 否 | 头像 URI（1-512 字节）；创建时缺省用占位 URI，补齐时空值不覆盖链上 |
+
+**请求示例**
+
+```bash
+curl -X POST http://localhost:8080/api/tool/did/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "privateKey": "<私钥 hex>",
+    "address": "<账户地址 base58>",
+    "subjectType": "Personal",
+    "alias": "alice",
+    "services": [{ "label": "website", "serviceEndpoint": "https://alice.example.com" }],
+    "avatarUri": "https://cdn.example.com/alice.png"
+  }'
+```
+
+**响应示例（data 字段）**
+
+```json
+{
+  "address": "QffKfGk3Jnp4k4qHJtbA8fwrW8E",
+  "didId": "did:milon:QffKfGk3Jnp4k4qHJtbA8fwrW8E",
+  "created": true,
+  "steps": {
+    "create":   { "skipped": false, "txHash": "0x…", "detail": "created with alias" },
+    "alias":    null,
+    "services": null,
+    "avatar":   null
+  },
+  "document": { "subject": { "subject_type": {"index":0,"variant":"Personal"}, "address": "…" }, "keys": [], "services": [], "alias": {"alias":"alice","suffix":9386}, "avatar_uri": "…", "deactivated": false }
+}
+```
+
+> `steps.alias`/`steps.services`/`steps.avatar` 仅在「已存在→补齐差异」路径出现；`document` 为创建/补齐后的链上最新文档。
+
+#### 43. 设置/更换 DID 别名
+
+- **方法**: `POST`；**路径**: `/api/tool/did/set-alias`
+- **说明**: 为已有 DID 设置或更换全局唯一别名（链上 `SetAlias`）。代填 suffix 撞名自动换号重试。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `privateKey`/`publicKey`/`address` | string | 是 | 同上 |
+| `alias` | string | 是 | 别名字符串（不含后缀） |
+| `suffix` | number | 否 | 显式数字后缀，缺省随机代填 |
+
+```bash
+curl -X POST http://localhost:8080/api/tool/did/set-alias \
+  -H "Content-Type: application/json" \
+  -d '{"privateKey":"<hex>","address":"<base58>","alias":"bob"}'
+```
+
+响应 `data`：`{ "address", "txHash", "name": {"alias","suffix"}, "nameBinding" }`（`nameBinding` 为按名反查结果，失败时 `null`）。
+
+#### 44. 添加 DID 服务端点
+
+- **方法**: `POST`；**路径**: `/api/tool/did/add-service`
+- **说明**: 为 DID 添加服务端点（链上 `AddService`），service id 由链上分配。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `privateKey`/`publicKey`/`address` | string | 是 | 同上 |
+| `label` | string | 是 | 服务标签（非空） |
+| `serviceEndpoint` | string | 是 | 绝对 URI（`https://…` 等） |
+
+响应 `data`：`{ "address", "txHash", "document" }`——`document` 为最新文档，从 `services[]` 中取链上分配的 `id`。
+
+#### 45. 更新 DID 服务端点
+
+- **方法**: `POST`；**路径**: `/api/tool/did/update-service`
+
+在 43 的基础上增加：`id`（number，必填，待更新的服务 id）。响应同 43。
+
+#### 46. 移除 DID 服务端点
+
+- **方法**: `POST`；**路径**: `/api/tool/did/remove-service`
+
+请求仅 `privateKey`/`publicKey`/`address` + `id`（number，必填）。响应同 43。
+
+#### 47. 设置 DID 头像 URI
+
+- **方法**: `POST`；**路径**: `/api/tool/did/set-avatar-uri`
+
+请求为公共字段 + `avatarUri`（string，必填，1-512 字节）。响应同 43。
+
+#### 48. 添加 DID 密钥
+
+- **方法**: `POST`；**路径**: `/api/tool/did/add-key`
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `privateKey`/`publicKey`/`address` | string | 是 | 同上 |
+| `newPublicKey` | string | 是 | 要加入文档的新公钥（base58） |
+| `label` | string | 否 | 密钥标签，缺省 `null` |
+
+响应 `data`：`{ "address", "txHash", "document" }`，从 `keys[]` 中取链上分配的 `id`。
+
+#### 49. 更新 DID 密钥
+
+- **方法**: `POST`；**路径**: `/api/tool/did/update-key`
+
+在 47 的基础上增加：`id`（number，必填，待更新的密钥 id）。
+
+#### 50. 移除 DID 密钥
+
+- **方法**: `POST`；**路径**: `/api/tool/did/remove-key`
+
+请求为公共字段 + `id`（number，必填）。最后一把密钥链端拒绝（错误 1042 CannotRemoveLastKey）。
+
+#### 51. 停用 DID
+
+- **方法**: `POST`；**路径**: `/api/tool/did/deactivate`
+- **说明**: 停用该 DID（链上 `Deactivate`），停用后 identity 全部写操作被拒（错误 1026），**不可逆恢复需谨慎**。请求仅公共字段，响应 `{ "address", "txHash" }`。
+
+#### 52. 查询 DID 文档
+
+- **方法**: `GET`；**路径**: `/api/tool/did/:address/document`
+- **说明**: 查询完整 DID 文档（链上 `Document` view）。未创建返回 404（`DidNotFound`/1025）。
+
+```bash
+curl http://localhost:8080/api/tool/did/QffKfGk3Jnp4k4qHJtbA8fwrW8E/document
+```
+
+响应 `data`：`{ "address", "didId", "document": { subject, controller, keys[], services[], alias, avatar_uri, updated_at_ms, deactivated } }`。
+
+#### 53. 按别名反查绑定
+
+- **方法**: `GET`；**路径**: `/api/tool/did/name-binding?name=alice-1024`
+- **说明**: 按完整 DidName 反查绑定（链上 `NameBinding` view）。未绑定返回 404（`NameNotFound`/1029）。
+
+响应 `data`：`{ "name": {"alias","suffix"}, "binding": { "name": …, "subject": {"subject_type","address"} } }`。
 
 ---
 
@@ -2296,5 +2571,18 @@ curl -X POST http://localhost:8080/api/tool/vc-flow \
 | 38 | GET | `/api/util/mock/:id` | 按 ID 返回 Mock 内容（原样返回） |
 | 39 | GET | `/api/idl/metadata` | 获取 IDL 元数据 |
 | 40 | POST | `/api/tool/vc-flow` | VC 签发披露全流程（领水+DID+组织+凭证+披露，同步幂等） |
+| 41 | POST | `/api/tool/sft-flow` | SFT 全流程（创建SFT+slot+分发+合并+转移，参数控制步骤） |
+| 42 | POST | `/api/tool/did/create` | DID 一键创建（别名+服务+头像聚合，幂等补齐） |
+| 43 | POST | `/api/tool/did/set-alias` | 设置/更换 DID 别名（suffix 可代填+撞名重试） |
+| 44 | POST | `/api/tool/did/add-service` | 添加 DID 服务端点 |
+| 45 | POST | `/api/tool/did/update-service` | 更新 DID 服务端点 |
+| 46 | POST | `/api/tool/did/remove-service` | 移除 DID 服务端点 |
+| 47 | POST | `/api/tool/did/set-avatar-uri` | 设置 DID 头像 URI |
+| 48 | POST | `/api/tool/did/add-key` | 添加 DID 密钥 |
+| 49 | POST | `/api/tool/did/update-key` | 更新 DID 密钥 |
+| 50 | POST | `/api/tool/did/remove-key` | 移除 DID 密钥 |
+| 51 | POST | `/api/tool/did/deactivate` | 停用 DID |
+| 52 | GET | `/api/tool/did/:address/document` | 查询 DID 文档 |
+| 53 | GET | `/api/tool/did/name-binding` | 按别名反查 DID 绑定 |
 
-**统计**：共 39 个端点，分布于 9 个功能组（网络管理 3、系统 2、账户 3、交易 7、合约 9、RPC 4、水龙头 2、工具 7、IDL 元数据 1）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 53 个端点，分布于 12 个功能组（网络管理 3、系统 2、账户 3、交易 7、合约 9、RPC 4、水龙头 2、工具 20、IDL 元数据 1、VC 全流程 1、SFT 全流程 1、DID 12）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。

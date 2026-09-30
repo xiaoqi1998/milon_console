@@ -85,8 +85,60 @@ const ENDPOINTS = [
       userAddress: 'base58地址(必填!取账户生成时返回的address,服务端按其匹配曲线,防止私钥曲线歧义派生错地址)',
       credentialPrefix: 'Test',
       credentialCount: 5,
-      validUntilMs: '毫秒时间戳(必须为未来时间,链端拒绝披露过期凭证);null=永久'
+      validUntilMs: '毫秒时间戳(必须为未来时间,链端拒绝披露过期凭证);null=永久',
+      issuerDid: { alias: '别名主体(可选,缺省自动生成 org+地址前8位)', autoAlias: true, suffix: null, services: [{ label: 'portal', serviceEndpoint: 'https://org.example.com' }], avatarUri: '头像URI(可选)' },
+      userDid: { alias: '别名主体(可选,缺省自动生成 user+地址前8位)', autoAlias: true, suffix: null, services: [], avatarUri: '头像URI(可选)' }
     }, null, 2) },
+  { id: 'sft-flow', method: 'POST', path: '/api/tool/sft-flow', summary: 'SFT全流程(创建SFT+slot+分发+合并+转移,参数控制步骤)', group: '工具',
+    bodyTemplate: JSON.stringify({
+      ownerPrivateKey: 'hex或base58私钥(owner,签slot/mint/merge/transfer并付gas,可用 /api/accounts/generate 生成)',
+      ownerPublicKey: 'owner公钥(仅FN-DSA-512私钥时必填)',
+      ownerAddress: 'base58地址(必填!取账户生成时返回的address,服务端按其匹配曲线)',
+      sft: { address: '(可选)已有SFT地址,链上存在则跳过创建;不传整个sft对象=服务端生成新资源账户', privateKey: '(条件必填)sft.address指向的SFT不存在时,需资源账户私钥签名create_sft', publicKey: '(仅FN-DSA-512私钥时必填)' },
+      sftMetadata: { name: 'Demo SFT(1..=128字符,创建新SFT时必填)', symbol: 'DSFT(1..=32字符)', coverUrl: 'https://example.com/sft.png', metadata: 'https://example.com/sft.json', attribute: 'series=2026' },
+      royaltyBps: 50,
+      slot: { slotId: 0, metadata: { name: 'Level-1 VIP Card', attribute: 'level=1' }, isTransferable: true },
+      distributions: [
+        { to: '接收者A地址(base58)', amount: 40, metadata: { attribute: 'batch=b1' } },
+        { to: '接收者B地址(base58)', amount: 60 },
+        { to: 'owner自己地址(base58)', amount: 30, comment: 'merge 需要 owner 自持份额,直发给接收者的 token owner 份额为 0' }
+      ],
+      merge: { fromTokenId: 3, toTokenId: 1 },
+      transfer: { tokenId: 1, to: '接收者C地址(base58)', amount: '缺省=该token全额份额;显式传必须为正数' }
+    }, null, 2) },
+  { id: 'did-create', method: 'POST', path: '/api/tool/did/create', summary: 'DID一键创建(别名+服务+头像,幂等补齐)', group: 'DID',
+    bodyTemplate: JSON.stringify({
+      privateKey: 'hex或base58私钥(FN-DSA-512私钥须同时传publicKey)',
+      publicKey: '公钥(仅FN-DSA-512私钥时必填)',
+      address: 'base58地址(必填!32字节私钥不同曲线派生不同地址,取账户生成返回的address)',
+      subjectType: 'Personal',
+      alias: 'alice(可选,不含数字后缀;非空则创建即绑别名)',
+      suffix: null,
+      services: [{ label: 'website', serviceEndpoint: 'https://example.com' }],
+      avatarUri: 'https://cdn.example.com/avatar.png(可选,缺省占位URI)'
+    }, null, 2) },
+  { id: 'did-set-alias', method: 'POST', path: '/api/tool/did/set-alias', summary: '设置/更换DID别名(suffix可代填+撞名重试)', group: 'DID',
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', publicKey: '公钥(仅FN-DSA-512必填)', address: 'base58地址(必填)', alias: 'bob(不含数字后缀)', suffix: null }, null, 2) },
+  { id: 'did-add-service', method: 'POST', path: '/api/tool/did/add-service', summary: '添加DID服务端点', group: 'DID',
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址(必填)', label: 'api', serviceEndpoint: 'https://example.com/api/v1' }, null, 2) },
+  { id: 'did-update-service', method: 'POST', path: '/api/tool/did/update-service', summary: '更新指定DID服务端点', group: 'DID',
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址(必填)', id: 0, label: 'api-v2', serviceEndpoint: 'https://example.com/api/v2' }, null, 2) },
+  { id: 'did-remove-service', method: 'POST', path: '/api/tool/did/remove-service', summary: '移除指定DID服务端点', group: 'DID',
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址(必填)', id: 0 }, null, 2) },
+  { id: 'did-set-avatar', method: 'POST', path: '/api/tool/did/set-avatar-uri', summary: '设置DID头像URI', group: 'DID',
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址(必填)', avatarUri: 'https://cdn.example.com/new.png' }, null, 2) },
+  { id: 'did-add-key', method: 'POST', path: '/api/tool/did/add-key', summary: '添加DID密钥', group: 'DID',
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥(交易签名者)', address: 'base58地址(必填)', newPublicKey: 'base58公钥(加入文档的新公钥)', label: 'backup(可选)' }, null, 2) },
+  { id: 'did-update-key', method: 'POST', path: '/api/tool/did/update-key', summary: '更新指定DID密钥', group: 'DID',
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址(必填)', id: 0, newPublicKey: 'base58公钥', label: 'rotated' }, null, 2) },
+  { id: 'did-remove-key', method: 'POST', path: '/api/tool/did/remove-key', summary: '移除指定DID密钥(最后一把不可移)', group: 'DID',
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址(必填)', id: 1 }, null, 2) },
+  { id: 'did-deactivate', method: 'POST', path: '/api/tool/did/deactivate', summary: '停用DID(不可逆,写操作全拒)', group: 'DID',
+    bodyTemplate: JSON.stringify({ privateKey: 'hex或base58私钥', address: 'base58地址(必填)' }, null, 2) },
+  { id: 'did-document', method: 'GET', path: '/api/tool/did/:address/document', summary: '查询DID文档(未创建404)', group: 'DID',
+    pathParams: [{ name: 'address', ph: 'base58地址' }] },
+  { id: 'did-name-binding', method: 'GET', path: '/api/tool/did/name-binding', summary: '按别名反查DID绑定', group: 'DID',
+    queryParams: [{ name: 'name', ph: 'alice-1024(alias-数字完整名)' }] },
   { id: 'view-single', method: 'POST', path: '/api/view/single', summary: '底层单指令视图', group: '合约',
     bodyTemplate: JSON.stringify({ transactionPostcard: 'base64编码' }, null, 2) },
   { id: 'view-multi', method: 'POST', path: '/api/view/multi', summary: '底层多指令视图', group: '合约',
@@ -758,6 +810,10 @@ async function sendRequest() {
   // vc-flow 为同步全流程接口（约 10 笔交易逐笔等待确认），提前提示耗时避免误以为卡死
   if (state.currentEndpoint.id === 'vc-flow') {
     showToast('VC 全流程执行中：领水 + DID + 组织注册 + 凭证签发披露，约 30s~2min，请耐心等待', 'info');
+  }
+  // sft-flow 同样为同步全流程接口（每步一笔链上交易，逐笔等待确认）
+  if (state.currentEndpoint.id === 'sft-flow') {
+    showToast('SFT 全流程执行中：领水 + 创建SFT + 创建slot + 逐笔分发/合并/转移，每步一笔交易，请耐心等待', 'info');
   }
   var start = performance.now();
   try {
@@ -2944,6 +3000,8 @@ var API_DOCS = {
       { name: 'credentialPrefix', type: 'string', required: false, desc: '凭证 schema 前缀（缺省 Test）' },
       { name: 'credentialCount', type: 'int', required: false, desc: '凭证张数（缺省 5，上限 20）' },
       { name: 'validUntilMs', type: 'int', required: false, desc: '凭证有效期毫秒时间戳，必须为未来时间（链端拒绝披露过期凭证，错误 1067）；null/0=永久有效' },
+      { name: 'issuerDid', type: 'object', required: false, desc: 'issuer DID 选项：{alias, autoAlias, suffix, services, avatarUri}。缺省走完整创建——自动生成全局唯一别名（org+地址前8位+随机数字后缀，撞名自动换号重试）+ 占位头像' },
+      { name: 'userDid', type: 'object', required: false, desc: 'user DID 选项，同 issuerDid（自动别名前缀为 user）；autoAlias:false 且未给 alias 时该方不绑别名' },
     ],
     response: { success: true, code: 0, message: 'ok', data: {
       issuer: { address: '2pwKY...', faucet: { skipped: true, claimed: false, balanceBefore: '9980000000', balanceAfter: '9980000000', detail: 'balance is sufficient, skip faucet' }, did: { skipped: false, txHash: '0x3b3b...' }, organization: { skipped: false, txHash: '0xb7e8...' } },
@@ -2955,6 +3013,154 @@ var API_DOCS = {
         { schema: 'Test1', onChain: true, valid: true },
       ],
     } },
+  },
+  'sft-flow': {
+    desc: 'SFT 全流程（同步，每步一笔链上交易）：owner 领水（余额 ≥ 100 MIL 跳过）→ 创建 SFT（缺省服务端生成 Ed25519 资源账户并在响应返回私钥；传 sft.address 且链上已存在则跳过）→ 创建 slot（slot_id 链上递增分配，从 SlotCreatedEvent 提取；传 slot.slotId 复用）→ 分发（对 distributions 逐笔 Mint 直发，每笔独立 token_id）→ 合并（fromTokenId → toTokenId，仅合并 owner 自己持有的份额）→ 转移（tokenId → to，amount 缺省全额）→ 回读验证。步骤开关 = 参数存在性：不传某步参数即跳过该步。注意：分发/合并/转移为链上状态变更操作，重复调用会重复生效；创建 SFT 与 slot 复用支持幂等重跑。',
+    params: [
+      { name: 'ownerPrivateKey', type: 'string', required: true, desc: 'owner 私钥（hex/base58）；slot/mint/merge/transfer 均由 owner 签名并支付 gas' },
+      { name: 'ownerPublicKey', type: 'string', required: false, desc: 'owner 公钥，FN-DSA-512 私钥时必填' },
+      { name: 'ownerAddress', type: 'string', required: true, desc: 'owner 地址（base58），曲线消歧（同 vc-flow 的 userAddress）' },
+      { name: 'sft', type: 'object', required: false, desc: 'SFT 资源账户选项 {address, privateKey, publicKey}；缺省生成新资源账户（Ed25519，私钥随响应返回）。传 address 且链上已存在则跳过创建；不存在则须传 privateKey 签名 create_sft（gas 由 owner 代付）' },
+      { name: 'sftMetadata', type: 'object', required: false, desc: '创建新 SFT 的元数据 {name(1..=128), symbol(1..=32), coverUrl, metadata, attribute}；name/symbol 链端强制必填，需要创建 SFT 时此处必填' },
+      { name: 'royaltyBps', type: 'int', required: false, desc: '二级市场版税万分比（u16），缺省 0，版税接收人初始为 owner' },
+      { name: 'slot', type: 'object', required: false, desc: 'slot 选项 {slotId, metadata, isTransferable}；slotId>0 复用已有 slot（与创建参数互斥），否则创建新 slot；isTransferable 缺省 true。缺省整个对象 = 跳过 slot 步骤' },
+      { name: 'distributions', type: 'array', required: false, desc: '分发列表 [{to, amount, metadata?}]，每笔一次 Mint 直发（独立 token_id），上限 20 笔；依赖 slot（复用或新建）' },
+      { name: 'merge', type: 'object', required: false, desc: '合并选项 {fromTokenId, toTokenId}，两字段必须同时提供且不能相同；仅合并 owner 自己持有的份额（链端语义）——分发直发给接收者的 token owner 份额为 0，不能作为 fromTokenId（链端 1286）' },
+      { name: 'transfer', type: 'object', required: false, desc: '转移选项 {tokenId, to, amount?}；amount 缺省 = 该 token 在 owner 名下全额份额（链上回读），显式传必须为正数' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: {
+      owner: '3pHqr...',
+      faucet: { skipped: true, claimed: false, balanceBefore: '9800000000', balanceAfter: '9800000000', detail: 'balance is sufficient, skip faucet' },
+      sft: { address: '5Fsde...', owner: '3pHqr...', privateKey: '0x…(仅新生成时返回)', created: true, skipped: false, txHash: '0x…', detail: 'generated new sft resource account (ed25519)' },
+      slot: { slotId: 1, created: true, reused: false, txHash: '0x…' },
+      distributions: [
+        { to: '5DhTh...', amount: 40, tokenId: 1, txHash: '0x…' },
+        { to: '5Grwv...', amount: 60, tokenId: 2, txHash: '0x…' },
+      ],
+      merge: { fromTokenId: 2, toTokenId: 1, mergedAmount: 60, txHash: '0x…' },
+      transfer: { tokenId: 1, to: '5DAQd...', amount: 100, txHash: '0x…' },
+      verification: { sftMetadata: { name: 'Milon SFT Demo', symbol: 'MSFT' }, slotInfo: {}, balances: [{ tokenId: 1, holder: '5DhTh...', balance: 100 }] },
+    } },
+  },
+  'did-create': {
+    desc: 'DID 一键创建（聚合）：一步完成 创建 + 别名绑定(CreateWithAlias) + 服务登记 + 头像设置。幂等：链上已有 DID 则跳过创建、按请求补齐差异（别名不同→SetAlias、缺失服务→AddService、显式头像不同→SetAvatarUri，未传头像绝不覆盖链上值），可直接重跑。别名规则：链上别名为「alias-数字」格式且完整 DidName(alias+suffix 整体)全局唯一；suffix 缺省由服务端随机代填（4 位数字），撞上已占名（1028）自动换号重试至多 3 次。address 必填：32 字节私钥不同曲线派生不同地址，显式地址用于锁定正确公钥。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥（hex/base58）；FN-DSA-512 私钥须同时传 publicKey' },
+      { name: 'publicKey', type: 'string', required: false, desc: '公钥，FN-DSA-512 私钥时必填' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址（base58），曲线消歧' },
+      { name: 'subjectType', type: 'string', required: false, desc: 'Personal（缺省）/ Organization（后续注册组织必须为 Organization）' },
+      { name: 'alias', type: 'string', required: false, desc: '别名字符串（不含数字后缀），非空时创建即绑定' },
+      { name: 'suffix', type: 'int', required: false, desc: '显式别名数字后缀，缺省服务端代填' },
+      { name: 'services', type: 'array', required: false, desc: '服务端点列表 [{label, serviceEndpoint}]，endpoint 须为绝对 URI' },
+      { name: 'avatarUri', type: 'string', required: false, desc: '头像 URI（1-512 字节），缺省占位 URI' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: {
+      address: 'QffKfGk...', didId: 'did:milon:QffKfGk...', created: true,
+      steps: { create: { skipped: false, txHash: '0x…', detail: 'created with alias' }, alias: null, services: null, avatar: null },
+      document: { subject: { subject_type: { index: 0, variant: 'Personal' }, address: 'QffKfGk...' }, controller: 'QffKfGk...', keys: [{ id: 0, label: 'primary', public_key: 'GBW5RB...' }], services: [{ id: 0, label: 'website', service_endpoint: 'https://…' }], alias: { alias: 'alice', suffix: 9386 }, avatar_uri: 'https://…', updated_at_ms: 1790737882000, deactivated: false },
+    } },
+  },
+  'did-set-alias': {
+    desc: '为已有 DID 设置/更换全局唯一别名（链上 SetAlias）。suffix 缺省服务端随机代填（4 位数字），撞名（1028）自动换号重试至多 3 次；显式 suffix 撞名直接报错。响应带按名反查的 nameBinding。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥' },
+      { name: 'publicKey', type: 'string', required: false, desc: '公钥，FN-DSA-512 私钥时必填' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址' },
+      { name: 'alias', type: 'string', required: true, desc: '别名字符串（不含数字后缀）' },
+      { name: 'suffix', type: 'int', required: false, desc: '显式数字后缀，缺省随机代填' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', txHash: '0x…', name: { alias: 'bob', suffix: 3028 }, nameBinding: { name: { alias: 'bob', suffix: 3028 }, subject: { subject_type: { index: 0, variant: 'Personal' }, address: 'QffKfGk...' } } } },
+  },
+  'did-add-service': {
+    desc: '为 DID 添加服务端点（链上 AddService），service id 由链上分配；响应带最新文档，从 services[] 中取新 id。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址' },
+      { name: 'label', type: 'string', required: true, desc: '服务标签（非空）' },
+      { name: 'serviceEndpoint', type: 'string', required: true, desc: '绝对 URI（https://… 等）' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', txHash: '0x…', document: { services: [{ id: 1, label: 'api', service_endpoint: 'https://…/api/v1' }] } } },
+  },
+  'did-update-service': {
+    desc: '更新指定 id 的服务条目（链上 UpdateService）。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址' },
+      { name: 'id', type: 'int', required: true, desc: '服务 id（从 document.services[] 获取）' },
+      { name: 'label', type: 'string', required: true, desc: '新标签' },
+      { name: 'serviceEndpoint', type: 'string', required: true, desc: '新绝对 URI' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', txHash: '0x…', document: {} } },
+  },
+  'did-remove-service': {
+    desc: '移除指定 id 的服务条目（链上 RemoveService）。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址' },
+      { name: 'id', type: 'int', required: true, desc: '服务 id' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', txHash: '0x…', document: {} } },
+  },
+  'did-set-avatar': {
+    desc: '设置/更新 DID 头像 URI（链上 SetAvatarUri，长度 1-512 字节）。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址' },
+      { name: 'avatarUri', type: 'string', required: true, desc: '头像 URI' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', txHash: '0x…', document: {} } },
+  },
+  'did-add-key': {
+    desc: '向 DID 文档添加一把新公钥（链上 AddKey），key id 由链上分配；响应带最新文档，从 keys[] 中取新 id。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥（交易签名者）' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址' },
+      { name: 'newPublicKey', type: 'string', required: true, desc: '要加入文档的新公钥（base58）' },
+      { name: 'label', type: 'string', required: false, desc: '密钥标签，缺省 null' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', txHash: '0x…', document: { keys: [{ id: 1, label: 'backup', public_key: '…' }] } } },
+  },
+  'did-update-key': {
+    desc: '替换 DID 文档中指定 id 的密钥（链上 UpdateKey，密钥轮换用）。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址' },
+      { name: 'id', type: 'int', required: true, desc: '密钥 id' },
+      { name: 'newPublicKey', type: 'string', required: true, desc: '新公钥（base58）' },
+      { name: 'label', type: 'string', required: false, desc: '新标签' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', txHash: '0x…', document: {} } },
+  },
+  'did-remove-key': {
+    desc: '移除指定 id 的密钥（链上 RemoveKey）。最后一把密钥链端拒绝（错误 1042 CannotRemoveLastKey）。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址' },
+      { name: 'id', type: 'int', required: true, desc: '密钥 id' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', txHash: '0x…', document: {} } },
+  },
+  'did-deactivate': {
+    desc: '停用该 DID（链上 Deactivate）。停用后 identity 全部写操作被拒（错误 1026），不可逆，需谨慎。',
+    params: [
+      { name: 'privateKey', type: 'string', required: true, desc: '私钥' },
+      { name: 'address', type: 'string', required: true, desc: '账户地址' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', txHash: '0x…' } },
+  },
+  'did-document': {
+    desc: '查询完整 DID 文档（链上 Document view）。未创建返回 404（DidNotFound/1025）。',
+    params: [
+      { name: 'address', type: 'string', required: true, desc: '路径参数：账户地址（base58）' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { address: 'QffKfGk...', didId: 'did:milon:QffKfGk...', document: { subject: {}, controller: 'QffKfGk...', keys: [], services: [], alias: null, avatar_uri: '…', updated_at_ms: 1790737882000, deactivated: false } } },
+  },
+  'did-name-binding': {
+    desc: '按完整 DidName（alias-数字）反查 DID 绑定（链上 NameBinding view）。未绑定返回 404（NameNotFound/1029）。',
+    params: [
+      { name: 'name', type: 'string', required: true, desc: 'query 参数：完整别名，如 alice-1024' },
+    ],
+    response: { success: true, code: 0, message: 'ok', data: { name: { alias: 'alice', suffix: 1024 }, binding: { name: { alias: 'alice', suffix: 1024 }, subject: { subject_type: { index: 0, variant: 'Personal' }, address: 'QffKfGk...' } } } },
   },
   'derive-addr': {
     desc: '从公钥派生账户地址。',

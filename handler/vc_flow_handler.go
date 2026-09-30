@@ -3,7 +3,6 @@ package handler
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -14,9 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	milon "github.com/milon-labs/milon-go-sdk"
-	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
-	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/provider"
 )
 
@@ -25,7 +22,7 @@ import (
 // 给定证书颁发者(issuer)与个人用户(user)两方的私钥,自动完成:
 //
 //	[1] 双方领水(余额充足则跳过;24h 冷却但余额够也放行)
-//	[2] issuer 创建 Organization 型 DID(identity.Create)
+//	[2] issuer 创建 Organization 型 DID(identity.Create/CreateWithAlias,可透传别名/服务/头像)
 //	[3] issuer 注册组织角色 VcIssuer + 声明凭证 schema(identity.RegisterOrganization)
 //	[4] user 创建 Personal 型 DID
 //	[5] issuer 链下签发 N 张键值对凭证(schema 名 prefix+序号,缺省 Test1~Test5)
@@ -36,9 +33,8 @@ import (
 // 组织已注册 / 凭证已披露时自动跳过,可直接重跑。
 
 const (
-	vcFlowDefaultCount = 5                 // 缺省签发凭证张数
-	vcFlowMaxCount     = 20                // 单次最多签发张数
-	vcFlowGasThreshold = 100 * 1_000_000   // 余额 ≥ 100 MIL 视为无需领水
+	vcFlowDefaultCount = 5               // 缺省签发凭证张数
+	vcFlowMaxCount     = 20              // 单次最多签发张数
 	vcFlowAvatarURI    = "https://milon.example/avatar.png"
 	vcFlowIdentityApp  = "identity"
 )
@@ -54,6 +50,8 @@ type vcFlowRequest struct {
 	CredentialPrefix string `json:"credentialPrefix"` // 凭证 schema 前缀,缺省 Test
 	CredentialCount  int    `json:"credentialCount"`  // 凭证张数,缺省 5,上限 20
 	ValidUntilMs     *int64 `json:"validUntilMs"`     // 凭证有效期毫秒时间戳;null=永久
+	IssuerDid        *vcFlowDidOptions `json:"issuerDid"` // 可选;issuer DID 的别名/服务/头像透传
+	UserDid          *vcFlowDidOptions `json:"userDid"`   // 可选;user DID 的别名/服务/头像透传
 }
 
 // validateVcFlowRequest 校验请求体必填约束与有效期(纯函数,便于单测)。
@@ -104,29 +102,12 @@ type vcFlowCredential struct {
 	IssuerSignature string `json:"issuerSignature"` // hex
 }
 
-// vcFlowFaucetStep 领水步骤结果。
-type vcFlowFaucetStep struct {
-	Skipped       bool   `json:"skipped"`
-	Claimed       bool   `json:"claimed"`
-	TxHash        string `json:"txHash,omitempty"`
-	BalanceBefore string `json:"balanceBefore"`
-	BalanceAfter  string `json:"balanceAfter"`
-	Detail        string `json:"detail,omitempty"`
-}
-
-// vcFlowStep 一步链上写操作的幂等执行结果。
-type vcFlowStep struct {
-	Skipped bool   `json:"skipped"`
-	TxHash  string `json:"txHash,omitempty"`
-	Detail  string `json:"detail,omitempty"`
-}
-
 // vcFlowPartyResult 单个参与方(issuer/user)的步骤明细。
 type vcFlowPartyResult struct {
-	Address       string          `json:"address"`
-	Faucet        vcFlowFaucetStep `json:"faucet"`
-	Did           vcFlowStep      `json:"did"`
-	Organization  *vcFlowStep     `json:"organization,omitempty"` // 仅 issuer
+	Address      string          `json:"address"`
+	Faucet       flowFaucetStep  `json:"faucet"`
+	Did          flowStep        `json:"did"`
+	Organization *flowStep       `json:"organization,omitempty"` // 仅 issuer
 }
 
 // vcFlowCredentialResult 单张凭证的签发 + 披露结果。
@@ -189,83 +170,6 @@ func buildVcFlowCredentials(chainID int, issuerAddr, subjectAddr crypto.Address,
 	return creds, nil
 }
 
-// resolveVcFlowParty 解析一方(issuer/user)身份:私钥必填。
-// role 用于错误信息区分角色("issuer"/"user")——同一错误在两方身上措辞不同,
-// 避免出现「user 传 FN-DSA-512 私钥缺公钥,报错却让补 issuerPublicKey」的误导。
-// 32 字节经典私钥默认按 Ed25519 解释(与 /api/util/vc-attestation 一致);
-// 显式传入的地址与 Ed25519 派生地址不一致时,自动尝试 secp256k1 / bls12381
-// 曲线解释(同一 32 字节私钥在不同曲线下派生不同地址,以显式地址为准)。
-// FN-DSA-512(1281 字节)私钥须额外传公钥(SDK 无法从签名密钥反推)。
-func resolveVcFlowParty(role, privKey, pubKey, addrStr string) (crypto.SecretKeyer, *crypto.PublicKey, crypto.Address, error) {
-	// FN-DSA-512 缺公钥的前置检查:resolveIssuerIdentity 的错误措辞固定为 issuer,
-	// 这里按角色先行给出准确报错
-	if fk, err := crypto.SecretKeyerFromStringRelaxed(privKey); err == nil && crypto.AsFnDsa512SecretKey(fk) != nil && strings.TrimSpace(pubKey) == "" {
-		return nil, nil, crypto.Address{}, fmt.Errorf(
-			"%sPublicKey is required when %s private key is FN-DSA-512(1281字节后量子私钥无法反推公钥,请传账户生成时返回的 %sPublicKey)",
-			role, role, role)
-	}
-
-	sk, pub, addr, err := resolveIssuerIdentity(privKey, pubKey)
-	if err != nil {
-		// 其余错误措辞同样按角色改写(resolveIssuerIdentity 的文案均以 issuer 主语)
-		rewritten := strings.ReplaceAll(err.Error(), "issuer", role)
-		return nil, nil, crypto.Address{}, errors.New(rewritten)
-	}
-	explicit := strings.TrimSpace(addrStr)
-	if explicit == "" {
-		return sk, pub, *addr, nil
-	}
-	want, perr := types.ParseAddress(explicit)
-	if perr != nil {
-		return nil, nil, crypto.Address{}, fmt.Errorf("invalid address %q: %w", explicit, perr)
-	}
-	if want.ToBase58() == addr.ToBase58() {
-		return sk, pub, *addr, nil
-	}
-
-	// 曲线回退:经典私钥换 secp256k1 / bls12381 解释再比对
-	if ck := crypto.AsClassicalSecretKey(sk); ck != nil {
-		blsDerive := func() (*crypto.PublicKey, error) { return ck.BLS12381Public(), nil }
-		for _, derive := range []func() (*crypto.PublicKey, error){ck.Secp256k1Public, blsDerive} {
-			altPub, derr := derive()
-			if derr != nil {
-				continue
-			}
-			altAddr, aerr := crypto.NewAddressFromPublicKey(altPub)
-			if aerr != nil {
-				continue
-			}
-			if altAddr.ToBase58() == want.ToBase58() {
-				return sk, altPub, *altAddr, nil
-			}
-		}
-	}
-	return nil, nil, crypto.Address{}, fmt.Errorf(
-		"address %s does not match any address derived from the private key (ed25519: %s, plus secp256k1/bls12381 variants)",
-		explicit, addr.ToBase58())
-}
-
-// isTolerableError 判断链端错误是否属于幂等容忍范围(错误名或错误码子串匹配)。
-func isTolerableError(errMsg string, tolerable ...string) bool {
-	if errMsg == "" {
-		return false
-	}
-	for _, sub := range tolerable {
-		if strings.Contains(errMsg, sub) {
-			return true
-		}
-	}
-	return false
-}
-
-// isAccountNotFoundErr 判断是否为「账户不存在」错误(code=512):
-// 全新账户首次上链前查余额的预期错误,应视为余额 0 而非失败。
-func isAccountNotFoundErr(msg string) bool {
-	return strings.Contains(msg, "code=512") ||
-		strings.Contains(msg, "账户不存在") ||
-		strings.Contains(msg, "account not exist")
-}
-
 // VcFlowHandler 提供 VC 签发-披露全流程工具。
 type VcFlowHandler struct {
 	nm *client.NetworkManager
@@ -291,13 +195,13 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 		return
 	}
 
-	issuerSK, issuerPub, issuerAddr, err := resolveVcFlowParty("issuer", req.IssuerPrivateKey, req.IssuerPublicKey, req.IssuerAddress)
+	issuerSK, issuerPub, issuerAddr, err := resolveFlowParty("issuer", req.IssuerPrivateKey, req.IssuerPublicKey, req.IssuerAddress)
 	if err != nil {
 		logParamError(c, "VcFlow", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid issuer identity: "+err.Error(), nil))
 		return
 	}
-	userSK, userPub, userAddr, err := resolveVcFlowParty("user", req.UserPrivateKey, req.UserPublicKey, req.UserAddress)
+	userSK, userPub, userAddr, err := resolveFlowParty("user", req.UserPrivateKey, req.UserPublicKey, req.UserAddress)
 	if err != nil {
 		logParamError(c, "VcFlow", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid user identity: "+err.Error(), nil))
@@ -334,11 +238,11 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 	}
 
 	// [1] 双方领水(幂等:余额充足即跳过)
-	if resp.Issuer.Faucet, err = vcFlowEnsureFaucet(mc, issuerAddr, issuerSK, issuerPub); err != nil {
+	if resp.Issuer.Faucet, err = flowEnsureFaucet(mc, issuerAddr, issuerSK, issuerPub); err != nil {
 		fail("issuer faucet", err)
 		return
 	}
-	if resp.User.Faucet, err = vcFlowEnsureFaucet(mc, userAddr, userSK, userPub); err != nil {
+	if resp.User.Faucet, err = flowEnsureFaucet(mc, userAddr, userSK, userPub); err != nil {
 		fail("user faucet", err)
 		return
 	}
@@ -349,8 +253,8 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 		schemas = append(schemas, fmt.Sprintf("%s%d", req.CredentialPrefix, i))
 	}
 
-	// [2] issuer 建 Organization 型 DID
-	if resp.Issuer.Did, err = vcFlowEnsureDID(mc, issuerAddr, issuerSK, issuerPub, "Organization"); err != nil {
+	// [2] issuer 建 Organization 型 DID(可选透传别名/服务/头像)
+	if resp.Issuer.Did, err = vcFlowEnsureDID(mc, issuerAddr, issuerSK, issuerPub, "Organization", req.IssuerDid); err != nil {
 		fail("issuer did create", err)
 		return
 	}
@@ -363,14 +267,14 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 			return
 		}
 	}
-	// [4] user 建 Personal 型 DID
-	if resp.User.Did, err = vcFlowEnsureDID(mc, userAddr, userSK, userPub, "Personal"); err != nil {
+	// [4] user 建 Personal 型 DID(可选透传别名/服务/头像)
+	if resp.User.Did, err = vcFlowEnsureDID(mc, userAddr, userSK, userPub, "Personal", req.UserDid); err != nil {
 		fail("user did create", err)
 		return
 	}
 
 	// [5] 链下签发 N 张键值对凭证
-	chainID, err := vcFlowChainID(mc)
+	chainID, err := flowChainID(mc)
 	if err != nil {
 		fail("get chain id", err)
 		return
@@ -406,189 +310,34 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 
 // ==================== 链上步骤辅助 ====================
 
-// vcFlowChainID 从链头取 chain ID(凭证签名摘要的组成部分)。
-func vcFlowChainID(mc *milon.Client) (int, error) {
-	result, err := mc.GetChainHead(milon.WithRequestID(lib.RequestID(time.Now().UnixMilli())))
+// vcFlowEnsureDID 确保 issuer/user 已建「完整」DID:默认自动生成全局唯一别名
+// (角色前缀 org-/user- + 地址片段 + 服务端代填数字后缀,撞名自动换号重试),
+// 服务/头像经 issuerDid/userDid 透传;核心逻辑在 didEnsureDocument,
+// 与 /api/tool/did/create 共用。结果汇总为单个 flowStep。
+func vcFlowEnsureDID(mc *milon.Client, addr crypto.Address, sk crypto.SecretKeyer, pub *crypto.PublicKey, subjectType string, opts *vcFlowDidOptions) (flowStep, error) {
+	rolePrefix := "user"
+	if subjectType == "Organization" {
+		rolePrefix = "org"
+	}
+	if opts == nil {
+		opts = &vcFlowDidOptions{}
+	}
+	if alias, bind := resolveVcFlowDidAlias(opts, rolePrefix, addr); bind {
+		opts.Alias = alias
+	}
+	res, err := didEnsureDocument(mc, addr, sk, pub, subjectType, opts)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get chain head: %w", err)
+		return flowStep{}, err
 	}
-	return int(result.BodyChainHead.ChainId), nil
-}
-
-// vcFlowCallView 执行一次 view 调用并解码。返回值可能是链端 Err 载荷
-// (*api.TxFailurePayload),用 vcFlowViewOK 区分。
-func vcFlowCallView(mc *milon.Client, appName, method string, args provider.Args) (any, error) {
-	pd, ok := mc.GetAllPd()[appName]
-	if !ok {
-		return nil, fmt.Errorf("IDL app %q not found", appName)
-	}
-	wire, err := encodeWithCoercion(pd, method, args)
-	if err != nil {
-		return nil, fmt.Errorf("failed to encode view %s.%s: %w", appName, method, err)
-	}
-	result, err := mc.View([]api.PackedInstruction{wire}, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli())))
-	if err != nil {
-		return nil, fmt.Errorf("view %s.%s failed: %w", appName, method, err)
-	}
-	value, err := pd.DecodeViewData(method, result.HTTPResponseBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode view %s.%s: %w", appName, method, err)
-	}
-	return value, nil
-}
-
-// vcFlowViewOK 判断 view 解码值是否为 Ok 载荷(而非链端 Err 载荷)。
-func vcFlowViewOK(value any) bool {
-	_, isFailure := value.(*api.TxFailurePayload)
-	return !isFailure
-}
-
-// vcFlowBuildTx 构建一笔「自付 gas + 签 ix0」的交易(等价 /api/write 的 unified_payer_all)。
-// 签名模式按账户链上状态自动修正(pubkey → 签名者列表)。
-func vcFlowBuildTx(mc *milon.Client, appName, method string, args provider.Args, addr crypto.Address, sk crypto.SecretKeyer, pub *crypto.PublicKey) (*lib.Transaction, error) {
-	pd, ok := mc.GetAllPd()[appName]
-	if !ok {
-		return nil, fmt.Errorf("IDL app %q not found", appName)
-	}
-	wire, err := encodeWithCoercion(pd, method, args)
-	if err != nil {
-		return nil, fmt.Errorf("failed to encode %s.%s: %w", appName, method, err)
-	}
-	mode, err := normalizeSignatureModeForAccount(mc, addr, lib.PubKeySignatureMode{PublicKey: *pub})
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve signature mode for %s: %w", addr.ToBase58(), err)
-	}
-	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
-		WithPayer(&addr).
-		AddIxAndPayerSig(addr, sk, 0, mode).
-		Build()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build tx for %s.%s: %w", appName, method, err)
-	}
-	return tx, nil
-}
-
-// vcFlowSendTx 提交交易并等待确认,返回 txHash;链端执行错误以 error 返回
-// (txHash 一并返回,便于追踪已提交但执行失败的交易)。
-func vcFlowSendTx(mc *milon.Client, tx *lib.Transaction) (string, error) {
-	if err := mc.SubmitTx(tx, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli()))); err != nil {
-		return "", err
-	}
-	txHash := txHashHex(tx)
-	if _, err := mc.WaitForTransaction(txHash, milon.WithWaitRequestID(lib.RequestID(1))); err != nil {
-		return txHash, err
-	}
-	return txHash, nil
-}
-
-// vcFlowEnsureFaucet 确保地址有足够 gas:
-//   - 余额 ≥ 阈值:跳过领水
-//   - 领水失败(典型:24h 冷却)但余额 ≥ 阈值:放行并在 Detail 说明
-//   - 领水成功:确认到账后返回
-func vcFlowEnsureFaucet(mc *milon.Client, addr crypto.Address, sk crypto.SecretKeyer, pub *crypto.PublicKey) (vcFlowFaucetStep, error) {
-	step := vcFlowFaucetStep{}
-	before, err := mc.BalanceOf(&addr)
-	if err != nil {
-		// 全新账户首次上链前链上无 Account 资源,查余额报「账户不存在」→ 视为余额 0
-		if !isAccountNotFoundErr(err.Error()) {
-			return step, fmt.Errorf("failed to query balance of %s: %w", addr.ToBase58(), err)
-		}
-		before = 0
-	}
-	step.BalanceBefore = fmt.Sprint(before)
-	step.BalanceAfter = step.BalanceBefore
-
-	if before >= vcFlowGasThreshold {
-		step.Skipped = true
-		step.Detail = "balance is sufficient, skip faucet"
-		return step, nil
-	}
-
-	mode, err := normalizeSignatureModeForAccount(mc, addr, lib.PubKeySignatureMode{PublicKey: *pub})
-	if err != nil {
-		return step, fmt.Errorf("faucet signature mode: %w", err)
-	}
-	tx, err := buildClaimFaucetTx(mc, addr, sk, mode)
-	if err != nil {
-		return step, fmt.Errorf("build faucet tx: %w", err)
-	}
-	if err := submitClaimFaucetTx(mc, tx); err != nil {
-		// 常见幂等场景:24h 内重复领水被拒,但余额足够 → 放行
-		if after, berr := mc.BalanceOf(&addr); berr == nil && after >= vcFlowGasThreshold {
-			step.Skipped = true
-			step.BalanceAfter = fmt.Sprint(after)
-			step.Detail = "faucet rejected but balance is sufficient: " + err.Error()
-			return step, nil
-		}
-		return step, fmt.Errorf("claim faucet: %w", err)
-	}
-
-	txHash := txHashHex(tx)
-	if _, err := mc.WaitForTransaction(txHash, milon.WithWaitRequestID(lib.RequestID(1))); err != nil {
-		if after, berr := mc.BalanceOf(&addr); berr == nil && after >= vcFlowGasThreshold {
-			step.Claimed = true
-			step.TxHash = txHash
-			step.BalanceAfter = fmt.Sprint(after)
-			step.Detail = "faucet submitted, balance confirms funding (wait error ignored): " + err.Error()
-			return step, nil
-		}
-		return step, fmt.Errorf("wait faucet tx %s: %w", txHash, err)
-	}
-
-	after, err := mc.BalanceOf(&addr)
-	if err != nil {
-		return step, fmt.Errorf("re-query balance: %w", err)
-	}
-	step.Claimed = true
-	step.TxHash = txHash
-	step.BalanceAfter = fmt.Sprint(after)
-	return step, nil
-}
-
-// vcFlowEnsureDID 确保地址已建 DID;已存在(view Document 可读)则跳过,
-// 链端报 DidAlreadyExists(1024)亦视为已存在。
-func vcFlowEnsureDID(mc *milon.Client, addr crypto.Address, sk crypto.SecretKeyer, pub *crypto.PublicKey, subjectType string) (vcFlowStep, error) {
-	step := vcFlowStep{}
-	if value, err := vcFlowCallView(mc, vcFlowIdentityApp, "Document", provider.Args{"subject": addr.ToBase58()}); err == nil && vcFlowViewOK(value) {
-		step.Skipped = true
-		step.Detail = "DID document already exists"
-		return step, nil
-	}
-
-	// 注意:struct 参数必须用 map[string]any 而非 gin.H ——
-	// args_coerce 的 struct 分支按精确类型 map[string]any 断言,自定义 map 类型会失败
-	args := provider.Args{
-		"subject": addr.ToBase58(),
-		"doc": map[string]any{
-			"subject_type": subjectType,
-			"keys":         []any{map[string]any{"public_key": pub.ToBase58(), "label": "primary"}},
-			"services":     []any{},
-			"avatar_uri":   vcFlowAvatarURI,
-		},
-	}
-	tx, err := vcFlowBuildTx(mc, vcFlowIdentityApp, "Create", args, addr, sk, pub)
-	if err != nil {
-		return step, err
-	}
-	txHash, err := vcFlowSendTx(mc, tx)
-	if err != nil {
-		if isTolerableError(err.Error(), "DidAlreadyExists", "1024") {
-			step.Skipped = true
-			step.Detail = "DID already exists on chain: " + err.Error()
-			return step, nil
-		}
-		return step, err
-	}
-	step.TxHash = txHash
-	return step, nil
+	return summarizeDidEnsure(res), nil
 }
 
 // vcFlowEnsureOrganization 确保 issuer 已注册组织(VcIssuer 角色 + 声明 schema);
 // 已注册(view OrganizationCapabilities 可读)则跳过,链端报
 // OrganizationAlreadyExists(1032)亦视为已注册。
-func vcFlowEnsureOrganization(mc *milon.Client, addr crypto.Address, sk crypto.SecretKeyer, pub *crypto.PublicKey, schemas []string) (vcFlowStep, error) {
-	step := vcFlowStep{}
-	if value, err := vcFlowCallView(mc, vcFlowIdentityApp, "OrganizationCapabilities", provider.Args{"subject": addr.ToBase58()}); err == nil && vcFlowViewOK(value) {
+func vcFlowEnsureOrganization(mc *milon.Client, addr crypto.Address, sk crypto.SecretKeyer, pub *crypto.PublicKey, schemas []string) (flowStep, error) {
+	step := flowStep{}
+	if value, err := flowCallView(mc, vcFlowIdentityApp, "OrganizationCapabilities", provider.Args{"subject": addr.ToBase58()}); err == nil && flowViewOK(value) {
 		step.Skipped = true
 		step.Detail = "organization already registered"
 		return step, nil
@@ -599,13 +348,13 @@ func vcFlowEnsureOrganization(mc *milon.Client, addr crypto.Address, sk crypto.S
 		"roles":               []string{"VcIssuer"},
 		"credential_schemas":  schemas,
 	}
-	tx, err := vcFlowBuildTx(mc, vcFlowIdentityApp, "RegisterOrganization", args, addr, sk, pub)
+	tx, err := flowBuildTx(mc, vcFlowIdentityApp, "RegisterOrganization", args, addr, sk, pub)
 	if err != nil {
 		return step, err
 	}
-	txHash, err := vcFlowSendTx(mc, tx)
+	txHash, err := flowSendTx(mc, tx)
 	if err != nil {
-		if isTolerableError(err.Error(), "OrganizationAlreadyExists", "1032") {
+		if isTolerableChainError(err.Error(), "OrganizationAlreadyExists", "1032") {
 			step.Skipped = true
 			step.Detail = "organization already registered on chain: " + err.Error()
 			return step, nil
@@ -625,7 +374,7 @@ func vcFlowDisclose(mc *milon.Client, userAddr crypto.Address, userSK crypto.Sec
 		"credential_schema":  cred.Schema,
 		"issuer":             issuerAddr.ToBase58(),
 	}
-	if value, verr := vcFlowCallView(mc, vcFlowIdentityApp, "VcAttestationCore", coreArgs); verr == nil && vcFlowViewOK(value) {
+	if value, verr := flowCallView(mc, vcFlowIdentityApp, "VcAttestationCore", coreArgs); verr == nil && flowViewOK(value) {
 		return true, true, "", nil
 	}
 
@@ -642,13 +391,13 @@ func vcFlowDisclose(mc *milon.Client, userAddr crypto.Address, userSK crypto.Sec
 		"valid_until_ms":     validUntil,
 		"issuer_signature":   cred.IssuerSignature,
 	}
-	tx, err := vcFlowBuildTx(mc, vcFlowIdentityApp, "DiscloseVcAttestation", args, userAddr, userSK, userPub)
+	tx, err := flowBuildTx(mc, vcFlowIdentityApp, "DiscloseVcAttestation", args, userAddr, userSK, userPub)
 	if err != nil {
 		return false, false, "", err
 	}
-	txHash, err = vcFlowSendTx(mc, tx)
+	txHash, err = flowSendTx(mc, tx)
 	if err != nil {
-		if isTolerableError(err.Error(), "VcAttestationAlreadyExists", "1072") {
+		if isTolerableChainError(err.Error(), "VcAttestationAlreadyExists", "1072") {
 			return true, true, txHash, nil
 		}
 		return false, false, txHash, err
@@ -660,11 +409,11 @@ func vcFlowDisclose(mc *milon.Client, userAddr crypto.Address, userSK crypto.Sec
 // HasValidVcFromIssuer 逐张确认当前有效。验证失败不中断流程,仅标记结果。
 func vcFlowVerify(mc *milon.Client, userAddr, issuerAddr crypto.Address, creds []vcFlowCredential) []vcFlowVerifyItem {
 	onChain := map[string]bool{}
-	if value, err := vcFlowCallView(mc, vcFlowIdentityApp, "DisclosedVcs", provider.Args{
+	if value, err := flowCallView(mc, vcFlowIdentityApp, "DisclosedVcs", provider.Args{
 		"subject": userAddr.ToBase58(),
 		"offset":  0,
 		"limit":   100,
-	}); err == nil && vcFlowViewOK(value) {
+	}); err == nil && flowViewOK(value) {
 		if rows, ok := value.([]any); ok {
 			for _, row := range rows {
 				if m, ok := row.(map[string]any); ok {
@@ -679,11 +428,11 @@ func vcFlowVerify(mc *milon.Client, userAddr, issuerAddr crypto.Address, creds [
 	items := make([]vcFlowVerifyItem, 0, len(creds))
 	for _, cred := range creds {
 		item := vcFlowVerifyItem{Schema: cred.Schema, OnChain: onChain[cred.Schema]}
-		if value, err := vcFlowCallView(mc, vcFlowIdentityApp, "HasValidVcFromIssuer", provider.Args{
+		if value, err := flowCallView(mc, vcFlowIdentityApp, "HasValidVcFromIssuer", provider.Args{
 			"subject":            userAddr.ToBase58(),
 			"issuer":             issuerAddr.ToBase58(),
 			"credential_schema":  cred.Schema,
-		}); err == nil && vcFlowViewOK(value) {
+		}); err == nil && flowViewOK(value) {
 			if valid, ok := value.(bool); ok {
 				item.Valid = valid
 			}
