@@ -59,7 +59,7 @@ const ENDPOINTS = [
       subjectAddress: 'base58地址(与subjectPrivateKey二选一)',
       credentialSchema: 'KycLevelCredential',
       credentialJson: '{"credentialSubject":{"id":"did:milon:subject","kycLevel":2},"id":"urn:uuid:12345678-1234-5678-1234-567812345678","issuer":"did:milon:issuer","type":["VerifiableCredential","KycLevelCredential"]}',
-      validUntil: '2027-08-24T00:00:00.000Z',
+      validUntil: '2027-08-24T00:00:00.000Z(毫秒时间戳须 13 位;传 10 位秒级会被 400 拦截——链端按毫秒解释恒为 1970 年,披露报 1067 Invalid disclosed VC data);不传则缺省当前时间+1年',
       credentialName: 'KycLevel Credential',
       credentialDesc: 'A mock KYC credential for testing the DID web upload flow.'
     }, null, 2) },
@@ -2999,7 +2999,7 @@ var API_DOCS = {
       { name: 'userAddress', type: 'string', required: true, desc: '用户地址（必填），取 /api/accounts/generate 返回的 address；服务端按其自动匹配曲线，防止私钥曲线歧义派生错地址' },
       { name: 'credentialPrefix', type: 'string', required: false, desc: '凭证 schema 前缀（缺省 Test）' },
       { name: 'credentialCount', type: 'int', required: false, desc: '凭证张数（缺省 5，上限 20）' },
-      { name: 'validUntilMs', type: 'int', required: false, desc: '凭证有效期毫秒时间戳，必须为未来时间（链端拒绝披露过期凭证，错误 1067）；null/0=永久有效' },
+      { name: 'validUntilMs', type: 'int', required: false, desc: '凭证有效期毫秒时间戳（13 位），必须为未来时间；10 位秒级时间戳会被 400 拦截（链端按毫秒解释恒为 1970 年→披露 1067→用户侧 Invalid disclosed VC data）；null/0=永久有效' },
       { name: 'issuerDid', type: 'object', required: false, desc: 'issuer DID 选项：{alias, autoAlias, suffix, services, avatarUri}。缺省走完整创建——自动生成全局唯一别名（org+地址前8位+随机数字后缀，撞名自动换号重试）+ 占位头像' },
       { name: 'userDid', type: 'object', required: false, desc: 'user DID 选项，同 issuerDid（自动别名前缀为 user）；autoAlias:false 且未给 alias 时该方不绑别名' },
     ],

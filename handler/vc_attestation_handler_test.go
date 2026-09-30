@@ -3,9 +3,15 @@ package handler
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 )
 
@@ -153,5 +159,82 @@ func TestResolveIssuerIdentityFnDsa512WrongPublicKeyType(t *testing.T) {
 	ed25519PubHex := "9d61b19deffb63bbd326eef7a6572727e1e6a3a3a3a3a3a3a3a3a3a3a3a3a3a"
 	if _, _, _, err := resolveIssuerIdentity(issuerSker.ToHex(), ed25519PubHex); err == nil {
 		t.Fatal("expected error when FN-DSA-512 private key is paired with a non-FN-DSA-512 public key")
+	}
+}
+
+// TestValidateVcAttestationValidUntil 校验披露有效期参数:
+// 0=不过期放行;秒级时间戳(10 位,按毫秒解释必为 1970 年)按「疑似秒级」硬拦;
+// 毫秒但已过期按「已过期」硬拦;未来毫秒放行。
+// 背景:用户应用传秒级 validUntilMs 导致链端恒报 1067,用户侧恒显
+// "Invalid disclosed VC data."(2026-09-30 devNet 实测复现)。
+func TestValidateVcAttestationValidUntil(t *testing.T) {
+	nowMs := int64(1_790_000_000_000) // 2026-09-30 前后
+
+	// 0 = 不过期,放行
+	if err := validateVcAttestationValidUntil(0, nowMs); err != nil {
+		t.Errorf("0 应视为不过期: %v", err)
+	}
+	// 未来毫秒,放行
+	if err := validateVcAttestationValidUntil(nowMs+3_600_000, nowMs); err != nil {
+		t.Errorf("未来毫秒应放行: %v", err)
+	}
+	// 秒级时间戳(10 位)→ 疑似秒级,硬拦且提示必须包含换算指引
+	err := validateVcAttestationValidUntil(1_800_000_000, nowMs)
+	if err == nil {
+		t.Fatal("秒级时间戳应被拦截")
+	}
+	for _, want := range []string{"秒级", "毫秒"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("秒级报错应包含 %q: %s", want, err.Error())
+		}
+	}
+	// 更小的秒级值同样拦截
+	if err := validateVcAttestationValidUntil(999_999_999, nowMs); err == nil {
+		t.Errorf("秒级下界应拦截")
+	}
+	// 毫秒但已过期 → 拦截(不误报为秒级)
+	err = validateVcAttestationValidUntil(nowMs-1_000, nowMs)
+	if err == nil {
+		t.Fatal("已过期毫秒应被拦截")
+	}
+	if strings.Contains(err.Error(), "秒级") {
+		t.Errorf("过去毫秒不应误报为秒级: %s", err.Error())
+	}
+	// 恰为 nowMs 的边界(不可能永不过期的凭证亦无意义,视为过期)
+	if err := validateVcAttestationValidUntil(nowMs, nowMs); err == nil {
+		t.Errorf("等于当前时间的有效期应视为过期拦截")
+	}
+}
+
+// TestGenerateVcAttestationDefaultValidUntil 验证不传有效期时,
+// 缺省 valid_until_ms 为「当前时间 + 1 年」(动态值,替代原固定
+// 1900000000000=2030 的写死缺省,避免固定值随时间失去意义)。
+func TestGenerateVcAttestationDefaultValidUntil(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	before := time.Now()
+	body := `{"issuerPrivateKey":"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f","subjectPrivateKey":"202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"}`
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/util/vc-attestation", strings.NewReader(body))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	NewVcAttestationHandler().GenerateVcAttestation(c)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	var resp generateVcAttestationResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Disclosure.Args.ValidUntilMs == nil {
+		t.Fatal("缺省应输出 valid_until_ms, got null")
+	}
+	after := time.Now()
+	got := *resp.Disclosure.Args.ValidUntilMs
+	lo := before.AddDate(1, 0, 0).Add(-2 * time.Minute).UnixMilli()
+	hi := after.AddDate(1, 0, 0).Add(2 * time.Minute).UnixMilli()
+	if got < lo || got > hi {
+		t.Fatalf("缺省有效期 = %d (%s), 期望当前时间+1年 ∈ [%d, %d]", got, time.UnixMilli(got).UTC().Format(time.RFC3339), lo, hi)
 	}
 }

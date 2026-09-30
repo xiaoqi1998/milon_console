@@ -1900,8 +1900,8 @@ curl -X POST http://localhost:8080/api/util/verify \
 | `issuerKeyId` | number | 否 | issuer 密钥索引，缺省 `0` |
 | `credentialSchema` | string | 否 | 凭证 schema，缺省 `KycLevelCredential` |
 | `credentialJson` | string | 否 | 凭证规范化 JSON 字符串（对其做 sha256 得到 `credential_hash`），缺省为内置 KYC 测试凭证 |
-| `validUntilMs` | number | 否 | 有效期毫秒时间戳；显式传入时优先于 `validUntil`（传 `0` 表示不过期） |
-| `validUntil` | string | 否 | 有效期 ISO8601（如 `2027-08-24T00:00:00.000Z`），与 `validUntilMs` 二选一，缺省 `1900000000000` ms |
+| `validUntilMs` | number | 否 | 有效期**毫秒**时间戳（13 位），显式传入时优先于 `validUntil`（传 `0` 表示不过期）。**必须为未来毫秒值**：传 10 位秒级时间戳会被 400 拦截（提示疑似秒级——链端按毫秒解释恒为 1970 年，披露报 1067，用户侧显示 Invalid disclosed VC data）；毫秒但已过期同样 400 拦截 |
+| `validUntil` | string | 否 | 有效期 ISO8601（如 `2027-08-24T00:00:00.000Z`），与 `validUntilMs` 二选一；两者都不传时缺省为**当前时间 + 1 年**（动态计算） |
 | `credentialName` | string | 否 | 凭证展示名称（写入 `credential.name`） |
 | `credentialDesc` | string | 否 | 凭证描述（写入 `credential.description`） |
 | `issuedAt` | string | 否 | 签发时间 ISO8601，缺省取当前 UTC |

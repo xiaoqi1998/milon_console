@@ -37,19 +37,19 @@ func NewVcAttestationHandler() *VcAttestationHandler {
 // generateVcAttestationRequest 是 GenerateVcAttestation 的请求体。
 // 字段与 Python 脚本 generate_vc_attestation() 参数一一对应。
 type generateVcAttestationRequest struct {
-	IssuerPrivateKey   string `json:"issuerPrivateKey"`             // issuer 私钥（hex/base58：32 字节经典 Ed25519 密钥或 1281 字节 FN-DSA-512 密钥，必填）
-	IssuerPublicKey    string `json:"issuerPublicKey"`              // issuer 公钥（hex/base58，897 字节）；issuer 为 FN-DSA-512 密钥时必填（SDK 无法从签名密钥反推公钥）
-	ChainID            *int64 `json:"chainId"`                      // 链 ID，缺省 900000001
-	SubjectPrivateKey  string `json:"subjectPrivateKey"`            // subject 私钥（hex）—— 与 subjectAddress 二选一；同时传时以 subjectAddress 为准
-	SubjectAddress     string `json:"subjectAddress"`               // subject 地址（bs58，20 字节）—— 与 subjectPrivateKey 二选一；两者同时传时以此地址为准
-	IssuerKeyID        *int   `json:"issuerKeyId"`                  // issuer 密钥索引，缺省 0
-	CredentialSchema   string `json:"credentialSchema"`             // 凭证 schema，缺省 KycLevelCredential
-	CredentialJson     string `json:"credentialJson"`               // 凭证规范化 JSON 字符串（sha256 作为 credential_hash）
-	ValidUntilMs       *int64 `json:"validUntilMs"`                 // 有效期毫秒时间戳；传 0 表示不过期（与 validUntil 二选一，显式传入优先）
-	ValidUntil         string `json:"validUntil"`                   // 有效期 ISO8601（如 2027-08-24T00:00:00.000Z）
-	CredentialName     string `json:"credentialName"`               // 凭证展示名称
-	CredentialDesc     string `json:"credentialDesc"`               // 凭证描述
-	IssuedAt           string `json:"issuedAt"`                     // 签发时间 ISO8601；缺省取当前 UTC
+	IssuerPrivateKey  string `json:"issuerPrivateKey"`  // issuer 私钥（hex/base58：32 字节经典 Ed25519 密钥或 1281 字节 FN-DSA-512 密钥，必填）
+	IssuerPublicKey   string `json:"issuerPublicKey"`   // issuer 公钥（hex/base58，897 字节）；issuer 为 FN-DSA-512 密钥时必填（SDK 无法从签名密钥反推公钥）
+	ChainID           *int64 `json:"chainId"`           // 链 ID，缺省 900000001
+	SubjectPrivateKey string `json:"subjectPrivateKey"` // subject 私钥（hex）—— 与 subjectAddress 二选一；同时传时以 subjectAddress 为准
+	SubjectAddress    string `json:"subjectAddress"`    // subject 地址（bs58，20 字节）—— 与 subjectPrivateKey 二选一；两者同时传时以此地址为准
+	IssuerKeyID       *int   `json:"issuerKeyId"`       // issuer 密钥索引，缺省 0
+	CredentialSchema  string `json:"credentialSchema"`  // 凭证 schema，缺省 KycLevelCredential
+	CredentialJson    string `json:"credentialJson"`    // 凭证规范化 JSON 字符串（sha256 作为 credential_hash）
+	ValidUntilMs      *int64 `json:"validUntilMs"`      // 有效期毫秒时间戳；传 0 表示不过期（与 validUntil 二选一，显式传入优先）
+	ValidUntil        string `json:"validUntil"`        // 有效期 ISO8601（如 2027-08-24T00:00:00.000Z）
+	CredentialName    string `json:"credentialName"`    // 凭证展示名称
+	CredentialDesc    string `json:"credentialDesc"`    // 凭证描述
+	IssuedAt          string `json:"issuedAt"`          // 签发时间 ISO8601；缺省取当前 UTC
 }
 
 // vcCredentialMeta 对应 milon-vc-disclosure 的 credential 段。
@@ -108,8 +108,9 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 		return
 	}
 
-	// ---- 有效期：显式 validUntilMs（0 = 不过期）> validUntil(ISO 推导) > 默认 1.9e12 ms ----
-	validUntilValue := int64(1_900_000_000_000)
+	// ---- 有效期：显式 validUntilMs（0 = 不过期）> validUntil(ISO 推导) > 缺省当前时间 + 1 年 ----
+	// 缺省用动态「now+1 年」而非写死的 1900000000000(2030),避免固定值随时间失去意义
+	validUntilValue := time.Now().AddDate(1, 0, 0).UnixMilli()
 	if req.ValidUntilMs != nil {
 		validUntilValue = *req.ValidUntilMs
 	} else if strings.TrimSpace(req.ValidUntil) != "" {
@@ -120,6 +121,13 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 			return
 		}
 		validUntilValue = ms
+	}
+	// 过期/秒级前置拦截(对齐 vc-flow 语义):链端拒绝披露当前无效的凭证(1067),
+	// 秒级时间戳按毫秒解释恒为 1970 年 → 用户侧恒显 "Invalid disclosed VC data."
+	if err := validateVcAttestationValidUntil(validUntilValue, time.Now().UnixMilli()); err != nil {
+		logParamError(c, "GenerateVcAttestation", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
 	}
 
 	// 与 Python 脚本语义一致：0 表示不过期（签名摘要取 0，输出 null）
@@ -390,6 +398,33 @@ func isoToMs(iso string) (int64, error) {
 		}
 	}
 	return 0, fmt.Errorf("无法解析时间: %s", iso)
+}
+
+// vcValidUntilSecondCutoff 区分「秒级时间戳」与「毫秒时间戳」的下界:
+// 10 位秒级时间戳最大约 9.9e9,任何作为有效期的毫秒值都应远大于 1e11
+// (1e11 ms ≈ 1973 年)。
+const vcValidUntilSecondCutoff = 100_000_000_000
+
+// validateVcAttestationValidUntil 校验披露有效期(0=不过期放行):
+//   - 非零但小于秒级/毫秒分界 → 几乎必然是应用误传了 10 位秒级时间戳,
+//     链端按毫秒解释恒为 1970 年 → 披露恒报 1067(用户侧表现为
+//     "Invalid disclosed VC data."),提前 400 拦截并给出换算指引;
+//   - 毫秒但已过期(<= nowMs) → 链端同样拒绝(1067),提前拦截。
+func validateVcAttestationValidUntil(validUntilMs, nowMs int64) error {
+	if validUntilMs == 0 {
+		return nil
+	}
+	if validUntilMs < vcValidUntilSecondCutoff {
+		return fmt.Errorf(
+			"validUntilMs=%d 疑似秒级时间戳(10 位):链端按毫秒解释会落在 1970 年,披露将被拒(错误 1067,用户侧显示 Invalid disclosed VC data);请改为 13 位毫秒时间戳,如 %d",
+			validUntilMs, time.Now().AddDate(1, 0, 0).UnixMilli())
+	}
+	if validUntilMs <= nowMs {
+		return fmt.Errorf(
+			"validUntilMs=%d 已过期(当前 %d):链端拒绝披露当前无效的凭证(错误 1067 Only a currently valid VC attestation can be accepted,用户侧显示 Invalid disclosed VC data);请传未来的毫秒时间戳,0 表示不过期",
+			validUntilMs, nowMs)
+	}
+	return nil
 }
 
 // msToIso 将毫秒时间戳转为 ISO8601 UTC 字符串（如 2027-08-24T00:00:00.000Z）。
