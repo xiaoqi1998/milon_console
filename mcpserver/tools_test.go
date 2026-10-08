@@ -88,6 +88,8 @@ func TestBasicToolCallMapping(t *testing.T) {
 		{"account_info", `{"address":"a1"}`, "GET /api/accounts/a1? "},
 		{"faucet_balance", `{"address":"a1"}`, "GET /api/faucet/balance/a1? "},
 		{"tx_get", `{"hash":"h1"}`, "GET /api/transactions/h1? "},
+		{"tx_parse", `{"hash":"h1","remote":"true"}`, "GET /api/transactions/h1/parse?remote=true "},
+		{"tx_events", `{"hash":"h1","typeTag":"5"}`, "GET /api/transactions/h1/events?typeTag=5 "},
 		{"tx_wait", `{"hash":"h1"}`, "GET /api/transactions/h1/wait? "},
 		{"rpc_block", `{"height":"123"}`, "GET /api/rpc/blocks/123? "},
 		{"rpc_resource", `{"hash":"r1"}`, "GET /api/rpc/resources/r1? "},
