@@ -64,7 +64,10 @@ func TestToolsListBasics(t *testing.T) {
 		"contract_write", "contract_write_multi",
 		"contract_write_multi_agent", "contract_write_multisig",
 		"tx_simulate_raw", "tx_submit_raw", "tx_inspect_raw",
-		"view_single", "view_multi"}
+		"view_single", "view_multi",
+		// Task 4：密钥与签名（5 个）
+		"util_derive_address", "util_derive_public_key",
+		"util_sign", "util_verify", "vc_attestation"}
 	for _, w := range want {
 		found := false
 		for _, n := range names {
@@ -219,6 +222,104 @@ func TestContractToolCallMapping(t *testing.T) {
 			`{"transactionPostcard":"pc1"}`,
 			"/api/view/multi",
 			`{"transactionPostcard":"pc1"}`},
+		// ---- Task 4 顺手补：Task 3 审查遗留缺口——下述 omitempty 可选字段此前
+		// 无正向传值用例，json tag 拼写无测试锁定。3 例分别锁住：
+		// contractSimulateArgs 的 ownerAddress/signers/gasPayer、
+		// contractMultiArgs 的 ix* 系列、contractWriteArgs 的 signers/gasPayer。----
+		{"contract_simulate",
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			"/api/simulate",
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+		{"contract_simulate_multi",
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0}}`,
+			"/api/simulate/multi",
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0}}`},
+		{"contract_write",
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			"/api/write",
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+	}
+	for _, c := range cases {
+		out := rpcCall(t, front.URL, "tools/call", map[string]any{"name": c.tool, "arguments": json.RawMessage(c.args)})
+		res, _ := out["result"].(map[string]any)
+		if res == nil {
+			t.Errorf("%s: 调用未返回 result（工具未注册或参数被拒）: %v", c.tool, out)
+			continue
+		}
+		if v, _ := res["isError"].(bool); v {
+			t.Errorf("%s: unexpected isError: %v", c.tool, out)
+		}
+	}
+	if len(*seen) != len(cases) {
+		t.Fatalf("后端收到 %d 个请求, want %d: %v", len(*seen), len(cases), *seen)
+	}
+	for i, c := range cases {
+		// seen 记录格式："POST <path>?<query> <body>"
+		parts := strings.SplitN((*seen)[i], " ", 3)
+		if len(parts) != 3 || parts[0] != "POST" || parts[1] != c.wantPath+"?" {
+			t.Errorf("%s: 请求行 got=%q want=POST %s?", c.tool, (*seen)[i], c.wantPath)
+			continue
+		}
+		if !jsonEqual(t, parts[2], c.wantBody) {
+			t.Errorf("%s: body 不匹配（见上）", c.tool)
+		}
+	}
+}
+
+// TestUtilToolCallMapping 覆盖 Task 4 的 5 个密钥/签名/VC 工具：
+// 断言每个工具把参数镜像为正确的 POST method + path + JSON body。
+// 多字段 body 一律 jsonEqual 键值比较（勿依赖 key 顺序——实现经 map 往返）。
+// vc_attestation 用三例分别锁住：最小必填集（omitempty 字段不出现）、
+// 全 13 字段正向传值（json tag 拼写全锁定）、指针字段 0 值透传
+// （validUntilMs=0 表示"不过期"，是业务语义，绝不能被 omitempty 吞掉）。
+func TestUtilToolCallMapping(t *testing.T) {
+	backend, seen := newFakeBackend(t, 200, `{"code":0}`)
+	t.Setenv("MILON_REST_BASE_URL", backend.URL)
+	front := httptest.NewServer(NewMCPHandler(""))
+	t.Cleanup(front.Close)
+
+	cases := []struct{ tool, args, wantPath, wantBody string }{
+		// util_derive_address ← deriveAddressRequest（handler/util.go:25）
+		{"util_derive_address",
+			`{"publicKey":"pk","keyType":"ed25519"}`,
+			"/api/util/address/derive",
+			`{"publicKey":"pk","keyType":"ed25519"}`},
+		// util_derive_address：keyType 可选（omitempty），不传时 body 不含该键
+		{"util_derive_address",
+			`{"publicKey":"pk"}`,
+			"/api/util/address/derive",
+			`{"publicKey":"pk"}`},
+		// util_derive_public_key ← derivePublicKeyRequest（handler/util.go:81）
+		{"util_derive_public_key",
+			`{"privateKey":"sk","keyType":"ed25519"}`,
+			"/api/util/key/derive-public",
+			`{"privateKey":"sk","keyType":"ed25519"}`},
+		// util_sign ← signMessageRequest（handler/util.go:138）
+		{"util_sign",
+			`{"privateKey":"sk","message":"deadbeef","keyType":"ed25519"}`,
+			"/api/util/sign",
+			`{"privateKey":"sk","message":"deadbeef","keyType":"ed25519"}`},
+		// util_verify ← verifySignatureRequest（handler/util.go:214）
+		{"util_verify",
+			`{"publicKey":"pk","message":"deadbeef","signature":"ab"}`,
+			"/api/util/verify",
+			`{"publicKey":"pk","message":"deadbeef","signature":"ab"}`},
+		// vc_attestation ← generateVcAttestationRequest（handler/vc_attestation_handler.go:39）
+		// 最小集：issuerPrivateKey + credentialJson，其余 omitempty 字段不得出现
+		{"vc_attestation",
+			`{"issuerPrivateKey":"sk","credentialJson":"{}"}`,
+			"/api/util/vc-attestation",
+			`{"issuerPrivateKey":"sk","credentialJson":"{}"}`},
+		// vc_attestation：全 13 字段正向传值，锁住全部 json tag 拼写
+		{"vc_attestation",
+			`{"issuerPrivateKey":"sk","issuerPublicKey":"pk","chainId":900000001,"subjectPrivateKey":"ssk","subjectAddress":"subj","issuerKeyId":2,"credentialSchema":"KycLevelCredential","credentialJson":"{}","validUntilMs":1900000000000,"validUntil":"2027-08-24T00:00:00.000Z","credentialName":"n","credentialDesc":"d","issuedAt":"2026-01-01T00:00:00.000Z"}`,
+			"/api/util/vc-attestation",
+			`{"issuerPrivateKey":"sk","issuerPublicKey":"pk","chainId":900000001,"subjectPrivateKey":"ssk","subjectAddress":"subj","issuerKeyId":2,"credentialSchema":"KycLevelCredential","credentialJson":"{}","validUntilMs":1900000000000,"validUntil":"2027-08-24T00:00:00.000Z","credentialName":"n","credentialDesc":"d","issuedAt":"2026-01-01T00:00:00.000Z"}`},
+		// vc_attestation：指针字段显式 0 值必须透传（validUntilMs=0 = 不过期）
+		{"vc_attestation",
+			`{"issuerPrivateKey":"sk","subjectAddress":"subj","validUntilMs":0}`,
+			"/api/util/vc-attestation",
+			`{"issuerPrivateKey":"sk","subjectAddress":"subj","validUntilMs":0}`},
 	}
 	for _, c := range cases {
 		out := rpcCall(t, front.URL, "tools/call", map[string]any{"name": c.tool, "arguments": json.RawMessage(c.args)})

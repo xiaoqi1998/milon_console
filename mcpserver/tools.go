@@ -168,6 +168,66 @@ type rawViewArgs struct {
 	TransactionPostcard string `json:"transactionPostcard" jsonschema:"base64 编码的视图 postcard 原文（单条或多条 wire 打包）"`
 }
 
+// ==================== Task 4：密钥与签名工具（5 个）====================
+// 字段 json tag 逐字镜像 handler 侧 request struct（唯一事实源），注释标注来源行号。
+// 已逐个核对 5 个 handler（DeriveAddress/DerivePublicKey/SignMessage/
+// VerifySignature/GenerateVcAttestation）：全部只读 JSON body，
+// 无 c.Query/c.Param，故 RESTMapping 均不带 PathParams/QueryParams。
+// 本批 handler 无 json.RawMessage 字段，不涉及 any 镜像规则。
+
+// utilDeriveAddressArgs 镜像 deriveAddressRequest（handler/util.go:25，
+// POST /api/util/address/derive）。publicKey 必填（handler 空值 400）；
+// keyType 可选（缺省按公钥自身曲线推断），标 omitempty。
+type utilDeriveAddressArgs struct {
+	PublicKey string `json:"publicKey" jsonschema:"公钥（hex 或 base58）"`
+	KeyType   string `json:"keyType,omitempty" jsonschema:"可选：secp256k1/ed25519/fn-dsa-512，缺省按公钥自身曲线推断"`
+}
+
+// utilDerivePublicKeyArgs 镜像 derivePublicKeyRequest（handler/util.go:81，
+// POST /api/util/key/derive-public）。两字段均被 handler 强校验非空，必填不标 omitempty。
+type utilDerivePublicKeyArgs struct {
+	PrivateKey string `json:"privateKey" jsonschema:"32 字节私钥（hex 或 base58）"`
+	KeyType    string `json:"keyType" jsonschema:"必填：secp256k1/ed25519/bls12381/fndsa512"`
+}
+
+// utilSignArgs 镜像 signMessageRequest（handler/util.go:138，POST /api/util/sign）。
+// 三字段均被 handler 强校验非空；服务端还需 ENABLE_UTIL_SIGN 开启，否则 403。
+type utilSignArgs struct {
+	PrivateKey string `json:"privateKey" jsonschema:"签名私钥（hex 或 base58）"`
+	Message    string `json:"message" jsonschema:"被签消息：优先按 hex 解码，失败则按 UTF-8 文本"`
+	KeyType    string `json:"keyType" jsonschema:"必填：secp256k1/ed25519/bls12381/fndsa512"`
+}
+
+// utilVerifyArgs 镜像 verifySignatureRequest（handler/util.go:214，POST /api/util/verify）。
+// 三字段均被 handler 强校验非空。
+type utilVerifyArgs struct {
+	PublicKey string `json:"publicKey" jsonschema:"公钥（hex 或 base58）"`
+	Message   string `json:"message" jsonschema:"验签消息（解码规则与 util_sign 一致：优先 hex，失败按 UTF-8）"`
+	Signature string `json:"signature" jsonschema:"签名 hex"`
+}
+
+// vcAttestationArgs 镜像 generateVcAttestationRequest（handler/vc_attestation_handler.go:39，
+// POST /api/util/vc-attestation）。issuerPrivateKey 必填；subjectPrivateKey 与
+// subjectAddress 二选一（同时传以 subjectAddress 为准）；其余可选（handler 均有缺省）。
+// 指针字段 chainId/issuerKeyId/validUntilMs 镜像 handler 的 *int64/*int 语义：
+// 不传 = 缺省；显式传 0 有业务含义（validUntilMs=0 表示不过期）——omitempty 只吞
+// nil 指针、不吞指向 0 的指针，0 值照常透传，与 handler 的判 nil 逻辑一致。
+type vcAttestationArgs struct {
+	IssuerPrivateKey  string `json:"issuerPrivateKey" jsonschema:"必填：issuer 私钥（32 字节 Ed25519 或 1281 字节 FN-DSA-512，hex/base58）"`
+	IssuerPublicKey   string `json:"issuerPublicKey,omitempty" jsonschema:"issuer 为 FN-DSA-512 密钥时必填（897 字节公钥，hex/base58）"`
+	ChainID           *int64 `json:"chainId,omitempty" jsonschema:"可选：链 ID，缺省 900000001"`
+	SubjectPrivateKey string `json:"subjectPrivateKey,omitempty" jsonschema:"subject 私钥（hex）——与 subjectAddress 二选一"`
+	SubjectAddress    string `json:"subjectAddress,omitempty" jsonschema:"subject 地址（bs58，20 字节）——与 subjectPrivateKey 二选一，同时传以本字段为准"`
+	IssuerKeyID       *int   `json:"issuerKeyId,omitempty" jsonschema:"可选：issuer 密钥索引，缺省 0"`
+	CredentialSchema  string `json:"credentialSchema,omitempty" jsonschema:"可选：凭证 schema，缺省 KycLevelCredential"`
+	CredentialJson    string `json:"credentialJson,omitempty" jsonschema:"凭证规范化 JSON 字符串（sha256 作为 credential_hash；缺省用内置示例凭证）"`
+	ValidUntilMs      *int64 `json:"validUntilMs,omitempty" jsonschema:"可选：有效期 13 位毫秒时间戳；0 表示不过期（与 validUntil 二选一，显式传入优先）"`
+	ValidUntil        string `json:"validUntil,omitempty" jsonschema:"可选：有效期 ISO8601（如 2027-08-24T00:00:00.000Z），与 validUntilMs 二选一"`
+	CredentialName    string `json:"credentialName,omitempty" jsonschema:"可选：凭证展示名称，缺省 KycLevel Credential"`
+	CredentialDesc    string `json:"credentialDesc,omitempty" jsonschema:"可选：凭证描述"`
+	IssuedAt          string `json:"issuedAt,omitempty" jsonschema:"可选：签发时间 ISO8601，缺省当前 UTC"`
+}
+
 // registerTool 把"输入结构 → REST 映射"注册为 MCP 工具。
 func registerTool[In any](srv *mcp.Server, exec *Executor, name, desc string, m RESTMapping) {
 	mcp.AddTool[In, any](srv, &mcp.Tool{Name: name, Description: desc},
@@ -229,7 +289,8 @@ func bearerAuth(token string, next http.Handler) http.Handler {
 	})
 }
 
-// RegisterTools 注册全部工具；基础 17 个 + Task 3 合约/视图/原始交易 13 个，后续任务在此追加。
+// RegisterTools 注册全部工具；基础 17 个 + Task 3 合约/视图/原始交易 13 个 +
+// Task 4 密钥/签名/VC 5 个，后续任务在此追加。
 func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[emptyArgs](srv, exec, "network_list", "列出内置网络（devNet/localNet）及当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/list"})
 	registerTool[emptyArgs](srv, exec, "network_current", "查询当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/current"})
@@ -273,4 +334,27 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	// 低层视图（预构建 postcard）
 	registerTool[rawViewArgs](srv, exec, "view_single", "低层视图调用（预构建 postcard wire）", RESTMapping{Method: "POST", PathTemplate: "/api/view/single"})
 	registerTool[rawViewArgs](srv, exec, "view_multi", "低层批量视图调用（预构建 postcard 多 wire 打包）", RESTMapping{Method: "POST", PathTemplate: "/api/view/multi"})
+
+	// ---- Task 4：密钥与签名（5 个，全部 POST 纯 JSON body，无 query/path 参数）----
+
+	// 密钥/地址派生
+	registerTool[utilDeriveAddressArgs](srv, exec, "util_derive_address",
+		"由公钥派生链上地址（bs58）。注意：32 字节私钥在 secp256k1/ed25519/fn-dsa-512 下派生出不同地址，地址计算必须用本工具（或 account_generate 的返回），不要本地臆造；keyType 可选，缺省按公钥自身曲线推断",
+		RESTMapping{Method: "POST", PathTemplate: "/api/util/address/derive"})
+	registerTool[utilDerivePublicKeyArgs](srv, exec, "util_derive_public_key",
+		"由 32 字节私钥按指定曲线派生公钥（keyType 必填：secp256k1/ed25519/bls12381/fndsa512）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/util/key/derive-public"})
+
+	// 签名/验签（util_sign 受服务端 ENABLE_UTIL_SIGN 开关控制）
+	registerTool[utilSignArgs](srv, exec, "util_sign",
+		"用私钥对消息签名，返回签名 hex 与公钥（keyType 必填；message 优先按 hex 解码、失败按 UTF-8 文本；服务端需开启 ENABLE_UTIL_SIGN，否则 403）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/util/sign"})
+	registerTool[utilVerifyArgs](srv, exec, "util_verify",
+		"验证签名是否匹配指定公钥与消息（signature 为 hex，message 解码规则与 util_sign 一致）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/util/verify"})
+
+	// VC 凭证披露
+	registerTool[vcAttestationArgs](srv, exec, "vc_attestation",
+		"生成 DiscloseVcAttestation 可验证凭证披露文档（milon-vc-disclosure 裸 JSON：issuer 私钥签名并本地验签，输出可直接用于链上披露；issuer 为 FN-DSA-512 密钥时须同时提供 issuerPublicKey）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/util/vc-attestation"})
 }
