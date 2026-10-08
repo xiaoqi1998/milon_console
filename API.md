@@ -2512,7 +2512,7 @@ curl http://localhost:8080/api/tool/did/QffKfGk3Jnp4k4qHJtbA8fwrW8E/document
 
 ## MCP 端点（/mcp）
 
-除 REST API 外，服务在同一端口内置 MCP（Model Context Protocol）端点，把 REST 能力全量映射为 **55 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接调用。
+除 REST API 外，服务在同一端口内置 MCP（Model Context Protocol）端点，把 REST 能力全量映射为 **57 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接调用。
 
 - **端点**: `http://127.0.0.1:8080/mcp`（端口随 `SERVER_PORT`）
 - **传输**: Streamable HTTP（`POST /mcp`，JSON-RPC），stateless 无会话状态，JSON 响应模式
@@ -2549,7 +2549,7 @@ ZCode / Claude 通用片段：
 
 > **日志风险**：`ENABLE_BODY_LOG=true` 时 `/mcp` 的工具入参会进入请求日志，且脱敏只覆盖裸 `privateKey` 等字段名——`payerPrivateKey` 等带前缀私钥参数会明文落日志，仅供 devNet 调试，生产勿开。
 
-### 工具对照表（55 个）
+### 工具对照表（57 个）
 
 #### 网络（3）
 
@@ -2633,13 +2633,15 @@ ZCode / Claude 通用片段：
 | `did_name_binding` | GET /api/tool/did/name-binding |
 | `did_document` | GET /api/tool/did/{address}/document |
 
-#### 保存的指令（4）
+#### 保存的指令（6）
 
 | 工具 | REST 端点 |
 |---|---|
 | `saved_instruction_create` | POST /api/saved-instructions |
 | `saved_instruction_list` | GET /api/saved-instructions |
 | `saved_instruction_get` | GET /api/saved-instructions/{id} |
+| `saved_instruction_update` | PUT /api/saved-instructions/{id}（部分更新：只改传入字段） |
+| `saved_instruction_delete` | DELETE /api/saved-instructions/{id} |
 | `saved_instruction_execute` | POST /api/saved-instructions/{id}/execute |
 
 #### Faucet（2）

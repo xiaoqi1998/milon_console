@@ -11,7 +11,7 @@ Milon API Server 将 Milon Go SDK 封装成 RESTful HTTP API，并提供一个�
 - 账户与密钥工具：支持账户生成、公钥派生、地址派生、签名与验签。
 - 多种支付/签名模式：支持 `unified_payer_all`、`unified_dual_sign`、`unified_payer_only_gas`、`split`、`multi_signer`、`sponsored`。
 - Faucet：支持领水和余额查询。
-- MCP 端点：`/mcp` 把 REST 能力全量映射为 55 个 MCP 工具，供 ZCode / Claude 等 AI 编程代理直连。
+- MCP 端点：`/mcp` 把 REST 能力全量映射为 57 个 MCP 工具，供 ZCode / Claude 等 AI 编程代理直连。
 - Web 控制台：访问 `http://localhost:8080` 可打开调试页面。
 
 ## 快速开始
@@ -281,7 +281,7 @@ curl http://localhost:8080/api/idl/metadata
 
 ## MCP
 
-服务在同一端口内置 MCP（Model Context Protocol）端点 `/mcp`，把 REST 能力全量映射为 **55 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接以自然语言驱动链上操作。工具与 REST 端点一一对应，行为完全一致，完整对照表见 [API.md](API.md) 的「MCP 端点」章节。
+服务在同一端口内置 MCP（Model Context Protocol）端点 `/mcp`，把 REST 能力全量映射为 **57 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接以自然语言驱动链上操作。工具与 REST 端点一一对应，行为完全一致，完整对照表见 [API.md](API.md) 的「MCP 端点」章节。
 
 ### 启用方式
 
@@ -307,7 +307,7 @@ ZCode / Claude 通用配置片段（加入 `mcpServers` 配置后重连即可）
 
 ### 鉴权（MCP_AUTH_TOKEN）
 
-默认不鉴权（与 REST 现状一致，适合本机/内网使用）。设置环境变量后，`/mcp` 要求携带 `Authorization: Bearer <token>`，不匹配返回 401：
+默认不鉴权（与 REST 现状一致，适合本机/内网使用，对外暴露请设置 `MCP_AUTH_TOKEN`）。设置环境变量后，`/mcp` 要求携带 `Authorization: Bearer <token>`，不匹配返回 401：
 
 ```env
 MCP_AUTH_TOKEN=your-secret-token
@@ -406,7 +406,7 @@ milon-api-server/
 │   ├── util.go
 │   └── view_handler.go
 ├── middleware/                   # CORS 和请求日志
-├── mcpserver/                    # MCP 端点（/mcp，55 个工具映射 REST）
+├── mcpserver/                    # MCP 端点（/mcp，57 个工具映射 REST）
 ├── types/                        # 请求、响应和转换辅助类型
 ├── static/                       # Web 调试控制台
 └── gosdk-develop/                # 内置 Milon Go SDK

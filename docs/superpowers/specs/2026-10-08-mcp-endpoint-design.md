@@ -14,7 +14,7 @@ milon-api-server 目前以 RESTful HTTP + Web 调试台对外暴露 Milon Go SDK
 2. 范围：把**现有**能力包成 MCP，不是只包未来新功能。
 3. 形态：挂在现有 server 上，Streamable HTTP 端点 `/mcp`，单进程部署。
 4. 复用方式：**方案 A——HTTP 自调用薄适配层**（否决了抽 service 层重构与 MCP 直调 SDK）。
-5. 工具面：**全量映射**——除 `mock`（前端调试辅助）与 `health`/`chain-head`（运维探活）外，全部 REST 端点一比一映射为 MCP 工具，共 55 个。能力对称，不留缺口。
+5. 工具面：**全量映射**——除 `mock`（前端调试辅助）与 `health`/`chain-head`（运维探活）外，全部 REST 端点一比一映射为 MCP 工具，共 57 个。能力对称，不留缺口。（勘误：原稿计 55，系 saved-instructions 的 update/delete 两端点转写漏计，2026-10-08 终审修正。）
 6. 鉴权：默认关闭，可选 `MCP_AUTH_TOKEN` 环境变量开启 Bearer 校验。
 
 ## 目标
@@ -49,14 +49,14 @@ gosdk → Milon 链
 
 新增 `mcpserver/` 包，职责：
 
-- `tools.go`：55 个工具的静态声明（名称、描述、JSON Schema、REST 映射：method、path 模板、body 组装规则）。
+- `tools.go`：57 个工具的静态声明（名称、描述、JSON Schema、REST 映射：method、path 模板、body 组装规则）。
 - `executor.go`：统一执行器——校验参数、渲染 path、组装 body、发回环请求、把 REST JSON 响应原样包成 MCP 工具结果（text content）。
 - `server.go`：构造 StreamableHTTPHandler、可选 Bearer 鉴权中间件、挂载到 gin。
 - `main.go` 增加约 3 行挂载代码，`config` 增读 `MCP_AUTH_TOKEN`。
 
 工具 Schema 手写（现有 REST 无 OpenAPI），描述文字面向 agent：写清参数含义、signer 角色要求、易错点（如私钥曲线、支付模式）。
 
-## 工具清单（55 个，全量映射）
+## 工具清单（57 个，全量映射）
 
 按 REST 路由分组列出。命名 `分组_动作`，与 REST 端点一一对应。
 
@@ -142,13 +142,15 @@ gosdk → Milon 链
 | `did_name_binding` | GET /api/tool/did/name-binding |
 | `did_document` | GET /api/tool/did/{address}/document |
 
-### 保存的指令（4）
+### 保存的指令（6）
 
 | 工具 | REST 端点 |
 |---|---|
 | `saved_instruction_create` | POST /api/saved-instructions |
 | `saved_instruction_list` | GET /api/saved-instructions |
 | `saved_instruction_get` | GET /api/saved-instructions/{id} |
+| `saved_instruction_update` | PUT /api/saved-instructions/{id}（部分更新：只改传入字段，未传保持不变） |
+| `saved_instruction_delete` | DELETE /api/saved-instructions/{id} |
 | `saved_instruction_execute` | POST /api/saved-instructions/{id}/execute |
 
 ### Faucet（2）
@@ -213,7 +215,7 @@ gosdk → Milon 链
    - 非 2xx 响应 → `isError=true` 且正文保留错误 JSON；
    - 缺参 → 本地校验错误，不发请求。
 2. **E2E**：`SERVER_PORT=18080` 启动真实 server，用官方 SDK 的 MCP client 走完整协议（initialize → tools/list → tools/call）：
-   - `tools/list` 断言 55 个工具全部注册；
+   - `tools/list` 断言 57 个工具全部注册；
    - 真链冒烟：`idl_metadata`、`account_generate`、`contract_read`、`network_list`；
    - 错误路径：故意传错参数，断言错误信息可读。
 3. **实测验收**：提供 ZCode 的 `mcpServers` 配置片段，用户加入配置后由 ZCode 在会话中实际调用工具验证。
@@ -221,7 +223,7 @@ gosdk → Milon 链
 ## 文档与 Playground
 
 - README 新增 "MCP" 章节：启用方式、配置片段、鉴权说明。
-- API.md 增补 `/mcp` 说明与 55 工具对照表。
+- API.md 增补 `/mcp` 说明与 57 工具对照表。
 - Web 调试台新增 MCP 卡片：展示连接配置 JSON + 一键复制 + 使用提示（满足"新能力要有前端可玩入口"的项目惯例）。
 
 ## 依赖
@@ -233,4 +235,4 @@ gosdk → Milon 链
 
 - stdio 传输模式：如未来需要本机纯 agent 场景（无 HTTP server），可在同一条工具声明上复用，另加入口即可。
 - mock/health 类端点：若 agent 场景出现需求再补。
-- 工具分页/分组：MCP 协议目前工具列表一次性下发，若 55 个工具对客户端上下文造成压力，再考虑按需裁剪配置。
+- 工具分页/分组：MCP 协议目前工具列表一次性下发，若 57 个工具对客户端上下文造成压力，再考虑按需裁剪配置。
