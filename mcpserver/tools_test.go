@@ -67,7 +67,16 @@ func TestToolsListBasics(t *testing.T) {
 		"view_single", "view_multi",
 		// Task 4：密钥与签名（5 个）
 		"util_derive_address", "util_derive_public_key",
-		"util_sign", "util_verify", "vc_attestation"}
+		"util_sign", "util_verify", "vc_attestation",
+		// Task 5：DID 全生命周期（12 个）
+		"did_create", "did_set_alias",
+		"did_add_service", "did_update_service", "did_remove_service",
+		"did_set_avatar_uri",
+		"did_add_key", "did_update_key", "did_remove_key",
+		"did_deactivate", "did_name_binding", "did_document",
+		// Task 5：保存指令（4 个）
+		"saved_instruction_create", "saved_instruction_list",
+		"saved_instruction_get", "saved_instruction_execute"}
 	for _, w := range want {
 		found := false
 		for _, n := range names {
@@ -145,102 +154,25 @@ func jsonEqual(t *testing.T, got, want string) bool {
 	return true
 }
 
-// TestContractToolCallMapping 覆盖 Task 3 的 13 个合约/视图/原始交易工具：
-// 断言每个工具把参数镜像为正确的 POST method + path + JSON body。
-// 输入结构无 omitempty，故 body 应包含镜像 struct 的全部 json tag
-// （未传字段以零值 ""/null 出现）——这同时是"字段镜像无遗漏"的强断言。
-func TestContractToolCallMapping(t *testing.T) {
-	backend, seen := newFakeBackend(t, 200, `{"code":0}`)
-	t.Setenv("MILON_REST_BASE_URL", backend.URL)
-	front := httptest.NewServer(NewMCPHandler(""))
-	t.Cleanup(front.Close)
+// restCallCase 表驱动用例：一次 tools/call 及其期望到达假后端的 REST 请求。
+// wantPathQuery 形如 "/api/read?"（无 query）或 "/api/tool/did/name-binding?name=alice-1024"，
+// 与 newFakeBackend 记录的 "<method> <path>?<rawQuery> <body>" 第二段对齐；
+// GET 请求不产生 body，wantBody 留空且不断言。
+type restCallCase struct {
+	tool          string
+	args          string
+	wantMethod    string
+	wantPathQuery string
+	wantBody      string
+}
 
-	cases := []struct{ tool, args, wantPath, wantBody string }{
-		// contract_read ← readContractRequest（handler/contract.go:43）
-		{"contract_read",
-			`{"appName":"identity","methodName":"1071_get_identity","args":{"id":"a1"},"payerAddress":"a1"}`,
-			"/api/read",
-			`{"appName":"identity","methodName":"1071_get_identity","args":{"id":"a1"},"payerAddress":"a1"}`},
-		// contract_read_multi ← readContractMultiRequest（handler/contract.go:103）
-		{"contract_read_multi",
-			`{"instructions":[{"appName":"identity","methodName":"m1","args":{"id":"a1"}}]}`,
-			"/api/read/multi",
-			`{"instructions":[{"appName":"identity","methodName":"m1","args":{"id":"a1"}}]}`},
-		// contract_simulate ← simulateContractRequest（handler/contract.go:165）
-		// 可选字段标 omitempty：未传/零值键不出现在 REST body（与缺省传给 gin 等效）。
-		{"contract_simulate",
-			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"variant":0},"ixAddress":"a2","ixSignatureMode":{"variant":0}}`,
-			"/api/simulate",
-			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"variant":0},"ixAddress":"a2","ixSignatureMode":{"variant":0}}`},
-		// contract_simulate_multi ← multiContractRequest（handler/contract.go:1132，SimulateContractMulti:1186）
-		{"contract_simulate_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"unified_payer_all","payerAddress":"a1"}`,
-			"/api/simulate/multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_payer_all","payerAddress":"a1"}`},
-		// contract_write ← writeContractRequest（handler/contract.go:789）
-		{"contract_write",
-			`{"appName":"nft","methodName":"mint","args":{},"paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1"}`,
-			"/api/write",
-			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1"}`},
-		// contract_write_multi ← multiContractRequest（handler/contract.go:1132，WriteContractMulti:1346）
-		{"contract_write_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
-			"/api/write/multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
-		// contract_write_multi_agent ← writeContractRequest（WriteContractMultiAgent，handler/contract.go:845）
-		{"contract_write_multi_agent",
-			`{"appName":"nft","methodName":"transfer","args":{},"paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2"}`,
-			"/api/write/multi-agent",
-			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2"}`},
-		// contract_write_multisig ← writeContractRequest（WriteContractMultisig，handler/contract.go:881）
-		{"contract_write_multisig",
-			`{"appName":"nft","methodName":"burn","args":{},"paymentMode":"split","ownerPrivateKey":"sk","ownerAddress":"a1"}`,
-			"/api/write/multisig",
-			`{"appName":"nft","methodName":"burn","paymentMode":"split","ownerPrivateKey":"sk","ownerAddress":"a1"}`},
-		// tx_simulate_raw ← rawTransactionRequest（handler/transaction_handler.go:293）
-		{"tx_simulate_raw",
-			`{"transactionPostcard":"pc1"}`,
-			"/api/transactions/simulate",
-			`{"transactionPostcard":"pc1"}`},
-		// tx_submit_raw ← rawTransactionRequest（handler/transaction_handler.go:293）
-		{"tx_submit_raw",
-			`{"transactionPostcard":"pc1"}`,
-			"/api/transactions/submit",
-			`{"transactionPostcard":"pc1"}`},
-		// tx_inspect_raw ← rawTransactionRequest（InspectTransaction，handler/transaction_handler.go:399）
-		{"tx_inspect_raw",
-			`{"transactionPostcard":"pc1"}`,
-			"/api/transactions/inspect",
-			`{"transactionPostcard":"pc1"}`},
-		// view_single ← rawViewRequest（handler/view_handler.go:48）
-		{"view_single",
-			`{"transactionPostcard":"pc1"}`,
-			"/api/view/single",
-			`{"transactionPostcard":"pc1"}`},
-		// view_multi ← rawViewRequest（ViewMulti，handler/view_handler.go:93）
-		{"view_multi",
-			`{"transactionPostcard":"pc1"}`,
-			"/api/view/multi",
-			`{"transactionPostcard":"pc1"}`},
-		// ---- Task 4 顺手补：Task 3 审查遗留缺口——下述 omitempty 可选字段此前
-		// 无正向传值用例，json tag 拼写无测试锁定。3 例分别锁住：
-		// contractSimulateArgs 的 ownerAddress/signers/gasPayer、
-		// contractMultiArgs 的 ix* 系列、contractWriteArgs 的 signers/gasPayer。----
-		{"contract_simulate",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
-			"/api/simulate",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
-		{"contract_simulate_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0}}`,
-			"/api/simulate/multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0}}`},
-		{"contract_write",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
-			"/api/write",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
-	}
+// assertRestCalls 批量执行 tools/call 并断言假后端逐条收到的 REST 请求与期望一致。
+// Task 5 从 Contract/Util 两份复制循环提炼（原第三份出现即提取）：
+// POST body 经 map 往返 key 顺序不定，一律 jsonEqual 键值比较（Task 1 教训）。
+func assertRestCalls(t *testing.T, frontURL string, seen *[]string, cases []restCallCase) {
+	t.Helper()
 	for _, c := range cases {
-		out := rpcCall(t, front.URL, "tools/call", map[string]any{"name": c.tool, "arguments": json.RawMessage(c.args)})
+		out := rpcCall(t, frontURL, "tools/call", map[string]any{"name": c.tool, "arguments": json.RawMessage(c.args)})
 		res, _ := out["result"].(map[string]any)
 		if res == nil {
 			t.Errorf("%s: 调用未返回 result（工具未注册或参数被拒）: %v", c.tool, out)
@@ -254,16 +186,124 @@ func TestContractToolCallMapping(t *testing.T) {
 		t.Fatalf("后端收到 %d 个请求, want %d: %v", len(*seen), len(cases), *seen)
 	}
 	for i, c := range cases {
-		// seen 记录格式："POST <path>?<query> <body>"
+		// seen 记录格式："<method> <path>?<query> <body>"
 		parts := strings.SplitN((*seen)[i], " ", 3)
-		if len(parts) != 3 || parts[0] != "POST" || parts[1] != c.wantPath+"?" {
-			t.Errorf("%s: 请求行 got=%q want=POST %s?", c.tool, (*seen)[i], c.wantPath)
+		if len(parts) != 3 || parts[0] != c.wantMethod || parts[1] != c.wantPathQuery {
+			t.Errorf("%s: 请求行 got=%q want=%s %s", c.tool, (*seen)[i], c.wantMethod, c.wantPathQuery)
 			continue
 		}
-		if !jsonEqual(t, parts[2], c.wantBody) {
+		if c.wantMethod == "POST" && !jsonEqual(t, parts[2], c.wantBody) {
 			t.Errorf("%s: body 不匹配（见上）", c.tool)
 		}
 	}
+}
+
+// TestContractToolCallMapping 覆盖 Task 3 的 13 个合约/视图/原始交易工具：
+// 断言每个工具把参数镜像为正确的 POST method + path + JSON body。
+// 输入结构无 omitempty，故 body 应包含镜像 struct 的全部 json tag
+// （未传字段以零值 ""/null 出现）——这同时是"字段镜像无遗漏"的强断言。
+func TestContractToolCallMapping(t *testing.T) {
+	backend, seen := newFakeBackend(t, 200, `{"code":0}`)
+	t.Setenv("MILON_REST_BASE_URL", backend.URL)
+	front := httptest.NewServer(NewMCPHandler(""))
+	t.Cleanup(front.Close)
+
+	cases := []restCallCase{
+		// contract_read ← readContractRequest（handler/contract.go:43）
+		{"contract_read",
+			`{"appName":"identity","methodName":"1071_get_identity","args":{"id":"a1"},"payerAddress":"a1"}`,
+			"POST", "/api/read?",
+			`{"appName":"identity","methodName":"1071_get_identity","args":{"id":"a1"},"payerAddress":"a1"}`},
+		// contract_read_multi ← readContractMultiRequest（handler/contract.go:103）
+		{"contract_read_multi",
+			`{"instructions":[{"appName":"identity","methodName":"m1","args":{"id":"a1"}}]}`,
+			"POST", "/api/read/multi?",
+			`{"instructions":[{"appName":"identity","methodName":"m1","args":{"id":"a1"}}]}`},
+		// contract_simulate ← simulateContractRequest（handler/contract.go:165）
+		// 可选字段标 omitempty：未传/零值键不出现在 REST body（与缺省传给 gin 等效）。
+		{"contract_simulate",
+			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"variant":0},"ixAddress":"a2","ixSignatureMode":{"variant":0}}`,
+			"POST", "/api/simulate?",
+			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"variant":0},"ixAddress":"a2","ixSignatureMode":{"variant":0}}`},
+		// contract_simulate_multi ← multiContractRequest（handler/contract.go:1132，SimulateContractMulti:1186）
+		{"contract_simulate_multi",
+			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"unified_payer_all","payerAddress":"a1"}`,
+			"POST", "/api/simulate/multi?",
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_payer_all","payerAddress":"a1"}`},
+		// contract_write ← writeContractRequest（handler/contract.go:789）
+		{"contract_write",
+			`{"appName":"nft","methodName":"mint","args":{},"paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1"}`,
+			"POST", "/api/write?",
+			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1"}`},
+		// contract_write_multi ← multiContractRequest（handler/contract.go:1132，WriteContractMulti:1346）
+		{"contract_write_multi",
+			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			"POST", "/api/write/multi?",
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+		// contract_write_multi_agent ← writeContractRequest（WriteContractMultiAgent，handler/contract.go:845）
+		{"contract_write_multi_agent",
+			`{"appName":"nft","methodName":"transfer","args":{},"paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2"}`,
+			"POST", "/api/write/multi-agent?",
+			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2"}`},
+		// contract_write_multisig ← writeContractRequest（WriteContractMultisig，handler/contract.go:881）
+		{"contract_write_multisig",
+			`{"appName":"nft","methodName":"burn","args":{},"paymentMode":"split","ownerPrivateKey":"sk","ownerAddress":"a1"}`,
+			"POST", "/api/write/multisig?",
+			`{"appName":"nft","methodName":"burn","paymentMode":"split","ownerPrivateKey":"sk","ownerAddress":"a1"}`},
+		// tx_simulate_raw ← rawTransactionRequest（handler/transaction_handler.go:293）
+		{"tx_simulate_raw",
+			`{"transactionPostcard":"pc1"}`,
+			"POST", "/api/transactions/simulate?",
+			`{"transactionPostcard":"pc1"}`},
+		// tx_submit_raw ← rawTransactionRequest（handler/transaction_handler.go:293）
+		{"tx_submit_raw",
+			`{"transactionPostcard":"pc1"}`,
+			"POST", "/api/transactions/submit?",
+			`{"transactionPostcard":"pc1"}`},
+		// tx_inspect_raw ← rawTransactionRequest（InspectTransaction，handler/transaction_handler.go:399）
+		{"tx_inspect_raw",
+			`{"transactionPostcard":"pc1"}`,
+			"POST", "/api/transactions/inspect?",
+			`{"transactionPostcard":"pc1"}`},
+		// view_single ← rawViewRequest（handler/view_handler.go:48）
+		{"view_single",
+			`{"transactionPostcard":"pc1"}`,
+			"POST", "/api/view/single?",
+			`{"transactionPostcard":"pc1"}`},
+		// view_multi ← rawViewRequest（ViewMulti，handler/view_handler.go:93）
+		{"view_multi",
+			`{"transactionPostcard":"pc1"}`,
+			"POST", "/api/view/multi?",
+			`{"transactionPostcard":"pc1"}`},
+		// ---- Task 4 顺手补：Task 3 审查遗留缺口——下述 omitempty 可选字段此前
+		// 无正向传值用例，json tag 拼写无测试锁定。3 例分别锁住：
+		// contractSimulateArgs 的 ownerAddress/signers/gasPayer、
+		// contractMultiArgs 的 ix* 系列、contractWriteArgs 的 signers/gasPayer。----
+		{"contract_simulate",
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			"POST", "/api/simulate?",
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+		{"contract_simulate_multi",
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0}}`,
+			"POST", "/api/simulate/multi?",
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0}}`},
+		{"contract_write",
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			"POST", "/api/write?",
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+		// ---- Task 5 顺手补：Task 4 审查遗留——contractMultiArgs 的
+		// payerPrivateKey/signatureMode/ownerPrivateKey/ownerAddress 与
+		// contractWriteArgs 的 ixSignatureMode 仍无正向传值用例，补 2 例锁拼写。----
+		{"contract_write_multi",
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"variant":0},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`,
+			"POST", "/api/write/multi?",
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"variant":0},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`},
+		{"contract_write_multi_agent",
+			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2","ixSignatureMode":{"variant":0}}`,
+			"POST", "/api/write/multi-agent?",
+			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2","ixSignatureMode":{"variant":0}}`},
+	}
+	assertRestCalls(t, front.URL, seen, cases)
 }
 
 // TestUtilToolCallMapping 覆盖 Task 4 的 5 个密钥/签名/VC 工具：
@@ -278,72 +318,174 @@ func TestUtilToolCallMapping(t *testing.T) {
 	front := httptest.NewServer(NewMCPHandler(""))
 	t.Cleanup(front.Close)
 
-	cases := []struct{ tool, args, wantPath, wantBody string }{
+	cases := []restCallCase{
 		// util_derive_address ← deriveAddressRequest（handler/util.go:25）
 		{"util_derive_address",
 			`{"publicKey":"pk","keyType":"ed25519"}`,
-			"/api/util/address/derive",
+			"POST", "/api/util/address/derive?",
 			`{"publicKey":"pk","keyType":"ed25519"}`},
 		// util_derive_address：keyType 可选（omitempty），不传时 body 不含该键
 		{"util_derive_address",
 			`{"publicKey":"pk"}`,
-			"/api/util/address/derive",
+			"POST", "/api/util/address/derive?",
 			`{"publicKey":"pk"}`},
 		// util_derive_public_key ← derivePublicKeyRequest（handler/util.go:81）
 		{"util_derive_public_key",
 			`{"privateKey":"sk","keyType":"ed25519"}`,
-			"/api/util/key/derive-public",
+			"POST", "/api/util/key/derive-public?",
 			`{"privateKey":"sk","keyType":"ed25519"}`},
 		// util_sign ← signMessageRequest（handler/util.go:138）
 		{"util_sign",
 			`{"privateKey":"sk","message":"deadbeef","keyType":"ed25519"}`,
-			"/api/util/sign",
+			"POST", "/api/util/sign?",
 			`{"privateKey":"sk","message":"deadbeef","keyType":"ed25519"}`},
 		// util_verify ← verifySignatureRequest（handler/util.go:214）
 		{"util_verify",
 			`{"publicKey":"pk","message":"deadbeef","signature":"ab"}`,
-			"/api/util/verify",
+			"POST", "/api/util/verify?",
 			`{"publicKey":"pk","message":"deadbeef","signature":"ab"}`},
 		// vc_attestation ← generateVcAttestationRequest（handler/vc_attestation_handler.go:39）
 		// 最小集：issuerPrivateKey + credentialJson，其余 omitempty 字段不得出现
 		{"vc_attestation",
 			`{"issuerPrivateKey":"sk","credentialJson":"{}"}`,
-			"/api/util/vc-attestation",
+			"POST", "/api/util/vc-attestation?",
 			`{"issuerPrivateKey":"sk","credentialJson":"{}"}`},
 		// vc_attestation：全 13 字段正向传值，锁住全部 json tag 拼写
 		{"vc_attestation",
 			`{"issuerPrivateKey":"sk","issuerPublicKey":"pk","chainId":900000001,"subjectPrivateKey":"ssk","subjectAddress":"subj","issuerKeyId":2,"credentialSchema":"KycLevelCredential","credentialJson":"{}","validUntilMs":1900000000000,"validUntil":"2027-08-24T00:00:00.000Z","credentialName":"n","credentialDesc":"d","issuedAt":"2026-01-01T00:00:00.000Z"}`,
-			"/api/util/vc-attestation",
+			"POST", "/api/util/vc-attestation?",
 			`{"issuerPrivateKey":"sk","issuerPublicKey":"pk","chainId":900000001,"subjectPrivateKey":"ssk","subjectAddress":"subj","issuerKeyId":2,"credentialSchema":"KycLevelCredential","credentialJson":"{}","validUntilMs":1900000000000,"validUntil":"2027-08-24T00:00:00.000Z","credentialName":"n","credentialDesc":"d","issuedAt":"2026-01-01T00:00:00.000Z"}`},
 		// vc_attestation：指针字段显式 0 值必须透传（validUntilMs=0 = 不过期）
 		{"vc_attestation",
 			`{"issuerPrivateKey":"sk","subjectAddress":"subj","validUntilMs":0}`,
-			"/api/util/vc-attestation",
+			"POST", "/api/util/vc-attestation?",
 			`{"issuerPrivateKey":"sk","subjectAddress":"subj","validUntilMs":0}`},
 	}
-	for _, c := range cases {
-		out := rpcCall(t, front.URL, "tools/call", map[string]any{"name": c.tool, "arguments": json.RawMessage(c.args)})
-		res, _ := out["result"].(map[string]any)
-		if res == nil {
-			t.Errorf("%s: 调用未返回 result（工具未注册或参数被拒）: %v", c.tool, out)
-			continue
-		}
-		if v, _ := res["isError"].(bool); v {
-			t.Errorf("%s: unexpected isError: %v", c.tool, out)
-		}
+	assertRestCalls(t, front.URL, seen, cases)
+}
+
+// TestDidSavedInstructionToolCallMapping 覆盖 Task 5 的 DID 12 工具 + 保存指令 4 工具：
+// 断言每个工具把参数镜像为正确的 method + path(+query/路径参数) + JSON body。
+// 字段镜像自 handler/did_handler.go 与 handler/saved_instruction_handler.go 的
+// request struct（json tag 逐字一致）；GET+query 工具（did_name_binding、
+// saved_instruction_execute 的 mode/wait）有带 query 的正向断言；
+// saved_instruction_create 全 17 字段正向传值锁住全部 json tag 拼写。
+func TestDidSavedInstructionToolCallMapping(t *testing.T) {
+	backend, seen := newFakeBackend(t, 200, `{"code":0}`)
+	t.Setenv("MILON_REST_BASE_URL", backend.URL)
+	front := httptest.NewServer(NewMCPHandler(""))
+	t.Cleanup(front.Close)
+
+	cases := []restCallCase{
+		// did_create ← didCreateRequest（handler/did_handler.go:48）
+		// 最小集：privateKey/address 必填（handler validateDidCreateRequest:188 校验），
+		// 其余可选字段 omitempty 不出现。
+		{"did_create",
+			`{"privateKey":"sk","address":"a1"}`,
+			"POST", "/api/tool/did/create?",
+			`{"privateKey":"sk","address":"a1"}`},
+		// did_create：全 8 字段正向传值（services 元素为 {label,serviceEndpoint}）
+		{"did_create",
+			`{"privateKey":"sk","publicKey":"pk","address":"a1","subjectType":"Organization","alias":"alice","suffix":1024,"services":[{"label":"blog","serviceEndpoint":"https://example.com"}],"avatarUri":"https://example.com/me.png"}`,
+			"POST", "/api/tool/did/create?",
+			`{"privateKey":"sk","publicKey":"pk","address":"a1","subjectType":"Organization","alias":"alice","suffix":1024,"services":[{"label":"blog","serviceEndpoint":"https://example.com"}],"avatarUri":"https://example.com/me.png"}`},
+		// did_set_alias ← SetAlias 匿名 request（handler/did_handler.go:465）
+		{"did_set_alias",
+			`{"privateKey":"sk","address":"a1","alias":"alice","suffix":1024}`,
+			"POST", "/api/tool/did/set-alias?",
+			`{"privateKey":"sk","address":"a1","alias":"alice","suffix":1024}`},
+		// did_add_service ← AddService 匿名 request（handler/did_handler.go:502）
+		{"did_add_service",
+			`{"privateKey":"sk","address":"a1","label":"blog","serviceEndpoint":"https://example.com"}`,
+			"POST", "/api/tool/did/add-service?",
+			`{"privateKey":"sk","address":"a1","label":"blog","serviceEndpoint":"https://example.com"}`},
+		// did_update_service ← UpdateService 匿名 request（handler/did_handler.go:540）
+		{"did_update_service",
+			`{"privateKey":"sk","address":"a1","id":2,"label":"blog","serviceEndpoint":"https://new.example.com"}`,
+			"POST", "/api/tool/did/update-service?",
+			`{"privateKey":"sk","address":"a1","id":2,"label":"blog","serviceEndpoint":"https://new.example.com"}`},
+		// did_remove_service ← RemoveService 匿名 request（handler/did_handler.go:584）
+		{"did_remove_service",
+			`{"privateKey":"sk","address":"a1","id":2}`,
+			"POST", "/api/tool/did/remove-service?",
+			`{"privateKey":"sk","address":"a1","id":2}`},
+		// did_set_avatar_uri ← SetAvatarUri 匿名 request（handler/did_handler.go:619）
+		{"did_set_avatar_uri",
+			`{"privateKey":"sk","address":"a1","avatarUri":"https://example.com/a.png"}`,
+			"POST", "/api/tool/did/set-avatar-uri?",
+			`{"privateKey":"sk","address":"a1","avatarUri":"https://example.com/a.png"}`},
+		// did_add_key ← AddKey 匿名 request（handler/did_handler.go:655），label 可选指针
+		{"did_add_key",
+			`{"privateKey":"sk","address":"a1","newPublicKey":"pk2","label":"backup"}`,
+			"POST", "/api/tool/did/add-key?",
+			`{"privateKey":"sk","address":"a1","newPublicKey":"pk2","label":"backup"}`},
+		// did_add_key：label 缺省（omitempty 吞 nil 指针，handler 侧 = option<String>::None）
+		{"did_add_key",
+			`{"privateKey":"sk","address":"a1","newPublicKey":"pk2"}`,
+			"POST", "/api/tool/did/add-key?",
+			`{"privateKey":"sk","address":"a1","newPublicKey":"pk2"}`},
+		// did_update_key ← UpdateKey 匿名 request（handler/did_handler.go:698）
+		{"did_update_key",
+			`{"privateKey":"sk","address":"a1","id":1,"newPublicKey":"pk2"}`,
+			"POST", "/api/tool/did/update-key?",
+			`{"privateKey":"sk","address":"a1","id":1,"newPublicKey":"pk2"}`},
+		// did_remove_key ← RemoveKey 匿名 request（handler/did_handler.go:742）
+		{"did_remove_key",
+			`{"privateKey":"sk","address":"a1","id":1}`,
+			"POST", "/api/tool/did/remove-key?",
+			`{"privateKey":"sk","address":"a1","id":1}`},
+		// did_deactivate ← didMutateBase（handler/did_handler.go:60，Deactivate:776 直接绑定）；
+		// publicKey 可选（omitempty），不传时 body 只含两个必填字段
+		{"did_deactivate",
+			`{"privateKey":"sk","address":"a1"}`,
+			"POST", "/api/tool/did/deactivate?",
+			`{"privateKey":"sk","address":"a1"}`},
+		// did_name_binding ← NameBinding（handler/did_handler.go:834）：
+		// GET + c.Query("name")，query 正向渲染
+		{"did_name_binding",
+			`{"name":"alice-1024"}`,
+			"GET", "/api/tool/did/name-binding?name=alice-1024",
+			""},
+		// did_document ← Document（handler/did_handler.go:803）：
+		// GET + c.Param("address")，路径参数渲染
+		{"did_document",
+			`{"address":"a1"}`,
+			"GET", "/api/tool/did/a1/document?",
+			""},
+		// saved_instruction_create ← createSavedInstructionRequest
+		//（handler/saved_instruction_handler.go:176）最小必填集
+		{"saved_instruction_create",
+			`{"name":"n1","appName":"identity","methodName":"m1"}`,
+			"POST", "/api/saved-instructions?",
+			`{"name":"n1","appName":"identity","methodName":"m1"}`},
+		// saved_instruction_create：全 17 字段正向传值，锁住全部 json tag 拼写
+		{"saved_instruction_create",
+			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"variant":0},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			"POST", "/api/saved-instructions?",
+			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"variant":0},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+		// saved_instruction_list ← ListSavedInstructions（handler/saved_instruction_handler.go:278）：
+		// handler 不读任何 query/param，无参 GET
+		{"saved_instruction_list",
+			`{}`,
+			"GET", "/api/saved-instructions?",
+			""},
+		// saved_instruction_get ← GetSavedInstruction（handler/saved_instruction_handler.go:284）：
+		// GET + c.Param("id")
+		{"saved_instruction_get",
+			`{"id":"abcd1234"}`,
+			"GET", "/api/saved-instructions/abcd1234?",
+			""},
+		// saved_instruction_execute ← ExecuteSavedInstruction（handler/saved_instruction_handler.go:383）：
+		// POST + c.Param("id")；mode/wait 可选 query（DefaultQuery:395/515），缺省不带
+		{"saved_instruction_execute",
+			`{"id":"abcd1234"}`,
+			"POST", "/api/saved-instructions/abcd1234/execute?",
+			`{}`},
+		// saved_instruction_execute：mode/wait 正向传值（query 渲染，handler 不读 body）
+		{"saved_instruction_execute",
+			`{"id":"abcd1234","mode":"send","wait":"false"}`,
+			"POST", "/api/saved-instructions/abcd1234/execute?mode=send&wait=false",
+			`{}`},
 	}
-	if len(*seen) != len(cases) {
-		t.Fatalf("后端收到 %d 个请求, want %d: %v", len(*seen), len(cases), *seen)
-	}
-	for i, c := range cases {
-		// seen 记录格式："POST <path>?<query> <body>"
-		parts := strings.SplitN((*seen)[i], " ", 3)
-		if len(parts) != 3 || parts[0] != "POST" || parts[1] != c.wantPath+"?" {
-			t.Errorf("%s: 请求行 got=%q want=POST %s?", c.tool, (*seen)[i], c.wantPath)
-			continue
-		}
-		if !jsonEqual(t, parts[2], c.wantBody) {
-			t.Errorf("%s: body 不匹配（见上）", c.tool)
-		}
-	}
+	assertRestCalls(t, front.URL, seen, cases)
 }

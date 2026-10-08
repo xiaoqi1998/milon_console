@@ -228,6 +228,149 @@ type vcAttestationArgs struct {
 	IssuedAt          string `json:"issuedAt,omitempty" jsonschema:"可选：签发时间 ISO8601，缺省当前 UTC"`
 }
 
+// ==================== Task 5：DID 全生命周期（12 个）+ 保存指令（4 个）====================
+// 字段 json tag 逐字镜像 handler 侧 request struct（唯一事实源），注释标注来源行号。
+// 已逐个核对 12+4 个 handler：
+//   - DID 细粒度端点（SetAlias/AddService/.../Deactivate）均为 POST 纯 JSON body，
+//     公共字段经匿名嵌入 didMutateBase（handler/did_handler.go:60）绑定；
+//   - Document 读 c.Param("address")（did_handler.go:804）、NameBinding 读
+//     c.Query("name")（did_handler.go:835），分别进 PathParams/QueryParams；
+//   - 保存指令：list 不读任何参数（saved_instruction_handler.go:278-281）、
+//     get 读 c.Param("id")（:285）、execute 读 c.Param("id") + c.DefaultQuery
+//     "mode"（:395）/"wait"（:515）且不读 body。
+// handler 侧 json.RawMessage 字段（signatureMode 等）按 Task 3 规则镜像为 any。
+
+// didCreateArgs 镜像 didCreateRequest（handler/did_handler.go:48，POST /api/tool/did/create）。
+// privateKey/address 被 validateDidCreateRequest（:188-194）校验必填，不标 omitempty；
+// services 元素结构为 {label, serviceEndpoint}（didServiceSpec，did_handler.go:42），
+// 按任务简报镜像为 []any 透传；suffix 为 *uint32 可选指针（覆盖服务端代填后缀）。
+type didCreateArgs struct {
+	PrivateKey  string  `json:"privateKey" jsonschema:"必填：私钥（hex 或 base58）"`
+	PublicKey   string  `json:"publicKey,omitempty" jsonschema:"FN-DSA-512 私钥时必填（897 字节公钥）"`
+	Address     string  `json:"address" jsonschema:"必填：32 字节私钥不同曲线派生不同地址，传 account_generate 返回的地址"`
+	SubjectType string  `json:"subjectType,omitempty" jsonschema:"可选：Personal（缺省）/Organization"`
+	Alias       string  `json:"alias,omitempty" jsonschema:"可选：非空时创建即绑定别名；「alias-数字」格式且全局唯一"`
+	Suffix      *uint32 `json:"suffix,omitempty" jsonschema:"可选：覆盖服务端代填的数字后缀"`
+	Services    []any   `json:"services,omitempty" jsonschema:"可选：创建时一并登记的服务端点，元素形如 {\"label\":\"...\",\"serviceEndpoint\":\"https://...\"}"`
+	AvatarURI   string  `json:"avatarUri,omitempty" jsonschema:"可选：头像 URI；链上已有 DID 时仅在显式传入且不同才更新"`
+}
+
+// didMutateArgs 镜像 didMutateBase（handler/did_handler.go:60）：DID 细粒度
+// 管理端点的公共身份字段。privateKey/address 被 bindMutate（:881-889）校验必填；
+// publicKey 仅 FN-DSA-512 私钥时需要。did_deactivate 直接以本结构为入参。
+type didMutateArgs struct {
+	PrivateKey string `json:"privateKey" jsonschema:"必填：私钥（hex 或 base58）"`
+	PublicKey  string `json:"publicKey,omitempty" jsonschema:"FN-DSA-512 私钥时必填（897 字节公钥）"`
+	Address    string `json:"address" jsonschema:"必填：32 字节私钥在不同曲线下派生不同地址，传账户生成时返回的地址"`
+}
+
+// didSetAliasArgs 镜像 SetAlias 的匿名 request（handler/did_handler.go:465）。
+// alias 被 handler（:473-477）校验必填；suffix 可选指针（缺省服务端代填并自动换号重试）。
+type didSetAliasArgs struct {
+	didMutateArgs
+	Alias  string  `json:"alias" jsonschema:"必填：别名主体；最终别名为「alias-数字」格式"`
+	Suffix *uint32 `json:"suffix,omitempty" jsonschema:"可选：数字后缀；缺省服务端代填，撞名自动换号重试"`
+}
+
+// didAddServiceArgs 镜像 AddService 的匿名 request（handler/did_handler.go:502）。
+// label/serviceEndpoint 均 handler 校验必填（:514-517，链端错误 1047/1048）。
+type didAddServiceArgs struct {
+	didMutateArgs
+	Label           string `json:"label" jsonschema:"必填：服务标签"`
+	ServiceEndpoint string `json:"serviceEndpoint" jsonschema:"必填：服务端点绝对 URI（如 https://example.com）"`
+}
+
+// didUpdateServiceArgs 镜像 UpdateService 的匿名 request（handler/did_handler.go:540）。
+// id 必填（handler :549 校验 nil 400），指针类型保持（0 是合法 service id）。
+type didUpdateServiceArgs struct {
+	didMutateArgs
+	Id              *uint8 `json:"id" jsonschema:"必填：服务 id（从 did_document 的 services 列表获取）"`
+	Label           string `json:"label" jsonschema:"必填：服务标签"`
+	ServiceEndpoint string `json:"serviceEndpoint" jsonschema:"必填：服务端点绝对 URI"`
+}
+
+// didRemoveServiceArgs 镜像 RemoveService 的匿名 request（handler/did_handler.go:584）。
+type didRemoveServiceArgs struct {
+	didMutateArgs
+	Id *uint8 `json:"id" jsonschema:"必填：服务 id（从 did_document 获取）"`
+}
+
+// didSetAvatarUriArgs 镜像 SetAvatarUri 的匿名 request（handler/did_handler.go:619）。
+// avatarUri 被 handler（:626-630）校验必填（链端要求长度 1-512 字节，错误 1045）。
+type didSetAvatarUriArgs struct {
+	didMutateArgs
+	AvatarURI string `json:"avatarUri" jsonschema:"必填：头像 URI（1-512 字节）"`
+}
+
+// didAddKeyArgs 镜像 AddKey 的匿名 request（handler/did_handler.go:655）。
+// newPublicKey 必填（:663-667）；label 可选指针（缺省 = 链端 option<String>::None）。
+type didAddKeyArgs struct {
+	didMutateArgs
+	NewPublicKey string  `json:"newPublicKey" jsonschema:"必填：要加入文档的公钥（base58）"`
+	Label        *string `json:"label,omitempty" jsonschema:"可选：密钥标签；缺省不设"`
+}
+
+// didUpdateKeyArgs 镜像 UpdateKey 的匿名 request（handler/did_handler.go:698）。
+// id 与 newPublicKey 均 handler 校验必填（:708-711）。
+type didUpdateKeyArgs struct {
+	didMutateArgs
+	Id           *uint8  `json:"id" jsonschema:"必填：密钥 id（从 did_document 的 keys 列表获取）"`
+	NewPublicKey string  `json:"newPublicKey" jsonschema:"必填：新公钥（base58）"`
+	Label        *string `json:"label,omitempty" jsonschema:"可选：密钥标签"`
+}
+
+// didRemoveKeyArgs 镜像 RemoveKey 的匿名 request（handler/did_handler.go:742）。
+type didRemoveKeyArgs struct {
+	didMutateArgs
+	Id *uint8 `json:"id" jsonschema:"必填：密钥 id（最后一把密钥链端拒绝，错误 1042）"`
+}
+
+// didNameBindingArgs 镜像 NameBinding 的 query 参数（handler/did_handler.go:835
+// 读 c.Query("name")，空值 400）。
+type didNameBindingArgs struct {
+	Name string `json:"name" jsonschema:"必填：完整别名，「alias-数字」格式，如 alice-1024"`
+}
+
+// savedInstructionCreateArgs 镜像 createSavedInstructionRequest
+//（handler/saved_instruction_handler.go:176，POST /api/saved-instructions）。
+// name/appName/methodName 带 binding:"required"，不标 omitempty；
+// 其余可选（entry 方法保存时 paymentMode 缺省 unified_payer_all）。
+// signatureMode/ixSignatureMode 为 handler 侧 json.RawMessage，按规则镜像为 any。
+type savedInstructionCreateArgs struct {
+	Name            string         `json:"name" jsonschema:"必填：展示名称"`
+	Description     string         `json:"description,omitempty"`
+	AppName         string         `json:"appName" jsonschema:"必填：IDL app 名（先用 idl_metadata 查）"`
+	MethodName      string         `json:"methodName" jsonschema:"必填：IDL 方法名"`
+	Args            map[string]any `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
+	PaymentMode     string         `json:"paymentMode,omitempty" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored；entry 缺省 unified_payer_all"`
+	PayerAddress    string         `json:"payerAddress,omitempty"`
+	PayerPrivateKey string         `json:"payerPrivateKey,omitempty"`
+	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"签名模式对象，如 {\"variant\":0}"`
+	IxAddress       string         `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
+	IxPrivateKey    string         `json:"ixPrivateKey,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户私钥"`
+	IxSignatureMode any            `json:"ixSignatureMode,omitempty"`
+	OwnerAddress    string         `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
+	OwnerPrivateKey string         `json:"ownerPrivateKey,omitempty" jsonschema:"split 专用：owner 私钥，缺省取 payerPrivateKey"`
+	Signers         []signerEntry  `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
+	GasPayer        *signerEntry   `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
+}
+
+// savedInstructionIdArgs 镜像 GetSavedInstruction 的路径参数
+//（handler/saved_instruction_handler.go:285 读 c.Param("id")）。
+type savedInstructionIdArgs struct {
+	Id string `json:"id" jsonschema:"必填：保存指令 ID"`
+}
+
+// savedInstructionExecuteArgs 镜像 ExecuteSavedInstruction 的参数
+//（handler/saved_instruction_handler.go:383：c.Param("id") + DefaultQuery
+// "mode"（:395，缺省 auto：view→read、entry→simulate）/"wait"（:515，仅 send
+// 模式读取，缺省 true））。handler 不读 body，mode/wait 渲染为 query。
+type savedInstructionExecuteArgs struct {
+	Id   string `json:"id" jsonschema:"必填：保存指令 ID"`
+	Mode string `json:"mode,omitempty" jsonschema:"可选：read/simulate/send；缺省 auto（view→read、entry→simulate）"`
+	Wait string `json:"wait,omitempty" jsonschema:"可选：send 模式是否等待确认（true/1 等待），缺省 true"`
+}
+
 // registerTool 把"输入结构 → REST 映射"注册为 MCP 工具。
 func registerTool[In any](srv *mcp.Server, exec *Executor, name, desc string, m RESTMapping) {
 	mcp.AddTool[In, any](srv, &mcp.Tool{Name: name, Description: desc},
@@ -290,7 +433,7 @@ func bearerAuth(token string, next http.Handler) http.Handler {
 }
 
 // RegisterTools 注册全部工具；基础 17 个 + Task 3 合约/视图/原始交易 13 个 +
-// Task 4 密钥/签名/VC 5 个，后续任务在此追加。
+// Task 4 密钥/签名/VC 5 个 + Task 5 DID 12 个与保存指令 4 个（共 51 个），后续任务在此追加。
 func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[emptyArgs](srv, exec, "network_list", "列出内置网络（devNet/localNet）及当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/list"})
 	registerTool[emptyArgs](srv, exec, "network_current", "查询当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/current"})
@@ -357,4 +500,71 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[vcAttestationArgs](srv, exec, "vc_attestation",
 		"生成 DiscloseVcAttestation 可验证凭证披露文档（milon-vc-disclosure 裸 JSON：issuer 私钥签名并本地验签，输出可直接用于链上披露；issuer 为 FN-DSA-512 密钥时须同时提供 issuerPublicKey）",
 		RESTMapping{Method: "POST", PathTemplate: "/api/util/vc-attestation"})
+
+	// ---- Task 5：DID 全生命周期（12 个）----
+
+	// 创建（幂等聚合：链上已有则按请求补齐差异，可直接重跑）
+	registerTool[didCreateArgs](srv, exec, "did_create",
+		"创建 DID（幂等）：一步完成 创建（+可选别名）+服务+头像；链上已有 DID 时按请求补齐差异（缺别名 SetAlias/缺服务 AddService/头像不同 SetAvatarUri），不覆盖已有",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/create"})
+
+	// 别名
+	registerTool[didSetAliasArgs](srv, exec, "did_set_alias",
+		"为已有 DID 绑定/更换别名（「alias-数字」格式且全局唯一；suffix 缺省服务端代填，撞名自动换号重试；响应含最新 nameBinding）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/set-alias"})
+
+	// 服务端点
+	registerTool[didAddServiceArgs](srv, exec, "did_add_service",
+		"向 DID 文档添加服务端点（label + 绝对 URI）；响应带最新文档，从中取链上分配的 service id",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/add-service"})
+	registerTool[didUpdateServiceArgs](srv, exec, "did_update_service",
+		"更新 DID 文档中的服务端点（id 从 did_document 的 services 列表获取）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/update-service"})
+	registerTool[didRemoveServiceArgs](srv, exec, "did_remove_service",
+		"移除 DID 文档中的服务端点（id 从 did_document 获取）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/remove-service"})
+
+	// 头像
+	registerTool[didSetAvatarUriArgs](srv, exec, "did_set_avatar_uri",
+		"设置 DID 头像 URI（长度 1-512 字节）；响应带最新文档",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/set-avatar-uri"})
+
+	// 密钥管理
+	registerTool[didAddKeyArgs](srv, exec, "did_add_key",
+		"向 DID 文档添加公钥（响应带最新文档，从中取链上分配的 key id）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/add-key"})
+	registerTool[didUpdateKeyArgs](srv, exec, "did_update_key",
+		"更新 DID 文档中的公钥（id 从 did_document 的 keys 列表获取）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/update-key"})
+	registerTool[didRemoveKeyArgs](srv, exec, "did_remove_key",
+		"移除 DID 文档中的公钥（最后一把密钥链端拒绝，错误 1042）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/remove-key"})
+
+	// 停用
+	registerTool[didMutateArgs](srv, exec, "did_deactivate",
+		"停用 DID（不可逆；停用后 identity 写操作均被拒，错误 1026）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/deactivate"})
+
+	// 查询
+	registerTool[didNameBindingArgs](srv, exec, "did_name_binding",
+		"按别名反查 DID 绑定（完整别名「alias-数字」，如 alice-1024；未绑定时 404）",
+		RESTMapping{Method: "GET", PathTemplate: "/api/tool/did/name-binding", QueryParams: []string{"name"}})
+	registerTool[addressArgs](srv, exec, "did_document",
+		"查询完整 DID 文档（含 keys/services/avatar/alias；未创建时 404）",
+		RESTMapping{Method: "GET", PathTemplate: "/api/tool/did/{address}/document", PathParams: []string{"address"}})
+
+	// ---- Task 5：保存指令（4 个）----
+
+	registerTool[savedInstructionCreateArgs](srv, exec, "saved_instruction_create",
+		"保存一条 IDL 方法调用（含账户/签名绑定）供后续反复执行；kind 由 IDL 自动检测（view/entry），entry 方法 paymentMode 缺省 unified_payer_all",
+		RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions"})
+	registerTool[emptyArgs](srv, exec, "saved_instruction_list",
+		"列出全部保存的指令",
+		RESTMapping{Method: "GET", PathTemplate: "/api/saved-instructions"})
+	registerTool[savedInstructionIdArgs](srv, exec, "saved_instruction_get",
+		"按 ID 查询单条保存的指令（含绑定的账户与签名信息）",
+		RESTMapping{Method: "GET", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}})
+	registerTool[savedInstructionExecuteArgs](srv, exec, "saved_instruction_execute",
+		"执行保存的指令（mode 缺省 auto：view→read、entry→simulate；send 真实上链，可用 wait 控制是否等待确认）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions/{id}/execute", PathParams: []string{"id"}, QueryParams: []string{"mode", "wait"}})
 }
