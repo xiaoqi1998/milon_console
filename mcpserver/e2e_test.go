@@ -40,11 +40,11 @@ func e2eContentText(t *testing.T, res map[string]any) string {
 }
 
 func TestE2ESmoke(t *testing.T) {
-	// ---- 1. tools/list：55 个工具齐备 ----
+	// ---- 1. tools/list：57 个工具齐备 ----
 	out := rpcCall(t, e2eURL, "tools/list", map[string]any{})
 	tools := out["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 55 {
-		t.Fatalf("tools=%d want 55", len(tools))
+	if len(tools) != 57 {
+		t.Fatalf("tools=%d want 57", len(tools))
 	}
 
 	// ---- 2. 真链冒烟：无参工具直调（account_generate 空参数走 REST 默认曲线） ----

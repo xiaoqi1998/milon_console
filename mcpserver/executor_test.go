@@ -69,6 +69,43 @@ func TestExecutorCall(t *testing.T) {
 		}
 	})
 
+	t.Run("PUT 携带 JSON body 且排除路径参数", func(t *testing.T) {
+		srv, seen := newFakeBackend(t, 200, `{}`)
+		e := NewExecutor(srv.URL, srv.Client())
+		// PUT 与 POST 同为 body 方法（saved-instructions 更新）；
+		// id 已渲染进路径，不得残留在 body。
+		_, err := e.Call(ctx, RESTMapping{Method: "PUT", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}},
+			json.RawMessage(`{"id":"abc","name":"n2","description":"d2"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := (*seen)[0]
+		prefix := "PUT /api/saved-instructions/abc? "
+		if !strings.HasPrefix(got, prefix) {
+			t.Fatalf("got=%s", got)
+		}
+		var body map[string]any
+		if err := json.Unmarshal([]byte(strings.TrimPrefix(got, prefix)), &body); err != nil {
+			t.Fatalf("PUT 应携带合法 JSON body: %v", err)
+		}
+		if len(body) != 2 || body["name"] != "n2" || body["description"] != "d2" {
+			t.Fatalf("body=%v（路径参数 id 应被排除）", body)
+		}
+	})
+
+	t.Run("DELETE 无 body", func(t *testing.T) {
+		srv, seen := newFakeBackend(t, 200, `{}`)
+		e := NewExecutor(srv.URL, srv.Client())
+		_, err := e.Call(ctx, RESTMapping{Method: "DELETE", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}},
+			json.RawMessage(`{"id":"abc"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := (*seen)[0]; got != "DELETE /api/saved-instructions/abc? " {
+			t.Fatalf("got=%q（DELETE 不应携带 body）", got)
+		}
+	})
+
 	t.Run("非2xx 转工具错误且保留原文", func(t *testing.T) {
 		srv, _ := newFakeBackend(t, 400, `{"code":1001,"message":"invalid privateKey"}`)
 		e := NewExecutor(srv.URL, srv.Client())

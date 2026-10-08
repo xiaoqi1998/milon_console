@@ -15,7 +15,7 @@ import (
 
 // RESTMapping 声明一个 MCP 工具对应的 REST 调用。
 type RESTMapping struct {
-	Method       string // "GET" / "POST"
+	Method       string // "GET" / "POST" / "PUT" / "DELETE"
 	PathTemplate string // 如 "/api/transactions/{hash}"
 	PathParams   []string
 	QueryParams  []string // 若 handler 读 c.Query，则列入；渲染为 query string
@@ -66,8 +66,10 @@ func (e *Executor) Call(ctx context.Context, m RESTMapping, argsJSON json.RawMes
 		path += "?" + query.Encode()
 	}
 
+	// body 方法：POST 与 PUT 都把剩余参数组为 JSON body；GET/DELETE 无 body。
+	hasBody := m.Method == "POST" || m.Method == "PUT"
 	var body io.Reader
-	if m.Method == "POST" {
+	if hasBody {
 		b, err := json.Marshal(args)
 		if err != nil {
 			return nil, err
@@ -78,7 +80,7 @@ func (e *Executor) Call(ctx context.Context, m RESTMapping, argsJSON json.RawMes
 	if err != nil {
 		return nil, err
 	}
-	if m.Method == "POST" {
+	if hasBody {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	resp, err := e.http.Do(req)

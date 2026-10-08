@@ -232,16 +232,18 @@ type vcAttestationArgs struct {
 	IssuedAt          string `json:"issuedAt,omitempty" jsonschema:"可选：签发时间 ISO8601，缺省当前 UTC"`
 }
 
-// ==================== Task 5：DID 全生命周期（12 个）+ 保存指令（4 个）====================
+// ==================== Task 5：DID 全生命周期（12 个）+ 保存指令（6 个）====================
 // 字段 json tag 逐字镜像 handler 侧 request struct（唯一事实源），注释标注来源行号。
-// 已逐个核对 12+4 个 handler：
+// 已逐个核对 12+6 个 handler：
 //   - DID 细粒度端点（SetAlias/AddService/.../Deactivate）均为 POST 纯 JSON body，
 //     公共字段经匿名嵌入 didMutateBase（handler/did_handler.go:60）绑定；
 //   - Document 读 c.Param("address")（did_handler.go:804）、NameBinding 读
 //     c.Query("name")（did_handler.go:835），分别进 PathParams/QueryParams；
 //   - 保存指令：list 不读任何参数（saved_instruction_handler.go:278-281）、
-//     get 读 c.Param("id")（:285）、execute 读 c.Param("id") + c.DefaultQuery
-//     "mode"（:395）/"wait"（:515）且不读 body。
+//     get 读 c.Param("id")（:285）、update 读 c.Param("id") + JSON body
+//     （updateSavedInstructionRequest:195，全字段 nil-able 部分更新）、
+//     delete 只读 c.Param("id")（:364，无 body）、execute 读 c.Param("id") +
+//     c.DefaultQuery "mode"（:395）/"wait"（:515）且不读 body。
 // handler 侧 json.RawMessage 字段（signatureMode 等）按 Task 3 规则镜像为 any。
 
 // didCreateArgs 镜像 didCreateRequest（handler/did_handler.go:48，POST /api/tool/did/create）。
@@ -357,6 +359,32 @@ type savedInstructionCreateArgs struct {
 	OwnerPrivateKey string         `json:"ownerPrivateKey,omitempty" jsonschema:"split 专用：owner 私钥，缺省取 payerPrivateKey"`
 	Signers         []signerEntry  `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
 	GasPayer        *signerEntry   `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
+}
+
+// savedInstructionUpdateArgs 镜像 updateSavedInstructionRequest
+// （handler/saved_instruction_handler.go:195，PUT /api/saved-instructions/{id}）。
+// 部分更新契约：handler 侧全字段 nil-able（*string 指针 / map / RawMessage /
+// slice / 指针元素）且无 binding required——不传 = 保持原值，镜像侧全标
+// omitempty 保持同样的可选语义（schema required 集只含路径参数 id）。
+// handler 不支持改 appName/methodName/kind（需换方法请删除后重建），
+// 故镜像不含这三字段。signatureMode/ixSignatureMode 为 handler 侧
+// json.RawMessage，按规则镜像为 any。
+type savedInstructionUpdateArgs struct {
+	Id              string         `json:"id" jsonschema:"必填：保存指令 ID"`
+	Name            *string        `json:"name,omitempty" jsonschema:"可选：新的展示名称；不传保持不变"`
+	Description     *string        `json:"description,omitempty" jsonschema:"可选：新的描述；不传保持不变"`
+	Args            map[string]any `json:"args,omitempty" jsonschema:"可选：新的方法参数对象；不传保持不变"`
+	PaymentMode     *string        `json:"paymentMode,omitempty" jsonschema:"可选：unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
+	PayerAddress    *string        `json:"payerAddress,omitempty"`
+	PayerPrivateKey *string        `json:"payerPrivateKey,omitempty"`
+	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"可选：签名模式对象，如 {\"variant\":0}"`
+	IxAddress       *string        `json:"ixAddress,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户地址"`
+	IxPrivateKey    *string        `json:"ixPrivateKey,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户私钥"`
+	IxSignatureMode any            `json:"ixSignatureMode,omitempty"`
+	OwnerAddress    *string        `json:"ownerAddress,omitempty" jsonschema:"可选：split 专用：owner 地址"`
+	OwnerPrivateKey *string        `json:"ownerPrivateKey,omitempty" jsonschema:"可选：split 专用：owner 私钥"`
+	Signers         []signerEntry  `json:"signers,omitempty" jsonschema:"可选：multi_signer 专用：签名者列表"`
+	GasPayer        *signerEntry   `json:"gasPayer,omitempty" jsonschema:"可选：multi_signer 专用：独立 gas 代付账户"`
 }
 
 // savedInstructionIdArgs 镜像 GetSavedInstruction 的路径参数
@@ -585,8 +613,8 @@ func bearerAuth(token string, next http.Handler) http.Handler {
 }
 
 // RegisterTools 注册全部工具；基础 17 个 + Task 3 合约/视图/原始交易 13 个 +
-// Task 4 密钥/签名/VC 5 个 + Task 5 DID 12 个与保存指令 4 个 + Task 6 高层
-// flow 工具 4 个（共 55 个）。
+// Task 4 密钥/签名/VC 5 个 + Task 5 DID 12 个与保存指令 6 个 + Task 6 高层
+// flow 工具 4 个（共 57 个）。
 func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[emptyArgs](srv, exec, "network_list", "列出内置网络（devNet/localNet）及当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/list"})
 	registerTool[emptyArgs](srv, exec, "network_current", "查询当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/current"})
@@ -706,7 +734,7 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		"查询完整 DID 文档（含 keys/services/avatar/alias；未创建时 404）",
 		RESTMapping{Method: "GET", PathTemplate: "/api/tool/did/{address}/document", PathParams: []string{"address"}})
 
-	// ---- Task 5：保存指令（4 个）----
+	// ---- Task 5：保存指令（6 个）----
 
 	registerTool[savedInstructionCreateArgs](srv, exec, "saved_instruction_create",
 		"保存一条 IDL 方法调用（含账户/签名绑定）供后续反复执行；kind 由 IDL 自动检测（view/entry），entry 方法 paymentMode 缺省 unified_payer_all",
@@ -717,6 +745,12 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[savedInstructionIdArgs](srv, exec, "saved_instruction_get",
 		"按 ID 查询单条保存的指令（含绑定的账户与签名信息）",
 		RESTMapping{Method: "GET", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}})
+	registerTool[savedInstructionUpdateArgs](srv, exec, "saved_instruction_update",
+		"部分更新保存的指令：只改传入的字段，未传字段保持不变（如只换 name 或 args）；不支持改 appName/methodName/kind，需换方法请删除后重建",
+		RESTMapping{Method: "PUT", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}})
+	registerTool[savedInstructionIdArgs](srv, exec, "saved_instruction_delete",
+		"按 ID 删除保存的指令（不可恢复）",
+		RESTMapping{Method: "DELETE", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}})
 	registerTool[savedInstructionExecuteArgs](srv, exec, "saved_instruction_execute",
 		"执行保存的指令（mode 缺省 auto：view→read、entry→simulate；send 真实上链，可用 wait 控制是否等待确认）",
 		RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions/{id}/execute", PathParams: []string{"id"}, QueryParams: []string{"mode", "wait"}})

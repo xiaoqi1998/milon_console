@@ -75,9 +75,10 @@ func TestToolsListBasics(t *testing.T) {
 		"did_set_avatar_uri",
 		"did_add_key", "did_update_key", "did_remove_key",
 		"did_deactivate", "did_name_binding", "did_document",
-		// Task 5：保存指令（4 个）
+		// Task 5：保存指令（6 个）
 		"saved_instruction_create", "saved_instruction_list",
-		"saved_instruction_get", "saved_instruction_execute",
+		"saved_instruction_get", "saved_instruction_update", "saved_instruction_delete",
+		"saved_instruction_execute",
 		// Task 6：高层 flow 工具（4 个）
 		"vc_flow", "sft_flow", "bulk_transfer", "bulk_transfer_status"}
 	for _, w := range want {
@@ -199,7 +200,7 @@ func assertRestCalls(t *testing.T, frontURL string, seen *[]string, cases []rest
 			t.Errorf("%s: 请求行 got=%q want=%s %s", c.tool, (*seen)[i], c.wantMethod, c.wantPathQuery)
 			continue
 		}
-		if c.wantMethod == "POST" && !jsonEqual(t, parts[2], c.wantBody) {
+		if (c.wantMethod == "POST" || c.wantMethod == "PUT") && !jsonEqual(t, parts[2], c.wantBody) {
 			t.Errorf("%s: body 不匹配（见上）", c.tool)
 		}
 	}
@@ -371,12 +372,13 @@ func TestUtilToolCallMapping(t *testing.T) {
 	assertRestCalls(t, front.URL, seen, cases)
 }
 
-// TestDidSavedInstructionToolCallMapping 覆盖 Task 5 的 DID 12 工具 + 保存指令 4 工具：
+// TestDidSavedInstructionToolCallMapping 覆盖 Task 5 的 DID 12 工具 + 保存指令 6 工具：
 // 断言每个工具把参数镜像为正确的 method + path(+query/路径参数) + JSON body。
 // 字段镜像自 handler/did_handler.go 与 handler/saved_instruction_handler.go 的
 // request struct（json tag 逐字一致）；GET+query 工具（did_name_binding、
 // saved_instruction_execute 的 mode/wait）有带 query 的正向断言；
-// saved_instruction_create 全 17 字段正向传值锁住全部 json tag 拼写。
+// saved_instruction_create 全 16 字段正向传值锁住全部 json tag 拼写；
+// saved_instruction_update 有部分更新（指针语义 body）断言，delete 无 body。
 func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 	backend, seen := newFakeBackend(t, 200, `{"code":0}`)
 	t.Setenv("MILON_REST_BASE_URL", backend.URL)
@@ -465,7 +467,7 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 			`{"name":"n1","appName":"identity","methodName":"m1"}`,
 			"POST", "/api/saved-instructions?",
 			`{"name":"n1","appName":"identity","methodName":"m1"}`},
-		// saved_instruction_create：全 17 字段正向传值，锁住全部 json tag 拼写
+		// saved_instruction_create：全 16 字段正向传值，锁住全部 json tag 拼写
 		{"saved_instruction_create",
 			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"variant":0},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
 			"POST", "/api/saved-instructions?",
@@ -481,6 +483,32 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 		{"saved_instruction_get",
 			`{"id":"abcd1234"}`,
 			"GET", "/api/saved-instructions/abcd1234?",
+			""},
+		// saved_instruction_update ← UpdateSavedInstruction（handler/saved_instruction_handler.go:295）：
+		// PUT + c.Param("id") + 部分更新 body。最小集：只传 id——handler 的
+		// updateSavedInstructionRequest（:195）全字段 nil-able 且无 binding required，
+		// 空 body 合法（全部字段保持不变），镜像侧全可选 = 部分更新契约。
+		{"saved_instruction_update",
+			`{"id":"abcd1234","name":"n2"}`,
+			"PUT", "/api/saved-instructions/abcd1234?",
+			`{"name":"n2"}`},
+		// saved_instruction_update：指针语义 body——只传 name/description/args，
+		// 其余字段（含全部签名字段）不得出现在 REST body（= 未传保持不变）
+		{"saved_instruction_update",
+			`{"id":"abcd1234","description":"d2","args":{"id":"a2"},"paymentMode":"split"}`,
+			"PUT", "/api/saved-instructions/abcd1234?",
+			`{"description":"d2","args":{"id":"a2"},"paymentMode":"split"}`},
+		// saved_instruction_update：全 14 body 字段正向传值（含 signers/gasPayer
+		// 嵌套与 signatureMode 对象），锁住全部 json tag 拼写
+		{"saved_instruction_update",
+			`{"id":"abcd1234","name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"variant":0},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			"PUT", "/api/saved-instructions/abcd1234?",
+			`{"name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"variant":0},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+		// saved_instruction_delete ← DeleteSavedInstruction（handler/saved_instruction_handler.go:363）：
+		// DELETE + c.Param("id")，不读 query/body，无 body 路径
+		{"saved_instruction_delete",
+			`{"id":"abcd1234"}`,
+			"DELETE", "/api/saved-instructions/abcd1234?",
 			""},
 		// saved_instruction_execute ← ExecuteSavedInstruction（handler/saved_instruction_handler.go:383）：
 		// POST + c.Param("id")；mode/wait 可选 query（DefaultQuery:395/515），缺省不带
@@ -530,7 +558,7 @@ func TestFlowToolCallMapping(t *testing.T) {
 			`{"ownerPrivateKey":"sk","ownerAddress":"a1"}`,
 			"POST", "/api/tool/sft-flow?",
 			`{"ownerPrivateKey":"sk","ownerAddress":"a1"}`},
-		// sft_flow：全 9 字段正向传值，嵌套 sft（3 字段）/sftMetadata（5 字段）/
+		// sft_flow：全 10 字段正向传值，嵌套 sft（3 字段）/sftMetadata（5 字段）/
 		// slot（slotId + metadata 5 字段全指针 + isTransferable）/distributions
 		//（含 token 级 metadata 覆盖）/merge/transfer 全展开，锁全部嵌套 tag
 		{"sft_flow",
@@ -624,21 +652,26 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		// 细粒度端点 alias/label/serviceEndpoint/id/avatarUri/newPublicKey 空 400；
 		// saved_instruction_handler.go name/appName/methodName binding required，
 		// id 为路由 param
-		"did_create":                {"privateKey", "address"},
-		"did_set_alias":             {"privateKey", "address", "alias"},
-		"did_add_service":           {"privateKey", "address", "label", "serviceEndpoint"},
-		"did_update_service":        {"privateKey", "address", "id", "label", "serviceEndpoint"},
-		"did_remove_service":        {"privateKey", "address", "id"},
-		"did_set_avatar_uri":        {"privateKey", "address", "avatarUri"},
-		"did_add_key":               {"privateKey", "address", "newPublicKey"},
-		"did_update_key":            {"privateKey", "address", "id", "newPublicKey"},
-		"did_remove_key":            {"privateKey", "address", "id"},
-		"did_deactivate":            {"privateKey", "address"},
-		"did_name_binding":          {"name"},
-		"did_document":              {"address"},
-		"saved_instruction_create":  {"name", "appName", "methodName"},
-		"saved_instruction_list":    {},
-		"saved_instruction_get":     {"id"},
+		"did_create":               {"privateKey", "address"},
+		"did_set_alias":            {"privateKey", "address", "alias"},
+		"did_add_service":          {"privateKey", "address", "label", "serviceEndpoint"},
+		"did_update_service":       {"privateKey", "address", "id", "label", "serviceEndpoint"},
+		"did_remove_service":       {"privateKey", "address", "id"},
+		"did_set_avatar_uri":       {"privateKey", "address", "avatarUri"},
+		"did_add_key":              {"privateKey", "address", "newPublicKey"},
+		"did_update_key":           {"privateKey", "address", "id", "newPublicKey"},
+		"did_remove_key":           {"privateKey", "address", "id"},
+		"did_deactivate":           {"privateKey", "address"},
+		"did_name_binding":         {"name"},
+		"did_document":             {"address"},
+		"saved_instruction_create": {"name", "appName", "methodName"},
+		"saved_instruction_list":   {},
+		"saved_instruction_get":    {"id"},
+		// update：handler updateSavedInstructionRequest 全字段 nil-able 且无
+		// binding required（空 body 合法），镜像侧全可选；仅 id 为路由 param 必填
+		"saved_instruction_update": {"id"},
+		// delete：handler 只读 c.Param("id")（saved_instruction_handler.go:364）
+		"saved_instruction_delete":  {"id"},
 		"saved_instruction_execute": {"id"},
 		// Task 6：vc_flow_handler.go/sft_flow_handler.go validate* 空值 400；
 		// bulk_transfer_handler.go binding required；status id 为路由 param
@@ -647,8 +680,8 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"bulk_transfer":        {"count", "toAddress"},
 		"bulk_transfer_status": {"id"},
 	}
-	if len(want) != 55 {
-		t.Fatalf("用例表=%d, want 55（新工具须回 handler 事实源核对后补行）", len(want))
+	if len(want) != 57 {
+		t.Fatalf("用例表=%d, want 57（新工具须回 handler 事实源核对后补行）", len(want))
 	}
 	for name, w := range want {
 		sort.Strings(w)
@@ -674,7 +707,7 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 }
 
 // TestToolsListTotalAndAuth 锁定 Task 7 的两件事：
-//  1. tools/list 总数 = 55（基础 17 + Task3 13 + Task4 5 + Task5 16 + Task6 4）；
+//  1. tools/list 总数 = 57（基础 17 + Task3 13 + Task4 5 + Task5 18 + Task6 4）；
 //  2. Bearer 鉴权三态：无 token 401 / 带对 token 200 / 带错 token 401。
 //
 // 假后端经 MILON_REST_BASE_URL 注入（tools/list 不触达后端，注入只为与
@@ -688,8 +721,8 @@ func TestToolsListTotalAndAuth(t *testing.T) {
 	t.Cleanup(front.Close)
 	out := rpcCall(t, front.URL, "tools/list", map[string]any{})
 	tools := out["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 55 {
-		t.Fatalf("工具数=%d, want 55", len(tools))
+	if len(tools) != 57 {
+		t.Fatalf("工具数=%d, want 57", len(tools))
 	}
 
 	// 鉴权开启后的三态
