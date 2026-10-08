@@ -203,7 +203,7 @@ gosdk → Milon 链
 
 - 环境变量 `MCP_AUTH_TOKEN`：默认空 = `/mcp` 不鉴权（与 REST 现状一致，本机/内网使用）；设置后 `/mcp` 要求 `Authorization: Bearer <token>`，不匹配返回 401。
 - Streamable HTTP 以 stateless 模式运行（无 session 状态），多 client 并发安全。
-- 私钥仅作为工具参数在内存中转发至回环请求，不落盘、不写日志（对齐 REST 现状）。工具描述中明确建议 agent 使用临时测试账户，勿投入主网资产私钥。
+- 私钥仅作为工具参数在内存中转发至回环请求，不落盘。日志风险须如实陈述：`ENABLE_BODY_LOG` 开启时 /mcp 工具入参（请求体）会写入日志，而现有脱敏正则只覆盖裸 `privateKey` 等词、不覆盖 `payerPrivateKey` 等带前缀字段，存在泄露缺口（详见 README MCP 章节的风险提示：仅限 devNet 调试，生产勿开）。工具描述中明确建议 agent 使用临时测试账户，勿投入主网资产私钥。
 
 ## 测试策略（TDD）
 
