@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -108,6 +109,10 @@ func TestBasicToolCallMapping(t *testing.T) {
 		{"network_list", `{}`, "GET /api/network/list? "},
 		{"network_switch", `{"network":"localNet"}`, `POST /api/network/switch? {"network":"localNet"}`},
 		{"account_generate", `{"keyType":"ed25519"}`, `POST /api/accounts/generate? {"keyType":"ed25519"}`},
+		// Task 8 缺陷回归：keyType 在 REST 侧可缺省（account_handler.go GenerateAccount
+		// 空值缺省 secp256k1），MCP schema 必填集必须与之一致——空参数应放行
+		// 并以空 body 到达后端（handler 侧 ContentLength=0 同样走缺省分支）。
+		{"account_generate", `{}`, "POST /api/accounts/generate? {}"},
 		{"account_info", `{"address":"a1"}`, "GET /api/accounts/a1? "},
 		{"faucet_balance", `{"address":"a1"}`, "GET /api/faucet/balance/a1? "},
 		{"tx_get", `{"hash":"h1"}`, "GET /api/transactions/h1? "},
@@ -546,6 +551,126 @@ func TestFlowToolCallMapping(t *testing.T) {
 			""},
 	}
 	assertRestCalls(t, front.URL, seen, cases)
+}
+
+// TestSchemaRequiredMatchesREST 把 Task 8 的"schema 必填集 ↔ REST 契约"扫描结论
+// 固化为断言：tools/list 返回的每个工具 inputSchema.required 必须与 handler
+// 事实源（binding:"required" / 空值 400 / 路由 param）一致。此后任何新工具或
+// 字段改动改了必填集都会在这里红灯，倒逼回 handler 核对。
+// 依据逐工具注明（文件:行为）；排序后比较，不依赖 required 数组顺序。
+func TestSchemaRequiredMatchesREST(t *testing.T) {
+	srv := mcpHTTPServer(t, "")
+	out := rpcCall(t, srv.URL, "tools/list", map[string]any{})
+	tools := out["result"].(map[string]any)["tools"].([]any)
+	got := map[string][]string{}
+	for _, tl := range tools {
+		m := tl.(map[string]any)
+		var req []string
+		if raw, ok := m["inputSchema"].(map[string]any)["required"].([]any); ok {
+			for _, r := range raw {
+				req = append(req, r.(string))
+			}
+		}
+		sort.Strings(req)
+		got[m["name"].(string)] = req
+	}
+
+	// 事实源：handler 侧必填证据（binding:"required" 或空值 400 或路由 param 必填）。
+	want := map[string][]string{
+		// 基础 17：network.go(binding required)、account_handler.go(空值 400/
+		// keyType 缺省 secp256k1)、faucet_handler.go(binding required/空值 400)、
+		// transaction_handler.go(hash 空值 400)、rpc_read.go(binding required/
+		// height param ParseUint)、resource_path_handler.go(空值 400)
+		"network_list": {}, "network_current": {},
+		"network_switch":          {"network"},
+		"account_generate":        {}, // keyType 缺省 secp256k1——Task 8 修复点
+		"account_info":            {"address"},
+		"account_resources":       {"address"},
+		"faucet_claim":            {"privateKey", "address", "signatureMode"},
+		"faucet_balance":          {"address"},
+		"tx_get":                  {"hash"},
+		"tx_parse":                {"hash"},
+		"tx_events":               {"hash"},
+		"tx_wait":                 {"hash"},
+		"rpc_block":               {"height"},
+		"rpc_resource":            {"hash"},
+		"rpc_access_value":        {"blobHashes"},
+		"rpc_resource_path":       {"hash"},
+		"idl_metadata":            {},
+		// Task 3：contract.go appName/methodName/paymentMode/instructions 均
+		// binding:"required"；transaction_handler.go/view_handler.go postcard
+		// binding:"required"
+		"contract_read":              {"appName", "methodName"},
+		"contract_read_multi":        {"instructions"},
+		"contract_simulate":          {"appName", "methodName", "paymentMode"},
+		"contract_simulate_multi":    {"instructions", "paymentMode"},
+		"contract_write":             {"appName", "methodName", "paymentMode"},
+		"contract_write_multi":       {"instructions", "paymentMode"},
+		"contract_write_multi_agent": {"appName", "methodName", "paymentMode"},
+		"contract_write_multisig":    {"appName", "methodName", "paymentMode"},
+		"tx_simulate_raw":            {"transactionPostcard"},
+		"tx_submit_raw":              {"transactionPostcard"},
+		"tx_inspect_raw":             {"transactionPostcard"},
+		"view_single":                {"transactionPostcard"},
+		"view_multi":                 {"transactionPostcard"},
+		// Task 4：util.go 四 handler 均空值 400；vc_attestation_handler.go
+		// issuerPrivateKey 空值 400（subject 二选一无法用 required 表达，保持可选）
+		"util_derive_address":    {"publicKey"},
+		"util_derive_public_key": {"privateKey", "keyType"},
+		"util_sign":              {"privateKey", "message", "keyType"},
+		"util_verify":            {"publicKey", "message", "signature"},
+		"vc_attestation":         {"issuerPrivateKey"},
+		// Task 5：did_handler.go validateDidCreateRequest/bindMutate 空值 400，
+		// 细粒度端点 alias/label/serviceEndpoint/id/avatarUri/newPublicKey 空 400；
+		// saved_instruction_handler.go name/appName/methodName binding required，
+		// id 为路由 param
+		"did_create":             {"privateKey", "address"},
+		"did_set_alias":          {"privateKey", "address", "alias"},
+		"did_add_service":        {"privateKey", "address", "label", "serviceEndpoint"},
+		"did_update_service":     {"privateKey", "address", "id", "label", "serviceEndpoint"},
+		"did_remove_service":     {"privateKey", "address", "id"},
+		"did_set_avatar_uri":     {"privateKey", "address", "avatarUri"},
+		"did_add_key":            {"privateKey", "address", "newPublicKey"},
+		"did_update_key":         {"privateKey", "address", "id", "newPublicKey"},
+		"did_remove_key":         {"privateKey", "address", "id"},
+		"did_deactivate":         {"privateKey", "address"},
+		"did_name_binding":       {"name"},
+		"did_document":           {"address"},
+		"saved_instruction_create": {"name", "appName", "methodName"},
+		"saved_instruction_list":   {},
+		"saved_instruction_get":    {"id"},
+		"saved_instruction_execute": {"id"},
+		// Task 6：vc_flow_handler.go/sft_flow_handler.go validate* 空值 400；
+		// bulk_transfer_handler.go binding required；status id 为路由 param
+		"vc_flow":              {"issuerPrivateKey", "userPrivateKey", "userAddress"},
+		"sft_flow":             {"ownerPrivateKey", "ownerAddress"},
+		"bulk_transfer":        {"count", "toAddress"},
+		"bulk_transfer_status": {"id"},
+	}
+	if len(want) != 55 {
+		t.Fatalf("用例表=%d, want 55（新工具须回 handler 事实源核对后补行）", len(want))
+	}
+	for name, w := range want {
+		sort.Strings(w)
+		g := got[name]
+		if g == nil {
+			g = []string{} // 无 required（nil）与空集（[]string{}）语义等价，归一后比较
+		}
+		if !reflect.DeepEqual(g, w) {
+			t.Errorf("%s: required=%v want %v", name, g, w)
+		}
+	}
+	if len(got) != len(want) {
+		t.Errorf("工具数=%d want %d：多出的工具=%v", len(got), len(want), func() []string {
+			var extra []string
+			for n := range got {
+				if _, ok := want[n]; !ok {
+					extra = append(extra, n)
+				}
+			}
+			return extra
+		}())
+	}
 }
 
 // TestToolsListTotalAndAuth 锁定 Task 7 的两件事：
