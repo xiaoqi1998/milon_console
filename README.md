@@ -11,6 +11,7 @@ Milon API Server 将 Milon Go SDK 封装成 RESTful HTTP API，并提供一个�
 - 账户与密钥工具：支持账户生成、公钥派生、地址派生、签名与验签。
 - 多种支付/签名模式：支持 `unified_payer_all`、`unified_dual_sign`、`unified_payer_only_gas`、`split`、`multi_signer`、`sponsored`。
 - Faucet：支持领水和余额查询。
+- MCP 端点：`/mcp` 把 REST 能力全量映射为 55 个 MCP 工具，供 ZCode / Claude 等 AI 编程代理直连。
 - Web 控制台：访问 `http://localhost:8080` 可打开调试页面。
 
 ## 快速开始
@@ -65,6 +66,7 @@ docker compose down
 | `MILON_RPC_URL` | 空 | 自定义 RPC 地址 |
 | `MILON_CHAIN_ID` | `0` | 自定义 chain id |
 | `ENABLE_BODY_LOG` | `false` | 是否记录请求体与响应体（脱敏后输出，见下方说明） |
+| `MCP_AUTH_TOKEN` | 空 | `/mcp` 端点的 Bearer 鉴权令牌；为空时不鉴权 |
 
 示例：
 
@@ -277,6 +279,64 @@ curl http://localhost:8080/api/idl/metadata
 | --- | --- | --- |
 | `GET` | `/api/idl/metadata` | 获取当前 SDK 已加载的 IDL app、方法、参数和返回值 schema |
 
+## MCP
+
+服务在同一端口内置 MCP（Model Context Protocol）端点 `/mcp`，把 REST 能力全量映射为 **55 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接以自然语言驱动链上操作。工具与 REST 端点一一对应，行为完全一致，完整对照表见 [API.md](API.md) 的「MCP 端点」章节。
+
+### 启用方式
+
+无需额外配置，`/mcp` 随服务自动可用（Streamable HTTP 传输、stateless、JSON 响应模式）：
+
+```
+http://127.0.0.1:8080/mcp
+```
+
+### 客户端配置
+
+ZCode / Claude 通用配置片段（加入 `mcpServers` 配置后重连即可）：
+
+```json
+{
+  "mcpServers": {
+    "milon": { "url": "http://127.0.0.1:8080/mcp" }
+  }
+}
+```
+
+连接后建议先调用 `idl_metadata` 工具发现当前可用的 app 与方法，再按需调用合约读写、账户、交易等工具。
+
+### 鉴权（MCP_AUTH_TOKEN）
+
+默认不鉴权（与 REST 现状一致，适合本机/内网使用）。设置环境变量后，`/mcp` 要求携带 `Authorization: Bearer <token>`，不匹配返回 401：
+
+```env
+MCP_AUTH_TOKEN=your-secret-token
+```
+
+对应客户端配置需带 `headers`：
+
+```json
+{
+  "mcpServers": {
+    "milon": {
+      "url": "http://127.0.0.1:8080/mcp",
+      "headers": { "Authorization": "Bearer your-secret-token" }
+    }
+  }
+}
+```
+
+### 日志风险提示
+
+开启 `ENABLE_BODY_LOG=true` 后，`/mcp` 的 JSON-RPC 请求体（即工具入参）会随请求日志输出。内置脱敏只覆盖 `privateKey` / `private_key` / `mnemonic` / `secret` / `password` 等字段名，**带前缀的私钥参数（如 `payerPrivateKey`、`ownerPrivateKey`、`issuerPrivateKey`）不会被脱敏，会明文写入日志**。该特性仅供 devNet 调试排查使用，生产环境务必保持关闭，也建议 agent 只使用临时测试账户私钥。
+
+### 超时限制
+
+MCP 端点侧单次工具调用的回环超时为 **120s**：
+
+- `vc_flow` 全流程需同步完成约 20 张凭证的签发与披露，devNet 上可能超过 120s 而报超时，属预期限制；
+- `bulk_transfer` 为异步任务（先返回 `jobId`，再用 `bulk_transfer_status` 轮询），不受该超时影响。
+
 ## 支付模式
 
 `/api/simulate` 和 `/api/write` 通过 `paymentMode` 指定 gas 支付与签名方式。
@@ -346,6 +406,7 @@ milon-api-server/
 │   ├── util.go
 │   └── view_handler.go
 ├── middleware/                   # CORS 和请求日志
+├── mcpserver/                    # MCP 端点（/mcp，55 个工具映射 REST）
 ├── types/                        # 请求、响应和转换辅助类型
 ├── static/                       # Web 调试控制台
 └── gosdk-develop/                # 内置 Milon Go SDK

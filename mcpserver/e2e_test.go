@@ -47,14 +47,11 @@ func TestE2ESmoke(t *testing.T) {
 		t.Fatalf("tools=%d want 55", len(tools))
 	}
 
-	// ---- 2. 真链冒烟：无参工具直调 ----
-	// 注意：account_generate 此处显式传 keyType——运行中的服务二进制不含
-	// Task 8 的 schema 修复（keyType 已改可选），显式传值对新旧 schema 均可过；
-	// 修复本身由日常单测 TestBasicToolCallMapping 的空参数用例锁定。
+	// ---- 2. 真链冒烟：无参工具直调（account_generate 空参数走 REST 默认曲线） ----
 	for _, c := range []struct{ tool, args string }{
 		{"network_list", `{}`},
 		{"idl_metadata", `{}`},
-		{"account_generate", `{"keyType":"secp256k1"}`},
+		{"account_generate", `{}`},
 	} {
 		res := e2eCallTools(t, c.tool, c.args)
 		if v, _ := res["isError"].(bool); v {
@@ -68,7 +65,7 @@ func TestE2ESmoke(t *testing.T) {
 	// 返回链端错误"账户不存在 (code 512)"而非 0 余额——这是 BalanceOf 视图
 	// 的契约而非链路故障。故本步断言"响应结构化可读"（能解析出 message 字段
 	// 的 JSON），isError 两可；链接通了、参数传对了、错误可读透传即达标。
-	gen := e2eCallTools(t, "account_generate", `{"keyType":"secp256k1"}`)
+	gen := e2eCallTools(t, "account_generate", `{}`)
 	genText := e2eContentText(t, gen)
 	var genBody struct {
 		Data struct {

@@ -2510,6 +2510,164 @@ curl http://localhost:8080/api/tool/did/QffKfGk3Jnp4k4qHJtbA8fwrW8E/document
 
 ---
 
+## MCP 端点（/mcp）
+
+除 REST API 外，服务在同一端口内置 MCP（Model Context Protocol）端点，把 REST 能力全量映射为 **55 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接调用。
+
+- **端点**: `http://127.0.0.1:8080/mcp`（端口随 `SERVER_PORT`）
+- **传输**: Streamable HTTP（`POST /mcp`，JSON-RPC），stateless 无会话状态，JSON 响应模式
+- **启用**: 无需额外配置，随服务自动可用
+- **鉴权**: 默认不鉴权；设置环境变量 `MCP_AUTH_TOKEN` 后要求 `Authorization: Bearer <token>`，不匹配返回 401
+- **行为**: 工具与 REST 端点一一对应，参数经校验后回环调用同进程 REST handler，响应 JSON 原样作为工具结果返回；REST 非 2xx 时工具结果标记 `isError=true` 并保留错误 JSON 原文
+- **超时**: 回环请求超时 120s；`vc_flow`（约 20 张凭证同步签发披露）在 devNet 上可能超时，`bulk_transfer` 为异步 jobId 轮询不受影响
+- **排除**: `mock`（前端调试辅助）与 `health` / `chain-head`（运维探活）4 个端点不映射
+
+### 客户端配置
+
+ZCode / Claude 通用片段：
+
+```json
+{
+  "mcpServers": {
+    "milon": { "url": "http://127.0.0.1:8080/mcp" }
+  }
+}
+```
+
+设置 `MCP_AUTH_TOKEN` 时需携带 Bearer 头：
+
+```json
+{
+  "mcpServers": {
+    "milon": {
+      "url": "http://127.0.0.1:8080/mcp",
+      "headers": { "Authorization": "Bearer your-secret-token" }
+    }
+  }
+}
+```
+
+> **日志风险**：`ENABLE_BODY_LOG=true` 时 `/mcp` 的工具入参会进入请求日志，且脱敏只覆盖裸 `privateKey` 等字段名——`payerPrivateKey` 等带前缀私钥参数会明文落日志，仅供 devNet 调试，生产勿开。
+
+### 工具对照表（55 个）
+
+#### 网络（3）
+
+| 工具 | REST 端点 |
+|---|---|
+| `network_list` | GET /api/network/list |
+| `network_current` | GET /api/network/current |
+| `network_switch` | POST /api/network/switch |
+
+#### 账户（3）
+
+| 工具 | REST 端点 |
+|---|---|
+| `account_generate` | POST /api/accounts/generate |
+| `account_info` | GET /api/accounts/{address} |
+| `account_resources` | GET /api/accounts/{address}/resources |
+
+#### 交易查询（4）
+
+| 工具 | REST 端点 |
+|---|---|
+| `tx_get` | GET /api/transactions/{hash} |
+| `tx_parse` | GET /api/transactions/{hash}/parse |
+| `tx_events` | GET /api/transactions/{hash}/events |
+| `tx_wait` | GET /api/transactions/{hash}/wait |
+
+#### 原始交易（3）
+
+| 工具 | REST 端点 |
+|---|---|
+| `tx_simulate_raw` | POST /api/transactions/simulate |
+| `tx_submit_raw` | POST /api/transactions/submit |
+| `tx_inspect_raw` | POST /api/transactions/inspect |
+
+#### RPC 底层查询（4）
+
+| 工具 | REST 端点 |
+|---|---|
+| `rpc_block` | GET /api/rpc/blocks/{height} |
+| `rpc_resource` | GET /api/rpc/resources/{hash} |
+| `rpc_access_value` | POST /api/rpc/access-value |
+| `rpc_resource_path` | GET /api/rpc/resource-paths/{hash} |
+
+#### 合约与 IDL 发现（9）
+
+| 工具 | REST 端点 |
+|---|---|
+| `idl_metadata` | GET /api/idl/metadata（agent 的发现入口：app/方法/参数/返回/signer） |
+| `contract_read` | POST /api/read |
+| `contract_read_multi` | POST /api/read/multi |
+| `contract_simulate` | POST /api/simulate |
+| `contract_simulate_multi` | POST /api/simulate/multi |
+| `contract_write` | POST /api/write |
+| `contract_write_multi` | POST /api/write/multi |
+| `contract_write_multi_agent` | POST /api/write/multi-agent |
+| `contract_write_multisig` | POST /api/write/multisig |
+
+#### 高层 flow 工具（4）
+
+| 工具 | REST 端点 |
+|---|---|
+| `vc_flow` | POST /api/tool/vc-flow |
+| `sft_flow` | POST /api/tool/sft-flow |
+| `bulk_transfer` | POST /api/tool/bulk-transfer |
+| `bulk_transfer_status` | GET /api/tool/bulk-transfer/{id} |
+
+#### DID（12）
+
+| 工具 | REST 端点 |
+|---|---|
+| `did_create` | POST /api/tool/did/create |
+| `did_set_alias` | POST /api/tool/did/set-alias |
+| `did_add_service` | POST /api/tool/did/add-service |
+| `did_update_service` | POST /api/tool/did/update-service |
+| `did_remove_service` | POST /api/tool/did/remove-service |
+| `did_set_avatar_uri` | POST /api/tool/did/set-avatar-uri |
+| `did_add_key` | POST /api/tool/did/add-key |
+| `did_update_key` | POST /api/tool/did/update-key |
+| `did_remove_key` | POST /api/tool/did/remove-key |
+| `did_deactivate` | POST /api/tool/did/deactivate |
+| `did_name_binding` | GET /api/tool/did/name-binding |
+| `did_document` | GET /api/tool/did/{address}/document |
+
+#### 保存的指令（4）
+
+| 工具 | REST 端点 |
+|---|---|
+| `saved_instruction_create` | POST /api/saved-instructions |
+| `saved_instruction_list` | GET /api/saved-instructions |
+| `saved_instruction_get` | GET /api/saved-instructions/{id} |
+| `saved_instruction_execute` | POST /api/saved-instructions/{id}/execute |
+
+#### Faucet（2）
+
+| 工具 | REST 端点 |
+|---|---|
+| `faucet_claim` | POST /api/faucet/claim |
+| `faucet_balance` | GET /api/faucet/balance/{address} |
+
+#### 密钥与签名工具（5）
+
+| 工具 | REST 端点 |
+|---|---|
+| `util_derive_address` | POST /api/util/address/derive（32 字节私钥三曲线派生不同地址，地址派生必须走本口径） |
+| `util_derive_public_key` | POST /api/util/key/derive-public |
+| `util_sign` | POST /api/util/sign |
+| `util_verify` | POST /api/util/verify |
+| `vc_attestation` | POST /api/util/vc-attestation |
+
+#### 视图查询（2）
+
+| 工具 | REST 端点 |
+|---|---|
+| `view_single` | POST /api/view/single |
+| `view_multi` | POST /api/view/multi |
+
+---
+
 ## 错误码
 
 | 错误码 | 常量名 | HTTP 状态码 | 说明 |

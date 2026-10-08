@@ -51,6 +51,10 @@
         <span class="nav-icon">⚠️</span>
         <span class="nav-label">错误码</span>
       </button>
+      <button class="nav-tab" data-view="mcp">
+        <span class="nav-icon">🤖</span>
+        <span class="nav-label">MCP 接入</span>
+      </button>
     </nav>
     <div class="topbar-right">
       <button class="account-btn" id="accountBtn" title="账户管理">
@@ -375,6 +379,25 @@
             </button>
           </div>
         </section>
+      </div>
+    </section>
+
+    <section class="view" id="view-mcp">
+      <div class="mcp-layout">
+        <div class="mcp-card">
+          <div class="mcp-card-header">
+            <span class="mcp-icon">🤖</span>
+            <h2>MCP 接入</h2>
+          </div>
+          <p class="mcp-desc">本服务已内置 MCP 端点 <code>/mcp</code>，55 个 REST 能力全部映射为 MCP 工具。把下面的配置加入 ZCode / Claude 的 <code>mcpServers</code>，AI 编程代理即可用自然语言直接驱动账户、合约、交易与 DID/VC 等链上操作。</p>
+          <div class="docs-code-label">客户端配置（ZCode / Claude 通用，端口跟随当前页面自动生成）</div>
+          <pre class="docs-code-block"><code id="mcpConfigJson">加载中...</code></pre>
+          <button class="btn btn-primary" id="mcpCopyBtn">
+            <span class="btn-icon">⧉</span>
+            <span>复制配置</span>
+          </button>
+          <p class="mcp-hint">默认无需鉴权；服务端设置 <code>MCP_AUTH_TOKEN</code> 后需携带 <code>Authorization: Bearer &lt;token&gt;</code> 头。风险提示：开启 <code>ENABLE_BODY_LOG</code> 时 /mcp 工具入参（含私钥字段）会写入日志，仅限 devNet 调试，生产勿开。</p>
+        </div>
       </div>
     </section>
   </main>

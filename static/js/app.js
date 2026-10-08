@@ -1287,6 +1287,23 @@ function fallbackCopy(text, onSuccess, onFail) {
   document.body.removeChild(ta);
 }
 
+// MCP 接入卡片：/mcp 与页面同源同端口，跟随当前访问地址生成配置
+// （与 buildCurl 的 window.location.origin 口径一致）。
+function initMcpCard() {
+  var text = JSON.stringify(
+    { mcpServers: { milon: { url: window.location.origin + '/mcp' } } },
+    null, 2
+  );
+  $('mcpConfigJson').textContent = text;
+  $('mcpCopyBtn').addEventListener('click', function () {
+    copyToClipboard(text, function () {
+      showToast('MCP 配置已复制', 'success');
+    }, function () {
+      showToast('复制失败', 'error');
+    });
+  });
+}
+
 function switchRespTab(name) {
   state.activeRespTab = name;
   document.querySelectorAll('.resp-tab').forEach(function (t) {
@@ -6050,6 +6067,8 @@ function initApp() {
   $('idlSearch').addEventListener('input', function (e) {
     renderIDLAppList(e.target.value);
   });
+  // MCP 接入卡片（配置 JSON 填充 + 复制按钮）
+  initMcpCard();
   $('idlModeSingle').addEventListener('click', function () { setIDLBatchMode('single'); });
   $('idlModeBatch').addEventListener('click', function () { setIDLBatchMode('batch'); });
   $('idlSendBtn').addEventListener('click', sendIDLRequest);

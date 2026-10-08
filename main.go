@@ -238,6 +238,7 @@ func main() {
 	fmt.Println("    POST /api/tool/did/deactivate     - 停用 DID")
 	fmt.Println("    GET  /api/tool/did/:address/document - 查询 DID 文档")
 	fmt.Println("    GET  /api/tool/did/name-binding   - 按别名反查 DID 绑定")
+	fmt.Println("    ANY  /mcp                         - MCP 端点（55 个工具，供 AI 编程代理接入）")
 	fmt.Println("    GET  /                            - Web console")
 	fmt.Println("    GET  /static/*                    - Static files")
 	fmt.Println("========================================")
