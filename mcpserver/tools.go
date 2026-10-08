@@ -2,6 +2,7 @@ package mcpserver
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -565,9 +566,13 @@ func NewMCPHandler(token string) http.Handler {
 }
 
 // bearerAuth 校验 Authorization: Bearer <token> 后转发给 MCP handler。
+// M-3（Task 2 审查遗留）：token 比较改用 subtle.ConstantTimeCompare，
+// 避免逐字节短路比较的时序侧信道泄露正确 token 的前缀；长度不等时
+// ConstantTimeCompare 直接返回 0（仅泄露长度，token 长度非秘密，可接受）。
 func bearerAuth(token string, next http.Handler) http.Handler {
+	want := []byte("Bearer " + token)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer "+token {
+		if subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), want) != 1 {
 			w.WriteHeader(http.StatusUnauthorized)
 			_, _ = w.Write([]byte(`{"code":401,"message":"invalid MCP token"}`))
 			return

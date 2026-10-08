@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"milon-api-server/client"
 	"milon-api-server/config"
 	"milon-api-server/handler"
+	"milon-api-server/mcpserver"
 	"milon-api-server/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -161,6 +163,9 @@ func main() {
 			savedGroup.POST("/:id/execute", savedInstructionHandler.ExecuteSavedInstruction)
 		}
 	}
+
+	// MCP 端点：把全部 REST 能力暴露为 MCP 工具（Streamable HTTP, stateless）
+	r.Any("/mcp", gin.WrapH(mcpserver.NewMCPHandler(os.Getenv("MCP_AUTH_TOKEN"))))
 
 	// Print startup banner
 	fmt.Println("========================================")

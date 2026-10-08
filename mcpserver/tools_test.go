@@ -547,3 +547,63 @@ func TestFlowToolCallMapping(t *testing.T) {
 	}
 	assertRestCalls(t, front.URL, seen, cases)
 }
+
+// TestToolsListTotalAndAuth 锁定 Task 7 的两件事：
+//  1. tools/list 总数 = 55（基础 17 + Task3 13 + Task4 5 + Task5 16 + Task6 4）；
+//  2. Bearer 鉴权三态：无 token 401 / 带对 token 200 / 带错 token 401。
+//
+// 假后端经 MILON_REST_BASE_URL 注入（tools/list 不触达后端，注入只为与
+// 生产同构）；鉴权部分的请求直发 JSON-RPC，不经 rpcCall（它断言 200）。
+func TestToolsListTotalAndAuth(t *testing.T) {
+	backend, _ := newFakeBackend(t, 200, `{}`)
+	t.Setenv("MILON_REST_BASE_URL", backend.URL)
+
+	// 不鉴权：tools/list 总数断言
+	front := httptest.NewServer(NewMCPHandler(""))
+	t.Cleanup(front.Close)
+	out := rpcCall(t, front.URL, "tools/list", map[string]any{})
+	tools := out["result"].(map[string]any)["tools"].([]any)
+	if len(tools) != 55 {
+		t.Fatalf("工具数=%d, want 55", len(tools))
+	}
+
+	// 鉴权开启后的三态
+	authed := httptest.NewServer(NewMCPHandler("secret"))
+	t.Cleanup(authed.Close)
+	listReq := `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`
+
+	resp, err := http.Post(authed.URL, "application/json", bytes.NewReader([]byte(listReq)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("无 token = %d, want 401", resp.StatusCode)
+	}
+
+	req, _ := http.NewRequest("POST", authed.URL, bytes.NewReader([]byte(listReq)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	req.Header.Set("Authorization", "Bearer secret")
+	resp2, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp2.Body.Close()
+	if resp2.StatusCode != http.StatusOK {
+		t.Fatalf("带对 token = %d, want 200", resp2.StatusCode)
+	}
+
+	reqWrong, _ := http.NewRequest("POST", authed.URL, bytes.NewReader([]byte(listReq)))
+	reqWrong.Header.Set("Content-Type", "application/json")
+	reqWrong.Header.Set("Accept", "application/json, text/event-stream")
+	reqWrong.Header.Set("Authorization", "Bearer wrong")
+	resp3, err := http.DefaultClient.Do(reqWrong)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp3.Body.Close()
+	if resp3.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("带错 token = %d, want 401", resp3.StatusCode)
+	}
+}
