@@ -582,21 +582,21 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		// transaction_handler.go(hash 空值 400)、rpc_read.go(binding required/
 		// height param ParseUint)、resource_path_handler.go(空值 400)
 		"network_list": {}, "network_current": {},
-		"network_switch":          {"network"},
-		"account_generate":        {}, // keyType 缺省 secp256k1——Task 8 修复点
-		"account_info":            {"address"},
-		"account_resources":       {"address"},
-		"faucet_claim":            {"privateKey", "address", "signatureMode"},
-		"faucet_balance":          {"address"},
-		"tx_get":                  {"hash"},
-		"tx_parse":                {"hash"},
-		"tx_events":               {"hash"},
-		"tx_wait":                 {"hash"},
-		"rpc_block":               {"height"},
-		"rpc_resource":            {"hash"},
-		"rpc_access_value":        {"blobHashes"},
-		"rpc_resource_path":       {"hash"},
-		"idl_metadata":            {},
+		"network_switch":    {"network"},
+		"account_generate":  {}, // keyType 缺省 secp256k1——Task 8 修复点
+		"account_info":      {"address"},
+		"account_resources": {"address"},
+		"faucet_claim":      {"privateKey", "address", "signatureMode"},
+		"faucet_balance":    {"address"},
+		"tx_get":            {"hash"},
+		"tx_parse":          {"hash"},
+		"tx_events":         {"hash"},
+		"tx_wait":           {"hash"},
+		"rpc_block":         {"height"},
+		"rpc_resource":      {"hash"},
+		"rpc_access_value":  {"blobHashes"},
+		"rpc_resource_path": {"hash"},
+		"idl_metadata":      {},
 		// Task 3：contract.go appName/methodName/paymentMode/instructions 均
 		// binding:"required"；transaction_handler.go/view_handler.go postcard
 		// binding:"required"
@@ -624,21 +624,21 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		// 细粒度端点 alias/label/serviceEndpoint/id/avatarUri/newPublicKey 空 400；
 		// saved_instruction_handler.go name/appName/methodName binding required，
 		// id 为路由 param
-		"did_create":             {"privateKey", "address"},
-		"did_set_alias":          {"privateKey", "address", "alias"},
-		"did_add_service":        {"privateKey", "address", "label", "serviceEndpoint"},
-		"did_update_service":     {"privateKey", "address", "id", "label", "serviceEndpoint"},
-		"did_remove_service":     {"privateKey", "address", "id"},
-		"did_set_avatar_uri":     {"privateKey", "address", "avatarUri"},
-		"did_add_key":            {"privateKey", "address", "newPublicKey"},
-		"did_update_key":         {"privateKey", "address", "id", "newPublicKey"},
-		"did_remove_key":         {"privateKey", "address", "id"},
-		"did_deactivate":         {"privateKey", "address"},
-		"did_name_binding":       {"name"},
-		"did_document":           {"address"},
-		"saved_instruction_create": {"name", "appName", "methodName"},
-		"saved_instruction_list":   {},
-		"saved_instruction_get":    {"id"},
+		"did_create":                {"privateKey", "address"},
+		"did_set_alias":             {"privateKey", "address", "alias"},
+		"did_add_service":           {"privateKey", "address", "label", "serviceEndpoint"},
+		"did_update_service":        {"privateKey", "address", "id", "label", "serviceEndpoint"},
+		"did_remove_service":        {"privateKey", "address", "id"},
+		"did_set_avatar_uri":        {"privateKey", "address", "avatarUri"},
+		"did_add_key":               {"privateKey", "address", "newPublicKey"},
+		"did_update_key":            {"privateKey", "address", "id", "newPublicKey"},
+		"did_remove_key":            {"privateKey", "address", "id"},
+		"did_deactivate":            {"privateKey", "address"},
+		"did_name_binding":          {"name"},
+		"did_document":              {"address"},
+		"saved_instruction_create":  {"name", "appName", "methodName"},
+		"saved_instruction_list":    {},
+		"saved_instruction_get":     {"id"},
 		"saved_instruction_execute": {"id"},
 		// Task 6：vc_flow_handler.go/sft_flow_handler.go validate* 空值 400；
 		// bulk_transfer_handler.go binding required；status id 为路由 param

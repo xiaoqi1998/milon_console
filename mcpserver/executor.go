@@ -15,8 +15,8 @@ import (
 
 // RESTMapping 声明一个 MCP 工具对应的 REST 调用。
 type RESTMapping struct {
-	Method       string   // "GET" / "POST"
-	PathTemplate string   // 如 "/api/transactions/{hash}"
+	Method       string // "GET" / "POST"
+	PathTemplate string // 如 "/api/transactions/{hash}"
 	PathParams   []string
 	QueryParams  []string // 若 handler 读 c.Query，则列入；渲染为 query string
 }
