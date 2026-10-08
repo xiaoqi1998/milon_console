@@ -1,0 +1,100 @@
+package mcpserver
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+// newFakeBackend 起一个记录请求的假 REST 后端。
+func newFakeBackend(t *testing.T, status int, respBody string) (*httptest.Server, *[]string) {
+	t.Helper()
+	var seen []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := make([]byte, r.ContentLength)
+		if r.ContentLength > 0 {
+			_, _ = r.Body.Read(body)
+		}
+		seen = append(seen, r.Method+" "+r.URL.Path+"?"+r.URL.RawQuery+" "+string(body))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(respBody))
+	}))
+	t.Cleanup(srv.Close)
+	return srv, &seen
+}
+
+func TestExecutorCall(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("GET 路径参数渲染", func(t *testing.T) {
+		srv, seen := newFakeBackend(t, 200, `{"code":0}`)
+		e := NewExecutor(srv.URL, srv.Client())
+		out, err := e.Call(ctx, RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}", PathParams: []string{"hash"}},
+			json.RawMessage(`{"hash":"abc"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if out.IsError || string(out.Body) != `{"code":0}` {
+			t.Fatalf("out=%+v", out)
+		}
+		if *seen != nil && (*seen)[0] != "GET /api/transactions/abc? " {
+			t.Fatalf("seen=%v", *seen)
+		}
+	})
+
+	t.Run("POST body 排除路径参数", func(t *testing.T) {
+		srv, seen := newFakeBackend(t, 200, `{}`)
+		e := NewExecutor(srv.URL, srv.Client())
+		_, err := e.Call(ctx, RESTMapping{Method: "POST", PathTemplate: "/api/faucet/claim"},
+			json.RawMessage(`{"privateKey":"sk","address":"addr"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := (*seen)[0]
+		// JSON 对象无序：实现经 map 往返后 key 顺序会变，按键值比较而非字面全等。
+		prefix := "POST /api/faucet/claim? "
+		if !strings.HasPrefix(got, prefix) {
+			t.Fatalf("got=%s", got)
+		}
+		var body map[string]string
+		if err := json.Unmarshal([]byte(strings.TrimPrefix(got, prefix)), &body); err != nil {
+			t.Fatalf("body 不是合法 JSON: %v", err)
+		}
+		if len(body) != 2 || body["privateKey"] != "sk" || body["address"] != "addr" {
+			t.Fatalf("body=%v", body)
+		}
+	})
+
+	t.Run("非2xx 转工具错误且保留原文", func(t *testing.T) {
+		srv, _ := newFakeBackend(t, 400, `{"code":1001,"message":"invalid privateKey"}`)
+		e := NewExecutor(srv.URL, srv.Client())
+		out, _ := e.Call(ctx, RESTMapping{Method: "POST", PathTemplate: "/api/faucet/claim"}, json.RawMessage(`{}`))
+		if !out.IsError {
+			t.Fatal("want IsError")
+		}
+		if string(out.Body) != `{"code":1001,"message":"invalid privateKey"}` {
+			t.Fatalf("body=%s", out.Body)
+		}
+	})
+
+	t.Run("缺路径参数返回错误", func(t *testing.T) {
+		srv, _ := newFakeBackend(t, 200, `{}`)
+		e := NewExecutor(srv.URL, srv.Client())
+		_, err := e.Call(ctx, RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}", PathParams: []string{"hash"}}, json.RawMessage(`{}`))
+		if err == nil {
+			t.Fatal("want error for missing path param")
+		}
+	})
+
+	t.Run("后端不可达报可读错误", func(t *testing.T) {
+		e := NewExecutor("http://127.0.0.1:1", &http.Client{})
+		out, err := e.Call(ctx, RESTMapping{Method: "GET", PathTemplate: "/api/health"}, json.RawMessage(`{}`))
+		if err == nil && !out.IsError {
+			t.Fatal("want unreachable error")
+		}
+	})
+}
