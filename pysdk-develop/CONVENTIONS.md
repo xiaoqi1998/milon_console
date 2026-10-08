@@ -66,9 +66,15 @@
 | `pornin/go-fn-dsa` | FN-DSA-512 | 纯 Python 移植 `milon_sdk.crypto._fndsa`（源：本机 Go module cache 的 go-fn-dsa@v0.2.0） |
 | `btcsuite/btcutil/base58` | Base58 | `base58` 包 |
 
-BLS 细节：DST = `BLS_SIG_BLS12381G2_XMD:SHA-256_SSWAP_RO_NUL_`（blst 传 nil DST
-时的默认值，即 basic/min-sig 方案）；公钥 = G1 生成元×标量，压缩 48 字节；
-签名 = G2 hash-to-curve(msg)×标量，压缩 96 字节。
+BLS 细节（2026-10-08 跨语言对拍实证修正）：gosdk 调 `blst.KeyGen(seed)` 与
+`P2Affine.Sign(sk, msg, nil)`——blst 绑定传 nil DST 时 **C 侧使用空 DST（b""）**，
+不替换为标准 suite 字符串；map 为 SSWU（3-isogeny）。KeyGen 为 BLS 签名规范
+draft-04 版 HKDF：`salt=SHA256("BLS-SIG-KEYGEN-SALT-")`（每轮再 hash）、
+`PRK=HMAC(salt, IKM||0x00)`、`OKM=HKDF-Expand(PRK, I2OSP(48,2), 48)`、
+`SK=OS2IP(OKM) mod r`。公钥 = G1 生成元×标量，压缩 48 字节（ZCash 格式）；
+签名 = G2 hash_to_G2(msg, DST=b"")×标量，压缩 96 字节。验证 = basic 方案配对
+等式 e(sig, g1)·e(H(msg), pk) == 1。Python 侧全部经 py_ecc + hashlib 实现，
+与 Go/blst 输出逐字节一致（固定 seed 向量锁死，见 tests/crypto/test_vectors.py）。
 
 ### FN-DSA 移植接口契约（`milon_sdk/crypto/_fndsa/__init__.py`）
 
