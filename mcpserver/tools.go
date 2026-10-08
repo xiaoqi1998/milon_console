@@ -332,7 +332,7 @@ type didNameBindingArgs struct {
 }
 
 // savedInstructionCreateArgs 镜像 createSavedInstructionRequest
-//（handler/saved_instruction_handler.go:176，POST /api/saved-instructions）。
+// （handler/saved_instruction_handler.go:176，POST /api/saved-instructions）。
 // name/appName/methodName 带 binding:"required"，不标 omitempty；
 // 其余可选（entry 方法保存时 paymentMode 缺省 unified_payer_all）。
 // signatureMode/ixSignatureMode 为 handler 侧 json.RawMessage，按规则镜像为 any。
@@ -356,19 +356,163 @@ type savedInstructionCreateArgs struct {
 }
 
 // savedInstructionIdArgs 镜像 GetSavedInstruction 的路径参数
-//（handler/saved_instruction_handler.go:285 读 c.Param("id")）。
+// （handler/saved_instruction_handler.go:285 读 c.Param("id")）。
 type savedInstructionIdArgs struct {
 	Id string `json:"id" jsonschema:"必填：保存指令 ID"`
 }
 
 // savedInstructionExecuteArgs 镜像 ExecuteSavedInstruction 的参数
-//（handler/saved_instruction_handler.go:383：c.Param("id") + DefaultQuery
+// （handler/saved_instruction_handler.go:383：c.Param("id") + DefaultQuery
 // "mode"（:395，缺省 auto：view→read、entry→simulate）/"wait"（:515，仅 send
 // 模式读取，缺省 true））。handler 不读 body，mode/wait 渲染为 query。
 type savedInstructionExecuteArgs struct {
 	Id   string `json:"id" jsonschema:"必填：保存指令 ID"`
 	Mode string `json:"mode,omitempty" jsonschema:"可选：read/simulate/send；缺省 auto（view→read、entry→simulate）"`
 	Wait string `json:"wait,omitempty" jsonschema:"可选：send 模式是否等待确认（true/1 等待），缺省 true"`
+}
+
+// ==================== Task 6：高层 flow 工具（4 个）====================
+// 字段 json tag 逐字镜像 handler 侧 request struct（唯一事实源），注释标注来源行号。
+// 已逐个核对 3 个 handler：
+//   - VcFlow（handler/vc_flow_handler.go:184）与 SftFlow（handler/sft_flow_handler.go:290）
+//     均为 POST 纯 JSON body，无 c.Query/c.Param；
+//   - GetBulkTransferStatus（handler/bulk_transfer_handler.go:196）读 c.Param("id")
+//     进 PathParams，不读 query；BulkTransfer（:90）为 POST 纯 JSON body。
+// 嵌套 options struct 同样逐字镜像（指针保持指针、json tag 一致）；
+// 本批 handler 无 json.RawMessage 字段，不涉及 any 镜像规则。
+
+// vcFlowServiceSpecArgs 镜像 didServiceSpec（handler/did_handler.go:42，
+// vcFlowDidOptions.Services 的元素）。label/serviceEndpoint 在细粒度 AddService
+// 端点被校验必填；嵌入可选上下文，标 omitempty 由 handler 统一校验。
+type vcFlowServiceSpecArgs struct {
+	Label           string `json:"label,omitempty" jsonschema:"服务标签"`
+	ServiceEndpoint string `json:"serviceEndpoint,omitempty" jsonschema:"服务端点绝对 URI（如 https://example.com）"`
+}
+
+// vcFlowDidOptionsArgs 镜像 vcFlowDidOptions（handler/did_handler.go:76，
+// vc-flow 透传给某一方 DID 创建的可选项）。
+type vcFlowDidOptionsArgs struct {
+	Alias     string                  `json:"alias,omitempty" jsonschema:"可选：DID 别名主体；缺省服务端按角色自动生成（org-/user- + 地址片段）"`
+	Suffix    *uint32                 `json:"suffix,omitempty" jsonschema:"可选：覆盖服务端代填的数字后缀"`
+	Services  []vcFlowServiceSpecArgs `json:"services,omitempty" jsonschema:"可选：创建时一并登记的服务端点，元素形如 {\"label\":\"...\",\"serviceEndpoint\":\"https://...\"}"`
+	AvatarURI string                  `json:"avatarUri,omitempty" jsonschema:"可选：头像 URI"`
+	AutoAlias *bool                   `json:"autoAlias,omitempty" jsonschema:"可选：缺省 true；false 且未给别名时不绑定"`
+}
+
+// vcFlowArgs 镜像 vcFlowRequest（handler/vc_flow_handler.go:43，
+// POST /api/tool/vc-flow）。issuerPrivateKey/userPrivateKey/userAddress 被
+// validateVcFlowRequest（:65-79）校验必填，不标 omitempty；其余可选
+// （credentialCount<=0 缺省 5、上限 20；validUntilMs 为 *int64：null/0=永久，
+// omitempty 只吞 nil 指针、不吞指向 0 的指针，0 值照常透传）。
+type vcFlowArgs struct {
+	IssuerPrivateKey string                `json:"issuerPrivateKey" jsonschema:"必填：颁发者私钥（hex 或 base58）；VC 凭证签名仅支持 Ed25519/FN-DSA-512"`
+	IssuerPublicKey  string                `json:"issuerPublicKey,omitempty" jsonschema:"颁发者为 FN-DSA-512 私钥时必填（897 字节公钥）"`
+	IssuerAddress    string                `json:"issuerAddress,omitempty" jsonschema:"可选；显式传入时须与私钥派生地址一致"`
+	UserPrivateKey   string                `json:"userPrivateKey" jsonschema:"必填：个人用户私钥（hex 或 base58）"`
+	UserPublicKey    string                `json:"userPublicKey,omitempty" jsonschema:"用户为 FN-DSA-512 私钥时必填"`
+	UserAddress      string                `json:"userAddress" jsonschema:"必填：32 字节私钥在不同曲线下派生不同地址，传 account_generate 返回的地址"`
+	CredentialPrefix string                `json:"credentialPrefix,omitempty" jsonschema:"可选：凭证 schema 前缀，缺省 Test"`
+	CredentialCount  int                   `json:"credentialCount,omitempty" jsonschema:"可选：签发凭证张数，缺省 5，上限 20"`
+	ValidUntilMs     *int64                `json:"validUntilMs,omitempty" jsonschema:"可选：凭证有效期 13 位毫秒时间戳（须为未来值）；null 或 0 表示永久"`
+	IssuerDid        *vcFlowDidOptionsArgs `json:"issuerDid,omitempty" jsonschema:"可选：issuer DID 的别名/服务/头像透传"`
+	UserDid          *vcFlowDidOptionsArgs `json:"userDid,omitempty" jsonschema:"可选：user DID 的别名/服务/头像透传"`
+}
+
+// sftFlowSftOptionsArgs 镜像 sftFlowSftOptions（handler/sft_flow_handler.go:59，
+// SFT 资源账户选项）。
+type sftFlowSftOptionsArgs struct {
+	Address    string `json:"address,omitempty" jsonschema:"可选：已有 SFT 地址；链上已存在则跳过创建"`
+	PrivateKey string `json:"privateKey,omitempty" jsonschema:"传 address 且链上不存在时必填：SFT 资源账户私钥（签名 create_sft，gas 由 owner 代付）"`
+	PublicKey  string `json:"publicKey,omitempty" jsonschema:"SFT 资源账户为 FN-DSA-512 私钥时必填"`
+}
+
+// sftFlowMetadataArgs 镜像 sftFlowMetadata（handler/sft_flow_handler.go:66，
+// IDL Metadata）。name/symbol 链端强制（创建新 SFT 时必填，validateSftFlowRequest:125-131
+// 前置拦截；复用已有 SFT 时不校验），交由 handler 统一校验，镜像侧标 omitempty。
+type sftFlowMetadataArgs struct {
+	Name      string  `json:"name,omitempty" jsonschema:"SFT 名称；创建新 SFT 时必填（链端 1 到 128 字符）"`
+	Symbol    string  `json:"symbol,omitempty" jsonschema:"SFT 符号；创建新 SFT 时必填（链端 1 到 32 字符）"`
+	CoverUrl  string  `json:"coverUrl,omitempty" jsonschema:"可选：封面 URL"`
+	Metadata  string  `json:"metadata,omitempty" jsonschema:"可选：自由元数据"`
+	Attribute *string `json:"attribute,omitempty" jsonschema:"可选：属性（option<String>；缺省不设）"`
+}
+
+// sftFlowMetadataOverrideArgs 镜像 sftFlowMetadataOverride
+// （handler/sft_flow_handler.go:76，IDL MetadataOverride，全可选指针；
+// 未提供的字段动态继承 SFT metadata）。
+type sftFlowMetadataOverrideArgs struct {
+	Name      *string `json:"name,omitempty"`
+	Symbol    *string `json:"symbol,omitempty"`
+	CoverUrl  *string `json:"coverUrl,omitempty"`
+	Metadata  *string `json:"metadata,omitempty"`
+	Attribute *string `json:"attribute,omitempty"`
+}
+
+// sftFlowSlotOptionsArgs 镜像 sftFlowSlotOptions（handler/sft_flow_handler.go:85）。
+// slotId=0（或缺省）表示新建 slot，无独立业务含义，标 omitempty；
+// 与 metadata/isTransferable 互斥（validateSftFlowRequest:133-137）。
+type sftFlowSlotOptionsArgs struct {
+	SlotId         uint64                       `json:"slotId,omitempty" jsonschema:"复用已有 slot 的 id；缺省/0 = 新建 slot"`
+	Metadata       *sftFlowMetadataOverrideArgs `json:"metadata,omitempty" jsonschema:"可选：仅新建 slot 时的元数据覆盖（未提供字段动态继承 SFT metadata）"`
+	IsTransferable *bool                        `json:"isTransferable,omitempty" jsonschema:"可选：仅新建 slot 时生效，缺省 true"`
+}
+
+// sftFlowDistributionArgs 镜像 sftFlowDistribution（handler/sft_flow_handler.go:92，
+// 一笔分发 = 一次 Mint）。to/amount 被 validateSftFlowRequest（:145-155）校验必填，
+// 不标 omitempty；单次最多 20 笔（每笔一笔链上交易）。
+type sftFlowDistributionArgs struct {
+	To       string                       `json:"to" jsonschema:"必填：接收方地址"`
+	Amount   uint64                       `json:"amount" jsonschema:"必填：铸出份额（正数），每笔铸出独立 token_id"`
+	Metadata *sftFlowMetadataOverrideArgs `json:"metadata,omitempty" jsonschema:"可选：token 级元数据覆盖"`
+}
+
+// sftFlowMergeOptionsArgs 镜像 sftFlowMergeOptions（handler/sft_flow_handler.go:99）。
+// 两字段都传（>0）才执行合并；0 = 跳过（与缺省等价，标 omitempty）。
+type sftFlowMergeOptionsArgs struct {
+	FromTokenId uint64 `json:"fromTokenId,omitempty" jsonschema:"合并源 token id（须持有份额）"`
+	ToTokenId   uint64 `json:"toTokenId,omitempty" jsonschema:"合并目标 token id（同 slot）"`
+}
+
+// sftFlowTransferOptionsArgs 镜像 sftFlowTransferOptions
+// （handler/sft_flow_handler.go:105）。tokenId/to 被 validateSftFlowRequest
+// （:166-175）校验必填，不标 omitempty；amount 为 *uint64：nil=该 token 全额份额，
+// omitempty 只吞 nil、不吞指向 0 的指针（显式 0 照常透传并被 handler 拒绝）。
+type sftFlowTransferOptionsArgs struct {
+	TokenId uint64  `json:"tokenId" jsonschema:"必填：转移的 token id"`
+	To      string  `json:"to" jsonschema:"必填：接收方地址"`
+	Amount  *uint64 `json:"amount,omitempty" jsonschema:"可选：转移份额；缺省 = 该 token 全额份额"`
+}
+
+// sftFlowArgs 镜像 sftFlowRequest（handler/sft_flow_handler.go:45，
+// POST /api/tool/sft-flow）。ownerPrivateKey/ownerAddress 被
+// validateSftFlowRequest（:116-121）校验必填，不标 omitempty；
+// 步骤开关 = 参数存在性：不传某步的参数即跳过该步。
+type sftFlowArgs struct {
+	OwnerPrivateKey string                      `json:"ownerPrivateKey" jsonschema:"必填：owner 私钥（hex 或 base58）"`
+	OwnerPublicKey  string                      `json:"ownerPublicKey,omitempty" jsonschema:"owner 为 FN-DSA-512 私钥时必填"`
+	OwnerAddress    string                      `json:"ownerAddress" jsonschema:"必填：32 字节私钥在不同曲线下派生不同地址，传 account_generate 返回的地址"`
+	Sft             *sftFlowSftOptionsArgs      `json:"sft,omitempty" jsonschema:"可选：SFT 资源账户；缺省服务端生成新 Ed25519 资源账户（私钥随响应返回）"`
+	SftMetadata     *sftFlowMetadataArgs        `json:"sftMetadata,omitempty" jsonschema:"创建 SFT 时的元数据（新 SFT 时 name/symbol 必填）"`
+	RoyaltyBps      uint16                      `json:"royaltyBps,omitempty" jsonschema:"可选：二级市场版税万分比，缺省 0"`
+	Slot            *sftFlowSlotOptionsArgs     `json:"slot,omitempty" jsonschema:"可选：slot 步骤；缺省跳过"`
+	Distributions   []sftFlowDistributionArgs   `json:"distributions,omitempty" jsonschema:"可选：分发列表（逐笔 Mint 直发，最多 20 笔；需要 slot）"`
+	Merge           *sftFlowMergeOptionsArgs    `json:"merge,omitempty" jsonschema:"可选：合并（fromTokenId→toTokenId，仅合并自己持有的份额）"`
+	Transfer        *sftFlowTransferOptionsArgs `json:"transfer,omitempty" jsonschema:"可选：转移（tokenId→to，amount 缺省全额）"`
+}
+
+// bulkTransferArgs 镜像 bulkTransferRequest（handler/bulk_transfer_handler.go:39，
+// POST /api/tool/bulk-transfer）。count/toAddress 带 binding:"required"
+// （count 限 1..=5000），不标 omitempty；concurrency 可选（缺省 16，上限 128）。
+type bulkTransferArgs struct {
+	Count       int    `json:"count" jsonschema:"必填：批量生成账户数（1 到 5000）"`
+	ToAddress   string `json:"toAddress" jsonschema:"必填：归集目标地址（每账户领水 10000 MIL 后转出 9800，预留 200 gas）"`
+	Concurrency int    `json:"concurrency,omitempty" jsonschema:"可选：并发数，缺省 16，上限 128"`
+}
+
+// bulkTransferStatusArgs 镜像 GetBulkTransferStatus 的路径参数
+// （handler/bulk_transfer_handler.go:196 读 c.Param("id")，不读 query）。
+type bulkTransferStatusArgs struct {
+	Id string `json:"id" jsonschema:"必填：批量转账任务 ID（bulk_transfer 返回的 jobId）"`
 }
 
 // registerTool 把"输入结构 → REST 映射"注册为 MCP 工具。
@@ -433,7 +577,8 @@ func bearerAuth(token string, next http.Handler) http.Handler {
 }
 
 // RegisterTools 注册全部工具；基础 17 个 + Task 3 合约/视图/原始交易 13 个 +
-// Task 4 密钥/签名/VC 5 个 + Task 5 DID 12 个与保存指令 4 个（共 51 个），后续任务在此追加。
+// Task 4 密钥/签名/VC 5 个 + Task 5 DID 12 个与保存指令 4 个 + Task 6 高层
+// flow 工具 4 个（共 55 个）。
 func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[emptyArgs](srv, exec, "network_list", "列出内置网络（devNet/localNet）及当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/list"})
 	registerTool[emptyArgs](srv, exec, "network_current", "查询当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/current"})
@@ -567,4 +712,26 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[savedInstructionExecuteArgs](srv, exec, "saved_instruction_execute",
 		"执行保存的指令（mode 缺省 auto：view→read、entry→simulate；send 真实上链，可用 wait 控制是否等待确认）",
 		RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions/{id}/execute", PathParams: []string{"id"}, QueryParams: []string{"mode", "wait"}})
+
+	// ---- Task 6：高层 flow 工具（4 个）----
+
+	// VC 全流程（服务端多步编排，同步执行；幂等可重跑）
+	registerTool[vcFlowArgs](srv, exec, "vc_flow",
+		"VC 签发全流程编排（服务端多步编排，一次调用完成）：双方领水 → issuer/user 创建 DID → issuer 注册组织（VcIssuer 角色 + schema 声明）→ 链下签发 N 张键值对凭证 → user 逐张披露上链 → 回读验证；每步幂等（DID/组织/凭证已存在自动跳过），可直接重跑",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/vc-flow"})
+
+	// SFT 全流程（服务端多步编排，同步执行；步骤开关 = 参数存在性）
+	registerTool[sftFlowArgs](srv, exec, "sft_flow",
+		"SFT 全生命周期编排（服务端多步编排，一次调用完成）：owner 领水 → 创建/复用 SFT（缺省生成新资源账户并返回私钥）→ 创建/复用 slot → 逐笔 Mint 分发 → 合并 → 转移 → 回读验证；不传某步参数即跳过该步；注意分发/合并/转移是链上状态变更，重跑会重复生效",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/sft-flow"})
+
+	// 批量转账（异步任务，返回 jobId 轮询）
+	registerTool[bulkTransferArgs](srv, exec, "bulk_transfer",
+		"批量生成账户 → 逐个领水 → 归集 MIL 到目标地址（异步任务：立即返回 jobId，用 bulk_transfer_status 轮询进度；每账户领水 10000 MIL 转出 9800、预留 200 gas）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/bulk-transfer"})
+
+	// 批量转账进度查询（GET + 路径参数 id）
+	registerTool[bulkTransferStatusArgs](srv, exec, "bulk_transfer_status",
+		"查询批量转账任务进度与结果（含 done/success/failed 计数、归集总额与逐账户明细；jobId 来自 bulk_transfer 的返回）",
+		RESTMapping{Method: "GET", PathTemplate: "/api/tool/bulk-transfer/{id}", PathParams: []string{"id"}})
 }

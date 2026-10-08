@@ -76,7 +76,9 @@ func TestToolsListBasics(t *testing.T) {
 		"did_deactivate", "did_name_binding", "did_document",
 		// Task 5：保存指令（4 个）
 		"saved_instruction_create", "saved_instruction_list",
-		"saved_instruction_get", "saved_instruction_execute"}
+		"saved_instruction_get", "saved_instruction_execute",
+		// Task 6：高层 flow 工具（4 个）
+		"vc_flow", "sft_flow", "bulk_transfer", "bulk_transfer_status"}
 	for _, w := range want {
 		found := false
 		for _, n := range names {
@@ -486,6 +488,62 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 			`{"id":"abcd1234","mode":"send","wait":"false"}`,
 			"POST", "/api/saved-instructions/abcd1234/execute?mode=send&wait=false",
 			`{}`},
+	}
+	assertRestCalls(t, front.URL, seen, cases)
+}
+
+// TestFlowToolCallMapping 覆盖 Task 6 的 4 个高层 flow 工具：
+// 断言每个工具把参数镜像为正确的 method + path + JSON body。
+// 字段镜像自 handler/vc_flow_handler.go（vcFlowRequest:43 及嵌套
+// vcFlowDidOptions[did_handler.go:76]/didServiceSpec[did_handler.go:42]）、
+// handler/sft_flow_handler.go（sftFlowRequest:45 及嵌套 sft/sftMetadata/
+// slot/distributions/merge/transfer）、handler/bulk_transfer_handler.go
+// （bulkTransferRequest:39；GetBulkTransferStatus:196 只读 c.Param("id")，无 query）。
+// vc_flow/sft_flow 各有一例正向传一层嵌套 options，锁住嵌套字段 json tag 拼写。
+func TestFlowToolCallMapping(t *testing.T) {
+	backend, seen := newFakeBackend(t, 200, `{"code":0}`)
+	t.Setenv("MILON_REST_BASE_URL", backend.URL)
+	front := httptest.NewServer(NewMCPHandler(""))
+	t.Cleanup(front.Close)
+
+	cases := []restCallCase{
+		// vc_flow ← vcFlowRequest（handler/vc_flow_handler.go:43）
+		// 最小集：issuerPrivateKey/userPrivateKey/userAddress 必填
+		//（validateVcFlowRequest:66-73 校验），其余 omitempty 不出现。
+		{"vc_flow",
+			`{"issuerPrivateKey":"sk1","userPrivateKey":"sk2","userAddress":"a2"}`,
+			"POST", "/api/tool/vc-flow?",
+			`{"issuerPrivateKey":"sk1","userPrivateKey":"sk2","userAddress":"a2"}`},
+		// vc_flow：全 11 字段正向传值，issuerDid 传全 5 字段（含 services 元素
+		// {label,serviceEndpoint}）、userDid 传一层，锁住全部嵌套 json tag 拼写
+		{"vc_flow",
+			`{"issuerPrivateKey":"sk1","issuerPublicKey":"pk1","issuerAddress":"a1","userPrivateKey":"sk2","userPublicKey":"pk2","userAddress":"a2","credentialPrefix":"Kyc","credentialCount":3,"validUntilMs":1900000000000,"issuerDid":{"alias":"org-abc","suffix":7,"services":[{"label":"blog","serviceEndpoint":"https://example.com"}],"avatarUri":"https://example.com/a.png","autoAlias":false},"userDid":{"alias":"alice"}}`,
+			"POST", "/api/tool/vc-flow?",
+			`{"issuerPrivateKey":"sk1","issuerPublicKey":"pk1","issuerAddress":"a1","userPrivateKey":"sk2","userPublicKey":"pk2","userAddress":"a2","credentialPrefix":"Kyc","credentialCount":3,"validUntilMs":1900000000000,"issuerDid":{"alias":"org-abc","suffix":7,"services":[{"label":"blog","serviceEndpoint":"https://example.com"}],"avatarUri":"https://example.com/a.png","autoAlias":false},"userDid":{"alias":"alice"}}`},
+		// sft_flow ← sftFlowRequest（handler/sft_flow_handler.go:45）最小必填集
+		{"sft_flow",
+			`{"ownerPrivateKey":"sk","ownerAddress":"a1"}`,
+			"POST", "/api/tool/sft-flow?",
+			`{"ownerPrivateKey":"sk","ownerAddress":"a1"}`},
+		// sft_flow：全 9 字段正向传值，嵌套 sft（3 字段）/sftMetadata（5 字段）/
+		// slot（slotId + metadata 5 字段全指针 + isTransferable）/distributions
+		//（含 token 级 metadata 覆盖）/merge/transfer 全展开，锁全部嵌套 tag
+		{"sft_flow",
+			`{"ownerPrivateKey":"sk","ownerPublicKey":"pk","ownerAddress":"a1","sft":{"address":"sft1","privateKey":"ssk","publicKey":"spk"},"sftMetadata":{"name":"MySFT","symbol":"MSF","coverUrl":"https://example.com/c.png","metadata":"m","attribute":"attr"},"royaltyBps":500,"slot":{"slotId":3,"metadata":{"name":"slot-n","symbol":"slot-s","coverUrl":"c","metadata":"m","attribute":"a"},"isTransferable":false},"distributions":[{"to":"a2","amount":100,"metadata":{"name":"tok-n"}}],"merge":{"fromTokenId":1,"toTokenId":2},"transfer":{"tokenId":5,"to":"a3","amount":40}}`,
+			"POST", "/api/tool/sft-flow?",
+			`{"ownerPrivateKey":"sk","ownerPublicKey":"pk","ownerAddress":"a1","sft":{"address":"sft1","privateKey":"ssk","publicKey":"spk"},"sftMetadata":{"name":"MySFT","symbol":"MSF","coverUrl":"https://example.com/c.png","metadata":"m","attribute":"attr"},"royaltyBps":500,"slot":{"slotId":3,"metadata":{"name":"slot-n","symbol":"slot-s","coverUrl":"c","metadata":"m","attribute":"a"},"isTransferable":false},"distributions":[{"to":"a2","amount":100,"metadata":{"name":"tok-n"}}],"merge":{"fromTokenId":1,"toTokenId":2},"transfer":{"tokenId":5,"to":"a3","amount":40}}`},
+		// bulk_transfer ← bulkTransferRequest（handler/bulk_transfer_handler.go:39）
+		// count/toAddress 带 binding:"required"；concurrency 可选（缺省 16，上限 128）
+		{"bulk_transfer",
+			`{"count":10,"toAddress":"a1","concurrency":32}`,
+			"POST", "/api/tool/bulk-transfer?",
+			`{"count":10,"toAddress":"a1","concurrency":32}`},
+		// bulk_transfer_status ← GetBulkTransferStatus（handler/bulk_transfer_handler.go:196）：
+		// GET + c.Param("id")，不读 query；返回任务进度与逐账户结果
+		{"bulk_transfer_status",
+			`{"id":"1760000000000000000"}`,
+			"GET", "/api/tool/bulk-transfer/1760000000000000000?",
+			""},
 	}
 	assertRestCalls(t, front.URL, seen, cases)
 }
