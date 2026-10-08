@@ -1,0 +1,1102 @@
+{
+  "metadata": {
+    "app_id": 10,
+    "name": "social",
+    "description": "Milon social app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 13067,
+      "handler": "upsert_social_profile",
+      "kind": "entry",
+      "name": "UpsertSocialProfile"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 23225,
+      "handler": "register_source_app",
+      "kind": "entry",
+      "name": "RegisterSourceApp",
+      "returns": {
+        "type": "u32"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "publisher",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 55820,
+      "handler": "add_source_app_publisher",
+      "kind": "entry",
+      "name": "AddSourceAppPublisher"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "publisher",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 62309,
+      "handler": "remove_source_app_publisher",
+      "kind": "entry",
+      "name": "RemoveSourceAppPublisher"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "new_owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 21283,
+      "handler": "transfer_source_app_owner",
+      "kind": "entry",
+      "name": "TransferSourceAppOwner"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 52796,
+      "handler": "deactivate_source_app",
+      "kind": "entry",
+      "name": "DeactivateSourceApp"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 55074,
+      "handler": "reactivate_source_app",
+      "kind": "entry",
+      "name": "ReactivateSourceApp"
+    },
+    {
+      "args": [
+        {
+          "name": "publisher",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "object_type",
+          "role": "input",
+          "type": "ObjectType"
+        },
+        {
+          "name": "object_id",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "content_hash",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 32627,
+      "handler": "upsert_reference",
+      "kind": "entry",
+      "name": "UpsertReference"
+    },
+    {
+      "args": [
+        {
+          "name": "publisher",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "object_type",
+          "role": "input",
+          "type": "ObjectType"
+        },
+        {
+          "name": "object_id",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 41015,
+      "handler": "retire_reference",
+      "kind": "entry",
+      "name": "RetireReference"
+    },
+    {
+      "args": [
+        {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "join_mode",
+          "role": "input",
+          "type": "JoinMode"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 18868,
+      "handler": "create_community",
+      "kind": "entry",
+      "name": "CreateCommunity",
+      "returns": {
+        "type": "u32"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 63564,
+      "handler": "update_community_uri",
+      "kind": "entry",
+      "name": "UpdateCommunityUri"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "join_mode",
+          "role": "input",
+          "type": "JoinMode"
+        }
+      ],
+      "discriminator": 20649,
+      "handler": "set_community_join_mode",
+      "kind": "entry",
+      "name": "SetCommunityJoinMode"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "new_owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 5543,
+      "handler": "transfer_community_owner",
+      "kind": "entry",
+      "name": "TransferCommunityOwner"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 32318,
+      "handler": "deactivate_community",
+      "kind": "entry",
+      "name": "DeactivateCommunity"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "admin",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 10690,
+      "handler": "grant_community_admin",
+      "kind": "entry",
+      "name": "GrantCommunityAdmin"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "admin",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 62146,
+      "handler": "revoke_community_admin",
+      "kind": "entry",
+      "name": "RevokeCommunityAdmin"
+    },
+    {
+      "args": [
+        {
+          "name": "member",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 39196,
+      "handler": "join_community",
+      "kind": "entry",
+      "name": "JoinCommunity"
+    },
+    {
+      "args": [
+        {
+          "name": "member",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 57790,
+      "handler": "request_join_community",
+      "kind": "entry",
+      "name": "RequestJoinCommunity"
+    },
+    {
+      "args": [
+        {
+          "name": "member",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 33199,
+      "handler": "cancel_join_request",
+      "kind": "entry",
+      "name": "CancelJoinRequest"
+    },
+    {
+      "args": [
+        {
+          "name": "admin",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 2182,
+      "handler": "approve_join_request",
+      "kind": "entry",
+      "name": "ApproveJoinRequest"
+    },
+    {
+      "args": [
+        {
+          "name": "admin",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 21924,
+      "handler": "reject_join_request",
+      "kind": "entry",
+      "name": "RejectJoinRequest"
+    },
+    {
+      "args": [
+        {
+          "name": "member",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 7711,
+      "handler": "leave_community",
+      "kind": "entry",
+      "name": "LeaveCommunity"
+    },
+    {
+      "args": [
+        {
+          "name": "admin",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 7071,
+      "handler": "remove_community_member",
+      "kind": "entry",
+      "name": "RemoveCommunityMember"
+    },
+    {
+      "args": [
+        {
+          "name": "subject",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 5863,
+      "handler": "social_profile",
+      "kind": "view",
+      "name": "SocialProfile",
+      "returns": {
+        "type": "String"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 2147,
+      "handler": "source_app",
+      "kind": "view",
+      "name": "SourceApp",
+      "returns": {
+        "type": "SourceApp"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "publisher",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 14357,
+      "handler": "is_source_app_publisher",
+      "kind": "view",
+      "name": "IsSourceAppPublisher",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "source_app_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "object_type",
+          "role": "input",
+          "type": "ObjectType"
+        },
+        {
+          "name": "object_id",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 7408,
+      "handler": "get_reference",
+      "kind": "view",
+      "name": "GetReference",
+      "returns": {
+        "type": "Reference"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 59279,
+      "handler": "community",
+      "kind": "view",
+      "name": "Community",
+      "returns": {
+        "type": "CommunityControl"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "admin",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 56720,
+      "handler": "is_community_admin",
+      "kind": "view",
+      "name": "IsCommunityAdmin",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 38404,
+      "handler": "join_request",
+      "kind": "view",
+      "name": "JoinRequest",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 36616,
+      "handler": "community_membership",
+      "kind": "view",
+      "name": "CommunityMembership",
+      "returns": {
+        "type": "bool"
+      }
+    }
+  ],
+  "types": [
+    {
+      "kind": "enum",
+      "name": "ObjectType",
+      "typeTag": 6776125531577280399,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Profile"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Tags"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Content"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Relationship"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Other"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "JoinMode",
+      "typeTag": 2350450800222339267,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Open"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Approval"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "publishing_enabled",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "SourceApp",
+      "typeTag": 8914166003957741580
+    },
+    {
+      "kind": "enum",
+      "name": "ReferenceStatus",
+      "typeTag": 7940954906745129895,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Active"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Retired"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "subject",
+          "type": "Address"
+        },
+        {
+          "name": "content_hash",
+          "type": "B256"
+        },
+        {
+          "name": "uri",
+          "type": "String"
+        },
+        {
+          "name": "status",
+          "type": "ReferenceStatus"
+        },
+        {
+          "name": "revision",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "Reference",
+      "typeTag": 5198236407389515229
+    },
+    {
+      "fields": [
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "join_mode",
+          "type": "JoinMode"
+        },
+        {
+          "name": "mutations_enabled",
+          "type": "bool"
+        },
+        {
+          "name": "member_count",
+          "type": "u32"
+        },
+        {
+          "name": "uri",
+          "type": "String"
+        }
+      ],
+      "kind": "struct",
+      "name": "CommunityControl",
+      "typeTag": 16708904908548046110
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "resources": [
+    {
+      "name": "_SocialProfile",
+      "type": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "name": "_SourceApp",
+      "type": "SourceApp",
+      "typeTag": 8914166003957741580
+    },
+    {
+      "name": "_SourceAppSequence",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_SourcePublisher",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_Reference",
+      "type": "Reference",
+      "typeTag": 5198236407389515229
+    },
+    {
+      "name": "_CommunityControl",
+      "type": "CommunityControl",
+      "typeTag": 16708904908548046110
+    },
+    {
+      "name": "_CommunitySequence",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_CommunityCreatorCount",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_CommunityAdmin",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_JoinRequest",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_Membership",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    }
+  ],
+  "constants": [
+    {
+      "name": "MAX_COMMUNITIES_PER_CREATOR",
+      "type": "u32",
+      "value": 8
+    },
+    {
+      "name": "MAX_MEMBERS_PER_COMMUNITY",
+      "type": "u32",
+      "value": 10000
+    }
+  ],
+  "errors": [
+    {
+      "code": 2560,
+      "message": "DID does not exist or is deactivated: {0:?}",
+      "name": "DidNotActive"
+    },
+    {
+      "code": 2561,
+      "message": "an active organization DID is required: {0:?}",
+      "name": "OrganizationDidRequired"
+    },
+    {
+      "code": 2562,
+      "message": "community ID sequence is exhausted",
+      "name": "CommunityIdExhausted"
+    },
+    {
+      "code": 2563,
+      "message": "URI is invalid",
+      "name": "InvalidUri"
+    },
+    {
+      "code": 2564,
+      "message": "source app not found: {0}",
+      "name": "SourceAppNotFound"
+    },
+    {
+      "code": 2565,
+      "message": "source app already exists: {0}",
+      "name": "SourceAppAlreadyExists"
+    },
+    {
+      "code": 2566,
+      "message": "source app publishing is disabled: {0}",
+      "name": "SourceAppPublishingDisabled"
+    },
+    {
+      "code": 2567,
+      "message": "source app owner required: {0:?}",
+      "name": "SourceAppOwnerRequired"
+    },
+    {
+      "code": 2568,
+      "message": "source app publisher required: app={0}, signer={1:?}",
+      "name": "SourceAppPublisherRequired"
+    },
+    {
+      "code": 2569,
+      "message": "publisher already exists: app={0}, signer={1:?}",
+      "name": "PublisherAlreadyExists"
+    },
+    {
+      "code": 2570,
+      "message": "publisher not found: app={0}, signer={1:?}",
+      "name": "PublisherNotFound"
+    },
+    {
+      "code": 2571,
+      "message": "a source app owner cannot be removed as its publisher",
+      "name": "CannotRemoveOwnerPublisher"
+    },
+    {
+      "code": 2572,
+      "message": "source app ID sequence is exhausted",
+      "name": "SourceAppIdExhausted"
+    },
+    {
+      "code": 2573,
+      "message": "stable object ID is invalid",
+      "name": "InvalidObjectId"
+    },
+    {
+      "code": 2574,
+      "message": "reference not found",
+      "name": "ReferenceNotFound"
+    },
+    {
+      "code": 2575,
+      "message": "reference is retired",
+      "name": "ReferenceRetired"
+    },
+    {
+      "code": 2576,
+      "message": "reference is not retired",
+      "name": "ReferenceNotRetired"
+    },
+    {
+      "code": 2577,
+      "message": "reference revision is exhausted",
+      "name": "ReferenceRevisionExhausted"
+    },
+    {
+      "code": 2578,
+      "message": "community not found: {0}",
+      "name": "CommunityNotFound"
+    },
+    {
+      "code": 2579,
+      "message": "community already exists: {0}",
+      "name": "CommunityAlreadyExists"
+    },
+    {
+      "code": 2580,
+      "message": "community mutations are disabled: {0}",
+      "name": "CommunityMutationsDisabled"
+    },
+    {
+      "code": 2581,
+      "message": "community owner required: {0:?}",
+      "name": "CommunityOwnerRequired"
+    },
+    {
+      "code": 2582,
+      "message": "community administrator required: {0:?}",
+      "name": "CommunityAdminRequired"
+    },
+    {
+      "code": 2583,
+      "message": "the community owner cannot be removed",
+      "name": "CannotRemoveCommunityOwner"
+    },
+    {
+      "code": 2584,
+      "message": "community administrator already exists: {0:?}",
+      "name": "CommunityAdminAlreadyExists"
+    },
+    {
+      "code": 2585,
+      "message": "community administrator not found: {0:?}",
+      "name": "CommunityAdminNotFound"
+    },
+    {
+      "code": 2586,
+      "message": "join mode does not allow this operation",
+      "name": "InvalidJoinMode"
+    },
+    {
+      "code": 2587,
+      "message": "membership is already active: {0:?}",
+      "name": "MembershipAlreadyActive"
+    },
+    {
+      "code": 2588,
+      "message": "active membership was not found: {0:?}",
+      "name": "MembershipNotActive"
+    },
+    {
+      "code": 2589,
+      "message": "a join request is already pending: {0:?}",
+      "name": "JoinRequestAlreadyPending"
+    },
+    {
+      "code": 2590,
+      "message": "pending join request was not found: {0:?}",
+      "name": "JoinRequestNotPending"
+    },
+    {
+      "code": 2591,
+      "message": "Transparent IdentityError",
+      "name": "IdentityError",
+      "transparent": true
+    },
+    {
+      "code": 2592,
+      "message": "Transparent ContextError",
+      "name": "ContextError",
+      "transparent": true
+    },
+    {
+      "code": 2593,
+      "message": "community creation limit reached for DID: {0:?}",
+      "name": "CommunityCreationLimitReached"
+    },
+    {
+      "code": 2594,
+      "message": "community member limit reached: {0}",
+      "name": "CommunityMemberLimitReached"
+    },
+    {
+      "code": 2595,
+      "message": "community member count invariant failed: {0}",
+      "name": "CommunityMemberCountInvariant"
+    },
+    {
+      "code": 2596,
+      "message": "the community owner cannot leave",
+      "name": "CannotLeaveCommunityOwner"
+    }
+  ]
+}

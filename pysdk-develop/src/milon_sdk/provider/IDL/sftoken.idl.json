@@ -1,0 +1,1506 @@
+{
+  "metadata": {
+    "app_id": 5,
+    "name": "sftoken",
+    "description": "Milon sftoken app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "metadata",
+          "role": "input",
+          "type": "Metadata"
+        },
+        {
+          "name": "royalty_bps",
+          "role": "input",
+          "type": "u16"
+        }
+      ],
+      "discriminator": 5334,
+      "handler": "create_sft",
+      "kind": "entry",
+      "name": "CreateSft"
+    },
+    {
+      "args": [
+        {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot",
+          "role": "input",
+          "type": "SlotData"
+        },
+        {
+          "name": "is_transferable",
+          "role": "input",
+          "type": "bool"
+        }
+      ],
+      "discriminator": 56115,
+      "handler": "create_slot",
+      "kind": "entry",
+      "name": "CreateSlot",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "current_owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "new_owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 35617,
+      "handler": "transfer_owner",
+      "kind": "entry",
+      "name": "TransferOwner"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "cover_url",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 480,
+      "handler": "set_cover_url",
+      "kind": "entry",
+      "name": "SetCoverUrl"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 4819,
+      "handler": "set_uri",
+      "kind": "entry",
+      "name": "SetUri"
+    },
+    {
+      "args": [
+        {
+          "name": "current",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "new",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 33676,
+      "handler": "transfer_mint_authority",
+      "kind": "entry",
+      "name": "TransferMintAuthority"
+    },
+    {
+      "args": [
+        {
+          "name": "current",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "new",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 57787,
+      "handler": "transfer_update_author",
+      "kind": "entry",
+      "name": "TransferUpdateAuthor"
+    },
+    {
+      "args": [
+        {
+          "name": "current",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "new",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 26719,
+      "handler": "transfer_freeze_authority",
+      "kind": "entry",
+      "name": "TransferFreezeAuthority"
+    },
+    {
+      "args": [
+        {
+          "name": "current",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "new_recipient",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 56414,
+      "handler": "transfer_royalty_recipient",
+      "kind": "entry",
+      "name": "TransferRoyaltyRecipient"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "transferable",
+          "role": "input",
+          "type": "bool"
+        }
+      ],
+      "discriminator": 57575,
+      "handler": "set_slot_transferable",
+      "kind": "entry",
+      "name": "SetSlotTransferable"
+    },
+    {
+      "args": [
+        {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "attribute",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 3272,
+      "handler": "set_slot_attribute",
+      "kind": "entry",
+      "name": "SetSlotAttribute"
+    },
+    {
+      "args": [
+        {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "cover_url",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 15677,
+      "handler": "set_slot_cover_url",
+      "kind": "entry",
+      "name": "SetSlotCoverUrl"
+    },
+    {
+      "args": [
+        {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 28914,
+      "handler": "set_slot_uri",
+      "kind": "entry",
+      "name": "SetSlotUri"
+    },
+    {
+      "args": [
+        {
+          "name": "minter",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "metadata",
+          "role": "input",
+          "type": "option<MetadataOverride>"
+        }
+      ],
+      "discriminator": 43610,
+      "handler": "mint",
+      "kind": "entry",
+      "name": "Mint",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 7015,
+      "handler": "burn",
+      "kind": "entry",
+      "name": "Burn"
+    },
+    {
+      "args": [
+        {
+          "name": "freezer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 36565,
+      "handler": "freeze",
+      "kind": "entry",
+      "name": "Freeze"
+    },
+    {
+      "args": [
+        {
+          "name": "freezer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 49498,
+      "handler": "unfreeze",
+      "kind": "entry",
+      "name": "Unfreeze"
+    },
+    {
+      "args": [
+        {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "attribute",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 50607,
+      "handler": "set_token_attribute",
+      "kind": "entry",
+      "name": "SetTokenAttribute"
+    },
+    {
+      "args": [
+        {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "cover_url",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 58854,
+      "handler": "set_token_cover_url",
+      "kind": "entry",
+      "name": "SetTokenCoverUrl"
+    },
+    {
+      "args": [
+        {
+          "name": "author",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "uri",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 50621,
+      "handler": "set_token_uri",
+      "kind": "entry",
+      "name": "SetTokenUri"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "spender",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 34407,
+      "handler": "approve",
+      "kind": "entry",
+      "name": "Approve"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "spender",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 57842,
+      "handler": "revoke_approval",
+      "kind": "entry",
+      "name": "RevokeApproval"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "from_token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 50774,
+      "handler": "split",
+      "kind": "entry",
+      "name": "Split",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "from_token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "to_token_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 110,
+      "handler": "merge",
+      "kind": "entry",
+      "name": "Merge"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 48437,
+      "handler": "transfer",
+      "kind": "entry",
+      "name": "Transfer"
+    },
+    {
+      "args": [
+        {
+          "name": "spender",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "from",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "to",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 19098,
+      "handler": "transfer_from",
+      "kind": "entry",
+      "name": "TransferFrom"
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 46443,
+      "handler": "sft_owner_of",
+      "kind": "view",
+      "name": "SftOwnerOf",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 12747,
+      "handler": "sft_metadata",
+      "kind": "view",
+      "name": "SftMetadata",
+      "returns": {
+        "type": "Metadata"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 48907,
+      "handler": "slot_info",
+      "kind": "view",
+      "name": "SlotInfo",
+      "returns": {
+        "type": "SlotData"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 26530,
+      "handler": "slot_metadata",
+      "kind": "view",
+      "name": "SlotMetadata",
+      "returns": {
+        "type": "Metadata"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "slot_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 16363,
+      "handler": "is_slot_transferable",
+      "kind": "view",
+      "name": "IsSlotTransferable",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 35083,
+      "handler": "token",
+      "kind": "view",
+      "name": "Token",
+      "returns": {
+        "type": "Metadata"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 38850,
+      "handler": "slot_of",
+      "kind": "view",
+      "name": "SlotOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 63018,
+      "handler": "balance_of",
+      "kind": "view",
+      "name": "BalanceOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 59068,
+      "handler": "frozen_of",
+      "kind": "view",
+      "name": "FrozenOf",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "token_id",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "spender",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 63999,
+      "handler": "approval_of",
+      "kind": "view",
+      "name": "ApprovalOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 30311,
+      "handler": "royalty_info",
+      "kind": "view",
+      "name": "RoyaltyInfo",
+      "returns": {
+        "type": "Royalty"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 57868,
+      "handler": "mint_authority",
+      "kind": "view",
+      "name": "MintAuthority",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 6459,
+      "handler": "update_author",
+      "kind": "view",
+      "name": "UpdateAuthor",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 10975,
+      "handler": "freeze_authority",
+      "kind": "view",
+      "name": "FreezeAuthority",
+      "returns": {
+        "type": "Address"
+      }
+    }
+  ],
+  "types": [
+    {
+      "fields": [
+        {
+          "name": "name",
+          "type": "String"
+        },
+        {
+          "name": "symbol",
+          "type": "String"
+        },
+        {
+          "name": "cover_url",
+          "type": "String"
+        },
+        {
+          "name": "metadata",
+          "type": "String"
+        },
+        {
+          "name": "attribute",
+          "type": "option<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "Metadata",
+      "typeTag": 16597600053100423329
+    },
+    {
+      "fields": [
+        {
+          "name": "name",
+          "type": "option<String>"
+        },
+        {
+          "name": "symbol",
+          "type": "option<String>"
+        },
+        {
+          "name": "cover_url",
+          "type": "option<String>"
+        },
+        {
+          "name": "metadata",
+          "type": "option<String>"
+        },
+        {
+          "name": "attribute",
+          "type": "option<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "MetadataOverride",
+      "typeTag": 1521786355183284625
+    },
+    {
+      "fields": [
+        {
+          "name": "metadata",
+          "type": "option<MetadataOverride>"
+        }
+      ],
+      "kind": "struct",
+      "name": "Token",
+      "typeTag": 14126857848543451857
+    },
+    {
+      "fields": [
+        {
+          "name": "metadata",
+          "type": "option<MetadataOverride>"
+        }
+      ],
+      "kind": "struct",
+      "name": "SlotData",
+      "typeTag": 16546317778011887664
+    },
+    {
+      "fields": [
+        {
+          "name": "recipient",
+          "type": "Address"
+        },
+        {
+          "name": "bps",
+          "type": "u16"
+        }
+      ],
+      "kind": "struct",
+      "name": "Royalty",
+      "typeTag": 8013111409802783456
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "resources": [
+    {
+      "name": "_SftOwner",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_SftMetadata",
+      "type": "Metadata",
+      "typeTag": 3119835375849690086
+    },
+    {
+      "name": "_SftRoyalty",
+      "type": "Royalty",
+      "typeTag": 16416299771797568401
+    },
+    {
+      "name": "_SftNextSlotId",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_SftNextTokenId",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_SftMintPermission",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_SftUpdatePermission",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_SftFreezePermission",
+      "type": "Address",
+      "typeTag": 15146535206056819577
+    },
+    {
+      "name": "_Slot",
+      "type": "SlotData",
+      "typeTag": 6310559783402314447
+    },
+    {
+      "name": "_SlotExists",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_SlotTransferable",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_Token",
+      "type": "Token",
+      "typeTag": 7491257169663686040
+    },
+    {
+      "name": "_TokenSlotId",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_TokenBalance",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_TokenFrozen",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_Approval",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "events": [
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "sft",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "metadata",
+          "type": "Metadata"
+        }
+      ],
+      "name": "SftCreatedEvent",
+      "typeTag": 14598215378642513979
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "sft",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "slot_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "metadata",
+          "type": "SlotData"
+        }
+      ],
+      "name": "SlotCreatedEvent",
+      "typeTag": 1769434390890356512
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "sft",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "token_id",
+          "type": "u64"
+        },
+        {
+          "indexed": true,
+          "name": "slot_id",
+          "type": "u64"
+        },
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "TokenMintedEvent",
+      "typeTag": 6248943049156148556
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "sft",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "token_id",
+          "type": "u64"
+        },
+        {
+          "indexed": true,
+          "name": "slot_id",
+          "type": "u64"
+        },
+        {
+          "indexed": true,
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "TokenBurnedEvent",
+      "typeTag": 3949389203557328607
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "sft",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "from_token_id",
+          "type": "u64"
+        },
+        {
+          "indexed": true,
+          "name": "to_token_id",
+          "type": "u64"
+        },
+        {
+          "indexed": true,
+          "name": "from",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "to",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "TokenTransferredEvent",
+      "typeTag": 4473315672219730635
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "sft",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "token_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "attribute",
+          "type": "String"
+        }
+      ],
+      "name": "AttributeSetEvent",
+      "typeTag": 4045023747084950996
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "sft",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "from",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "to",
+          "type": "Address"
+        }
+      ],
+      "name": "RoyaltyRecipientTransferredEvent",
+      "typeTag": 567351340953111585
+    }
+  ],
+  "errors": [
+    {
+      "code": 1280,
+      "message": "unauthorized signer: {0:?}",
+      "name": "Unauthorized"
+    },
+    {
+      "code": 1281,
+      "message": "source and destination tokens belong to different slots: {0} != {1}",
+      "name": "SlotMismatch"
+    },
+    {
+      "code": 1282,
+      "message": "insufficient token amount (token: {0}, available: {1}, required: {2})",
+      "name": "InsufficientBalance"
+    },
+    {
+      "code": 1283,
+      "message": "token not found: {0}",
+      "name": "TokenNotFound"
+    },
+    {
+      "code": 1284,
+      "message": "slot not found: {0}",
+      "name": "SlotNotFound"
+    },
+    {
+      "code": 1285,
+      "message": "SFT has not been created",
+      "name": "SftNotFound"
+    },
+    {
+      "code": 1286,
+      "message": "amount must be greater than zero",
+      "name": "ZeroValueOperation"
+    },
+    {
+      "code": 1287,
+      "message": "source and destination must differ",
+      "name": "SelfTransfer"
+    },
+    {
+      "code": 1288,
+      "message": "split amount must be less than source balance (token: {0}, balance: {1})",
+      "name": "FullBalanceSplit"
+    },
+    {
+      "code": 1289,
+      "message": "a token cannot be merged into itself",
+      "name": "SelfMerge"
+    },
+    {
+      "code": 1290,
+      "message": "token balance is frozen (token: {0}, owner: {1:?})",
+      "name": "TokenFrozen"
+    },
+    {
+      "code": 1291,
+      "message": "SFT already exists",
+      "name": "SftAlreadyExists"
+    },
+    {
+      "code": 1292,
+      "message": "invalid SFT parameters: {0}",
+      "name": "InvalidParameters"
+    },
+    {
+      "code": 1293,
+      "message": "token id sequence is exhausted",
+      "name": "TokenIdExhausted"
+    },
+    {
+      "code": 1294,
+      "message": "slot id sequence is exhausted",
+      "name": "SlotIdExhausted"
+    },
+    {
+      "code": 1295,
+      "message": "arithmetic overflow",
+      "name": "Overflow"
+    },
+    {
+      "code": 1296,
+      "message": "insufficient approval (token: {0}, owner: {1:?}, spender: {2:?}, available: {3}, required: {4})",
+      "name": "InsufficientApproval"
+    },
+    {
+      "code": 1297,
+      "message": "address not signed in current transaction: {0:?}",
+      "name": "AddressNotSignatured"
+    }
+  ]
+}

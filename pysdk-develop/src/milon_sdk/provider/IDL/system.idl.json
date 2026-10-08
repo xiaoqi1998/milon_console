@@ -1,0 +1,284 @@
+{
+  "metadata": {
+    "app_id": 0,
+    "name": "system",
+    "description": "Milon system app IDL"
+  },
+  "instructions": [
+    {
+      "args": [],
+      "discriminator": 13507,
+      "handler": "noop",
+      "kind": "entry",
+      "name": "Noop"
+    },
+    {
+      "args": [
+        {
+          "name": "start_timestamp_ms",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "min_duration_ms",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 57604,
+      "handler": "bootstrap_epoch_clock",
+      "kind": "entry",
+      "name": "BootstrapEpochClock"
+    },
+    {
+      "args": [
+        {
+          "name": "max_validator_set_size",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "group_threshold_ratio_num",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "group_threshold_ratio_den",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "block_threshold_ratio_num",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "block_threshold_ratio_den",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "batch_committee_ratio_num",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "batch_committee_ratio_den",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 37696,
+      "handler": "bootstrap_validator_set_config",
+      "kind": "entry",
+      "name": "BootstrapValidatorSetConfig"
+    },
+    {
+      "args": [
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_account",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "consensus_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "ed25519_pubkey",
+          "role": "input",
+          "type": "bytes"
+        }
+      ],
+      "discriminator": 16918,
+      "handler": "register_validator_identity",
+      "kind": "entry",
+      "name": "RegisterValidatorIdentity"
+    },
+    {
+      "args": [
+        {
+          "name": "target_epoch",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "validator_set_seed",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 55212,
+      "handler": "prepare_validator_set",
+      "kind": "entry",
+      "name": "PrepareValidatorSet"
+    },
+    {
+      "args": [],
+      "discriminator": 61700,
+      "handler": "settle_staking_epoch",
+      "kind": "entry",
+      "name": "SettleStakingEpoch"
+    },
+    {
+      "args": [],
+      "discriminator": 59552,
+      "handler": "commit_validator_set",
+      "kind": "entry",
+      "name": "CommitValidatorSet"
+    },
+    {
+      "args": [],
+      "discriminator": 49456,
+      "handler": "commit_block_seed",
+      "kind": "entry",
+      "name": "CommitBlockSeed"
+    }
+  ],
+  "types": [
+    {
+      "fields": [
+        {
+          "name": "validator",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_account",
+          "type": "Address"
+        },
+        {
+          "name": "consensus_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "bls_pubkey",
+          "type": "bytes"
+        },
+        {
+          "name": "ed25519_pubkey",
+          "type": "bytes"
+        }
+      ],
+      "kind": "struct",
+      "name": "ConsensusValidatorIdentity",
+      "typeTag": 16798500351373647328
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
+      "name": "bytes",
+      "typeTag": 10405529814227927951
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    }
+  ],
+  "resources": [
+    {
+      "name": "_ResourceAccountClaim",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_BlockSeed",
+      "type": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "name": "_ConsensusValidatorIdentity",
+      "type": "ConsensusValidatorIdentity",
+      "typeTag": 16798500351373647328
+    },
+    {
+      "name": "_ConsensusValidatorByAccount",
+      "type": "Address",
+      "typeTag": 7031394024774032867
+    },
+    {
+      "name": "_ConsensusValidatorByPubkey",
+      "type": "Address",
+      "typeTag": 7031394024774032867
+    },
+    {
+      "name": "_ConsensusValidatorByBls",
+      "type": "Address",
+      "typeTag": 7031394024774032867
+    }
+  ],
+  "constants": [
+    {
+      "name": "BLOCK_SEED_RES_HINT",
+      "type": "usize",
+      "value": 1
+    }
+  ],
+  "errors": [
+    {
+      "code": 0,
+      "message": "Randomness action failed: {0}",
+      "name": "RandomnessFailure"
+    },
+    {
+      "code": 1,
+      "message": "System staking action failed: {0}",
+      "name": "StakingFailure"
+    },
+    {
+      "code": 2,
+      "message": "Epoch clock action failed: {0}",
+      "name": "EpochClockFailure"
+    },
+    {
+      "code": 3,
+      "message": "ValidatorSet action failed: {0}",
+      "name": "ValidatorSetFailure"
+    },
+    {
+      "code": 4,
+      "message": "Block seed is not initialized",
+      "name": "BlockSeedNotInitialized"
+    },
+    {
+      "code": 5,
+      "message": "Block seed is already initialized",
+      "name": "BlockSeedAlreadyInitialized"
+    },
+    {
+      "code": 6,
+      "message": "Invalid random range {0}..{1}",
+      "name": "InvalidRandomRange"
+    }
+  ]
+}
