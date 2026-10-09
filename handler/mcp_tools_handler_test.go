@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"milon-api-server/mcpserver"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,8 +43,12 @@ func TestMcpToolsEndpoint(t *testing.T) {
 	if !resp.Success {
 		t.Fatalf("success=false: %s", w.Body.String())
 	}
-	if len(resp.Data) != 58 {
-		t.Fatalf("工具数=%d, want 58", len(resp.Data))
+	// 数量与 ToolInventory 同源对账，另设下限防工具意外丢失（批次全部落地后升 64）
+	if len(resp.Data) != len(mcpserver.ToolInventory()) {
+		t.Fatalf("端点返回 %d 个 != inventory %d 个", len(resp.Data), len(mcpserver.ToolInventory()))
+	}
+	if len(resp.Data) < 60 {
+		t.Fatalf("工具数=%d, want ≥60", len(resp.Data))
 	}
 	seen := map[string]bool{}
 	for _, ti := range resp.Data {

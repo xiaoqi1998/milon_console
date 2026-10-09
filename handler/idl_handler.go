@@ -414,3 +414,51 @@ func hasPrefixAny(s string, prefixes ...string) bool {
 	}
 	return false
 }
+
+// idlAppBrief 是 ListApps 的轻量清单条目——不带 instructions 明细，
+// 供 AI 分页发现（idl_metadata 一次约 200KB 会撑爆上下文）。
+type idlAppBrief struct {
+	AppID            uint8  `json:"appId"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	InstructionCount int    `json:"instructionCount"`
+}
+
+// ListApps handles GET /api/idl/apps
+// 返回全部 app 的轻量清单（id/名称/简介/方法数），按 appId 升序。
+func (h *IDLHandler) ListApps(c *gin.Context) {
+	mc := middleware.ClientFrom(c)
+	if mc == nil {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "no active network client", nil))
+		return
+	}
+	allPd := mc.GetAllPd()
+	apps := make([]idlAppBrief, 0, len(allPd))
+	for name, pd := range allPd {
+		apps = append(apps, idlAppBrief{
+			AppID:            pd.IDL.Metadata.AppID,
+			Name:             name,
+			Description:      pd.IDL.Metadata.Description,
+			InstructionCount: len(pd.IDL.Instructions),
+		})
+	}
+	sort.Slice(apps, func(i, j int) bool { return apps[i].AppID < apps[j].AppID })
+	c.JSON(http.StatusOK, types.SuccessResponse(apps, "ok"))
+}
+
+// AppMethods handles GET /api/idl/apps/:appName/methods
+// 返回单个 app 的全量方法元数据（含参数/返回值/signer 角色明细）。
+func (h *IDLHandler) AppMethods(c *gin.Context) {
+	appName := c.Param("appName")
+	mc := middleware.ClientFrom(c)
+	if mc == nil {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "no active network client", nil))
+		return
+	}
+	pd, ok := mc.GetAllPd()[appName]
+	if !ok {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "unknown app: "+appName, nil))
+		return
+	}
+	c.JSON(http.StatusOK, types.SuccessResponse(buildAppMeta(appName, pd), "ok"))
+}

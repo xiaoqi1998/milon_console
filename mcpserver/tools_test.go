@@ -58,7 +58,7 @@ func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers ma
 
 // wantToolCount 锁定工具总数。每新增一个 MCP 工具：+1 并在 TestToolsListBasics
 // 的 want 列表补名（本批 7 工具完成后应为 64）。
-const wantToolCount = 58
+const wantToolCount = 60
 
 func TestToolsListBasics(t *testing.T) {
 	srv := mcpHTTPServer(t, "")
@@ -73,7 +73,7 @@ func TestToolsListBasics(t *testing.T) {
 		"faucet_claim", "faucet_balance",
 		"tx_get", "tx_parse", "tx_events", "tx_wait", "tx_track",
 		"rpc_block", "rpc_resource", "rpc_access_value", "rpc_resource_path",
-		"idl_metadata",
+		"idl_metadata", "idl_apps", "idl_methods",
 		// Task 3：合约/视图/原始交易家族（13 个）
 		"contract_read", "contract_read_multi",
 		"contract_simulate", "contract_simulate_multi",
@@ -631,6 +631,8 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"account_resources": {"address"},
 		"faucet_claim":      {"privateKey", "address", "signatureMode"},
 		"faucet_balance":    {"address"},
+		"idl_apps":           {},
+		"idl_methods":        {"appName"},
 		"tx_get":            {"hash"},
 		"tx_parse":          {"hash"},
 		"tx_events":         {"hash"},

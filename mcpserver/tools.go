@@ -60,6 +60,11 @@ type txTrackArgs struct {
 	TimeoutSecs string `json:"timeoutSecs,omitempty" jsonschema:"可选：等待确认超时秒数（十进制整数，缺省 60）"`
 }
 
+// idlMethodsArgs 镜像 AppMethods 的路径参数。
+type idlMethodsArgs struct {
+	AppName string `json:"appName" jsonschema:"必填：app 名（idl_apps 返回的 name，如 token）"`
+}
+
 type hashArgs struct {
 	Hash string `json:"hash"`
 }
@@ -733,6 +738,12 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[accessValueArgs](srv, exec, "rpc_access_value", "按 blob 哈希批量取 access value", RESTMapping{Method: "POST", PathTemplate: "/api/rpc/access-value"})
 	registerTool[hashArgs](srv, exec, "rpc_resource_path", "按哈希查资源路径", RESTMapping{Method: "GET", PathTemplate: "/api/rpc/resource-paths/{hash}", PathParams: []string{"hash"}})
 	registerTool[emptyArgs](srv, exec, "idl_metadata", "IDL 元数据发现：列出全部 app/方法/参数/返回值/signer 角色（调用合约工具前的第一站）", RESTMapping{Method: "GET", PathTemplate: "/api/idl/metadata"})
+	registerTool[emptyArgs](srv, exec, "idl_apps",
+		"IDL app 轻量清单（名称/简介/方法数）——idl_metadata 全量约 200KB 易撑爆上下文，建议先调本工具看有什么，再按需调 idl_methods",
+		RESTMapping{Method: "GET", PathTemplate: "/api/idl/apps"})
+	registerTool[idlMethodsArgs](srv, exec, "idl_methods",
+		"查单个 app 的全量方法明细（参数/返回值/signer 角色/错误码）；注意返回的 name 是 PascalCase（如 Transfer），而 contract_read/write 的 methodName 用 snake_case 的 handler 名（如 transfer）",
+		RESTMapping{Method: "GET", PathTemplate: "/api/idl/apps/{appName}/methods", PathParams: []string{"appName"}})
 
 	// ---- Task 3：合约/视图/原始交易家族（13 个，全部 POST 纯 JSON body，无 query/path 参数）----
 

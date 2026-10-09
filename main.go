@@ -131,6 +131,8 @@ func main() {
 
 		// IDL metadata (discovery for all IDL apps & methods)
 		api.GET("/idl/metadata", idlHandler.GetIDLMetadata)
+		api.GET("/idl/apps", idlHandler.ListApps)
+		api.GET("/idl/apps/:appName/methods", idlHandler.AppMethods)
 
 		// Bulk transfer (generate accounts, claim faucet, consolidate MIL)
 		api.POST("/tool/bulk-transfer", bulkTransferHandler.BulkTransfer)
@@ -230,6 +232,8 @@ func main() {
 	fmt.Println("    POST /api/view/multi              - Low-level multi view")
 	fmt.Println("    GET  /api/rpc/resource-paths/:hash- Get resource path by hash")
 	fmt.Println("    GET  /api/idl/metadata            - IDL 方法元数据（app/方法/参数 schema）")
+	fmt.Println("    GET  /api/idl/apps                - IDL app 轻量清单（名称/简介/方法数）")
+	fmt.Println("    GET  /api/idl/apps/:app/methods   - 单 app 全量方法明细")
 	fmt.Println("    POST /api/tool/bulk-transfer      - 批量生成账户并归集 MIL（异步任务）")
 	fmt.Println("    GET  /api/tool/bulk-transfer/:id  - 查询批量归集任务进度")
 	fmt.Println("    POST /api/tool/vc-flow            - VC 签发披露全流程（领水+DID+组织+凭证，同步）")
