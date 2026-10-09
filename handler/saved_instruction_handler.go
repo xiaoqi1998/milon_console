@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"milon-api-server/client"
+	"milon-api-server/middleware"
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
@@ -219,7 +220,7 @@ func (h *SavedInstructionHandler) CreateSavedInstruction(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 
 	// Validate IDL method exists and detect kind.
 	pd, ok := mc.GetAllPd()[req.AppName]
@@ -388,7 +389,7 @@ func (h *SavedInstructionHandler) ExecuteSavedInstruction(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	// Determine execution mode.

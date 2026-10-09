@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"milon-api-server/client"
+	"milon-api-server/middleware"
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
@@ -65,7 +66,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 
 	// 账户已上链时公钥模式会被链端拒绝（错误 285 PubkeyModeForbidden）→ 自动切签名者列表模式
 	mode, err = normalizeSignatureModeForAccount(mc, addr, mode)
@@ -163,7 +164,7 @@ func (h *FaucetHandler) GetBalance(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 
 	balance, err := mc.BalanceOf(&addr)
 	if err != nil {

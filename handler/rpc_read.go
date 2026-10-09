@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"milon-api-server/client"
+	"milon-api-server/middleware"
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
@@ -65,7 +66,7 @@ func (h *RpcHandler) GetBlock(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetBlockByHeight(height, milon.WithRequestID(requestId))
@@ -108,7 +109,7 @@ func (h *RpcHandler) GetResource(c *gin.Context) {
 	var rsHash api.RsHash
 	copy(rsHash[:], hashBytes)
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetResource(rsHash, milon.WithRequestID(requestId))
@@ -153,7 +154,7 @@ func (h *RpcHandler) GetAccessValue(c *gin.Context) {
 		blobHashList = append(blobHashList, bh)
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetAccessValue(blobHashList, milon.WithRequestID(requestId))

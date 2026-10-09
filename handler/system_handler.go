@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"milon-api-server/client"
+	"milon-api-server/middleware"
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +34,7 @@ type chainHeadResponse struct {
 
 // Health handles GET /api/health
 func (h *SystemHandler) Health(c *gin.Context) {
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetChainHead(milon.WithRequestID(requestId))
@@ -55,7 +56,7 @@ func (h *SystemHandler) Health(c *gin.Context) {
 
 // GetChainHead handles GET /api/chain-head
 func (h *SystemHandler) GetChainHead(c *gin.Context) {
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetChainHead(milon.WithRequestID(requestId))

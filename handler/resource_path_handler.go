@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"milon-api-server/client"
+	"milon-api-server/middleware"
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
@@ -55,7 +56,7 @@ func (h *ResourcePathHandler) GetResourcePathByHash(c *gin.Context) {
 	var rsHash api.RsHash
 	copy(rsHash[:], hashBytes)
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetResourcePathByHash(rsHash, milon.WithRequestID(requestId))

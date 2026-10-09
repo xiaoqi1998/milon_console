@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"milon-api-server/client"
+	"milon-api-server/middleware"
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
@@ -40,7 +41,7 @@ func (h *AccountHandler) GetAccount(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetAccount(address, milon.WithRequestID(requestId))
@@ -62,7 +63,7 @@ func (h *AccountHandler) GetAccountResources(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetAccount(address, milon.WithRequestID(requestId))

@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"milon-api-server/client"
+	"milon-api-server/middleware"
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
@@ -103,7 +104,7 @@ type idlSignerLookupMeta struct {
 // GetIDLMetadata handles GET /api/idl/metadata
 // 返回所有已加载 IDL app 的元数据（app 列表 + 每个方法名/类型/参数/角色）。
 func (h *IDLHandler) GetIDLMetadata(c *gin.Context) {
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	if mc == nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "no active network client", nil))
 		return

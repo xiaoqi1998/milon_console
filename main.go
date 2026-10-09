@@ -56,6 +56,8 @@ func main() {
 	mcpToolsHandler := handler.NewMcpToolsHandler()
 
 	api := r.Group("/api")
+	// 请求级网络选择：X-Milon-Network 头 → 对应网络 client；缺省走服务端默认网络
+	api.Use(middleware.ResolveNetwork(nm))
 	{
 		// Network management
 		netGroup := api.Group("/network")

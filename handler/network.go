@@ -25,7 +25,8 @@ func (h *NetworkHandler) ListNetworks(c *gin.Context) {
 	c.JSON(http.StatusOK, types.SuccessResponse(networks, "ok"))
 }
 
-// GetCurrentNetwork handles GET /api/network/current
+// GetCurrentNetwork handles GET /api/network/current —— 返回服务端默认网络
+// （未携带 X-Milon-Network 头的请求所走的网络）。
 func (h *NetworkHandler) GetCurrentNetwork(c *gin.Context) {
 	_, cfg := h.nm.GetCurrent()
 	info := client.NetworkInfo{
@@ -38,7 +39,7 @@ func (h *NetworkHandler) GetCurrentNetwork(c *gin.Context) {
 	c.JSON(http.StatusOK, types.SuccessResponse(info, "ok"))
 }
 
-// SwitchNetwork handles POST /api/network/switch
+// SwitchNetwork handles POST /api/network/switch —— 设置服务端默认网络（仅影响未携带网络头的请求）
 func (h *NetworkHandler) SwitchNetwork(c *gin.Context) {
 	var req types.NetworkSwitchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

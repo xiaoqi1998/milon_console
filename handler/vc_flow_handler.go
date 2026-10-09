@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"milon-api-server/client"
+	"milon-api-server/middleware"
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
@@ -221,7 +222,7 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	if mc == nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "no current network", nil))
 		return

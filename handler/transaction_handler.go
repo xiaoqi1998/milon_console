@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"milon-api-server/client"
+	"milon-api-server/middleware"
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
@@ -206,7 +207,7 @@ func (h *TransactionHandler) GetTransactionByHash(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetTxByHash(hash, milon.WithRequestID(requestId))
@@ -240,7 +241,7 @@ func (h *TransactionHandler) GetTransactionEvents(c *gin.Context) {
 		typeTagFilter = &filter
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.EventsByTxHash(hash, typeTagFilter, milon.WithRequestID(requestId))
@@ -274,7 +275,7 @@ func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 		options = append(options, milon.WithWaitPollTimeout(time.Duration(secs)*time.Second))
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	waitOptions := append([]milon.WaitOption{milon.WithWaitRequestID(requestId)}, options...)
@@ -326,7 +327,7 @@ func (h *TransactionHandler) SimulateTransaction(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
@@ -376,7 +377,7 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 		return
 	}
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
@@ -681,7 +682,7 @@ func (h *TransactionHandler) GetTransactionByHashParsed(c *gin.Context) {
 	}
 	remote := c.Query("remote") == "true" || c.Query("remote") == "1"
 
-	mc, _ := h.nm.GetCurrent()
+	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
 	result, err := mc.GetTxByHash(hash, milon.WithRequestID(requestId))
