@@ -424,7 +424,7 @@
             </button>
           </div>
 
-          <p class="mcp-hint">注意事项：MCP 端点单次工具调用回环超时 120s（长任务如 sft_flow / vc_flow 请耐心等待）；开启 <code>ENABLE_BODY_LOG</code> 时 /mcp 工具入参（含私钥字段）会写入日志，仅限 devNet 调试，生产勿开；对外暴露服务务必设置 <code>MCP_AUTH_TOKEN</code>。</p>
+          <p class="mcp-hint">注意事项：MCP 端点单次工具调用回环超时 120s（长任务如 sft_flow / vc_flow 请耐心等待）；开启 <code>ENABLE_BODY_LOG</code> 时 /mcp 工具入参（含私钥字段）会写入日志，仅限 devNet 调试，生产勿开；对外暴露服务务必设置 <code>MCP_AUTH_TOKEN</code>。多网络并存时可对 /mcp 请求携带 <code>X-Milon-Network</code> 头（客户端在 mcpServers 配置的 headers 中设置，如 <code>{"X-Milon-Network": "devNet"}</code>），全部工具调用按该网络执行，缺省走服务端默认网络。</p>
         </div>
 
         <!-- 区块二：工具清单（服务端动态导出） -->
