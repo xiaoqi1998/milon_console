@@ -281,7 +281,7 @@ curl http://localhost:8080/api/idl/metadata
 
 ## MCP
 
-服务在同一端口内置 MCP（Model Context Protocol）端点 `/mcp`，把 REST 能力全量映射为 **57 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接以自然语言驱动链上操作。工具与 REST 端点一一对应，行为完全一致，完整对照表见 [API.md](API.md) 的「MCP 端点」章节。
+服务在同一端口内置 MCP（Model Context Protocol）端点 `/mcp`，把 REST 能力全量映射为 **57 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接以自然语言驱动链上操作。工具与 REST 端点一一对应，行为完全一致，完整对照表见 [API.md](API.md) 的「MCP 端点」章节；也可经 `GET /api/mcp/tools` 程序化获取工具清单（含名称/描述/分组/REST 映射，与注册表同源），或直接在 Web 控制台的「MCP 接入」页查看配置方法与可搜索的工具总览。
 
 ### 启用方式
 

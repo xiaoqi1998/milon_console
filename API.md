@@ -440,6 +440,44 @@ curl http://localhost:8080/api/chain-head
 
 ---
 
+#### 6. MCP 工具清单
+
+- **方法**: `GET`
+- **路径**: `/api/mcp/tools`
+- **说明**: 返回全部 MCP 工具的清单（与 `/mcp` 端点注册表同源），含名称、描述、展示分组与对应 REST 映射。前端「MCP 接入」页面与外部集成方可用它程序化发现工具；服务端新增工具后本接口自动同步。
+
+**请求参数**
+
+无
+
+**请求示例**
+
+```bash
+curl http://localhost:8080/api/mcp/tools
+```
+
+**响应示例**
+
+```json
+{
+  "success": true,
+  "code": 0,
+  "message": "ok",
+  "data": [
+    {
+      "name": "network_list",
+      "description": "列出内置网络（devNet/localNet）及当前网络",
+      "group": "网络",
+      "method": "GET",
+      "path": "/api/network/list"
+    }
+  ],
+  "timestamp": "2026-10-09T10:00:00+08:00"
+}
+```
+
+---
+
 ### 三、账户
 
 #### 6. 获取账户信息
@@ -2521,6 +2559,7 @@ curl http://localhost:8080/api/tool/did/QffKfGk3Jnp4k4qHJtbA8fwrW8E/document
 - **行为**: 工具与 REST 端点一一对应，参数经校验后回环调用同进程 REST handler，响应 JSON 原样作为工具结果返回；REST 非 2xx 时工具结果标记 `isError=true` 并保留错误 JSON 原文
 - **超时**: 回环请求超时 120s；`vc_flow`（约 20 张凭证同步签发披露）在 devNet 上可能超时，`bulk_transfer` 为异步 jobId 轮询不受影响
 - **排除**: `mock`（前端调试辅助）与 `health` / `chain-head`（运维探活）4 个端点不映射
+- **工具清单**: `GET /api/mcp/tools` 返回全部工具的名称/描述/分组/REST 映射（与注册表同源），供程序化发现与前端展示
 
 ### 客户端配置
 
@@ -2744,5 +2783,6 @@ ZCode / Claude 通用片段：
 | 51 | POST | `/api/tool/did/deactivate` | 停用 DID |
 | 52 | GET | `/api/tool/did/:address/document` | 查询 DID 文档 |
 | 53 | GET | `/api/tool/did/name-binding` | 按别名反查 DID 绑定 |
+| 54 | GET | `/api/mcp/tools` | MCP 工具清单（与 /mcp 注册表同源） |
 
-**统计**：共 53 个端点，分布于 12 个功能组（网络管理 3、系统 2、账户 3、交易 7、合约 9、RPC 4、水龙头 2、工具 20、IDL 元数据 1、VC 全流程 1、SFT 全流程 1、DID 12）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 54 个端点，分布于 12 个功能组（网络管理 3、系统 3、账户 3、交易 7、合约 9、RPC 4、水龙头 2、工具 20、IDL 元数据 1、VC 全流程 1、SFT 全流程 1、DID 12）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。

@@ -765,3 +765,65 @@ func TestToolsListTotalAndAuth(t *testing.T) {
 		t.Fatalf("带错 token = %d, want 401", resp3.StatusCode)
 	}
 }
+
+// TestToolInventory 锁定 GET /api/mcp/tools 的数据源（单源对账）：
+//  1. ToolInventory() 恰好 57 条，与 /mcp tools/list 的名称集合完全一致；
+//  2. 每条 name/description/group/method/path 五字段非空；
+//  3. 多次构建 server（每个测试都调 mcpHTTPServer/RegisterTools）不得重复累积；
+//  4. 分组抽查：前缀推导正确（原始交易与高层编排不落入交易查询）。
+func TestToolInventory(t *testing.T) {
+	// 再触发一次完整 RegisterTools（此前其它测试已触发过多次），
+	// 若 inventory 无去重会立刻暴露为数量 > 57。
+	srv := mcpHTTPServer(t, "")
+	inv := ToolInventory()
+	if len(inv) != 57 {
+		t.Fatalf("ToolInventory 数量=%d, want 57", len(inv))
+	}
+
+	seen := make(map[string]bool, len(inv))
+	groupOf := make(map[string]string, len(inv))
+	for _, ti := range inv {
+		if ti.Name == "" || ti.Description == "" || ti.Group == "" || ti.Method == "" || ti.Path == "" {
+			t.Errorf("%s 存在空字段: %+v", ti.Name, ti)
+		}
+		if seen[ti.Name] {
+			t.Errorf("重复累积：%s（多次 RegisterTools 未去重）", ti.Name)
+		}
+		seen[ti.Name] = true
+		groupOf[ti.Name] = ti.Group
+	}
+
+	// 与 /mcp tools/list 对账：两边名称集合必须一致（防旁路注册）
+	out := rpcCall(t, srv.URL, "tools/list", map[string]any{})
+	tools := out["result"].(map[string]any)["tools"].([]any)
+	if len(tools) != len(inv) {
+		t.Fatalf("tools/list=%d 个 vs inventory=%d 个，存在旁路注册或漏收", len(tools), len(inv))
+	}
+	for _, tl := range tools {
+		n := tl.(map[string]any)["name"].(string)
+		if !seen[n] {
+			t.Errorf("tools/list 有 %s 而 inventory 无", n)
+		}
+	}
+
+	// 分组抽查
+	spot := map[string]string{
+		"network_list":            "网络",
+		"tx_get":                  "交易查询",
+		"tx_submit_raw":           "原始交易",
+		"contract_write":          "合约调用",
+		"view_multi":              "合约调用",
+		"util_sign":               "密钥与签名",
+		"vc_attestation":          "VC 凭证",
+		"did_document":            "DID",
+		"saved_instruction_list":  "保存指令",
+		"vc_flow":                 "高层编排",
+		"sft_flow":                "高层编排",
+		"bulk_transfer_status":    "高层编排",
+	}
+	for name, want := range spot {
+		if got := groupOf[name]; got != want {
+			t.Errorf("%s 分组=%q, want %q", name, got, want)
+		}
+	}
+}

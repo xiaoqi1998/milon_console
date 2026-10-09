@@ -7,7 +7,7 @@
 <title>Milon Chain API 调试控制台 | 区块链接口测试与文档</title>
 <meta name="description" content="Milon Chain 区块链 API 调试控制台，提供合约读写、账户查询、交易查询、事件监听等 RESTful 接口的在线测试与 SDK 调用。" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%237c5cff'/><stop offset='100%25' stop-color='%2322d3ee'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23g)'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>∞</text></svg>" type="image/svg+xml" />
-<link rel="stylesheet" href="/static/css/style.css" />
+<link rel="stylesheet" href="/static/css/style.css?v=20261009" />
 </head>
 <body>
 <div id="app">
@@ -384,19 +384,77 @@
 
     <section class="view" id="view-mcp">
       <div class="mcp-layout">
+        <!-- 区块一：配置方法 -->
         <div class="mcp-card">
           <div class="mcp-card-header">
             <span class="mcp-icon">🤖</span>
             <h2>MCP 接入</h2>
           </div>
-          <p class="mcp-desc">本服务已内置 MCP 端点 <code>/mcp</code>，57 个 REST 能力全部映射为 MCP 工具。把下面的配置加入 ZCode / Claude 的 <code>mcpServers</code>，AI 编程代理即可用自然语言直接驱动账户、合约、交易与 DID/VC 等链上操作。</p>
-          <div class="docs-code-label">客户端配置（ZCode / Claude 通用，端口跟随当前页面自动生成）</div>
-          <div class="docs-code-block"><pre id="mcpConfigJson">加载中...</pre></div>
+          <p class="mcp-desc">本服务内置 MCP（Model Context Protocol）端点 <code>/mcp</code>，把全部 REST 能力映射为 57 个 MCP 工具。AI 编程代理接入后，可直接用自然语言驱动链上操作：账户与密钥、代币转账、合约读写、交易解析、DID / VC / SFT 全生命周期——无需写一行 REST 调用代码。工具与 REST 端点一一对应、行为完全一致。</p>
+
+          <div class="mcp-tabs">
+            <button class="mcp-tab active" data-client="zcode">ZCode / Claude Code</button>
+            <button class="mcp-tab" data-client="cursor">Cursor</button>
+          </div>
+
+          <div class="mcp-tab-pane" id="mcpPaneZcode">
+            <p class="mcp-pane-desc">把下面的 JSON 加入 ZCode / Claude Code 的 MCP 配置（<code>mcpServers</code> 字段）。URL 端口跟随当前页面访问地址自动生成。</p>
+            <div class="docs-code-label">ZCode / Claude Code 配置</div>
+            <div class="docs-code-block"><pre id="mcpConfigJson">加载中...</pre></div>
+          </div>
+
+          <div class="mcp-tab-pane mcp-hidden" id="mcpPaneCursor">
+            <p class="mcp-pane-desc">Cursor 需将配置写入 <code>~/.cursor/mcp.json</code>（全局生效）或项目根目录 <code>.cursor/mcp.json</code>（仅当前项目），保存后重启 Cursor 生效。</p>
+            <div class="docs-code-label">~/.cursor/mcp.json</div>
+            <div class="docs-code-block"><pre id="mcpCursorConfigJson">加载中...</pre></div>
+          </div>
+
           <button class="btn btn-primary" id="mcpCopyBtn">
             <span class="btn-icon">⧉</span>
-            <span>复制配置</span>
+            <span id="mcpCopyBtnLabel">复制配置</span>
           </button>
-          <p class="mcp-hint">默认无需鉴权；服务端设置 <code>MCP_AUTH_TOKEN</code> 后需携带 <code>Authorization: Bearer &lt;token&gt;</code> 头。风险提示：开启 <code>ENABLE_BODY_LOG</code> 时 /mcp 工具入参（含私钥字段）会写入日志，仅限 devNet 调试，生产勿开。</p>
+
+          <div class="mcp-auth-sec">
+            <div class="mcp-sub-title">鉴权（可选）</div>
+            <p class="mcp-pane-desc">默认无需鉴权（适合本机 / 内网）。服务端设置 <code>MCP_AUTH_TOKEN</code> 环境变量后，<code>/mcp</code> 要求携带 <code>Authorization: Bearer &lt;token&gt;</code> 头，不对则返回 401。带鉴权的客户端配置：</p>
+            <div class="docs-code-block"><pre id="mcpAuthConfigJson">加载中...</pre></div>
+            <button class="btn btn-secondary mcp-auth-copy" id="mcpAuthCopyBtn">
+              <span class="btn-icon">⧉</span>
+              <span>复制鉴权配置</span>
+            </button>
+          </div>
+
+          <p class="mcp-hint">注意事项：MCP 端点单次工具调用回环超时 120s（长任务如 sft_flow / vc_flow 请耐心等待）；开启 <code>ENABLE_BODY_LOG</code> 时 /mcp 工具入参（含私钥字段）会写入日志，仅限 devNet 调试，生产勿开；对外暴露服务务必设置 <code>MCP_AUTH_TOKEN</code>。</p>
+        </div>
+
+        <!-- 区块二：工具清单（服务端动态导出） -->
+        <div class="mcp-card">
+          <div class="mcp-card-header">
+            <span class="mcp-icon">🧰</span>
+            <h2>工具清单</h2>
+            <span class="mcp-count-badge" id="mcpToolCount">…</span>
+          </div>
+          <p class="mcp-desc">全部工具实时来自 <code>GET /api/mcp/tools</code>（与 /mcp 注册表同源，服务端新增工具后本页自动同步）。每个工具注明对应的 REST 端点。</p>
+          <input type="text" class="mcp-search-input" id="mcpToolSearch" placeholder="搜索工具名 / 描述 / REST 路径…" autocomplete="off">
+          <div id="mcpToolGroups"><div class="mcp-tools-loading">清单加载中…</div></div>
+        </div>
+
+        <!-- 区块三：快速上手 -->
+        <div class="mcp-card">
+          <div class="mcp-card-header">
+            <span class="mcp-icon">🚀</span>
+            <h2>快速上手</h2>
+          </div>
+          <p class="mcp-desc">接入成功后，直接对 AI 说这些话试试（按场景从易到难）：</p>
+          <ul class="mcp-prompt-list">
+            <li><span class="mcp-prompt-tag">网络</span>「当前连的是哪个网络？查一下最新区块头」</li>
+            <li><span class="mcp-prompt-tag">账户</span>「生成一个 ed25519 新账户，然后去领水」</li>
+            <li><span class="mcp-prompt-tag">转账</span>「查我的余额，把 500 MIL 转到 <code>目标地址</code>，等确认后给我 txHash」</li>
+            <li><span class="mcp-prompt-tag">合约</span>「用 idl_metadata 看看 token app 有哪些方法，然后帮我查这个地址的 MIL 余额」</li>
+            <li><span class="mcp-prompt-tag">DID</span>「给我创建一个 DID，别名绑成 alice，再加一个服务端点」</li>
+            <li><span class="mcp-prompt-tag">编排</span>「跑一遍 SFT 全流程：建 SFT、建 slot、mint 100 份给我」</li>
+            <li><span class="mcp-prompt-tag">排错</span>「这笔交易 0x… 卡住没确认，帮我解析一下它的内容和事件」</li>
+          </ul>
         </div>
       </div>
     </section>
@@ -482,7 +540,7 @@
 
   <div class="toast-container" id="toastContainer"></div>
 </div>
-<script src="/static/js/app.js"></script>
-<script src="/static/js/saved-instructions.js"></script>
+<script src="/static/js/app.js?v=20261009"></script>
+<script src="/static/js/saved-instructions.js?v=20261009"></script>
 </body>
 </html>

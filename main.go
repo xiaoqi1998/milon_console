@@ -53,6 +53,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to init saved instruction store: %v", err)
 	}
+	mcpToolsHandler := handler.NewMcpToolsHandler()
 
 	api := r.Group("/api")
 	{
@@ -163,6 +164,9 @@ func main() {
 			savedGroup.DELETE("/:id", savedInstructionHandler.DeleteSavedInstruction)
 			savedGroup.POST("/:id/execute", savedInstructionHandler.ExecuteSavedInstruction)
 		}
+
+		// MCP tool inventory (programmatic discovery of all /mcp tools)
+		api.GET("/mcp/tools", mcpToolsHandler.ListTools)
 	}
 
 	// MCP 端点：把全部 REST 能力暴露为 MCP 工具（Streamable HTTP, stateless）
@@ -240,6 +244,7 @@ func main() {
 	fmt.Println("    GET  /api/tool/did/:address/document - 查询 DID 文档")
 	fmt.Println("    GET  /api/tool/did/name-binding   - 按别名反查 DID 绑定")
 	fmt.Println("    ANY  /mcp                         - MCP 端点（57 个工具，供 AI 编程代理接入）")
+	fmt.Println("    GET  /api/mcp/tools               - MCP 工具清单（与 /mcp 注册表同源）")
 	fmt.Println("    GET  /                            - Web console")
 	fmt.Println("    GET  /static/*                    - Static files")
 	fmt.Println("========================================")

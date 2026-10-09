@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
+	"sync"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -547,8 +549,88 @@ type bulkTransferStatusArgs struct {
 	Id string `json:"id" jsonschema:"必填：批量转账任务 ID（bulk_transfer 返回的 jobId）"`
 }
 
+// ==================== 工具清单导出（GET /api/mcp/tools 数据源）====================
+
+// ToolInfo 是单个 MCP 工具的清单条目；由 registerTool 在注册时单点收集，
+// 供前端「MCP 接入」页面渲染工具总览——新增工具自动进入清单，无需手动同步。
+type ToolInfo struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Group       string `json:"group"`
+	Method      string `json:"method"`
+	Path        string `json:"path"`
+}
+
+// inventory / inventorySeen 只在 RegisterTools（进程启动或测试）串行调用时
+// 写入，无需加锁；同名去重保证多次构建 server 不重复累积。
+var (
+	inventory     []ToolInfo
+	inventorySeen = map[string]bool{}
+	inventoryOnce sync.Once
+)
+
+// ToolInventory 返回已注册工具的清单副本（按注册顺序）。若进程尚未构建过
+// MCP server（例如仅以 REST 方式部署、/mcp 从未挂载），惰性构建一次以填充
+// 清单——BuildServer/NewExecutor 均无副作用、不发网络请求。
+func ToolInventory() []ToolInfo {
+	inventoryOnce.Do(func() {
+		if len(inventory) == 0 {
+			BuildServer("http://127.0.0.1:1")
+		}
+	})
+	out := make([]ToolInfo, len(inventory))
+	copy(out, inventory)
+	return out
+}
+
+// toolGroupOf 按工具名前缀推导展示分组；case 顺序敏感（_raw 与 flow 类
+// 须先于通用 tx_/vc_ 前缀匹配）。未匹配返回「其他」兜底——新工具忘加
+// 前缀只会归组变粗，不会从清单消失（有 TestToolInventory 空字段断言兜底）。
+func toolGroupOf(name string) string {
+	switch {
+	case name == "vc_flow", name == "sft_flow", strings.HasPrefix(name, "bulk_transfer"):
+		return "高层编排"
+	case strings.HasPrefix(name, "saved_instruction_"):
+		return "保存指令"
+	case strings.HasPrefix(name, "did_"):
+		return "DID"
+	case strings.HasPrefix(name, "vc_"):
+		return "VC 凭证"
+	case strings.HasPrefix(name, "util_"):
+		return "密钥与签名"
+	case strings.HasPrefix(name, "contract_"), strings.HasPrefix(name, "view_"):
+		return "合约调用"
+	case strings.HasPrefix(name, "tx_") && strings.HasSuffix(name, "_raw"):
+		return "原始交易"
+	case strings.HasPrefix(name, "tx_"):
+		return "交易查询"
+	case strings.HasPrefix(name, "idl_"):
+		return "IDL"
+	case strings.HasPrefix(name, "rpc_"):
+		return "RPC 底层"
+	case strings.HasPrefix(name, "faucet_"):
+		return "水龙头"
+	case strings.HasPrefix(name, "account_"):
+		return "账户"
+	case strings.HasPrefix(name, "network_"):
+		return "网络"
+	default:
+		return "其他"
+	}
+}
+
 // registerTool 把"输入结构 → REST 映射"注册为 MCP 工具。
 func registerTool[In any](srv *mcp.Server, exec *Executor, name, desc string, m RESTMapping) {
+	if !inventorySeen[name] {
+		inventorySeen[name] = true
+		inventory = append(inventory, ToolInfo{
+			Name:        name,
+			Description: desc,
+			Group:       toolGroupOf(name),
+			Method:      m.Method,
+			Path:        m.PathTemplate,
+		})
+	}
 	mcp.AddTool[In, any](srv, &mcp.Tool{Name: name, Description: desc},
 		func(ctx context.Context, req *mcp.CallToolRequest, args In) (*mcp.CallToolResult, any, error) {
 			raw, err := json.Marshal(args)

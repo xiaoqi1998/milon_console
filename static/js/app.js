@@ -5,6 +5,7 @@ const ENDPOINTS = [
     bodyTemplate: JSON.stringify({ network: 'devNet' }, null, 2) },
   { id: 'health', method: 'GET', path: '/api/health', summary: '健康检查', group: '系统' },
   { id: 'chain-head', method: 'GET', path: '/api/chain-head', summary: '获取链头', group: '系统' },
+  { id: 'mcp-tools', method: 'GET', path: '/api/mcp/tools', summary: 'MCP 工具清单（与 /mcp 注册表同源，含分组与 REST 映射）', group: '系统' },
   { id: 'acc-info', method: 'GET', path: '/api/accounts/:address', summary: '获取账户信息', group: '账户',
     pathParams: [{ name: 'address', ph: 'base58地址' }] },
   { id: 'acc-resources', method: 'GET', path: '/api/accounts/:address/resources', summary: '获取账户资源', group: '账户',
@@ -1289,19 +1290,120 @@ function fallbackCopy(text, onSuccess, onFail) {
 
 // MCP 接入卡片：/mcp 与页面同源同端口，跟随当前访问地址生成配置
 // （与 buildCurl 的 window.location.origin 口径一致）。
+// 三部分：客户端配置 tab（ZCode/Claude Code + Cursor）、鉴权配置示例、
+// 工具清单（GET /api/mcp/tools 动态渲染 + 搜索过滤）。
+var mcpState = { client: 'zcode', tools: null };
+
 function initMcpCard() {
-  var text = JSON.stringify(
-    { mcpServers: { milon: { url: window.location.origin + '/mcp' } } },
+  var mcpUrl = window.location.origin + '/mcp';
+  var zcodeText = JSON.stringify(
+    { mcpServers: { milon: { url: mcpUrl } } },
     null, 2
   );
-  $('mcpConfigJson').textContent = text;
+  var cursorText = JSON.stringify(
+    { mcpServers: { milon: { url: mcpUrl } } },
+    null, 2
+  );
+  var authText = JSON.stringify(
+    { mcpServers: { milon: { url: mcpUrl, headers: { Authorization: 'Bearer <your-token>' } } } },
+    null, 2
+  );
+  $('mcpConfigJson').textContent = zcodeText;
+  $('mcpCursorConfigJson').textContent = cursorText;
+  $('mcpAuthConfigJson').textContent = authText;
+
+  function activeConfig() {
+    return mcpState.client === 'cursor' ? cursorText : zcodeText;
+  }
   $('mcpCopyBtn').addEventListener('click', function () {
-    copyToClipboard(text, function () {
+    copyToClipboard(activeConfig(), function () {
       showToast('MCP 配置已复制', 'success');
     }, function () {
       showToast('复制失败', 'error');
     });
   });
+  $('mcpAuthCopyBtn').addEventListener('click', function () {
+    copyToClipboard(authText, function () {
+      showToast('鉴权配置已复制', 'success');
+    }, function () {
+      showToast('复制失败', 'error');
+    });
+  });
+
+  // 客户端 tab 切换（配置 JSON 与复制按钮跟随）
+  document.querySelectorAll('.mcp-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      mcpState.client = tab.getAttribute('data-client');
+      document.querySelectorAll('.mcp-tab').forEach(function (t) {
+        t.classList.toggle('active', t === tab);
+      });
+      $('mcpPaneZcode').classList.toggle('mcp-hidden', mcpState.client !== 'zcode');
+      $('mcpPaneCursor').classList.toggle('mcp-hidden', mcpState.client !== 'cursor');
+      $('mcpCopyBtnLabel').textContent = mcpState.client === 'cursor' ? '复制 Cursor 配置' : '复制配置';
+    });
+  });
+
+  $('mcpToolSearch').addEventListener('input', function () {
+    if (mcpState.tools) renderMcpTools(mcpState.tools, this.value.trim().toLowerCase());
+  });
+
+  loadMcpTools();
+}
+
+// mcpEscapeHtml 转义工具清单文本（名称/描述/路径来自服务端，仍防注入）。
+function mcpEscapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// renderMcpTools 按 group 分组渲染工具清单；q 非空时对
+// 名称/描述/REST 路径做大小写不敏感的包含匹配。
+function renderMcpTools(tools, q) {
+  var groups = {};
+  tools.forEach(function (t) {
+    if (q && (t.name + ' ' + t.description + ' ' + t.method + ' ' + t.path).toLowerCase().indexOf(q) < 0) return;
+    (groups[t.group] = groups[t.group] || []).push(t);
+  });
+  var order = [];
+  tools.forEach(function (t) {
+    if (groups[t.group] && order.indexOf(t.group) < 0) order.push(t.group);
+  });
+
+  var shown = 0;
+  var html = '';
+  order.forEach(function (g) {
+    var items = groups[g];
+    shown += items.length;
+    html += '<div class="mcp-tool-group">' +
+      '<div class="mcp-tool-group-title">' + mcpEscapeHtml(g) +
+      ' <span class="mcp-tool-group-count">' + items.length + '</span></div>';
+    items.forEach(function (t) {
+      html += '<div class="mcp-tool-row">' +
+        '<div class="mcp-tool-name">' + mcpEscapeHtml(t.name) + '</div>' +
+        '<div class="mcp-tool-desc">' + mcpEscapeHtml(t.description) + '</div>' +
+        '<div class="mcp-tool-rest"><span class="mcp-method-badge mcp-method-' + t.method.toLowerCase() + '">' + t.method + '</span><code>' + mcpEscapeHtml(t.path) + '</code></div>' +
+        '</div>';
+    });
+    html += '</div>';
+  });
+  if (!html) html = '<div class="mcp-tools-loading">没有匹配「' + mcpEscapeHtml(q) + '」的工具</div>';
+  $('mcpToolGroups').innerHTML = html;
+  $('mcpToolCount').textContent = q ? (shown + '/' + tools.length) : String(tools.length);
+}
+
+// loadMcpTools 拉取 /api/mcp/tools；失败时降级提示（不阻塞页面其他区块）。
+function loadMcpTools() {
+  fetch('/api/mcp/tools')
+    .then(function (r) { return r.json(); })
+    .then(function (resp) {
+      if (!resp.success || !Array.isArray(resp.data)) throw new Error('bad response');
+      mcpState.tools = resp.data;
+      renderMcpTools(resp.data, '');
+    })
+    .catch(function () {
+      $('mcpToolGroups').innerHTML = '<div class="mcp-tools-loading mcp-tools-error">工具清单加载失败（GET /api/mcp/tools 不可达），刷新页面重试</div>';
+      $('mcpToolCount').textContent = '!';
+    });
 }
 
 function switchRespTab(name) {
