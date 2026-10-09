@@ -141,6 +141,7 @@ func main() {
 		// VC flow (faucet + DID + credentials issuance + disclosure, end-to-end)
 		api.POST("/tool/vc-flow", vcFlowHandler.VcFlow)
 		api.POST("/tool/sft-flow", sftFlowHandler.SftFlow)
+		api.POST("/tool/transfer-mil", contractHandler.TransferMil)
 
 		// DID full lifecycle (create+alias+services+avatar aggregate, granular management, document query)
 		didGroup := api.Group("/tool/did")

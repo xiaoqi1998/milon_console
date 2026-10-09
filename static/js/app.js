@@ -35,6 +35,8 @@ const ENDPOINTS = [
   { id: 'idl-apps', method: 'GET', path: '/api/idl/apps', summary: 'IDL app 轻量清单(名称/简介/方法数)', group: 'IDL' },
   { id: 'idl-methods', method: 'GET', path: '/api/idl/apps/:appName/methods', summary: '单 app 全量方法明细', group: 'IDL',
     pathParams: [{ name: 'appName', ph: 'token' }] },
+  { id: 'transfer-mil', method: 'POST', path: '/api/tool/transfer-mil', summary: 'MIL 转账快捷封装(内部派生地址+填固定参数)', group: '合约',
+    bodyTemplate: JSON.stringify({ to: 'base58地址', amount: 1000000, privateKey: 'hex或base58私钥', keyType: 'secp256k1' }, null, 2) },
   { id: 'tx-track', method: 'GET', path: '/api/transactions/:hash/track', summary: '交易全链路追踪(存在+等待+事件聚合,终态status)', group: '交易',
     pathParams: [{ name: 'hash', ph: 'hex或base58' }],
     queryParams: [{ name: 'timeoutSecs', ph: '60' }] },

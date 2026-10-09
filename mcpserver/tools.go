@@ -60,6 +60,14 @@ type txTrackArgs struct {
 	TimeoutSecs string `json:"timeoutSecs,omitempty" jsonschema:"可选：等待确认超时秒数（十进制整数，缺省 60）"`
 }
 
+// transferMilArgs 镜像 transferMilRequest（POST /api/tool/transfer-mil 纯 body）。
+type transferMilArgs struct {
+	To         string `json:"to" jsonschema:"必填：接收方地址（base58）"`
+	Amount     uint64 `json:"amount" jsonschema:"必填：转账数量（最小单位，6 位精度下 1 MIL = 10^6）"`
+	PrivateKey string `json:"privateKey" jsonschema:"必填：转出方私钥（hex 或 base58）"`
+	KeyType    string `json:"keyType,omitempty" jsonschema:"可选：私钥曲线 secp256k1(缺省)/ed25519/bls12381/fndsa512"`
+}
+
 // idlMethodsArgs 镜像 AppMethods 的路径参数。
 type idlMethodsArgs struct {
 	AppName string `json:"appName" jsonschema:"必填：app 名（idl_apps 返回的 name，如 token）"`
@@ -601,6 +609,8 @@ func toolGroupOf(name string) string {
 	switch {
 	case name == "vc_flow", name == "sft_flow", strings.HasPrefix(name, "bulk_transfer"):
 		return "高层编排"
+	case strings.HasPrefix(name, "transfer_"):
+		return "高层编排"
 	case strings.HasPrefix(name, "saved_instruction_"):
 		return "保存指令"
 	case strings.HasPrefix(name, "did_"):
@@ -884,6 +894,9 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		RESTMapping{Method: "POST", PathTemplate: "/api/tool/bulk-transfer"})
 
 	// 批量转账进度查询（GET + 路径参数 id）
+	registerTool[transferMilArgs](srv, exec, "transfer_mil",
+		"MIL 转账快捷封装：只给 to/amount/privateKey，内部完成密钥派生地址 + 填充 token.Transfer 全部固定参数（MIL 代币地址/unified_payer_all/pubkey 签名模式自动修正），复用与 contract_write 完全相同的提交路径；返回 txHash，建议接着用 tx_track 跟踪确认",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/transfer-mil"})
 	registerTool[bulkTransferStatusArgs](srv, exec, "bulk_transfer_status",
 		"查询批量转账任务进度与结果（含 done/success/failed 计数、归集总额与逐账户明细；jobId 来自 bulk_transfer 的返回）",
 		RESTMapping{Method: "GET", PathTemplate: "/api/tool/bulk-transfer/{id}", PathParams: []string{"id"}})

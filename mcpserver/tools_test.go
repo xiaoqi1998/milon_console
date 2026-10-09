@@ -58,7 +58,7 @@ func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers ma
 
 // wantToolCount 锁定工具总数。每新增一个 MCP 工具：+1 并在 TestToolsListBasics
 // 的 want 列表补名（本批 7 工具完成后应为 64）。
-const wantToolCount = 60
+const wantToolCount = 61
 
 func TestToolsListBasics(t *testing.T) {
 	srv := mcpHTTPServer(t, "")
@@ -95,7 +95,7 @@ func TestToolsListBasics(t *testing.T) {
 		"saved_instruction_get", "saved_instruction_update", "saved_instruction_delete",
 		"saved_instruction_execute",
 		// Task 6：高层 flow 工具（4 个）
-		"vc_flow", "sft_flow", "bulk_transfer", "bulk_transfer_status"}
+		"vc_flow", "sft_flow", "bulk_transfer", "bulk_transfer_status", "transfer_mil"}
 	for _, w := range want {
 		found := false
 		for _, n := range names {
@@ -697,6 +697,7 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"sft_flow":             {"ownerPrivateKey", "ownerAddress"},
 		"bulk_transfer":        {"count", "toAddress"},
 		"bulk_transfer_status": {"id"},
+		"transfer_mil":         {"to", "amount", "privateKey"},
 	}
 	if len(want) != wantToolCount {
 		t.Fatalf("用例表=%d, want %d（新工具须回 handler 事实源核对后补行）", len(want), wantToolCount)
