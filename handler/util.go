@@ -139,6 +139,7 @@ type signMessageRequest struct {
 	PrivateKey string `json:"privateKey"`
 	Message    string `json:"message"`
 	KeyType    string `json:"keyType"`
+	PublicKey  string `json:"publicKey,omitempty"` // fndsa512 必填（Go 无法从私钥派生公钥）
 }
 
 // signMessageResponse is the response for SignMessage.
@@ -188,7 +189,18 @@ func (h *UtilHandler) SignMessage(c *gin.Context) {
 		return
 	}
 
-	pk, err := derivePublicKeyByType(sk, req.KeyType)
+	// fndsa512：Go 无法从私钥派生公钥，须显式传 publicKey（SignFor 需要）
+	var pk *crypto.PublicKey
+	if req.KeyType == "fndsa512" {
+		if req.PublicKey == "" {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER,
+				"keyType fndsa512 需显式传 publicKey（Go 无法从私钥派生公钥；account_generate 返回里有）", nil))
+			return
+		}
+		pk, err = crypto.NewPublicKeyFromStringRelaxed(req.PublicKey)
+	} else {
+		pk, err = derivePublicKeyByType(sk, req.KeyType)
+	}
 	if err != nil {
 		logParamError(c, "SignMessage", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
@@ -319,11 +331,9 @@ func derivePublicKeyByType(sk crypto.SecretKeyer, keyType string) (*crypto.Publi
 		}
 		return classicalSk.BLS12381Public(), nil
 	case "fndsa512":
-		fndsaSk := crypto.AsFnDsa512SecretKey(sk)
-		if fndsaSk == nil {
-			return nil, fmt.Errorf("keyType fndsa512 requires an fndsa512 secret key")
-		}
-		return fndsaSk.FnDsa512Public()
+		// Go SDK 的 FnDsa512Public 为 TODO not implemented（Go 版无法从私钥
+		// 派生公钥）——给出明确指引而非透传裸的 not implemented。
+		return nil, fmt.Errorf("fndsa512 无法从私钥派生公钥（Go SDK 未实现），请显式提供公钥（account_generate 返回的 publicKey）")
 	default:
 		return nil, fmt.Errorf("unsupported keyType: %s (supported: secp256k1, ed25519, bls12381, fndsa512)", keyType)
 	}

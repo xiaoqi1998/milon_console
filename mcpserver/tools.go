@@ -226,7 +226,7 @@ type utilDeriveAddressArgs struct {
 // POST /api/util/key/derive-public）。两字段均被 handler 强校验非空，必填不标 omitempty。
 type utilDerivePublicKeyArgs struct {
 	PrivateKey string `json:"privateKey" jsonschema:"32 字节私钥（hex 或 base58）"`
-	KeyType    string `json:"keyType" jsonschema:"必填：secp256k1/ed25519/bls12381/fndsa512"`
+	KeyType    string `json:"keyType" jsonschema:"必填：secp256k1/ed25519/bls12381（fndsa512 无法从私钥派生公钥，不支持——公钥用 account_generate 的返回）"`
 }
 
 // utilSignArgs 镜像 signMessageRequest（handler/util.go:138，POST /api/util/sign）。
@@ -235,6 +235,7 @@ type utilSignArgs struct {
 	PrivateKey string `json:"privateKey" jsonschema:"签名私钥（hex 或 base58）"`
 	Message    string `json:"message" jsonschema:"被签消息：优先按 hex 解码，失败则按 UTF-8 文本"`
 	KeyType    string `json:"keyType" jsonschema:"必填：secp256k1/ed25519/bls12381/fndsa512"`
+	PublicKey  string `json:"publicKey,omitempty" jsonschema:"fndsa512 时必填（897 字节公钥，Go 无法从私钥派生；account_generate 返回里有）"`
 }
 
 // utilVerifyArgs 镜像 verifySignatureRequest（handler/util.go:214，POST /api/util/verify）。
@@ -809,7 +810,7 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		"由公钥派生链上地址（bs58）。注意：32 字节私钥在 secp256k1/ed25519/fn-dsa-512 下派生出不同地址（fndsa512 完整私钥为 1281 字节，不适用本规则），地址计算必须用本工具（或 account_generate 的返回），不要本地臆造；keyType 可选，缺省按公钥自身曲线推断",
 		RESTMapping{Method: "POST", PathTemplate: "/api/util/address/derive"})
 	registerTool[utilDerivePublicKeyArgs](srv, exec, "util_derive_public_key",
-		"由 32 字节私钥按指定曲线派生公钥（keyType 必填：secp256k1/ed25519/bls12381/fndsa512）",
+		"由 32 字节私钥按指定曲线派生公钥（keyType 必填：secp256k1/ed25519/bls12381；fndsa512 无法从私钥派生公钥，不支持——公钥用 account_generate 的返回）",
 		RESTMapping{Method: "POST", PathTemplate: "/api/util/key/derive-public"})
 
 	// 签名/验签（util_sign 受服务端 ENABLE_UTIL_SIGN 开关控制）
