@@ -519,11 +519,29 @@ function escapeHTML(s) {
   });
 }
 
+// 线性 SVG 图标（与页面视觉统一：1.8px stroke、currentColor）
+function svgIcon(name, size) {
+  var s = size || 12;
+  var span = el('span', { style: 'display:inline-flex;line-height:0;' });
+  span.innerHTML = '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + SVG_PATHS[name] + '</svg>';
+  return span;
+}
+var SVG_PATHS = {
+  bookmark: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+  compare: '<rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  signal: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+};
+
 function showToast(msg, type) {
   var container = $('toastContainer');
   var toast = el('div', { class: 'toast ' + (type || 'info') });
-  var icons = { success: '\u2713', error: '\u2715', info: '\u2139', warning: '\u26a0' };
-  toast.appendChild(el('span', { class: 'toast-icon', text: icons[type || 'info'] || '\u2139' }));
+  var icons = { success: '\u2713', error: '\u2715', info: '\u00b7', warning: '\u0021' };
+  toast.appendChild(el('span', { class: 'toast-icon', text: icons[type || 'info'] || '\u00b7' }));
   toast.appendChild(el('span', { text: msg }));
   container.appendChild(toast);
   requestAnimationFrame(function () {
@@ -1077,20 +1095,20 @@ function displayResponse(data, statusCode, duration, headers, rawText, size) {
   if (gasValue !== null) {
     jp.appendChild(el('div', {
       class: 'gas-info-banner',
-      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:12px;border-radius:8px;background:linear-gradient(135deg,rgba(124,92,255,0.18),rgba(34,211,238,0.18));border:1px solid rgba(124,92,255,0.45);color:#22d3ee;font-weight:600;font-size:14px;'
+      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:12px;border-radius:4px;background:rgba(224,164,88,0.08);border:1px solid rgba(224,164,88,0.45);color:#e0a458;font-weight:600;font-size:14px;'
     },
-      el('span', { text: '⛽' }),
-      el('span', { text: 'Gas 费用: ' }),
-      el('span', { style: 'color:#fff;font-weight:700;', text: String(gasValue) })
+      el('span', { text: 'GAS' , style: 'font-family:Consolas,monospace;font-size:11px;font-weight:700;letter-spacing:1px;border:1px solid rgba(224,164,88,0.45);border-radius:3px;padding:1px 6px;' }),
+      el('span', { text: '费用: ' }),
+      el('span', { style: 'color:#ecebe6;font-weight:700;', text: String(gasValue) })
     ));
   }
   if (state.currentEndpoint && state.currentEndpoint.id === 'faucet-claim' && data && typeof data === 'object' && data.txHash) {
     jp.appendChild(el('div', {
       class: 'faucet-txhash-box',
-      style: 'display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 14px;margin-bottom:12px;border-radius:8px;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.35);'
+      style: 'display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 14px;margin-bottom:12px;border-radius:4px;background:rgba(224,164,88,0.06);border:1px solid rgba(224,164,88,0.4);'
     },
-      el('span', { style: 'color:#22d3ee;font-weight:600;', text: '领水交易哈希:' }),
-      el('code', { style: 'color:#fff;background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;word-break:break-all;', text: String(data.txHash) }),
+      el('span', { style: 'color:#e0a458;font-weight:600;', text: '领水交易哈希:' }),
+      el('code', { style: 'color:#ecebe6;background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:3px;word-break:break-all;', text: String(data.txHash) }),
       el('button', {
         class: 'btn btn-primary',
         style: 'padding:4px 12px;font-size:13px;',
@@ -1116,15 +1134,15 @@ function displayResponse(data, statusCode, duration, headers, rawText, size) {
   if (rawTxData) {
     var rawTxBanner = el('div', {
       class: 'rawtx-banner',
-      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-top:12px;border-radius:8px;background:rgba(124,92,255,0.10);border:1px solid rgba(124,92,255,0.35);color:#a78bfa;font-weight:600;font-size:14px;cursor:pointer;user-select:none;'
+      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-top:12px;border-radius:4px;background:rgba(154,143,208,0.08);border:1px solid rgba(154,143,208,0.4);color:#9a8fd0;font-weight:600;font-size:14px;cursor:pointer;user-select:none;'
     },
-      el('span', { text: '📦' }),
-      el('span', { text: '查看原始交易体 (rawTx)' }),
-      el('span', { style: 'margin-left:auto;color:#9aa3b2;font-size:12px;', text: '▶ 点击展开' })
+      el('span', { text: 'rawTx' , style: 'font-family:Consolas,monospace;font-size:11px;font-weight:700;letter-spacing:0.5px;border:1px solid rgba(154,143,208,0.45);border-radius:3px;padding:1px 6px;' }),
+      el('span', { text: '查看原始交易体' }),
+      el('span', { style: 'margin-left:auto;color:#6c6a63;font-size:12px;', text: '点击展开' })
     );
     var rawTxContent = el('div', {
       class: 'rawtx-content',
-      style: 'display:none;margin-top:8px;border-radius:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(124,92,255,0.25);padding:12px;'
+      style: 'display:none;margin-top:8px;border-radius:4px;background:rgba(0,0,0,0.35);border:1px solid #34343c;padding:12px;'
     });
     var toggleRawTx = function () {
       var expanded = rawTxContent.style.display !== 'none';
@@ -1138,7 +1156,7 @@ function displayResponse(data, statusCode, duration, headers, rawText, size) {
     rawTxContent.appendChild(rawTxPre);
     // AuthBit legend
     var legend = el('div', { style: 'margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;font-size:12px;color:#9aa3b2;line-height:1.6;' },
-      el('div', { style: 'color:#a78bfa;font-weight:600;margin-bottom:4px;', text: 'AuthBit 位含义' }),
+      el('div', { style: 'color:#e0a458;font-weight:600;margin-bottom:4px;', text: 'AuthBit 位含义' }),
       el('div', { text: 'bit0~bit61 = 签第 N 个 ix, bit63 = 付 gas (payer)' }),
       el('div', { text: '0x8000000000000000 = 只付 gas | 0x0000000000000001 = 只签 ix0 | 0x8000000000000001 = 付 gas + 签 ix0' })
     );
@@ -1905,7 +1923,7 @@ function buildAccountKeyRow(label, value, mask, visible, onToggle) {
       class: 'account-eye-btn',
       type: 'button',
       title: masked ? '显示明文' : '隐藏明文',
-      text: masked ? '👁' : '🙈',
+      text: masked ? '显' : '隐',
     });
     eyeBtn.addEventListener('click', function () {
       var next = !visible;
@@ -1914,7 +1932,7 @@ function buildAccountKeyRow(label, value, mask, visible, onToggle) {
       valEl.textContent = next ? valText : '••••••••••••••••••••';
       valEl.classList.toggle('masked', !next);
       valEl.title = next ? valText : '点击眼睛图标显示明文';
-      eyeBtn.textContent = next ? '🙈' : '👁';
+      eyeBtn.textContent = next ? '隐' : '显';
       eyeBtn.title = next ? '隐藏明文' : '显示明文';
       visible = next;
     });
@@ -2105,22 +2123,20 @@ function renderHistory() {
               class: 'h-act-btn',
               type: 'button',
               title: '加入请求集合',
-              text: '📌',
               onclick: function (e) {
                 e.stopPropagation();
                 addHistoryToCollection(h);
               },
-            }),
+            }, svgIcon('bookmark')),
             el('button', {
               class: 'h-act-btn' + (inDiff ? ' active' : ''),
               type: 'button',
               title: '加入响应对比（选 2 条）',
-              text: '⚖',
               onclick: function (e) {
                 e.stopPropagation();
                 toggleDiffSelection(h.id);
               },
-            })
+            }, svgIcon('compare'))
           )
         ),
         el(
@@ -2343,7 +2359,7 @@ async function replayCollection(col) {
     return;
   }
   if (!col.items.length) {
-    showToast('集合为空，先从历史记录 📌 添加请求', 'error');
+    showToast('集合为空，先在历史记录中点「收藏」添加请求', 'error');
     return;
   }
   state.replaying = true;
@@ -2478,7 +2494,7 @@ function renderCollections() {
 
   // 顶部操作行：导入
   var topBar = el('div', { class: 'collections-topbar' });
-  var importBtn = el('button', { class: 'btn btn-secondary btn-sm', type: 'button', text: '⬆ 导入集合 JSON' });
+  var importBtn = el('button', { class: 'btn btn-secondary btn-sm', type: 'button', text: '导入集合 JSON' });
   var fileInput = el('input', { type: 'file', accept: '.json,application/json', style: 'display:none' });
   fileInput.addEventListener('change', function () {
     if (fileInput.files && fileInput.files[0]) importCollectionFile(fileInput.files[0]);
@@ -2493,9 +2509,9 @@ function renderCollections() {
     panel.appendChild(
       el('div',
         { class: 'empty-state small' },
-        el('div', { class: 'empty-icon-wrapper small' }, el('span', { class: 'empty-icon', text: '🗂' })),
+        el('div', { class: 'empty-icon-wrapper small' }, svgIcon('folder', 16)),
         el('h4', { text: '暂无集合' }),
-        el('p', { text: '在历史记录中点 📌 把常用流程保存为集合，支持一键顺序重放' })
+        el('p', { text: '在历史记录中点「收藏」把常用流程保存为集合，支持一键顺序重放' })
       )
     );
     return;
@@ -2521,8 +2537,8 @@ function renderCollections() {
 
     var actions = el('span', { class: 'collection-actions' },
       el('button', { class: 'h-act-btn', type: 'button', title: '一键顺序重放', text: '▶', onclick: function () { replayCollection(col); } }),
-      el('button', { class: 'h-act-btn', type: 'button', title: '导出 JSON', text: '⬇', onclick: function () { exportCollectionFile(col); } }),
-      el('button', { class: 'h-act-btn', type: 'button', title: '删除集合', text: '🗑', onclick: function () { deleteCollection(col.id); } })
+      el('button', { class: 'h-act-btn', type: 'button', title: '导出 JSON', onclick: function () { exportCollectionFile(col); } }, svgIcon('download')),
+      el('button', { class: 'h-act-btn', type: 'button', title: '删除集合', onclick: function () { deleteCollection(col.id); } }, svgIcon('trash'))
     );
     headRow.appendChild(actions);
     card.appendChild(headRow);
@@ -2531,7 +2547,7 @@ function renderCollections() {
     if (expanded) {
       var list = el('div', { class: 'collection-items' });
       if (!col.items.length) {
-        list.appendChild(el('div', { class: 'collection-empty-hint', text: '集合为空，从历史记录 📌 添加' }));
+        list.appendChild(el('div', { class: 'collection-empty-hint', text: '集合为空，从历史记录中收藏添加' }));
       }
       col.items.forEach(function (it, i) {
         list.appendChild(
@@ -2667,7 +2683,7 @@ function updateDiffBar() {
 
 function openDiffModal() {
   if (state.diffSelection.length < 2) {
-    showToast('请在历史记录中点 ⚖ 选择 2 条记录', 'error');
+    showToast('请在历史记录中点「对比」选择 2 条记录', 'error');
     return;
   }
   var h1 = state.history.find(function (x) { return x.id === state.diffSelection[0]; });
@@ -2711,7 +2727,7 @@ function openDiffModal() {
 
   if (!diffs.length) {
     body.appendChild(el('div', { class: 'diff-identical' },
-      '✅ 响应一致（已自动忽略动态字段: ' + DIFF_IGNORE_KEYS.slice(0, 8).join(', ') + ' 等）'
+      '✓ 响应一致（已自动忽略动态字段: ' + DIFF_IGNORE_KEYS.slice(0, 8).join(', ') + ' 等）'
     ));
   } else {
     body.appendChild(el('div', { class: 'diff-summary', text: '共发现 ' + diffs.length + ' 处差异：' }));
@@ -4657,10 +4673,7 @@ function renderIDLBatchForm(focusIdx, opts) {
 
   if (!state.idlBatchItems.length) {
     var empty = el('div', { class: 'empty-state' },
-      el('div', { class: 'empty-icon-wrapper' },
-        el('div', { class: 'empty-glow' }),
-        el('span', { class: 'empty-icon', text: '🧩' })
-      ),
+      el('div', { class: 'empty-icon-wrapper' }, svgIcon('grid', 20)),
       el('h3', { text: '批量打包模式' }),
       el('p', { text: '在左侧按 app 分组点击方法，可逐个加入批次（同一方法可重复加入，各自独立填参），\n最终打包成单笔交易原子执行（全部成功或全部失败）' }),
       el('div', { class: 'empty-hint' },
@@ -5837,11 +5850,11 @@ function displayIDLResponse(data, statusCode, duration, headers, rawText, size) 
   if (gasValue !== null) {
     jp.appendChild(el('div', {
       class: 'gas-info-banner',
-      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:12px;border-radius:8px;background:linear-gradient(135deg,rgba(124,92,255,0.18),rgba(34,211,238,0.18));border:1px solid rgba(124,92,255,0.45);color:#22d3ee;font-weight:600;font-size:14px;'
+      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:12px;border-radius:4px;background:rgba(224,164,88,0.08);border:1px solid rgba(224,164,88,0.45);color:#e0a458;font-weight:600;font-size:14px;'
     },
-      el('span', { text: '⛽' }),
-      el('span', { text: 'Gas 费用: ' }),
-      el('span', { style: 'color:#fff;font-weight:700;', text: String(gasValue) })
+      el('span', { text: 'GAS' , style: 'font-family:Consolas,monospace;font-size:11px;font-weight:700;letter-spacing:1px;border:1px solid rgba(224,164,88,0.45);border-radius:3px;padding:1px 6px;' }),
+      el('span', { text: '费用: ' }),
+      el('span', { style: 'color:#ecebe6;font-weight:700;', text: String(gasValue) })
     ));
   }
   if (typeof data === 'string') {
@@ -5860,15 +5873,15 @@ function displayIDLResponse(data, statusCode, duration, headers, rawText, size) 
   if (rawTxData) {
     var rawTxBanner = el('div', {
       class: 'rawtx-banner',
-      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-top:12px;border-radius:8px;background:rgba(124,92,255,0.10);border:1px solid rgba(124,92,255,0.35);color:#a78bfa;font-weight:600;font-size:14px;cursor:pointer;user-select:none;'
+      style: 'display:flex;align-items:center;gap:8px;padding:10px 14px;margin-top:12px;border-radius:4px;background:rgba(154,143,208,0.08);border:1px solid rgba(154,143,208,0.4);color:#9a8fd0;font-weight:600;font-size:14px;cursor:pointer;user-select:none;'
     },
-      el('span', { text: '📦' }),
-      el('span', { text: '查看原始交易体 (rawTx)' }),
-      el('span', { style: 'margin-left:auto;color:#9aa3b2;font-size:12px;', text: '▶ 点击展开' })
+      el('span', { text: 'rawTx' , style: 'font-family:Consolas,monospace;font-size:11px;font-weight:700;letter-spacing:0.5px;border:1px solid rgba(154,143,208,0.45);border-radius:3px;padding:1px 6px;' }),
+      el('span', { text: '查看原始交易体' }),
+      el('span', { style: 'margin-left:auto;color:#6c6a63;font-size:12px;', text: '点击展开' })
     );
     var rawTxContent = el('div', {
       class: 'rawtx-content',
-      style: 'display:none;margin-top:8px;border-radius:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(124,92,255,0.25);padding:12px;'
+      style: 'display:none;margin-top:8px;border-radius:4px;background:rgba(0,0,0,0.35);border:1px solid #34343c;padding:12px;'
     });
     var toggleRawTx = function () {
       var expanded = rawTxContent.style.display !== 'none';
@@ -5880,7 +5893,7 @@ function displayIDLResponse(data, statusCode, duration, headers, rawText, size) 
     rawTxPre.innerHTML = formatJSON(rawTxData);
     rawTxContent.appendChild(rawTxPre);
     var legend = el('div', { style: 'margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;font-size:12px;color:#9aa3b2;line-height:1.6;' },
-      el('div', { style: 'color:#a78bfa;font-weight:600;margin-bottom:4px;', text: 'AuthBit 位含义' }),
+      el('div', { style: 'color:#e0a458;font-weight:600;margin-bottom:4px;', text: 'AuthBit 位含义' }),
       el('div', { text: 'bit0~bit61 = 签第 N 个 ix, bit63 = 付 gas (payer)' }),
       el('div', { text: '0x8000000000000000 = 只付 gas | 0x0000000000000001 = 只签 ix0 | 0x8000000000000001 = 付 gas + 签 ix0' })
     );
@@ -5945,7 +5958,7 @@ function resetIDLResponseArea() {
   $('idlRespSize').textContent = '--';
   $('tab-idl-json').innerHTML = '';
   $('tab-idl-json').appendChild(el('div', { class: 'empty-state small' },
-    el('div', { class: 'empty-icon-wrapper small' }, el('span', { class: 'empty-icon', text: '📡' })),
+    el('div', { class: 'empty-icon-wrapper small' }, svgIcon('signal', 16)),
     el('h4', { text: '等待请求' }),
     el('p', { text: '发送请求后响应结果将在此展示' })
   ));
