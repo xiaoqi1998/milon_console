@@ -99,6 +99,33 @@ func (nm *NetworkManager) Switch(networkName string) error {
 	return nil
 }
 
+// ClientFor 返回指定网络的 client 与配置（请求级网络解析的入口）。
+// name 为空时回落到默认网络（currentNetwork，即启动配置或 network_switch
+// 所设）；未知网络名返回错误。client 经 getOrCreateClient 缓存复用。
+// 注意：不能持 nm.mu 调 getOrCreateClient（它自己拿写锁），分步加锁。
+func (nm *NetworkManager) ClientFor(name string) (*milon.Client, milon.Network, error) {
+	if name == "" {
+		nm.mu.RLock()
+		name = nm.currentNetwork
+		nm.mu.RUnlock()
+	} else {
+		nm.mu.RLock()
+		_, known := nm.networks[name]
+		nm.mu.RUnlock()
+		if !known {
+			return nil, milon.Network{}, fmt.Errorf("unknown network: %s", name)
+		}
+	}
+	client, err := nm.getOrCreateClient(name)
+	if err != nil {
+		return nil, milon.Network{}, err
+	}
+	nm.mu.RLock()
+	cfg := nm.networks[name]
+	nm.mu.RUnlock()
+	return client, cfg, nil
+}
+
 // getOrCreateClient returns a cached client or creates one on demand.
 func (nm *NetworkManager) getOrCreateClient(networkName string) (*milon.Client, error) {
 	nm.mu.Lock()
