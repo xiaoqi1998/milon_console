@@ -58,7 +58,7 @@ func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers ma
 
 // wantToolCount 锁定工具总数。每新增一个 MCP 工具：+1 并在 TestToolsListBasics
 // 的 want 列表补名（本批 7 工具完成后应为 64）。
-const wantToolCount = 61
+const wantToolCount = 62
 
 func TestToolsListBasics(t *testing.T) {
 	srv := mcpHTTPServer(t, "")
@@ -69,7 +69,7 @@ func TestToolsListBasics(t *testing.T) {
 		names = append(names, tl.(map[string]any)["name"].(string))
 	}
 	want := []string{"network_list", "network_current", "network_switch",
-		"account_generate", "account_info", "account_resources",
+		"account_generate", "account_info", "account_resources", "account_summary",
 		"faucet_claim", "faucet_balance",
 		"tx_get", "tx_parse", "tx_events", "tx_wait", "tx_track",
 		"rpc_block", "rpc_resource", "rpc_access_value", "rpc_resource_path",
@@ -629,6 +629,7 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"account_generate":  {}, // keyType 缺省 secp256k1——Task 8 修复点
 		"account_info":      {"address"},
 		"account_resources": {"address"},
+		"account_summary":    {"address"},
 		"faucet_claim":      {"privateKey", "address", "signatureMode"},
 		"faucet_balance":    {"address"},
 		"idl_apps":           {},

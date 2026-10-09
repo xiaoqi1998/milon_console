@@ -60,6 +60,11 @@ type txTrackArgs struct {
 	TimeoutSecs string `json:"timeoutSecs,omitempty" jsonschema:"可选：等待确认超时秒数（十进制整数，缺省 60）"`
 }
 
+// accountSummaryArgs 镜像 Summary 的路径参数。
+type accountSummaryArgs struct {
+	Address string `json:"address" jsonschema:"必填：账户地址（base58）"`
+}
+
 // transferMilArgs 镜像 transferMilRequest（POST /api/tool/transfer-mil 纯 body）。
 type transferMilArgs struct {
 	To         string `json:"to" jsonschema:"必填：接收方地址（base58）"`
@@ -734,6 +739,9 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[accountGenerateArgs](srv, exec, "account_generate", "生成新账户（返回私钥/公钥/地址）", RESTMapping{Method: "POST", PathTemplate: "/api/accounts/generate"})
 	registerTool[addressArgs](srv, exec, "account_info", "查询账户信息", RESTMapping{Method: "GET", PathTemplate: "/api/accounts/{address}", PathParams: []string{"address"}})
 	registerTool[addressArgs](srv, exec, "account_resources", "查询账户链上资源", RESTMapping{Method: "GET", PathTemplate: "/api/accounts/{address}/resources", PathParams: []string{"address"}})
+	registerTool[accountSummaryArgs](srv, exec, "account_summary",
+		"地址全景聚合：MIL 余额 + 冻结量 + faucet 冷却剩余 + DID 文档一站返回；子项失败不整体失败（字段置 null 并在 errors 说明，DID 未创建属正常态记 did:null）",
+		RESTMapping{Method: "GET", PathTemplate: "/api/accounts/{address}/summary", PathParams: []string{"address"}})
 	registerTool[faucetClaimArgs](srv, exec, "faucet_claim", "从 faucet 领取代币（需私钥签名，等待确认后返回 txHash）", RESTMapping{Method: "POST", PathTemplate: "/api/faucet/claim"})
 	registerTool[addressArgs](srv, exec, "faucet_balance", "查询账户余额（faucet 口径）", RESTMapping{Method: "GET", PathTemplate: "/api/faucet/balance/{address}", PathParams: []string{"address"}})
 	registerTool[hashArgs](srv, exec, "tx_get", "按哈希查询交易", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}", PathParams: []string{"hash"}})

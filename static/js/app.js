@@ -24,6 +24,8 @@ const ENDPOINTS = [
     pathParams: [{ name: 'address', ph: 'base58地址' }] },
   { id: 'acc-generate', method: 'POST', path: '/api/accounts/generate', summary: '生成账户', group: '账户',
     bodyTemplate: JSON.stringify({ keyType: 'secp256k1' }, null, 2) },
+  { id: 'acc-summary', method: 'GET', path: '/api/accounts/:address/summary', summary: '地址全景(余额+冻结+冷却+DID聚合)', group: '账户',
+    pathParams: [{ name: 'address', ph: 'base58地址' }] },
   { id: 'tx-hash', method: 'GET', path: '/api/transactions/:hash', summary: '按哈希查交易', group: '交易',
     pathParams: [{ name: 'hash', ph: 'hex或base58' }] },
   { id: 'tx-events', method: 'GET', path: '/api/transactions/:hash/events', summary: '获取交易事件', group: '交易',

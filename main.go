@@ -75,6 +75,7 @@ func main() {
 		api.POST("/accounts/generate", accountHandler.GenerateAccount)
 		api.GET("/accounts/:address", accountHandler.GetAccount)
 		api.GET("/accounts/:address/resources", accountHandler.GetAccountResources)
+		api.GET("/accounts/:address/summary", accountHandler.Summary)
 
 		// Transaction
 		api.GET("/transactions/:hash", transactionHandler.GetTransactionByHash)

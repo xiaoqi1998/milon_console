@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/crypto"
+	"github.com/milon-labs/milon-go-sdk/provider"
 	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
@@ -164,4 +165,65 @@ func (h *AccountHandler) GenerateAccount(c *gin.Context) {
 
 	logBusinessInfo(c, "GenerateAccount", "keyType", keyType, "address", resp.Address)
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
+}
+
+// Summary handles GET /api/accounts/:address/summary
+// 地址全景聚合（AI 问答式视图）：MIL 余额 + 冻结量 + faucet 冷却剩余 +
+// DID 文档摘要，一站返回。子查询失败不整体失败——对应字段置 null 并在
+// errors 里说明（DID 未创建是正常态，did 置 null 不记错误）。
+func (h *AccountHandler) Summary(c *gin.Context) {
+	addrStr := c.Param("address")
+	if addrStr == "" {
+		logParamError(c, "Summary", paramError("address is required"))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "address is required", nil))
+		return
+	}
+	addr, err := types.ParseAddress(addrStr)
+	if err != nil {
+		logParamError(c, "Summary", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid address: "+err.Error(), nil))
+		return
+	}
+
+	mc := middleware.ClientFrom(c)
+	errors := map[string]string{}
+	data := gin.H{"address": addrStr}
+
+	if balance, err := mc.BalanceOf(&addr); err != nil {
+		errors["balance"] = err.Error()
+	} else {
+		data["balance"] = balance
+	}
+
+	if frozen, err := flowCallView(mc, "token", "FrozenOf", provider.Args{"token": milTokenAddress, "account": addrStr}); err == nil && flowViewOK(frozen) {
+		data["frozen"] = frozen
+	} else if err != nil {
+		errors["frozen"] = err.Error()
+	}
+
+	if cooldown, err := flowCallView(mc, "token", "FaucetCooldownRemaining", provider.Args{"account": addrStr}); err == nil && flowViewOK(cooldown) {
+		data["faucetCooldownRemaining"] = cooldown
+	} else if err != nil {
+		errors["faucetCooldown"] = err.Error()
+	}
+
+	// DID 未创建是正常态（错误或 view 值形态的 NotFound）→ did: null，其余记 errors
+	if doc, err := flowCallView(mc, vcFlowIdentityApp, "Document", provider.Args{"subject": addrStr}); err == nil && flowViewOK(doc) {
+		data["did"] = doc
+	} else {
+		msg := fmt.Sprintf("%v", doc)
+		if err != nil {
+			msg = err.Error()
+		}
+		if isDidNotFoundErr(msg) {
+			data["did"] = nil
+		} else {
+			errors["did"] = msg
+		}
+	}
+
+	if len(errors) > 0 {
+		data["errors"] = errors
+	}
+	c.JSON(http.StatusOK, types.SuccessResponse(data, "ok"))
 }
