@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"os"
+	"path/filepath"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -80,4 +82,39 @@ func TestTransferMilReachesSubmit(t *testing.T) {
 	if !strings.Contains(body, "failed to transfer") && !strings.Contains(body, "error") {
 		t.Fatalf("应包含错误上下文: %s", body)
 	}
+}
+
+// TestTransferMilFnDsa512NeedsPublicKey：Go SDK 无法从 fndsa512 私钥派生
+// 公钥（FnDsa512Public 为 TODO not implemented）——keyType=fndsa512 时
+// publicKey 必填，缺失应 400 且提示明确；带公钥则正常进入提交层。
+func TestTransferMilFnDsa512NeedsPublicKey(t *testing.T) {
+	r := newTransferMilRouter(t)
+	fndsaAcc, err := readTestFile("fndsa_acc.json")
+	if err != nil {
+		t.Skip("fndsa 测试账户未生成，跳过")
+	}
+	var acc struct {
+		PrivateKey string `json:"privateKey"`
+		PublicKey  string `json:"publicKey"`
+	}
+	_ = json.Unmarshal([]byte(fndsaAcc), &acc)
+
+	// 缺 publicKey → 400 且信息指路
+	body := `{"to":"2DSTxAj1h6JtrhyayNFo4heZBa29","amount":1000,"privateKey":"` + acc.PrivateKey + `","keyType":"fndsa512"}`
+	code, respBody := postTransferMil(r, body)
+	if code != http.StatusBadRequest || !strings.Contains(respBody, "publicKey") {
+		t.Fatalf("fndsa512 缺 publicKey 应 400 并提示, got %d: %s", code, respBody)
+	}
+
+	// 带 publicKey → 走到提交层（fake 拒绝 → 500）
+	body = `{"to":"2DSTxAj1h6JtrhyayNFo4heZBa29","amount":1000,"privateKey":"` + acc.PrivateKey + `","keyType":"fndsa512","publicKey":"` + acc.PublicKey + `"}`
+	code, respBody = postTransferMil(r, body)
+	if code != http.StatusInternalServerError {
+		t.Fatalf("fndsa512 带 publicKey 应进入提交层(500), got %d: %s", code, respBody)
+	}
+}
+
+// readTestFile 读项目根下的测试数据文件。
+func readTestFile(name string) ([]byte, error) {
+	return os.ReadFile(filepath.Join("..", name))
 }

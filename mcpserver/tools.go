@@ -26,7 +26,7 @@ type accountGenerateArgs struct {
 	// keyType 可缺省（REST 侧 account_handler.go GenerateAccount 空值缺省
 	// secp256k1），标 omitempty 使 MCP schema 不把它列入 required——Task 8
 	// 修复：此前缺 omitempty 导致客户端传 {} 被 schema 拒绝，与 REST 契约不一致。
-	KeyType string `json:"keyType,omitempty" jsonschema:"可选：密钥曲线 secp256k1(缺省)/ed25519/fn-dsa-512"`
+	KeyType string `json:"keyType,omitempty" jsonschema:"可选：密钥曲线 secp256k1(缺省)/ed25519/fndsa512（抗量子）"`
 }
 
 type addressArgs struct {
@@ -79,6 +79,7 @@ type transferMilArgs struct {
 	Amount     uint64 `json:"amount" jsonschema:"必填：转账数量（最小单位，6 位精度下 1 MIL = 10^6）"`
 	PrivateKey string `json:"privateKey" jsonschema:"必填：转出方私钥（hex 或 base58）"`
 	KeyType    string `json:"keyType,omitempty" jsonschema:"可选：私钥曲线 secp256k1(缺省)/ed25519/bls12381/fndsa512"`
+	PublicKey  string `json:"publicKey,omitempty" jsonschema:"fndsa512 时必填（897 字节公钥，Go 无法从私钥派生；account_generate 的返回里有）"`
 }
 
 // idlMethodsArgs 镜像 AppMethods 的路径参数。
@@ -218,7 +219,7 @@ type rawViewArgs struct {
 // keyType 可选（缺省按公钥自身曲线推断），标 omitempty。
 type utilDeriveAddressArgs struct {
 	PublicKey string `json:"publicKey" jsonschema:"公钥（hex 或 base58）"`
-	KeyType   string `json:"keyType,omitempty" jsonschema:"可选：secp256k1/ed25519/fn-dsa-512，缺省按公钥自身曲线推断"`
+	KeyType   string `json:"keyType,omitempty" jsonschema:"可选：secp256k1/ed25519/fndsa512，缺省按公钥自身曲线推断"`
 }
 
 // utilDerivePublicKeyArgs 镜像 derivePublicKeyRequest（handler/util.go:81，
@@ -805,7 +806,7 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 
 	// 密钥/地址派生
 	registerTool[utilDeriveAddressArgs](srv, exec, "util_derive_address",
-		"由公钥派生链上地址（bs58）。注意：32 字节私钥在 secp256k1/ed25519/fn-dsa-512 下派生出不同地址，地址计算必须用本工具（或 account_generate 的返回），不要本地臆造；keyType 可选，缺省按公钥自身曲线推断",
+		"由公钥派生链上地址（bs58）。注意：32 字节私钥在 secp256k1/ed25519/fn-dsa-512 下派生出不同地址（fndsa512 完整私钥为 1281 字节，不适用本规则），地址计算必须用本工具（或 account_generate 的返回），不要本地臆造；keyType 可选，缺省按公钥自身曲线推断",
 		RESTMapping{Method: "POST", PathTemplate: "/api/util/address/derive"})
 	registerTool[utilDerivePublicKeyArgs](srv, exec, "util_derive_public_key",
 		"由 32 字节私钥按指定曲线派生公钥（keyType 必填：secp256k1/ed25519/bls12381/fndsa512）",

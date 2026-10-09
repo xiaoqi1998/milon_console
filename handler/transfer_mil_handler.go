@@ -23,6 +23,7 @@ type transferMilRequest struct {
 	Amount     uint64 `json:"amount" binding:"required"`
 	PrivateKey string `json:"privateKey" binding:"required"`
 	KeyType    string `json:"keyType,omitempty"`
+	PublicKey  string `json:"publicKey,omitempty"`
 }
 
 // TransferMil handles POST /api/tool/transfer-mil
@@ -48,7 +49,20 @@ func (h *ContractHandler) TransferMil(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid privateKey: "+err.Error(), nil))
 		return
 	}
-	pk, err := derivePublicKeyByType(sk, keyType)
+	// fndsa512：Go SDK 无法从私钥派生公钥（FnDsa512Public 为 TODO not
+	// implemented），必须显式传 publicKey（account_generate 已返回）；
+	// 其余曲线内部派生。
+	var pk *crypto.PublicKey
+	if keyType == "fndsa512" {
+		if req.PublicKey == "" {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER,
+				"keyType fndsa512 需显式传 publicKey（897 字节公钥，Go SDK 无法从私钥派生；account_generate 的返回里有）", nil))
+			return
+		}
+		pk, err = crypto.NewPublicKeyFromStringRelaxed(req.PublicKey)
+	} else {
+		pk, err = derivePublicKeyByType(sk, keyType)
+	}
 	if err != nil {
 		logParamError(c, "TransferMil", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
