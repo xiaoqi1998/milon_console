@@ -290,6 +290,72 @@ func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
 }
 
+// TrackTransaction handles GET /api/transactions/:hash/track
+// tx_get + tx_wait + tx_events 的 AI 友好聚合：先查交易是否存在，存在则
+// 等待确认（timeoutSecs 缺省 60s），最后带回状态、交易摘要与事件。
+// 任一子步骤失败都折叠为可判读的 data.status 终态而非 500：
+// not_found（查无此交易）/ timeout（等待超时，仍携带已取得的摘要）/
+// confirmed（已确认——执行成败以摘要为准）。
+func (h *TransactionHandler) TrackTransaction(c *gin.Context) {
+	hash := c.Param("hash")
+	if hash == "" {
+		logParamError(c, "TrackTransaction", paramError("hash is required"))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "hash is required", nil))
+		return
+	}
+
+	var options []milon.WaitOption
+	if timeoutStr := c.Query("timeoutSecs"); timeoutStr != "" {
+		secs, err := strconv.ParseUint(timeoutStr, 10, 64)
+		if err != nil {
+			logParamError(c, "TrackTransaction", err)
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid timeoutSecs parameter", err.Error()))
+			return
+		}
+		options = append(options, milon.WithWaitPollTimeout(time.Duration(secs)*time.Second))
+	} else {
+		options = append(options, milon.WithWaitPollTimeout(60*time.Second))
+	}
+
+	mc := middleware.ClientFrom(c)
+	requestId := lib.RequestID(time.Now().UnixMilli())
+
+	// 1) 存在性：查不到（含链端错误）一律折叠为 not_found 终态
+	result, err := mc.GetTxByHash(hash, milon.WithRequestID(requestId))
+	if err != nil || result == nil || result.BodyTxHistory == nil {
+		c.JSON(http.StatusOK, types.SuccessResponse(map[string]any{
+			"status":   "not_found",
+			"hash":     hash,
+			"note":     "链上查询不到该交易（可能尚未提交或哈希有误）",
+			"rawError": err.Error(),
+		}, "ok"))
+		return
+	}
+	txSummary := toTxHistoryResponse(result.BodyTxHistory)
+
+	// 2) 等待确认：超时携带摘要返回；成功则用最新数据刷新摘要
+	waitResult, waitErr := mc.WaitForTransaction(hash, append([]milon.WaitOption{milon.WithWaitRequestID(requestId)}, options...)...)
+	status := "confirmed"
+	if waitErr != nil {
+		status = "timeout"
+	} else if waitResult != nil && waitResult.BodyTxHistory != nil {
+		txSummary = toTxHistoryResponse(waitResult.BodyTxHistory)
+	}
+
+	// 3) 事件：失败不阻塞聚合（返回空数组）
+	events := []any{}
+	if evResult, evErr := mc.EventsByTxHash(hash, nil, milon.WithRequestID(requestId)); evErr == nil {
+		events = append(events, evResult)
+	}
+
+	c.JSON(http.StatusOK, types.SuccessResponse(map[string]any{
+		"status":      status,
+		"hash":        hash,
+		"transaction": txSummary,
+		"events":      events,
+	}, "ok"))
+}
+
 // rawTransactionRequest is the request body for POST /api/transactions/simulate and /api/transactions/submit.
 type rawTransactionRequest struct {
 	TransactionPostcard string `json:"transactionPostcard" binding:"required"`

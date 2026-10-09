@@ -54,6 +54,12 @@ type txWaitArgs struct {
 	TimeoutSecs string `json:"timeoutSecs,omitempty" jsonschema:"可选：等待超时秒数（十进制整数）"`
 }
 
+// txTrackArgs 镜像 TrackTransaction 的参数（hash 路径参数 + timeoutSecs query）。
+type txTrackArgs struct {
+	Hash        string `json:"hash" jsonschema:"必填：交易哈希（hex 或 base58）"`
+	TimeoutSecs string `json:"timeoutSecs,omitempty" jsonschema:"可选：等待确认超时秒数（十进制整数，缺省 60）"`
+}
+
 type hashArgs struct {
 	Hash string `json:"hash"`
 }
@@ -719,6 +725,9 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[txParseArgs](srv, exec, "tx_parse", "解析交易（结构化 postcard）", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/parse", PathParams: []string{"hash"}, QueryParams: []string{"remote"}})
 	registerTool[txEventsArgs](srv, exec, "tx_events", "查询交易事件", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/events", PathParams: []string{"hash"}, QueryParams: []string{"typeTag"}})
 	registerTool[txWaitArgs](srv, exec, "tx_wait", "等待交易确认（可能长轮询）", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/wait", PathParams: []string{"hash"}, QueryParams: []string{"timeoutSecs"}})
+	registerTool[txTrackArgs](srv, exec, "tx_track",
+		"交易全链路追踪（tx_get+tx_wait+tx_events 聚合）：查存在→等确认（缺省 60s）→返回 status（not_found/timeout/confirmed）+ 交易摘要 + 事件，AI 发完交易后的收尾一步到位",
+		RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/track", PathParams: []string{"hash"}, QueryParams: []string{"timeoutSecs"}})
 	registerTool[heightArgs](srv, exec, "rpc_block", "按高度查区块头", RESTMapping{Method: "GET", PathTemplate: "/api/rpc/blocks/{height}", PathParams: []string{"height"}})
 	registerTool[hashArgs](srv, exec, "rpc_resource", "按哈希查链上资源原文", RESTMapping{Method: "GET", PathTemplate: "/api/rpc/resources/{hash}", PathParams: []string{"hash"}})
 	registerTool[accessValueArgs](srv, exec, "rpc_access_value", "按 blob 哈希批量取 access value", RESTMapping{Method: "POST", PathTemplate: "/api/rpc/access-value"})

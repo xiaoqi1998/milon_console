@@ -56,6 +56,10 @@ func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers ma
 	return out
 }
 
+// wantToolCount 锁定工具总数。每新增一个 MCP 工具：+1 并在 TestToolsListBasics
+// 的 want 列表补名（本批 7 工具完成后应为 64）。
+const wantToolCount = 58
+
 func TestToolsListBasics(t *testing.T) {
 	srv := mcpHTTPServer(t, "")
 	out := rpcCall(t, srv.URL, "tools/list", map[string]any{})
@@ -67,7 +71,7 @@ func TestToolsListBasics(t *testing.T) {
 	want := []string{"network_list", "network_current", "network_switch",
 		"account_generate", "account_info", "account_resources",
 		"faucet_claim", "faucet_balance",
-		"tx_get", "tx_parse", "tx_events", "tx_wait",
+		"tx_get", "tx_parse", "tx_events", "tx_wait", "tx_track",
 		"rpc_block", "rpc_resource", "rpc_access_value", "rpc_resource_path",
 		"idl_metadata",
 		// Task 3：合约/视图/原始交易家族（13 个）
@@ -631,6 +635,7 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"tx_parse":          {"hash"},
 		"tx_events":         {"hash"},
 		"tx_wait":           {"hash"},
+		"tx_track":          {"hash"},
 		"rpc_block":         {"height"},
 		"rpc_resource":      {"hash"},
 		"rpc_access_value":  {"blobHashes"},
@@ -691,8 +696,8 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"bulk_transfer":        {"count", "toAddress"},
 		"bulk_transfer_status": {"id"},
 	}
-	if len(want) != 57 {
-		t.Fatalf("用例表=%d, want 57（新工具须回 handler 事实源核对后补行）", len(want))
+	if len(want) != wantToolCount {
+		t.Fatalf("用例表=%d, want %d（新工具须回 handler 事实源核对后补行）", len(want), wantToolCount)
 	}
 	for name, w := range want {
 		sort.Strings(w)
@@ -732,8 +737,8 @@ func TestToolsListTotalAndAuth(t *testing.T) {
 	t.Cleanup(front.Close)
 	out := rpcCall(t, front.URL, "tools/list", map[string]any{})
 	tools := out["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 57 {
-		t.Fatalf("工具数=%d, want 57", len(tools))
+	if len(tools) != wantToolCount {
+		t.Fatalf("工具数=%d, want %d", len(tools), wantToolCount)
 	}
 
 	// 鉴权开启后的三态
@@ -787,8 +792,8 @@ func TestToolInventory(t *testing.T) {
 	// 若 inventory 无去重会立刻暴露为数量 > 57。
 	srv := mcpHTTPServer(t, "")
 	inv := ToolInventory()
-	if len(inv) != 57 {
-		t.Fatalf("ToolInventory 数量=%d, want 57", len(inv))
+	if len(inv) != wantToolCount {
+		t.Fatalf("ToolInventory 数量=%d, want %d", len(inv), wantToolCount)
 	}
 
 	seen := make(map[string]bool, len(inv))

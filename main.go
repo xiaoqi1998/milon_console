@@ -81,6 +81,7 @@ func main() {
 		api.GET("/transactions/:hash/parse", transactionHandler.GetTransactionByHashParsed)
 		api.GET("/transactions/:hash/events", transactionHandler.GetTransactionEvents)
 		api.GET("/transactions/:hash/wait", transactionHandler.WaitForTransaction)
+		api.GET("/transactions/:hash/track", transactionHandler.TrackTransaction)
 
 		// RPC
 		api.GET("/rpc/blocks/:height", rpcHandler.GetBlock)

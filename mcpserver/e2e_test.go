@@ -43,8 +43,8 @@ func TestE2ESmoke(t *testing.T) {
 	// ---- 1. tools/list：57 个工具齐备 ----
 	out := rpcCall(t, e2eURL, "tools/list", map[string]any{})
 	tools := out["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 57 {
-		t.Fatalf("tools=%d want 57", len(tools))
+	if len(tools) != wantToolCount {
+		t.Fatalf("tools=%d want %d", len(tools), wantToolCount)
 	}
 
 	// ---- 2. 真链冒烟：无参工具直调（account_generate 空参数走 REST 默认曲线） ----

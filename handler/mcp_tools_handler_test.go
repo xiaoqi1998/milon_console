@@ -41,8 +41,8 @@ func TestMcpToolsEndpoint(t *testing.T) {
 	if !resp.Success {
 		t.Fatalf("success=false: %s", w.Body.String())
 	}
-	if len(resp.Data) != 57 {
-		t.Fatalf("工具数=%d, want 57", len(resp.Data))
+	if len(resp.Data) != 58 {
+		t.Fatalf("工具数=%d, want 58", len(resp.Data))
 	}
 	seen := map[string]bool{}
 	for _, ti := range resp.Data {
