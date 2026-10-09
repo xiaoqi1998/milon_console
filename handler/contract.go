@@ -1578,3 +1578,70 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		return "", nil, fmt.Errorf("unsupported paymentMode: %s", req.PaymentMode)
 	}
 }
+
+// WriteSafe handles POST /api/write-safe
+// 合约写的安全版：先用与 /api/simulate 相同的模拟路径跑一遍（模拟签名、
+// 不消耗 gas），模拟失败 → 返回 stage=simulate_failed 与错误详情，绝不
+// 上链；模拟通过 → 与 /api/write 完全相同的路径真签提交。
+// 请求体与 /api/write 一致（含 payerPrivateKey 等真签材料，仅提交阶段使用）。
+func (h *ContractHandler) WriteSafe(c *gin.Context) {
+	var req writeContractRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "WriteSafe", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
+		return
+	}
+
+	mc := middleware.ClientFrom(c)
+	requestId := lib.RequestID(time.Now().UnixMilli())
+
+	if req.Args == nil {
+		req.Args = provider.Args{}
+	}
+	if err := validatePaymentModeFields(req.PaymentMode, req.Signers, req.PayerAddress, req.PayerPrivateKey, true); err != nil {
+		logParamError(c, "WriteSafe", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+
+	// 1) 模拟（复用 /api/simulate 的构造路径，模拟签名、不带私钥）
+	simReq := simulateContractRequest{
+		AppName:         req.AppName,
+		MethodName:      req.MethodName,
+		Args:            req.Args,
+		PaymentMode:     req.PaymentMode,
+		PayerAddress:    req.PayerAddress,
+		SignatureMode:   req.SignatureMode,
+		IxAddress:       req.IxAddress,
+		IxSignatureMode: req.IxSignatureMode,
+		OwnerAddress:    req.OwnerAddress,
+		Signers:         req.Signers,
+		GasPayer:        req.GasPayer,
+	}
+	simResult, _, simErr := h.dispatchSimulate(mc, &simReq, requestId)
+	if simErr != nil {
+		c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
+			"stage": "simulate_failed",
+			"error": simErr.Error(),
+			"note":  "模拟未通过，已阻止上链（未消耗 gas）",
+		}, "ok"))
+		return
+	}
+
+	// 2) 模拟通过 → 真签提交（与 /api/write 同路径）
+	txHash, tx, err := h.dispatchSubmit(mc, &req, requestId)
+	if err != nil {
+		logSDKError(c, "WriteSafe", err)
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "simulated ok but submit failed: "+err.Error(), nil))
+		return
+	}
+
+	logBusinessInfo(c, "WriteSafe", "txHash", txHash, "appName", req.AppName, "methodName", req.MethodName)
+	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
+		"stage":   "submitted",
+		"txHash":  txHash,
+		"receipt": simResult.BodySimulateReceipt,
+		"rawTx":   serializeTx(tx),
+		"tip":     "用 tx_track 工具（GET /api/transactions/{hash}/track）跟踪确认",
+	}, "ok"))
+}

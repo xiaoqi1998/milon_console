@@ -54,6 +54,7 @@ func main() {
 		log.Fatalf("failed to init saved instruction store: %v", err)
 	}
 	mcpToolsHandler := handler.NewMcpToolsHandler()
+	errorLookupHandler := handler.NewErrorLookupHandler()
 
 	api := r.Group("/api")
 	// 请求级网络选择：X-Milon-Network 头 → 对应网络 client；缺省走服务端默认网络
@@ -100,6 +101,7 @@ func main() {
 		api.POST("/write/multi", contractHandler.WriteContractMulti)
 		api.POST("/write/multi-agent", contractHandler.WriteContractMultiAgent)
 		api.POST("/write/multisig", contractHandler.WriteContractMultisig)
+		api.POST("/write-safe", contractHandler.WriteSafe)
 
 		// Transaction (simulate, submit, inspect)
 		api.POST("/transactions/simulate", transactionHandler.SimulateTransaction)
@@ -171,6 +173,9 @@ func main() {
 			savedGroup.DELETE("/:id", savedInstructionHandler.DeleteSavedInstruction)
 			savedGroup.POST("/:id/execute", savedInstructionHandler.ExecuteSavedInstruction)
 		}
+
+		// MCP tool inventory (programmatic discovery of all /mcp tools)
+		api.GET("/errors/:query", errorLookupHandler.Lookup)
 
 		// MCP tool inventory (programmatic discovery of all /mcp tools)
 		api.GET("/mcp/tools", mcpToolsHandler.ListTools)

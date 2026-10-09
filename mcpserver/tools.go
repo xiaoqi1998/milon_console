@@ -60,6 +60,14 @@ type txTrackArgs struct {
 	TimeoutSecs string `json:"timeoutSecs,omitempty" jsonschema:"可选：等待确认超时秒数（十进制整数，缺省 60）"`
 }
 
+// writeSafeArgs 与 contractWriteArgs 相同（请求体同 /api/write）。
+type writeSafeArgs = contractWriteArgs
+
+// errorLookupArgs 镜像 Lookup 的路径参数。
+type errorLookupArgs struct {
+	Query string `json:"query" jsonschema:"必填：十进制错误码或名字子串（如 521 / Cooldown）"`
+}
+
 // accountSummaryArgs 镜像 Summary 的路径参数。
 type accountSummaryArgs struct {
 	Address string `json:"address" jsonschema:"必填：账户地址（base58）"`
@@ -614,6 +622,8 @@ func toolGroupOf(name string) string {
 	switch {
 	case name == "vc_flow", name == "sft_flow", strings.HasPrefix(name, "bulk_transfer"):
 		return "高层编排"
+	case name == "error_lookup" || strings.HasPrefix(name, "error_"):
+		return "错误参考"
 	case strings.HasPrefix(name, "transfer_"):
 		return "高层编排"
 	case strings.HasPrefix(name, "saved_instruction_"):
@@ -778,6 +788,9 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[contractMultiArgs](srv, exec, "contract_write_multi", "多指令打包写交易（单笔交易原子上链）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi"})
 	registerTool[contractWriteArgs](srv, exec, "contract_write_multi_agent", "双账户写交易（unified_dual_sign：付 gas 与指令执行账户不同）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi-agent"})
 	registerTool[contractWriteArgs](srv, exec, "contract_write_multisig", "split 模式写交易（owner 付 gas 并签指令）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multisig"})
+	registerTool[writeSafeArgs](srv, exec, "contract_write_safe",
+		"安全版合约写：先模拟（不消耗 gas）再真签提交——模拟失败返回 stage=simulate_failed 并阻止上链，模拟通过才走与 contract_write 完全相同的提交路径；请求参数与 contract_write 一致",
+		RESTMapping{Method: "POST", PathTemplate: "/api/write-safe"})
 
 	// 原始 postcard 交易（simulate/submit/inspect 共用 rawTransactionRequest）
 	registerTool[rawTransactionArgs](srv, exec, "tx_simulate_raw", "模拟执行 postcard 原始交易（不消耗 gas）", RESTMapping{Method: "POST", PathTemplate: "/api/transactions/simulate"})
@@ -902,6 +915,9 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		RESTMapping{Method: "POST", PathTemplate: "/api/tool/bulk-transfer"})
 
 	// 批量转账进度查询（GET + 路径参数 id）
+	registerTool[errorLookupArgs](srv, exec, "error_lookup",
+		"错误码翻译：按十进制错误码或名字子串查 API 层码表与全部 IDL app 的链上错误码（如 521=VcRequired / Cooldown=FaucetCooldownActive），返回来源(api/app:名)+码+名字+说明+处置建议",
+		RESTMapping{Method: "GET", PathTemplate: "/api/errors/{query}", PathParams: []string{"query"}})
 	registerTool[transferMilArgs](srv, exec, "transfer_mil",
 		"MIL 转账快捷封装：只给 to/amount/privateKey，内部完成密钥派生地址 + 填充 token.Transfer 全部固定参数（MIL 代币地址/unified_payer_all/pubkey 签名模式自动修正），复用与 contract_write 完全相同的提交路径；返回 txHash，建议接着用 tx_track 跟踪确认",
 		RESTMapping{Method: "POST", PathTemplate: "/api/tool/transfer-mil"})
