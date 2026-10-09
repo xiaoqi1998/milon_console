@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -25,6 +26,13 @@ func mcpHTTPServer(t *testing.T, backendURL string) *httptest.Server {
 // Streamable HTTP 协议要求 Accept 同时含 application/json 与 text/event-stream。
 func rpcCall(t *testing.T, url, method string, params any) map[string]any {
 	t.Helper()
+	return rpcCallWithHeaders(t, url, method, params, nil)
+}
+
+// rpcCallWithHeaders 是 rpcCall 的带头变体（Task 4 请求头方案：
+// X-Milon-Network 经 /mcp 请求头注入，headers 为 nil 时与 rpcCall 等价）。
+func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers map[string]string) map[string]any {
+	t.Helper()
 	body, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": 1, "method": method, "params": params})
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
@@ -32,6 +40,9 @@ func rpcCall(t *testing.T, url, method string, params any) map[string]any {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json, text/event-stream")
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -808,22 +819,74 @@ func TestToolInventory(t *testing.T) {
 
 	// 分组抽查
 	spot := map[string]string{
-		"network_list":            "网络",
-		"tx_get":                  "交易查询",
-		"tx_submit_raw":           "原始交易",
-		"contract_write":          "合约调用",
-		"view_multi":              "合约调用",
-		"util_sign":               "密钥与签名",
-		"vc_attestation":          "VC 凭证",
-		"did_document":            "DID",
-		"saved_instruction_list":  "保存指令",
-		"vc_flow":                 "高层编排",
-		"sft_flow":                "高层编排",
-		"bulk_transfer_status":    "高层编排",
+		"network_list":           "网络",
+		"tx_get":                 "交易查询",
+		"tx_submit_raw":          "原始交易",
+		"contract_write":         "合约调用",
+		"view_multi":             "合约调用",
+		"util_sign":              "密钥与签名",
+		"vc_attestation":         "VC 凭证",
+		"did_document":           "DID",
+		"saved_instruction_list": "保存指令",
+		"vc_flow":                "高层编排",
+		"sft_flow":               "高层编排",
+		"bulk_transfer_status":   "高层编排",
 	}
 	for name, want := range spot {
 		if got := groupOf[name]; got != want {
 			t.Errorf("%s 分组=%q, want %q", name, got, want)
 		}
+	}
+}
+
+// TestNetworkHeaderPassthrough 锁定 Task 4 裁决方向 3（请求头方案，替代已作废的
+// networkScoped 参数方案）：/mcp 请求携带的 X-Milon-Network 头经工具回调 ctx
+// 透传到 executor 回环 REST 请求的同名头；未携带时回环不带该头（= 服务端默认
+// 网络）。本测试同时是方案前提的行为级验证：go-sdk 工具回调 ctx 必须源自 HTTP
+// request context，否则头永远到不了 executor（见 task-4-report.md BLOCKED 记录）。
+func TestNetworkHeaderPassthrough(t *testing.T) {
+	var mu sync.Mutex
+	var gotNetworks []string // 逐次记录回环请求收到的 X-Milon-Network（缺头记 ""）
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		gotNetworks = append(gotNetworks, r.Header.Get("X-Milon-Network"))
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"success":true,"data":{}}`))
+	}))
+	t.Cleanup(backend.Close)
+	t.Setenv("MILON_REST_BASE_URL", backend.URL)
+
+	front := httptest.NewServer(NewMCPHandler(""))
+	t.Cleanup(front.Close)
+
+	// 带头调用：X-Milon-Network: localNet → 回环 REST 应带同名头
+	out := rpcCallWithHeaders(t, front.URL, "tools/call", map[string]any{
+		"name":      "network_current",
+		"arguments": map[string]any{},
+	}, map[string]string{"X-Milon-Network": "localNet"})
+	if out["error"] != nil {
+		t.Fatalf("带头 tools/call 失败: %v", out["error"])
+	}
+
+	// 无头调用：回环 REST 不得带该头（缺省走服务端默认网络）
+	out2 := rpcCall(t, front.URL, "tools/call", map[string]any{
+		"name":      "network_current",
+		"arguments": map[string]any{},
+	})
+	if out2["error"] != nil {
+		t.Fatalf("无头 tools/call 失败: %v", out2["error"])
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(gotNetworks) != 2 {
+		t.Fatalf("后端收到 %d 个请求, want 2: %v", len(gotNetworks), gotNetworks)
+	}
+	if gotNetworks[0] != "localNet" {
+		t.Fatalf("带头回环应带 X-Milon-Network: localNet, got %q", gotNetworks[0])
+	}
+	if gotNetworks[1] != "" {
+		t.Fatalf("无头回环不应带 X-Milon-Network, got %q", gotNetworks[1])
 	}
 }

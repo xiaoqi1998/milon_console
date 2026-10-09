@@ -670,12 +670,21 @@ func NewMCPHandler(token string) http.Handler {
 	srv := BuildServer(baseURL)
 	// Stateless：免 initialize、每请求临时会话；JSONResponse：POST 响应用
 	// application/json 而非 SSE 流（协议 §2.1.5 允许，便于非流式客户端直读）。
-	h := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return srv },
+	inner := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return srv },
 		&mcp.StreamableHTTPOptions{Stateless: true, JSONResponse: true})
+	// 请求级网络（Task 4）：X-Milon-Network 头注入 request context，工具回调
+	// 的 ctx（go-sdk 从 r.Context() 传播）→ Executor.Call 回环透传同名头。
+	// 注入层放最外（先注入再鉴权）：401 路径响应不受影响，行为不变。
+	withNetwork := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if net := r.Header.Get("X-Milon-Network"); net != "" {
+			r = r.WithContext(context.WithValue(r.Context(), ctxKeyNetwork{}, net))
+		}
+		inner.ServeHTTP(w, r)
+	})
 	if token == "" {
-		return h
+		return withNetwork
 	}
-	return bearerAuth(token, h)
+	return bearerAuth(token, withNetwork)
 }
 
 // bearerAuth 校验 Authorization: Bearer <token> 后转发给 MCP handler。
@@ -700,7 +709,7 @@ func bearerAuth(token string, next http.Handler) http.Handler {
 func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[emptyArgs](srv, exec, "network_list", "列出内置网络（devNet/localNet）及当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/list"})
 	registerTool[emptyArgs](srv, exec, "network_current", "查询当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/current"})
-	registerTool[networkSwitchArgs](srv, exec, "network_switch", "切换当前网络（devNet/localNet）", RESTMapping{Method: "POST", PathTemplate: "/api/network/switch"})
+	registerTool[networkSwitchArgs](srv, exec, "network_switch", "设置服务端默认网络（仅影响未携带 X-Milon-Network 头的请求；devNet/localNet）", RESTMapping{Method: "POST", PathTemplate: "/api/network/switch"})
 	registerTool[accountGenerateArgs](srv, exec, "account_generate", "生成新账户（返回私钥/公钥/地址）", RESTMapping{Method: "POST", PathTemplate: "/api/accounts/generate"})
 	registerTool[addressArgs](srv, exec, "account_info", "查询账户信息", RESTMapping{Method: "GET", PathTemplate: "/api/accounts/{address}", PathParams: []string{"address"}})
 	registerTool[addressArgs](srv, exec, "account_resources", "查询账户链上资源", RESTMapping{Method: "GET", PathTemplate: "/api/accounts/{address}/resources", PathParams: []string{"address"}})
