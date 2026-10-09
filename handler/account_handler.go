@@ -197,8 +197,14 @@ func (h *AccountHandler) Summary(c *gin.Context) {
 
 	if frozen, err := flowCallView(mc, "token", "FrozenOf", provider.Args{"token": milTokenAddress, "account": addrStr}); err == nil && flowViewOK(frozen) {
 		data["frozen"] = frozen
-	} else if err != nil {
-		errors["frozen"] = err.Error()
+	} else {
+		// 查询出错或链端 Err 载荷（如账户无冻结记录）：置 null 并在 errors 透明说明
+		msg := fmt.Sprintf("%v", frozen)
+		if err != nil {
+			msg = err.Error()
+		}
+		data["frozen"] = nil
+		errors["frozen"] = msg
 	}
 
 	if cooldown, err := flowCallView(mc, "token", "FaucetCooldownRemaining", provider.Args{"account": addrStr}); err == nil && flowViewOK(cooldown) {

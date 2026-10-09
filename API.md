@@ -2562,9 +2562,63 @@ curl http://localhost:8080/api/tool/did/QffKfGk3Jnp4k4qHJtbA8fwrW8E/document
 
 ---
 
+## 十三、AI 辅助工具（聚合与快捷）
+
+面向 AI 代理高频工作流的高层封装：多步组合压成一步、易错参数内部化。与 MCP 端点的 7 个同名工具一一对应。
+
+#### 62. 交易全链路追踪
+
+- **方法**: `GET`　**路径**: `/api/transactions/:hash/track?timeoutSecs=60`
+- **说明**: tx_get + tx_wait + tx_events 聚合。先查存在，存在则等待确认（缺省 60s），返回 `data.status`（`not_found` / `timeout` / `confirmed`）+ 交易摘要 + 事件；子步骤失败折叠为终态而非 500。
+
+```bash
+curl "http://localhost:8080/api/transactions/<hash>/track?timeoutSecs=30"
+```
+
+#### 63. IDL app 轻量清单
+
+- **方法**: `GET`　**路径**: `/api/idl/apps`
+- **说明**: 返回全部 app 的 `{appId, name, description, instructionCount}`——`/api/idl/metadata` 全量约 200KB 易撑爆 AI 上下文，先调本端点再按需查下一个。
+
+#### 64. 单 app 方法明细
+
+- **方法**: `GET`　**路径**: `/api/idl/apps/:appName/methods`
+- **说明**: 返回单个 app 的全量方法（参数/返回值/signer 角色/错误码）。注意 `name` 为 PascalCase（如 `Transfer`），合约调用的 `methodName` 用它；`handler` 字段是 snake_case 仅供对照。
+
+#### 65. MIL 转账快捷封装
+
+- **方法**: `POST`　**路径**: `/api/tool/transfer-mil`
+- **说明**: 只需 `to` / `amount`（最小单位）/ `privateKey`（`keyType` 缺省 secp256k1），内部完成密钥派生地址、填充 token.Transfer 全部固定参数（MIL 代币地址、unified_payer_all、pubkey 签名模式自动修正），复用与 `/api/write` 完全相同的提交路径。
+
+```bash
+curl -X POST http://localhost:8080/api/tool/transfer-mil -H 'Content-Type: application/json'   -d '{"to":"<base58地址>","amount":1000000,"privateKey":"<hex私钥>"}'
+```
+
+#### 66. 地址全景聚合
+
+- **方法**: `GET`　**路径**: `/api/accounts/:address/summary`
+- **说明**: MIL 余额 + 冻结量 + faucet 冷却剩余 + DID 文档一站返回；子项失败不整体失败（字段置 null，`errors` 说明；DID 未创建属正常态，`did` 为 null）。
+
+#### 67. 安全版合约写
+
+- **方法**: `POST`　**路径**: `/api/write-safe`
+- **说明**: 请求体与 `/api/write` 一致。先按 `/api/simulate` 路径模拟（不消耗 gas）：失败 → 返回 `stage=simulate_failed` 与错误并**阻止上链**；通过 → 与 `/api/write` 同路径真签提交（`stage=submitted`）。
+
+#### 68. 错误码翻译
+
+- **方法**: `GET`　**路径**: `/api/errors/:query`
+- **说明**: `query` 为十进制错误码或名字子串（大小写不敏感），聚合 API 层码表与全部 IDL app 的链上错误码，返回 `[{source: "api"|"app:<名>", code, name, message, solution?}]`。
+
+```bash
+curl http://localhost:8080/api/errors/521   # → token.VcRequired
+curl http://localhost:8080/api/errors/Cooldown
+```
+
+---
+
 ## MCP 端点（/mcp）
 
-除 REST API 外，服务在同一端口内置 MCP（Model Context Protocol）端点，把 REST 能力全量映射为 **57 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接调用。
+除 REST API 外，服务在同一端口内置 MCP（Model Context Protocol）端点，把 REST 能力全量映射为 **64 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接调用。
 
 - **端点**: `http://127.0.0.1:8080/mcp`（端口随 `SERVER_PORT`）
 - **传输**: Streamable HTTP（`POST /mcp`，JSON-RPC），stateless 无会话状态，JSON 响应模式
@@ -2603,7 +2657,7 @@ ZCode / Claude 通用片段：
 
 > **日志风险**：`ENABLE_BODY_LOG=true` 时 `/mcp` 的工具入参会进入请求日志，且脱敏只覆盖裸 `privateKey` 等字段名——`payerPrivateKey` 等带前缀私钥参数会明文落日志，仅供 devNet 调试，生产勿开。
 
-### 工具对照表（57 个）
+### 工具对照表（64 个）
 
 #### 网络（3）
 
@@ -2620,6 +2674,7 @@ ZCode / Claude 通用片段：
 | `account_generate` | POST /api/accounts/generate |
 | `account_info` | GET /api/accounts/{address} |
 | `account_resources` | GET /api/accounts/{address}/resources |
+| `account_summary` | GET /api/accounts/{address}/summary |
 
 #### 交易查询（4）
 
@@ -2629,6 +2684,7 @@ ZCode / Claude 通用片段：
 | `tx_parse` | GET /api/transactions/{hash}/parse |
 | `tx_events` | GET /api/transactions/{hash}/events |
 | `tx_wait` | GET /api/transactions/{hash}/wait |
+| `tx_track` | GET /api/transactions/{hash}/track |
 
 #### 原始交易（3）
 
@@ -2652,6 +2708,8 @@ ZCode / Claude 通用片段：
 | 工具 | REST 端点 |
 |---|---|
 | `idl_metadata` | GET /api/idl/metadata（agent 的发现入口：app/方法/参数/返回/signer） |
+| `idl_apps` | GET /api/idl/apps |
+| `idl_methods` | GET /api/idl/apps/{appName}/methods |
 | `contract_read` | POST /api/read |
 | `contract_read_multi` | POST /api/read/multi |
 | `contract_simulate` | POST /api/simulate |
@@ -2660,6 +2718,7 @@ ZCode / Claude 通用片段：
 | `contract_write_multi` | POST /api/write/multi |
 | `contract_write_multi_agent` | POST /api/write/multi-agent |
 | `contract_write_multisig` | POST /api/write/multisig |
+| `contract_write_safe` | POST /api/write-safe |
 
 #### 高层 flow 工具（4）
 
@@ -2669,6 +2728,8 @@ ZCode / Claude 通用片段：
 | `sft_flow` | POST /api/tool/sft-flow |
 | `bulk_transfer` | POST /api/tool/bulk-transfer |
 | `bulk_transfer_status` | GET /api/tool/bulk-transfer/{id} |
+| `transfer_mil` | POST /api/tool/transfer-mil |
+| `error_lookup` | GET /api/errors/{query} |
 
 #### DID（12）
 
@@ -2799,5 +2860,12 @@ ZCode / Claude 通用片段：
 | 52 | GET | `/api/tool/did/:address/document` | 查询 DID 文档 |
 | 53 | GET | `/api/tool/did/name-binding` | 按别名反查 DID 绑定 |
 | 54 | GET | `/api/mcp/tools` | MCP 工具清单（与 /mcp 注册表同源） |
+| 55 | GET | `/api/transactions/:hash/track` | 交易全链路追踪（存在+等待+事件聚合，终态 status） |
+| 56 | GET | `/api/idl/apps` | IDL app 轻量清单（名称/简介/方法数） |
+| 57 | GET | `/api/idl/apps/:appName/methods` | 单 app 全量方法明细 |
+| 58 | POST | `/api/tool/transfer-mil` | MIL 转账快捷封装（内部派生地址+填固定参数） |
+| 59 | GET | `/api/accounts/:address/summary` | 地址全景聚合（余额+冻结+冷却+DID） |
+| 60 | POST | `/api/write-safe` | 安全版合约写（先模拟阻上链再真签提交） |
+| 61 | GET | `/api/errors/:query` | 错误码翻译（API 码表+IDL 链上错误） |
 
-**统计**：共 54 个端点，分布于 12 个功能组（网络管理 3、系统 3、账户 3、交易 7、合约 9、RPC 4、水龙头 2、工具 20、IDL 元数据 1、VC 全流程 1、SFT 全流程 1、DID 12）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 61 个端点，分布于 13 个功能组（网络管理 3、系统 4、账户 4、交易 8、合约 10、RPC 4、水龙头 2、工具 20、IDL 元数据 3、VC 全流程 1、SFT 全流程 1、DID 12、AI 辅助 7）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。

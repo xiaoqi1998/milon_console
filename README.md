@@ -11,7 +11,7 @@ Milon API Server 将 Milon Go SDK 封装成 RESTful HTTP API，并提供一个�
 - 账户与密钥工具：支持账户生成、公钥派生、地址派生、签名与验签。
 - 多种支付/签名模式：支持 `unified_payer_all`、`unified_dual_sign`、`unified_payer_only_gas`、`split`、`multi_signer`、`sponsored`。
 - Faucet：支持领水和余额查询。
-- MCP 端点：`/mcp` 把 REST 能力全量映射为 57 个 MCP 工具，供 ZCode / Claude 等 AI 编程代理直连。
+- MCP 端点：`/mcp` 把 REST 能力全量映射为 64 个 MCP 工具，供 ZCode / Claude 等 AI 编程代理直连。
 - Web 控制台：访问 `http://localhost:8080` 可打开调试页面。
 
 ## 快速开始
@@ -281,7 +281,9 @@ curl http://localhost:8080/api/idl/metadata
 
 ## MCP
 
-服务在同一端口内置 MCP（Model Context Protocol）端点 `/mcp`，把 REST 能力全量映射为 **57 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接以自然语言驱动链上操作。工具与 REST 端点一一对应，行为完全一致，完整对照表见 [API.md](API.md) 的「MCP 端点」章节；也可经 `GET /api/mcp/tools` 程序化获取工具清单（含名称/描述/分组/REST 映射，与注册表同源），或直接在 Web 控制台的「MCP 接入」页查看配置方法与可搜索的工具总览。全部工具调用随 /mcp 请求的 X-Milon-Network 头选择网络（缺省走服务端默认网络），多用户各带各的头互不干扰；REST 侧为同名请求头。
+服务在同一端口内置 MCP（Model Context Protocol）端点 `/mcp`，把 REST 能力全量映射为 **64 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接以自然语言驱动链上操作。工具与 REST 端点一一对应，行为完全一致，完整对照表见 [API.md](API.md) 的「MCP 端点」章节；也可经 `GET /api/mcp/tools` 程序化获取工具清单（含名称/描述/分组/REST 映射，与注册表同源），或直接在 Web 控制台的「MCP 接入」页查看配置方法与可搜索的工具总览。全部工具调用随 /mcp 请求的 X-Milon-Network 头选择网络（缺省走服务端默认网络），多用户各带各的头互不干扰；REST 侧为同名请求头。
+
+其中 7 个为面向 AI 高频工作流的高层封装：`tx_track`（交易全链路追踪）、`idl_apps`/`idl_methods`（IDL 分页查询，避免 200KB 上下文爆炸）、`transfer_mil`（转账快捷封装）、`account_summary`（地址全景聚合）、`contract_write_safe`（先模拟再上链）、`error_lookup`（错误码翻译）。
 
 ### 启用方式
 
@@ -419,7 +421,7 @@ milon-api-server/
 │   ├── util.go
 │   └── view_handler.go
 ├── middleware/                   # CORS 和请求日志
-├── mcpserver/                    # MCP 端点（/mcp，57 个工具映射 REST）
+├── mcpserver/                    # MCP 端点（/mcp，64 个工具映射 REST）
 ├── types/                        # 请求、响应和转换辅助类型
 ├── static/                       # Web 调试控制台
 └── gosdk-develop/                # 内置 Milon Go SDK

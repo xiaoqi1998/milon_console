@@ -47,8 +47,8 @@ func TestMcpToolsEndpoint(t *testing.T) {
 	if len(resp.Data) != len(mcpserver.ToolInventory()) {
 		t.Fatalf("端点返回 %d 个 != inventory %d 个", len(resp.Data), len(mcpserver.ToolInventory()))
 	}
-	if len(resp.Data) < 60 {
-		t.Fatalf("工具数=%d, want ≥60", len(resp.Data))
+	if len(resp.Data) < 64 {
+		t.Fatalf("工具数=%d, want ≥64", len(resp.Data))
 	}
 	seen := map[string]bool{}
 	for _, ti := range resp.Data {

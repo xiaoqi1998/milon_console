@@ -36,7 +36,7 @@ type addressArgs struct {
 type faucetClaimArgs struct {
 	PrivateKey    string `json:"privateKey" jsonschema:"领款账户私钥（hex 或 base58）"`
 	Address       string `json:"address" jsonschema:"领款账户地址"`
-	SignatureMode any    `json:"signatureMode" jsonschema:"签名模式对象，如 {\"variant\":0}；公钥模式或签名者列表模式"`
+	SignatureMode any    `json:"signatureMode" jsonschema:"签名模式对象，如 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"} 或 {\"type\":\"multisig\",\"publicKey\":\"..\",\"index\":N}"`
 }
 
 type txParseArgs struct {
@@ -111,7 +111,7 @@ type accessValueArgs struct {
 type signerEntry struct {
 	Address       string `json:"address" jsonschema:"签名者地址"`
 	PrivateKey    string `json:"privateKey,omitempty" jsonschema:"签名者私钥（写交易必填；模拟走模拟签名可省）"`
-	SignatureMode any    `json:"signatureMode" jsonschema:"签名模式对象，如 {\"variant\":0}（公钥模式）或 {\"type\":\"multisig\",\"index\":N}"`
+	SignatureMode any    `json:"signatureMode" jsonschema:"签名模式对象：公钥模式 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"} 或多签 {\"type\":\"multisig\",\"publicKey\":\"..\",\"index\":N}"`
 }
 
 // contractReadArgs 镜像 readContractRequest（handler/contract.go:43，POST /api/read）。
@@ -141,7 +141,7 @@ type contractSimulateArgs struct {
 	Args            map[string]any `json:"args,omitempty"`
 	PaymentMode     string         `json:"paymentMode" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
 	PayerAddress    string         `json:"payerAddress,omitempty"`
-	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"签名模式对象，如 {\"variant\":0}；缺省公钥模式"`
+	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"签名模式对象（如 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"}）；缺省公钥模式"`
 	IxAddress       string         `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
 	IxSignatureMode any            `json:"ixSignatureMode,omitempty"`
 	OwnerAddress    string         `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
@@ -385,7 +385,7 @@ type savedInstructionCreateArgs struct {
 	PaymentMode     string         `json:"paymentMode,omitempty" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored；entry 缺省 unified_payer_all"`
 	PayerAddress    string         `json:"payerAddress,omitempty"`
 	PayerPrivateKey string         `json:"payerPrivateKey,omitempty"`
-	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"签名模式对象，如 {\"variant\":0}"`
+	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"签名模式对象（如 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"}）"`
 	IxAddress       string         `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
 	IxPrivateKey    string         `json:"ixPrivateKey,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户私钥"`
 	IxSignatureMode any            `json:"ixSignatureMode,omitempty"`
@@ -411,7 +411,7 @@ type savedInstructionUpdateArgs struct {
 	PaymentMode     *string        `json:"paymentMode,omitempty" jsonschema:"可选：unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
 	PayerAddress    *string        `json:"payerAddress,omitempty"`
 	PayerPrivateKey *string        `json:"payerPrivateKey,omitempty"`
-	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"可选：签名模式对象，如 {\"variant\":0}"`
+	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"可选：签名模式对象（如 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"}）"`
 	IxAddress       *string        `json:"ixAddress,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户地址"`
 	IxPrivateKey    *string        `json:"ixPrivateKey,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户私钥"`
 	IxSignatureMode any            `json:"ixSignatureMode,omitempty"`
