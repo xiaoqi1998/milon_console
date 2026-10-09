@@ -25,7 +25,7 @@ var SAVED_PAYMENT_MODES = [
 
 async function loadSavedInstructions() {
   try {
-    var resp = await fetch('/api/saved-instructions');
+    var resp = await apiFetch('/api/saved-instructions');
     var data = await resp.json();
     state.savedInstructions = (data && data.data) ? data.data : [];
   } catch (e) {
@@ -148,7 +148,7 @@ function safeJSON(v) {
 async function runSaved(item, mode, ctx) {
   var start = performance.now();
   try {
-    var resp = await fetch('/api/saved-instructions/' + item.id + '/execute?mode=' + encodeURIComponent(mode), { method: 'POST' });
+    var resp = await apiFetch('/api/saved-instructions/' + item.id + '/execute?mode=' + encodeURIComponent(mode), { method: 'POST' });
     var dur = Math.round(performance.now() - start);
     var text = await resp.text();
     var size = new Blob([text]).size;
@@ -240,7 +240,7 @@ async function deleteSaved(item) {
   var ok = await uiConfirm('删除指令「' + (item.name || item.id) + '」？该操作不可恢复。', { danger: true });
   if (!ok) return;
   try {
-    var resp = await fetch('/api/saved-instructions/' + item.id, { method: 'DELETE' });
+    var resp = await apiFetch('/api/saved-instructions/' + item.id, { method: 'DELETE' });
     var data = await resp.json();
     if (data && data.success) {
       showToast('已删除', 'success');
@@ -390,7 +390,7 @@ function openSavedEditor(existing, prefill) {
       }
       try {
         var url = existing ? '/api/saved-instructions/' + existing.id : '/api/saved-instructions';
-        var resp = await fetch(url, {
+        var resp = await apiFetch(url, {
           method: existing ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),

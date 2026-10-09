@@ -1,3 +1,15 @@
+// apiFetch：链上 API 的统一 fetch 封装——携带本地网络偏好（顶栏选择器
+// 所选，存 localStorage['milonNetwork']）为 X-Milon-Network 头；无偏好不带头，
+// 走服务端默认网络。网络管理/健康检查等服务元数据端点不走此封装。
+function apiFetch(url, opt) {
+  opt = opt || {};
+  var net = localStorage.getItem('milonNetwork');
+  if (net) {
+    opt.headers = Object.assign({}, opt.headers, { 'X-Milon-Network': net });
+  }
+  return fetch(url, opt);
+}
+
 const ENDPOINTS = [
   { id: 'net-list', method: 'GET', path: '/api/network/list', summary: '获取网络列表', group: '网络管理' },
   { id: 'net-current', method: 'GET', path: '/api/network/current', summary: '获取当前网络', group: '网络管理' },
@@ -712,7 +724,7 @@ function renderParams(ep) {
     // 模板仍需要公钥但活跃账户只有私钥（如手动导入未填公钥）时，异步派生公钥并回填
     if (activeAcc && activeAcc.privateKey && !activeAcc.publicKey && bodyTpl.indexOf('base58公钥') !== -1) {
       (function (acc, textarea) {
-        fetch('/api/util/key/derive-public', {
+        apiFetch('/api/util/key/derive-public', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ privateKey: acc.privateKey.replace(/\s/g, ''), keyType: 'secp256k1' })
@@ -823,7 +835,7 @@ async function sendRequest() {
       opt.headers['Content-Type'] = 'application/json';
       opt.body = req.body;
     }
-    var resp = await fetch(req.url, opt);
+    var resp = await apiFetch(req.url, opt);
     var duration = Math.round(performance.now() - start);
     var text = await resp.text();
     var size = new Blob([text]).size;
@@ -868,7 +880,7 @@ async function pollBulkTransfer(jobId) {
     await sleep(2000);
     var resp, data;
     try {
-      resp = await fetch(pollReq.url);
+      resp = await apiFetch(pollReq.url);
       var text = await resp.text();
       try { data = JSON.parse(text); } catch (e) { data = text; }
     } catch (err) {
@@ -1436,10 +1448,19 @@ async function loadNetworks() {
       sel.innerHTML = '<option value="">（无网络）</option>';
       return;
     }
+    var names = [];
     list.forEach(function (n) {
       var name = typeof n === 'string' ? n : n.name || n.network || n.id || JSON.stringify(n);
+      names.push(name);
       sel.appendChild(el('option', { value: name, text: name }));
     });
+    // 本地网络偏好优先：localStorage['milonNetwork'] 有值且在列表中 → 选中它，
+    // 后续链上请求经 apiFetch 携带该偏好；否则沿用「服务器默认」回显。
+    var pref = localStorage.getItem('milonNetwork');
+    if (pref && names.indexOf(pref) !== -1) {
+      sel.value = pref;
+      return;
+    }
     try {
       var cur = await fetch('/api/network/current');
       var cd = await cur.json();
@@ -1465,20 +1486,8 @@ async function loadNetworks() {
 
 async function switchNetwork(name) {
   if (!name) return;
-  try {
-    var resp = await fetch('/api/network/switch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ network: name }),
-    });
-    if (resp.ok) showToast('已切换到 ' + name, 'success');
-    else {
-      var t = await resp.text();
-      showToast('切换失败: ' + (resp.status + ' ' + t).slice(0, 80), 'error');
-    }
-  } catch (err) {
-    showToast('切换失败: ' + (err.message || err), 'error');
-  }
+  localStorage.setItem('milonNetwork', name);
+  showToast('本地网络偏好已设为 ' + name + '（后续请求携带 X-Milon-Network 头）', 'success');
 }
 
 async function checkHealth() {
@@ -1832,7 +1841,7 @@ function renderAccountModal() {
   genBtn.addEventListener('click', function () {
     genBtn.disabled = true;
     genBtn.textContent = '生成中...';
-    fetch('/api/accounts/generate', {
+    apiFetch('/api/accounts/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ keyType: 'secp256k1' })
@@ -2355,7 +2364,7 @@ async function replayCollection(col) {
     }
     var start = performance.now();
     try {
-      var resp = await fetch(req.url, opt);
+      var resp = await apiFetch(req.url, opt);
       var duration = Math.round(performance.now() - start);
       var text = await resp.text();
       var size = new Blob([text]).size;
@@ -4306,7 +4315,7 @@ async function loadIDLMetadata() {
   tree.innerHTML = '';
   tree.appendChild(el('div', { class: 'empty-state small', text: '加载 IDL 元数据中...' }));
   try {
-    var resp = await fetch('/api/idl/metadata');
+    var resp = await apiFetch('/api/idl/metadata');
     var data = await resp.json();
     var apps = data && data.data ? data.data : [];
     state.idlMetadata = apps;
@@ -5283,7 +5292,7 @@ function idlAccountPublicKey(acc) {
   if (!acc.privateKey) return Promise.resolve('');
   var cacheKey = acc.address || acc.privateKey;
   if (idlPkDeriveCache[cacheKey]) return idlPkDeriveCache[cacheKey];
-  var p = fetch('/api/util/key/derive-public', {
+  var p = apiFetch('/api/util/key/derive-public', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ privateKey: acc.privateKey.replace(/\s/g, ''), keyType: 'secp256k1' })
@@ -5307,7 +5316,7 @@ function idlProbeSigMode(addr, pk) {
   var cacheKey = a + '|' + k;
   var cached = idlSigModeCache[cacheKey];
   if (cached && (Date.now() - cached.ts) < IDL_SIG_MODE_TTL) return Promise.resolve(cached.mode);
-  return fetch('/api/accounts/' + encodeURIComponent(a))
+  return apiFetch('/api/accounts/' + encodeURIComponent(a))
     .then(function (r) { return r.json(); })
     .then(function (resp) {
       var d = resp && resp.data;
@@ -5774,7 +5783,7 @@ async function sendIDLRequest() {
   var start = performance.now();
   try {
     var opt = { method: req.method, headers: { 'Content-Type': 'application/json' }, body: req.body };
-    var resp = await fetch(req.url, opt);
+    var resp = await apiFetch(req.url, opt);
     var duration = Math.round(performance.now() - start);
     var text = await resp.text();
     var size = new Blob([text]).size;
