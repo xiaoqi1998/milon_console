@@ -15,6 +15,7 @@
 3. `network_switch` **保留**，语义改为「设置服务端默认网络」——只影响未携带网络头的请求，现有脚本/调用方零破坏。
 4. MCP 侧每个工具获得可选 `network` 参数（schema 层面），executor 回环时转为请求头。
 5. 前端顶栏选择器改为本地偏好（localStorage），不再调用 `network_switch`。
+6. （勘误）MCP 网络选择最终落在 /mcp 请求头 X-Milon-Network 而非工具参数——networkScoped 泛型嵌入被 Go 语言禁止，见组件设计第 4 节勘误。
 
 ## 目标
 
@@ -78,20 +79,21 @@ func ClientFrom(c *gin.Context) *milon.Client                    // handler 侧�
 
 35 处 `mc, _ := h.nm.GetCurrent()` → `mc := middleware.ClientFrom(c)`。个别需要网络名的（如日志/回显）用 `middleware.NetworkNameFrom(c)`。`handler/network.go` 的 `GetCurrentNetwork` 改为展示**默认网络**（数据源 `nm.GetCurrent()` 不变，仅文案与文档更新）。
 
-### 4. MCP 层（`mcpserver/tools.go` + `executor.go`）
+### 4. MCP 层（`mcpserver/tools.go` + `executor.go`）——已勘误
 
-- `registerTool[In any]` 的 AddTool 输入类型包一层：
+> 勘误（2026-10-09 实施时）：原设计的 networkScoped[In] 泛型嵌入被 Go 语言禁止
+> （embedded field type cannot be a type parameter；具名字段变体会把 57 个工具的
+> 参数嵌套进子对象、破坏契约）。改采请求头方案：MCP 客户端对 POST /mcp 携带
+> X-Milon-Network 头，NewMCPHandler 包装层注入 request context，executor 回环
+> REST 时透传该头。57 个工具 schema 零变化；network_switch 无字段冲突。
 
-```go
-type networkScoped[In any] struct {
-    Network string `json:"network,omitempty" jsonschema:"可选：目标网络（devNet/localNet…），缺省用服务端默认网络"`
-    In                                  // 嵌入，schema 字段被 inline 展开（前提见风险）
-}
-```
-
-- 工具回调内：args 整体 marshal → unmarshal 成 `map[string]any` 抽出 `network` 键 → 余下重新 marshal 为原 argsJSON → `executor.Call` 签名增加 `network string`，回环 HTTP 请求带 `X-Milon-Network` 头。
-- `network_switch` 工具的 jsonschema 描述同步改为「设置服务端默认网络（仅影响未携带 network 的请求）」。
-- 工具清单导出（`ToolInventory`）不受影响：name/desc/REST 映射不变。
+- `NewMCPHandler` 在 StreamableHTTPHandler 外包 withNetwork 层：头非空则
+  `r.WithContext(context.WithValue(...))` 注入，再交鉴权/内部 handler。
+- `Executor.Call` 构造回环请求后、Do 前：`networkFromCtx(ctx)` 非空则设
+  X-Milon-Network 头（ctx 经 go-sdk 从 HTTP request context 传播，已测试验证）。
+- `network_switch` 工具描述改为「设置服务端默认网络（仅影响未携带
+  X-Milon-Network 头的请求）」，端点行为不变。
+- 工具清单导出（ToolInventory）不受影响。
 
 ### 5. 前端（`static/js/app.js` + `saved-instructions.js`）
 

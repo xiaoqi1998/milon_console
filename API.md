@@ -25,6 +25,20 @@ Milon API Server 将 Milon Go SDK 封装为一组 RESTful HTTP 接口，提供�
 
 ## 通用说明
 
+### 网络选择（请求级）
+
+除服务端默认网络外，任何链上端点都可通过请求头指定本次请求的网络：
+
+```bash
+curl -H 'X-Milon-Network: devNet' http://localhost:8080/api/chain-head
+```
+
+- 头缺失：走**服务端默认网络**（启动配置，或 `POST /api/network/switch` 最近所设）——与历史行为一致。
+- 头为已知网络名（`localNet` / `devNet`，未来 `mainNet`）：该次请求路由到对应网络，client 按网缓存复用。
+- 头为未知网络名：返回 400（`ERR_INVALID_PARAMETER`），message 指明未知名。
+- 多用户共享同一 server 时各带各的头，互不影响；`network_switch` 只改默认网络，不再影响显式指定网络的请求。
+- MCP 侧等价能力：对 /mcp 请求携带 X-Milon-Network 头（客户端在 mcpServers 配置的 headers 中设置），效果与 REST 相同。
+
 ### 统一响应格式
 
 所有接口均返回统一的 JSON 结构，包含以下字段：
@@ -338,7 +352,7 @@ curl http://localhost:8080/api/network/current
 
 - **方法**: `POST`
 - **路径**: `/api/network/switch`
-- **说明**: 切换当前激活的网络。支持 `devNet`、`localNet`。
+- **说明**: 切换当前激活的网络。支持 `devNet`、`localNet`。方案 A 后语义为设置服务端默认网络——仅影响未携带 `X-Milon-Network` 头的请求。
 
 **请求参数**
 
@@ -2560,6 +2574,7 @@ curl http://localhost:8080/api/tool/did/QffKfGk3Jnp4k4qHJtbA8fwrW8E/document
 - **超时**: 回环请求超时 120s；`vc_flow`（约 20 张凭证同步签发披露）在 devNet 上可能超时，`bulk_transfer` 为异步 jobId 轮询不受影响
 - **排除**: `mock`（前端调试辅助）与 `health` / `chain-head`（运维探活）4 个端点不映射
 - **工具清单**: `GET /api/mcp/tools` 返回全部工具的名称/描述/分组/REST 映射（与注册表同源），供程序化发现与前端展示
+- **网络选择**: 请求携带 X-Milon-Network 头即按该网络执行全部工具回环（缺省走服务端默认网络），与 REST 同构
 
 ### 客户端配置
 

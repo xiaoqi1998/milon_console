@@ -281,7 +281,7 @@ curl http://localhost:8080/api/idl/metadata
 
 ## MCP
 
-服务在同一端口内置 MCP（Model Context Protocol）端点 `/mcp`，把 REST 能力全量映射为 **57 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接以自然语言驱动链上操作。工具与 REST 端点一一对应，行为完全一致，完整对照表见 [API.md](API.md) 的「MCP 端点」章节；也可经 `GET /api/mcp/tools` 程序化获取工具清单（含名称/描述/分组/REST 映射，与注册表同源），或直接在 Web 控制台的「MCP 接入」页查看配置方法与可搜索的工具总览。
+服务在同一端口内置 MCP（Model Context Protocol）端点 `/mcp`，把 REST 能力全量映射为 **57 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接以自然语言驱动链上操作。工具与 REST 端点一一对应，行为完全一致，完整对照表见 [API.md](API.md) 的「MCP 端点」章节；也可经 `GET /api/mcp/tools` 程序化获取工具清单（含名称/描述/分组/REST 映射，与注册表同源），或直接在 Web 控制台的「MCP 接入」页查看配置方法与可搜索的工具总览。全部工具调用随 /mcp 请求的 X-Milon-Network 头选择网络（缺省走服务端默认网络），多用户各带各的头互不干扰；REST 侧为同名请求头。
 
 ### 启用方式
 
@@ -299,6 +299,19 @@ ZCode / Claude 通用配置片段（加入 `mcpServers` 配置后重连即可）
 {
   "mcpServers": {
     "milon": { "url": "http://127.0.0.1:8080/mcp" }
+  }
+}
+```
+
+需要按请求指定网络时，在同一 `headers` 中携带 `X-Milon-Network`（与下方鉴权头的用法同款；缺省走服务端默认网络）：
+
+```json
+{
+  "mcpServers": {
+    "milon": {
+      "url": "http://127.0.0.1:8080/mcp",
+      "headers": { "X-Milon-Network": "devNet" }
+    }
   }
 }
 ```
