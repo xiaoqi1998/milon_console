@@ -18,7 +18,10 @@ FN_DSA512_SIGN_KEY_LEN = 1281
 FN_DSA512_VRFY_KEY_LEN = 897
 FN_DSA512_SIG_LEN = 666
 
-# 定长 bytes 类型（Go: [N]byte 数组类型）。Python 侧以 bytes + 构造校验表达。
+# 定长 bytes 类型（Go: [N]byte 数组类型别名；构造校验由 new_*_from_bytes 提供）
+SecretKeyBytesFnDsa512 = bytes
+PublicKeyBytesFnDsa512 = bytes
+SignatureBytesFnDsa512 = bytes
 
 
 def keygen_512() -> tuple[bytes, bytes]:

@@ -69,6 +69,9 @@ from .address import (
 )
 from .fn_dsa512 import (
     FN_DSA512_SIG_LEN,
+    PublicKeyBytesFnDsa512,
+    SecretKeyBytesFnDsa512,
+    SignatureBytesFnDsa512,
     FN_DSA512_SIGN_KEY_LEN,
     FN_DSA512_VRFY_KEY_LEN,
     LOG_N,
@@ -139,6 +142,9 @@ __all__ = [
     "FN_DSA512_SIGN_KEY_LEN",
     "FN_DSA512_VRFY_KEY_LEN",
     "FN_DSA512_SIG_LEN",
+    "PublicKeyBytesFnDsa512",
+    "SecretKeyBytesFnDsa512",
+    "SignatureBytesFnDsa512",
     "keygen_512",
     "new_sign_key_512_from_bytes",
     "new_vrfy_key_512_from_bytes",

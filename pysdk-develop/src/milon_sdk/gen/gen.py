@@ -122,16 +122,37 @@ class GenApp:
         return inst
 
 
-# ---- 内置 app 对象（对齐 Go gen.Token / gen.Account / ... 包级变量）----
+# ---- 内置 app 对象（对齐 Go gen 包级变量：11 个 app 全量）----
 
-_TOKEN = GenApp("token")
-_ACCOUNT = GenApp("account")
+_APPS = {
+    "system": GenApp("system"),
+    "account": GenApp("account"),
+    "token": GenApp("token"),
+    "staking": GenApp("staking"),
+    "identity": GenApp("identity"),
+    "sftoken": GenApp("sftoken"),
+    "dex": GenApp("dex"),
+    "keyless": GenApp("keyless"),
+    "lucky_box": GenApp("lucky_box"),
+    "social": GenApp("social"),
+    "demo": GenApp("demo"),
+}
 
-TOKEN = _TOKEN
-ACCOUNT = _ACCOUNT
+# 模块级变量（UPPER_SNAKE；Go 侧为 PascalCase 包级变量）
+SYSTEM = _APPS["system"]
+ACCOUNT = _APPS["account"]
+TOKEN = _APPS["token"]
+STAKING = _APPS["staking"]
+IDENTITY = _APPS["identity"]
+SFTOKEN = _APPS["sftoken"]
+DEX = _APPS["dex"]
+KEYLESS = _APPS["keyless"]
+LUCKY_BOX = _APPS["lucky_box"]
+SOCIAL = _APPS["social"]
+DEMO = _APPS["demo"]
 
-register_app("token", lambda pd: _TOKEN.rebind(pd))
-register_app("account", lambda pd: _ACCOUNT.rebind(pd))
+for _name, _app in _APPS.items():
+    register_app(_name, _app.rebind)
 
 
 def _load_default_idls() -> Dict[str, IDL]:
@@ -145,11 +166,9 @@ def default_idls() -> Dict[str, IDL]:
 
 def get_app(app_name: str) -> GenApp:
     name = app_name.lower()
-    if name == "token":
-        return _TOKEN
-    if name == "account":
-        return _ACCOUNT
-    raise ValueError(f"unknown gen app: {app_name}")
+    if name not in _APPS:
+        raise ValueError(f"unknown gen app: {app_name}")
+    return _APPS[name]
 
 
 class TokenMetadata(dict):

@@ -4,9 +4,19 @@ from .network import DEV_NET, LOCAL_NET, Network
 from .client import (
     Client,
     ClientOption,
+    RequestOption,
+    WaitOption,
+    apply_request_options,
+    apply_wait_options,
     new_client,
     with_client_poll_period,
     with_client_poll_timeout,
+    with_context,
+    with_request_id,
+    with_wait_context,
+    with_wait_poll_period,
+    with_wait_poll_timeout,
+    with_wait_request_id,
 )
 from .resolve_resource_paths import resolve_resource_paths
 from . import api, crypto, gen, lib, postcard, provider, types
@@ -28,6 +38,21 @@ from .crypto import (
     new_public_key_from_bytes,
     new_signature_from_bytes,
 )
-from .lib import Transaction, new_transaction_builder
+from .lib import Transaction, TransactionSignatures as TxHistorySignature, new_transaction_builder
+from .rpc_client_v1 import (
+    BatchGetResourcePathByHashResult,
+    ChainHeadResult,
+    EventsByTxHashResult,
+    GetAccessValueResult,
+    GetAccountResult,
+    GetBlockByHeightResult,
+    GetResourcePathByHashResult,
+    GetResourceResult,
+    GetTxByHashResult,
+    GetTxHistoryProofResult,
+    RpcClientV1 as RpcClientImpl,
+    SimulateTxResult,
+    ViewResult,
+)
 
 __all__ = [n for n in dir() if not n.startswith("_")]

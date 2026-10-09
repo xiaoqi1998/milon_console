@@ -17,6 +17,7 @@ from .base import (
     TxId,
     TxProofIdentifier,
     TypeTagWithData,
+    TypeTagWithDataResolver,
     deserialize_access_record,
     deserialize_access_record_no_len,
     deserialize_event_entry,

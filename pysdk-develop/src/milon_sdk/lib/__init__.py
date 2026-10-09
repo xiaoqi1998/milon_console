@@ -33,6 +33,20 @@ from .rpc_response import (
 )
 from .transaction import Transaction, TransactionSignatures
 from .chain_id import GetChainId, get_chain_id, set_chain_id
+
+# Go 类型别名（值类型；Python 侧以 int 表达）
+from typing import Any, Callable, Dict, List, Optional, Union
+
+RequestID = int
+TransactionStamp = int
+RpcResponseStatus = int
+RpcResponseStatusOk = 0
+RpcResponseStatusInvalid = 1
+RpcResponseStatusNotFound = 2
+RpcResponseStatusDisabled = 3
+RpcResponseStatusUnavailable = 4
+RpcResponseStatusInternal = 5
+RpcResponseStatusFailed = 6
 from .account_signature import (
     AUTH_PAYER_BIT,
     AUTH_RESERVED_BIT,

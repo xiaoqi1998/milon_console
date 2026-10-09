@@ -313,26 +313,34 @@ class RpcClientV1:
         return out
 
     def account_signer_bit(self, account: Address) -> Bitmap64:
-        list_signers, err = None, None
         try:
             list_signers = self.list_account_signers(account)
         except ValueError as exc:
-            err = exc
-        if err is not None:
-            raise ValueError(f"failed to get account list signers: {err}") from err
+            raise ValueError(f"failed to get account list signers: {exc}") from exc
 
-        threshold = list_signers[1]
-        if not isinstance(threshold, int):
-            threshold = int(threshold)
-        if threshold <= 0:
-            return Bitmap64(0)
+        if not list_signers or not isinstance(list_signers[0], dict):
+            raise ValueError(f"unexpected account data: {list_signers[0] if list_signers else None}")
+        account_map = list_signers[0]
+        signers = list_signers[1] if len(list_signers) > 1 else None
+        if not isinstance(signers, list):
+            raise ValueError(f"unexpected signers list: {signers}")
+        if len(signers) != 1:
+            raise ValueError(
+                f"account {account} has {len(signers)} signers; "
+                f"AccountSignerBit supports single-signer accounts only"
+            )
 
-        # signers list（跳过 prefix 项，结构与 Go 一致：out[0]=count 语义）
-        signers = list_signers[2:] if len(list_signers) > 2 else []
-        bit = 0
-        for s in signers:
-            bit |= 1 << (int(s) if isinstance(s, int) else 0)
-        return Bitmap64(bit)
+        bm = account_map.get("bitmap")
+        if not isinstance(bm, int) or bm == 0:
+            raise ValueError(f"unexpected account bitmap: {account_map.get('bitmap')}")
+        # A single-signer account's bitmap has exactly one bit set.
+        lowest = bm & -bm
+        if bm != lowest:
+            raise ValueError(
+                f"account {account} bitmap {bm:#x} has multiple signer slots; "
+                f"use multisig signing instead"
+            )
+        return Bitmap64(lowest)
 
     def token_metadata(self, token: Address):
         wire = gen.TOKEN.METADATA.args(token=token).encode()
