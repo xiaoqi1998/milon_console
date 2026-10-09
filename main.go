@@ -24,9 +24,10 @@ func main() {
 	r.Use(middleware.LoggerMiddleware(cfg.EnableBodyLog))
 	r.Use(middleware.SetupCORS(cfg.AllowedOrigins))
 
-	// Static files
-	r.Static("/static", "./static")
-	r.GET("/", func(c *gin.Context) {
+	// Static files（no-cache：每次改动后浏览器重新校验，防跨部署跑旧 JS）
+	staticGroup := r.Group("/static", middleware.NoCache())
+	staticGroup.Static("/", "./static")
+	r.GET("/", middleware.NoCache(), func(c *gin.Context) {
 		c.File("./static/index.html")
 	})
 
