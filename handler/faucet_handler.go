@@ -29,10 +29,13 @@ func NewFaucetHandler(nm *client.NetworkManager) *FaucetHandler {
 }
 
 // claimFaucetRequest is the request body for POST /api/faucet/claim.
+// 宽容化（2026-10 AI 易用性）：signatureMode 缺省时从 privateKey 自动派生
+// （keyType 声明曲线，缺省 secp256k1）。
 type claimFaucetRequest struct {
 	PrivateKey    string          `json:"privateKey" binding:"required"`
 	Address       string          `json:"address" binding:"required"`
-	SignatureMode json.RawMessage `json:"signatureMode" binding:"required"`
+	SignatureMode json.RawMessage `json:"signatureMode"`
+	KeyType       string          `json:"keyType,omitempty"`
 }
 
 // ClaimFaucet handles POST /api/faucet/claim
@@ -59,11 +62,22 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 		return
 	}
 
-	mode, err := types.ParseSignatureModeFromJSON(req.SignatureMode)
-	if err != nil {
-		logParamError(c, "ClaimFaucet", err)
-		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid signatureMode: "+err.Error(), nil))
-		return
+	var mode lib.AccountSignatureMode
+	if len(req.SignatureMode) == 0 {
+		pk, derr := derivePublicKeyByType(sk, keyTypeOrDefault(req.KeyType))
+		if derr != nil {
+			logParamError(c, "ClaimFaucet", derr)
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "signatureMode 缺省且无法从 privateKey 派生："+derr.Error(), nil))
+			return
+		}
+		mode = lib.PubKeySignatureMode{PublicKey: *pk}
+	} else {
+		mode, err = types.ParseSignatureModeFromJSON(req.SignatureMode)
+		if err != nil {
+			logParamError(c, "ClaimFaucet", err)
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid signatureMode: "+err.Error(), nil))
+			return
+		}
 	}
 
 	mc := middleware.ClientFrom(c)

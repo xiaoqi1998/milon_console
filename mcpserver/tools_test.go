@@ -632,7 +632,9 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"account_info":      {"address"},
 		"account_resources": {"address"},
 		"account_summary":   {"address"},
-		"faucet_claim":      {"privateKey", "address", "signatureMode"},
+		// faucet_handler.go：privateKey/address binding required；signatureMode
+		// 已宽容化——缺省从 privateKey 自动派生（2026-10 AI 易用性修复），不再必填
+		"faucet_claim":      {"address", "privateKey"},
 		"faucet_balance":    {"address"},
 		"idl_apps":          {},
 		"idl_methods":       {"appName"},

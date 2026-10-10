@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"encoding/hex"
@@ -178,6 +178,9 @@ type simulateContractRequest struct {
 	// Fields for multi_signer mode (optional)
 	Signers  []types.SignerEntry `json:"signers"`
 	GasPayer *types.SignerEntry  `json:"gasPayer"`
+	// KeyType 声明各私钥的曲线（secp256k1 缺省/ed25519/bls12381/fndsa512），
+	// 仅在地址/签名模式缺省、需从私钥自动派生时使用（2026-10 AI 易用性）。
+	KeyType string `json:"keyType,omitempty"`
 }
 
 // SimulateContract handles POST /api/simulate
@@ -238,17 +241,17 @@ type rawAccountSignatureEntry struct {
 
 // rawTransactionSignatureEntry is the JSON-friendly view of a TransactionSignatures.
 type rawTransactionSignatureEntry struct {
-	Address          string                    `json:"address"` // 0x-prefixed address
+	Address          string                   `json:"address"` // 0x-prefixed address
 	AccountSignature rawAccountSignatureEntry `json:"accountSignature"`
 }
 
 // rawTransaction is the JSON-friendly view of a Transaction.
 type rawTransaction struct {
-	Stamp        int64                       `json:"stamp"`        // unix milliseconds
-	Payer        string                      `json:"payer"`        // 0x-prefixed address, empty if nil
-	Instructions []string                   `json:"instructions"` // list of hex-encoded postcard bytes
+	Stamp        int64                          `json:"stamp"`        // unix milliseconds
+	Payer        string                         `json:"payer"`        // 0x-prefixed address, empty if nil
+	Instructions []string                       `json:"instructions"` // list of hex-encoded postcard bytes
 	TxSigs       []rawTransactionSignatureEntry `json:"txSigs"`
-	TxHash       string                      `json:"txHash"` // hex-encoded tx hash
+	TxHash       string                         `json:"txHash"` // hex-encoded tx hash
 }
 
 // serializeTx converts a Transaction to a JSON-friendly map for inspection.
@@ -359,7 +362,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 
 	switch req.PaymentMode {
 	case PaymentModeUnifiedPayerAll:
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -376,11 +379,11 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		return simulateAndReturn(mc, tx, requestId)
 
 	case PaymentModeUnifiedDualSign:
-		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
-		ixAddr, ixMode, err := h.parsePayerAndMode(mc, req.IxAddress, req.IxSignatureMode)
+		ixAddr, ixMode, err := h.parsePayerAndMode(mc, req.IxAddress, req.IxSignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, fmt.Errorf("invalid ix fields: %w", err)
 		}
@@ -398,7 +401,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		return simulateAndReturn(mc, tx, requestId)
 
 	case PaymentModeUnifiedPayerOnlyGas:
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -419,7 +422,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if ownerAddrStr == "" {
 			ownerAddrStr = req.PayerAddress
 		}
-		ownerAddr, mode, err := h.parsePayerAndMode(mc, ownerAddrStr, req.SignatureMode)
+		ownerAddr, mode, err := h.parsePayerAndMode(mc, ownerAddrStr, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -447,7 +450,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		var gasPayerAddr *crypto.Address
 		var gasPayerMode lib.AccountSignatureMode
 		if req.GasPayer != nil {
-			addr, mode, err := h.parsePayerAndMode(mc, req.GasPayer.Address, req.GasPayer.SignatureMode)
+			addr, mode, err := h.parsePayerAndMode(mc, req.GasPayer.Address, req.GasPayer.SignatureMode, nil, req.GasPayer.KeyType)
 			if err != nil {
 				return nil, nil, fmt.Errorf("invalid gasPayer: %w", err)
 			}
@@ -466,7 +469,7 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 		if req.PayerAddress == "" {
 			return nil, nil, fmt.Errorf("payer is required for sponsored mode")
 		}
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -486,23 +489,137 @@ func (h *ContractHandler) dispatchSimulate(mc *milon.Client, req *simulateContra
 // parsePayerAndMode parses address + signatureMode JSON into the SDK types.
 // 解析后会按账户链上状态自动修正签名模式（见 normalizeSignatureModeForAccount）。
 // mc 来自请求级网络（middleware.ClientFrom），由 dispatch* 调用方传入。
-func (h *ContractHandler) parsePayerAndMode(mc *milon.Client, addrStr string, sigModeRaw json.RawMessage) (crypto.Address, lib.AccountSignatureMode, error) {
-	if addrStr == "" {
-		return crypto.Address{}, nil, fmt.Errorf("address is required")
-	}
-	addr, err := types.ParseAddress(addrStr)
+//
+// 宽容化（2026-10 AI 易用性）：sk 为该账户对应的私钥（无私钥场景如 simulate 传 nil）、
+// keyType 为其曲线声明（空串缺省 secp256k1）。缺省补齐规则：
+//   - 地址未传：从显式 signatureMode.publicKey 或私钥派生；
+//   - signatureMode 未传或缺 publicKey：从私钥派生公钥模式（fndsa512 无法派生，
+//     明确指引显式传公钥）；无私钥时账户已上链且唯一签名者 → 缺省签名者列表模式，
+//     否则返回附示例的可自纠错误。
+func (h *ContractHandler) parsePayerAndMode(mc *milon.Client, addrStr string, sigModeRaw json.RawMessage, sk crypto.SecretKeyer, keyType string) (crypto.Address, lib.AccountSignatureMode, error) {
+	modeType, pkBase58, msIndex, err := types.ParseSignatureModeParts(sigModeRaw)
 	if err != nil {
-		return crypto.Address{}, nil, fmt.Errorf("invalid address: %w", err)
+		return crypto.Address{}, nil, err
 	}
-	mode, err := types.ParseSignatureModeFromJSON(sigModeRaw)
-	if err != nil {
-		return crypto.Address{}, nil, fmt.Errorf("invalid signatureMode: %w", err)
+	var explicitPK *crypto.PublicKey
+	if pkBase58 != "" {
+		explicitPK, err = types.ParsePublicKey(pkBase58)
+		if err != nil {
+			return crypto.Address{}, nil, fmt.Errorf("invalid signatureMode.publicKey: %w", err)
+		}
 	}
+
+	// 地址：显式 > 公钥派生 > 私钥派生
+	var addr crypto.Address
+	if addrStr != "" {
+		addr, err = types.ParseAddress(addrStr)
+		if err != nil {
+			return crypto.Address{}, nil, fmt.Errorf("invalid address: %w", err)
+		}
+	} else {
+		switch {
+		case explicitPK != nil:
+			derived, derr := crypto.NewAddressFromPublicKey(explicitPK)
+			if derr != nil {
+				return crypto.Address{}, nil, fmt.Errorf("从 signatureMode.publicKey 派生地址失败: %w", derr)
+			}
+			addr = *derived
+		case sk != nil:
+			pk, derr := derivePublicKeyByType(sk, keyTypeOrDefault(keyType))
+			if derr != nil {
+				return crypto.Address{}, nil, fmt.Errorf("地址缺省且无法从私钥派生（%w）；请显式传地址（如 payerAddress）或 signatureMode.publicKey", derr)
+			}
+			derived, derr := crypto.NewAddressFromPublicKey(pk)
+			if derr != nil {
+				return crypto.Address{}, nil, fmt.Errorf("从私钥公钥派生地址失败: %w", derr)
+			}
+			addr = *derived
+		default:
+			return crypto.Address{}, nil, fmt.Errorf("address is required: 请传地址（如 payerAddress），或提供对应私钥（如 payerPrivateKey）由服务端自动派生")
+		}
+	}
+
+	// 模式：显式 > 私钥派生 > 链上签名者列表（无私钥场景）
+	var mode lib.AccountSignatureMode
+	switch {
+	case modeType == "":
+		if sk != nil {
+			pk := explicitPK
+			if pk == nil {
+				pk, err = derivePublicKeyByType(sk, keyTypeOrDefault(keyType))
+				if err != nil {
+					return crypto.Address{}, nil, fmt.Errorf("signatureMode 缺省且无法从私钥派生（%w）；请显式传 signatureMode.publicKey", err)
+				}
+			}
+			mode = lib.PubKeySignatureMode{PublicKey: *pk}
+		} else {
+			keys, onchain := listOnchainSigners(mc, addr)
+			if !onchain {
+				return crypto.Address{}, nil, fmt.Errorf(
+					"signatureMode is required: 账户 %s 未上链（或查询失败），无私钥可自动派生；请传 signatureMode，如 {\"type\":\"pubkey\",\"publicKey\":\"<base58公钥>\"}", addr)
+			}
+			mode, err = defaultSignersModeFor(addr, keys)
+			if err != nil {
+				return crypto.Address{}, nil, err
+			}
+		}
+	case modeType == "pubkey":
+		pk := explicitPK
+		if pk == nil {
+			if sk == nil {
+				return crypto.Address{}, nil, fmt.Errorf(
+					"signatureMode.publicKey is required: pubkey 模式必须携带公钥（无私钥可派生），如 {\"type\":\"pubkey\",\"publicKey\":\"<base58公钥>\"}")
+			}
+			pk, err = derivePublicKeyByType(sk, keyTypeOrDefault(keyType))
+			if err != nil {
+				return crypto.Address{}, nil, fmt.Errorf("signatureMode.publicKey 缺省且无法从私钥派生（%w）", err)
+			}
+		}
+		mode = lib.PubKeySignatureMode{PublicKey: *pk}
+	default: // "multisig"（ParseSignatureModeParts 已保证）
+		msMode := lib.MultisigKeySignatureMode{Index: uint8(*msIndex)}
+		if explicitPK != nil {
+			msMode.PublicKey = *explicitPK
+		} else if sk != nil {
+			if pk, derr := derivePublicKeyByType(sk, keyTypeOrDefault(keyType)); derr == nil {
+				msMode.PublicKey = *pk
+			}
+		}
+		mode = msMode
+	}
+
 	mode, err = normalizeSignatureModeForAccount(mc, addr, mode)
 	if err != nil {
 		return crypto.Address{}, nil, err
 	}
 	return addr, mode, nil
+}
+
+// keyTypeOrDefault 归一曲线名：空串缺省 secp256k1（全服务端约定：32 字节
+// 经典私钥的曲线由调用方声明，无法从字节本身区分）。
+func keyTypeOrDefault(keyType string) string {
+	if keyType == "" {
+		return "secp256k1"
+	}
+	return keyType
+}
+
+// defaultSignersModeFor 从链上签名者列表推导缺省签名模式（无私钥的 simulate 场景）：
+// 唯一签名者 → 签名者列表模式 index 0；多签名者 → 要求显式指定（列出可选 index）。
+func defaultSignersModeFor(addr crypto.Address, keys []string) (lib.AccountSignatureMode, error) {
+	switch {
+	case len(keys) == 1:
+		pk, err := crypto.NewPublicKeyFromStringRelaxed(keys[0])
+		if err != nil {
+			return nil, fmt.Errorf("账户 %s 的链上签名者公钥解析失败: %w", addr, err)
+		}
+		return lib.MultisigKeySignatureMode{Index: 0, PublicKey: *pk}, nil
+	case len(keys) > 1:
+		return nil, fmt.Errorf(
+			"signatureMode is required: 账户 %s 有 %d 个链上签名者 %v，多签账户请显式传 {\"type\":\"multisig\",\"index\":N,\"publicKey\":\"<base58公钥>\"}", addr, len(keys), keys)
+	default:
+		return nil, fmt.Errorf("signatureMode is required: 账户 %s 无可用的链上签名者，请传 signatureMode 如 {\"type\":\"pubkey\",\"publicKey\":\"<base58公钥>\"}", addr)
+	}
 }
 
 // ==================== 签名模式自动修正（链端错误 285 PubkeyModeForbidden） ====================
@@ -805,6 +922,9 @@ type writeContractRequest struct {
 	// Fields for multi_signer mode (optional)
 	Signers  []types.SignerEntry `json:"signers"`
 	GasPayer *types.SignerEntry  `json:"gasPayer"`
+	// KeyType 声明各私钥的曲线（secp256k1 缺省/ed25519/bls12381/fndsa512），
+	// 仅在地址/签名模式缺省、需从私钥自动派生时使用（2026-10 AI 易用性）。
+	KeyType string `json:"keyType,omitempty"`
 }
 
 // WriteContract handles POST /api/write
@@ -942,7 +1062,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
 		}
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}
@@ -966,7 +1086,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
 		}
-		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}
@@ -974,7 +1094,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid ixPrivateKey: %w", err)
 		}
-		ixAddr, ixMode, err := h.parsePayerAndMode(mc, req.IxAddress, req.IxSignatureMode)
+		ixAddr, ixMode, err := h.parsePayerAndMode(mc, req.IxAddress, req.IxSignatureMode, ixSk, req.KeyType)
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid ix fields: %w", err)
 		}
@@ -999,7 +1119,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
 		}
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}
@@ -1031,7 +1151,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		if ownerAddrStr == "" {
 			ownerAddrStr = req.PayerAddress
 		}
-		ownerAddr, mode, err := h.parsePayerAndMode(mc, ownerAddrStr, req.SignatureMode)
+		ownerAddr, mode, err := h.parsePayerAndMode(mc, ownerAddrStr, req.SignatureMode, ownerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}
@@ -1063,16 +1183,16 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		var gasPayerSk crypto.SecretKeyer
 		var gasPayerMode lib.AccountSignatureMode
 		if req.GasPayer != nil {
-			addr, mode, err := h.parsePayerAndMode(mc, req.GasPayer.Address, req.GasPayer.SignatureMode)
-			if err != nil {
-				return "", nil, fmt.Errorf("invalid gasPayer: %w", err)
-			}
-			sk, err := types.ParseSecretKey(req.GasPayer.PrivateKey)
+			gasSk, err := types.ParseSecretKey(req.GasPayer.PrivateKey)
 			if err != nil {
 				return "", nil, fmt.Errorf("invalid gasPayer privateKey: %w", err)
 			}
+			addr, mode, err := h.parsePayerAndMode(mc, req.GasPayer.Address, req.GasPayer.SignatureMode, gasSk, req.GasPayer.KeyType)
+			if err != nil {
+				return "", nil, fmt.Errorf("invalid gasPayer: %w", err)
+			}
 			gasPayerAddr = &addr
-			gasPayerSk = sk
+			gasPayerSk = gasSk
 			gasPayerMode = mode
 		}
 
@@ -1097,7 +1217,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
 		}
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}
@@ -1133,6 +1253,8 @@ type multiInstructionItem struct {
 type multiContractRequest struct {
 	Instructions []multiInstructionItem `json:"instructions" binding:"required"`
 	PaymentMode  string                 `json:"paymentMode" binding:"required"`
+	// KeyType 声明私钥曲线（缺省 secp256k1），自动派生地址/签名模式时使用。
+	KeyType string `json:"keyType,omitempty"`
 	// unified_payer_all / unified_payer_only_gas / sponsored：payer 账户
 	PayerPrivateKey string          `json:"payerPrivateKey"`
 	PayerAddress    string          `json:"payerAddress"`
@@ -1235,7 +1357,7 @@ func (h *ContractHandler) dispatchSimulateMulti(mc *milon.Client, req *multiCont
 	switch req.PaymentMode {
 	case PaymentModeUnifiedPayerAll:
 		// payer 签全部指令 + gas（bit63）
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -1246,11 +1368,11 @@ func (h *ContractHandler) dispatchSimulateMulti(mc *milon.Client, req *multiCont
 
 	case PaymentModeUnifiedDualSign:
 		// payer 只签 gas，ix 账户签全部指令
-		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
-		ixAddr, ixMode, err := h.parsePayerAndMode(mc, req.IxAddress, req.IxSignatureMode)
+		ixAddr, ixMode, err := h.parsePayerAndMode(mc, req.IxAddress, req.IxSignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, fmt.Errorf("invalid ix fields: %w", err)
 		}
@@ -1262,7 +1384,7 @@ func (h *ContractHandler) dispatchSimulateMulti(mc *milon.Client, req *multiCont
 
 	case PaymentModeUnifiedPayerOnlyGas:
 		// payer 只签 gas（指令无签名要求）
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -1277,7 +1399,7 @@ func (h *ContractHandler) dispatchSimulateMulti(mc *milon.Client, req *multiCont
 		if ownerAddrStr == "" {
 			ownerAddrStr = req.PayerAddress
 		}
-		ownerAddr, mode, err := h.parsePayerAndMode(mc, ownerAddrStr, req.SignatureMode)
+		ownerAddr, mode, err := h.parsePayerAndMode(mc, ownerAddrStr, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -1296,7 +1418,7 @@ func (h *ContractHandler) dispatchSimulateMulti(mc *milon.Client, req *multiCont
 		}
 		builder := lib.NewTransactionBuilder(instructions)
 		if req.GasPayer != nil {
-			gasAddr, gasMode, err := h.parsePayerAndMode(mc, req.GasPayer.Address, req.GasPayer.SignatureMode)
+			gasAddr, gasMode, err := h.parsePayerAndMode(mc, req.GasPayer.Address, req.GasPayer.SignatureMode, nil, req.GasPayer.KeyType)
 			if err != nil {
 				return nil, nil, fmt.Errorf("invalid gasPayer: %w", err)
 			}
@@ -1320,7 +1442,7 @@ func (h *ContractHandler) dispatchSimulateMulti(mc *milon.Client, req *multiCont
 		if req.PayerAddress == "" {
 			return nil, nil, fmt.Errorf("payer is required for sponsored mode")
 		}
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, nil, req.KeyType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -1397,7 +1519,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
 		}
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}
@@ -1418,7 +1540,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
 		}
-		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}
@@ -1426,7 +1548,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid ixPrivateKey: %w", err)
 		}
-		ixAddr, ixMode, err := h.parsePayerAndMode(mc, req.IxAddress, req.IxSignatureMode)
+		ixAddr, ixMode, err := h.parsePayerAndMode(mc, req.IxAddress, req.IxSignatureMode, ixSk, req.KeyType)
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid ix fields: %w", err)
 		}
@@ -1448,7 +1570,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
 		}
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}
@@ -1477,7 +1599,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		if ownerAddrStr == "" {
 			ownerAddrStr = req.PayerAddress
 		}
-		ownerAddr, mode, err := h.parsePayerAndMode(mc, ownerAddrStr, req.SignatureMode)
+		ownerAddr, mode, err := h.parsePayerAndMode(mc, ownerAddrStr, req.SignatureMode, ownerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}
@@ -1505,16 +1627,16 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		var gasPayerSk crypto.SecretKeyer
 		var gasPayerMode lib.AccountSignatureMode
 		if req.GasPayer != nil {
-			addr, mode, err := h.parsePayerAndMode(mc, req.GasPayer.Address, req.GasPayer.SignatureMode)
-			if err != nil {
-				return "", nil, fmt.Errorf("invalid gasPayer: %w", err)
-			}
-			sk, err := types.ParseSecretKey(req.GasPayer.PrivateKey)
+			gasSk, err := types.ParseSecretKey(req.GasPayer.PrivateKey)
 			if err != nil {
 				return "", nil, fmt.Errorf("invalid gasPayer privateKey: %w", err)
 			}
+			addr, mode, err := h.parsePayerAndMode(mc, req.GasPayer.Address, req.GasPayer.SignatureMode, gasSk, req.GasPayer.KeyType)
+			if err != nil {
+				return "", nil, fmt.Errorf("invalid gasPayer: %w", err)
+			}
 			gasPayerAddr = &addr
-			gasPayerSk = sk
+			gasPayerSk = gasSk
 			gasPayerMode = mode
 		}
 
@@ -1554,7 +1676,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
 		}
-		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode)
+		payerAddr, mode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
 		}

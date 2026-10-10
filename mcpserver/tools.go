@@ -49,9 +49,10 @@ type addressArgs struct {
 }
 
 type faucetClaimArgs struct {
-	PrivateKey    string            `json:"privateKey" jsonschema:"领款账户私钥（hex 或 base58）"`
-	Address       string            `json:"address" jsonschema:"领款账户地址"`
-	SignatureMode signatureModeSpec `json:"signatureMode" jsonschema:"领款签名模式：{\"type\":\"pubkey\",\"publicKey\":\"...\"} 或 {\"type\":\"multisig\",\"index\":N,\"publicKey\":\"...\"}"`
+	PrivateKey    string             `json:"privateKey" jsonschema:"领款账户私钥（hex 或 base58）"`
+	Address       string             `json:"address" jsonschema:"领款账户地址"`
+	SignatureMode *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"可选：领款签名模式；缺省时从 privateKey 自动派生公钥模式"`
+	KeyType       string             `json:"keyType,omitempty" jsonschema:"可选：privateKey 的曲线 secp256k1(缺省)/ed25519/bls12381，仅在自动派生签名模式时使用"`
 }
 
 type txParseArgs struct {
@@ -125,9 +126,10 @@ type accessValueArgs struct {
 // address/signatureMode 保持 required（镜像 handler 的 binding:"required"）；
 // privateKey 仅写交易需要（模拟走模拟签名），标 omitempty 允许省略。
 type signerEntry struct {
-	Address       string            `json:"address" jsonschema:"签名者地址"`
-	PrivateKey    string            `json:"privateKey,omitempty" jsonschema:"签名者私钥（写交易必填；模拟走模拟签名可省）"`
-	SignatureMode signatureModeSpec `json:"signatureMode" jsonschema:"签名者签名模式：{\"type\":\"pubkey\",\"publicKey\":\"...\"} 或 {\"type\":\"multisig\",\"index\":N,\"publicKey\":\"...\"}"`
+	Address       string             `json:"address" jsonschema:"签名者地址"`
+	PrivateKey    string             `json:"privateKey,omitempty" jsonschema:"签名者私钥（写交易必填；模拟走模拟签名可省）"`
+	SignatureMode *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"签名者签名模式：{\"type\":\"pubkey\",\"publicKey\":\"...\"}；缺省时从 privateKey 自动派生"`
+	KeyType       string             `json:"keyType,omitempty" jsonschema:"可选：privateKey 的曲线 secp256k1(缺省)/ed25519/bls12381，仅在自动派生签名模式时使用"`
 }
 
 // contractReadArgs 镜像 readContractRequest（handler/contract.go:43，POST /api/read）。
@@ -163,6 +165,7 @@ type contractSimulateArgs struct {
 	OwnerAddress    string             `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
 	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
 	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
+	KeyType         string             `json:"keyType,omitempty" jsonschema:"可选：各私钥的曲线 secp256k1(缺省)/ed25519/bls12381，仅在自动派生地址/签名模式时使用"`
 }
 
 // multiInstructionItemArgs 镜像 multiInstructionItem（handler/contract.go:1125）。
@@ -207,6 +210,7 @@ type contractWriteArgs struct {
 	OwnerAddress    string             `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
 	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
 	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
+	KeyType         string             `json:"keyType,omitempty" jsonschema:"可选：各私钥的曲线 secp256k1(缺省)/ed25519/bls12381，仅在自动派生地址/签名模式时使用"`
 }
 
 // rawTransactionArgs 镜像 rawTransactionRequest（handler/transaction_handler.go:293，
