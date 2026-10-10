@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 
 	"milon-api-server/client"
 	"milon-api-server/middleware"
@@ -184,6 +186,36 @@ func (h *IDLHandler) GetIDLMetadata(c *gin.Context) {
 	}
 
 	allPd := mc.GetAllPd()
+
+	// apps 过滤（2026-10 AI 提速）：全量约 200KB，AI 只需一两个 app 时按需取。
+	// 未知名以 400 报出名字与全部可用清单，一轮自纠。
+	if appsParam := strings.TrimSpace(c.Query("apps")); appsParam != "" {
+		wanted := strings.Split(appsParam, ",")
+		var unknown []string
+		apps := make([]idlAppMeta, 0, len(wanted))
+		for _, w := range wanted {
+			name := strings.TrimSpace(w)
+			pd, ok := allPd[name]
+			if !ok {
+				unknown = append(unknown, name)
+				continue
+			}
+			apps = append(apps, buildAppMeta(name, pd))
+		}
+		if len(unknown) > 0 {
+			available := make([]string, 0, len(allPd))
+			for name := range allPd {
+				available = append(available, name)
+			}
+			sort.Strings(available)
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER,
+				fmt.Sprintf("unknown apps: %v；可用: %v", unknown, available), nil))
+			return
+		}
+		sort.Slice(apps, func(i, j int) bool { return apps[i].AppID < apps[j].AppID })
+		c.JSON(http.StatusOK, types.SuccessResponse(apps, "ok"))
+		return
+	}
 
 	apps := make([]idlAppMeta, 0, len(allPd))
 	for name, pd := range allPd {

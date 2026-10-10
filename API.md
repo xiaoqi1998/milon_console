@@ -2128,12 +2128,15 @@ curl http://localhost:8080/api/util/mock/1f2a3b4c5d6e7f8090a1b2c3d4e5f6070
 
 **请求参数**
 
-无
+| 字段 | 位置 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- | --- |
+| `apps` | query | string | 否 | 逗号分隔的 app 名（如 `token,identity`），只返回这些 app 的元数据——全量约 200KB，建议过滤；含未知名返回 400 并附全部可用名 |
 
 **请求示例**
 
 ```bash
 curl http://localhost:8080/api/idl/metadata
+curl "http://localhost:8080/api/idl/metadata?apps=token"
 ```
 
 **响应结构**
@@ -2146,6 +2149,7 @@ curl http://localhost:8080/api/idl/metadata
 | `data[].description` | string | app 描述 |
 | `data[].instructions` | array | 方法（指令）列表 |
 | `data[].instructions[].name` | string | 方法名（PascalCase，如 `Transfer`） |
+| `data[].instructions[].exampleArgs` | object | 按参数类型生成的调用模板（数值 0/地址占位/vec 数组/option null），可直接填空作为 args |
 | `data[].instructions[].kind` | string | 方法类型：`entry`（写入）或 `view`（只读） |
 | `data[].instructions[].handler` | string | 方法处理器名（snake_case，如 `transfer`、`balance_of`） |
 | `data[].instructions[].discriminator` | number | 方法判别符（u16） |
@@ -2653,7 +2657,8 @@ curl http://localhost:8080/api/errors/Cooldown
 2. **类型保真**：`timeoutSecs` 是数字、`wait`/`remote` 是布尔——按 schema 类型传，不要包字符串。
 3. **paymentMode 端点缺省**：`contract_write_multi_agent`（隐含 unified_dual_sign）与 `contract_write_multisig`（隐含 split）可不传；通用 `contract_write` / `contract_write_safe` 仍必填。
 4. **signatureMode 形态**：必须是对象 `{"type":"pubkey","publicKey":"..."}`（REST 侧兼容字符串化与 type 缺省，但 MCP schema 按对象传）；`publicKey` 缺省时服务端自动派生（fndsa512 必须显式传）。
-5. **报错自纠**：签名模式解析失败、multisig 索引越界、pubkey 模式被拒（285）等错误的报文都附正确形态示例或签名者列表，按示例重试即可；链上错误码用 `error_lookup` 工具翻译。
+5. **报错自纠**：签名模式解析失败、multisig 索引越界、pubkey 模式被拒（285）等错误的报文都附正确形态示例或签名者列表，按示例重试即可；链上错误码用 `error_lookup` 工具翻译；水龙头冷却/余额不足的错误消息已内联下一步动作提示。
+6. **提速约定（2026-10）**：缺参会一次性全部列出（带类型与已提供参数），一轮修对；`idl_methods` 每方法带 `exampleArgs` 调用模板；`idl_metadata` 传 `apps=token` 只取所需 app（全量约 200KB）；写交易传 `wait: true`（可配 `waitTimeoutSecs`，缺省 60s）同请求等确认，响应带 `confirmed`/`waitError`，省一次 `tx_track`。
 
 ### 客户端配置
 

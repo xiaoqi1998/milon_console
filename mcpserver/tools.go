@@ -98,6 +98,11 @@ type transferMilArgs struct {
 	PublicKey  string `json:"publicKey,omitempty" jsonschema:"fndsa512 时必填（897 字节公钥，Go 无法从私钥派生；account_generate 的返回里有）"`
 }
 
+// idlMetadataArgs 镜像 GetIDLMetadata 的 query 参数（apps 过滤，2026-10 AI 提速）。
+type idlMetadataArgs struct {
+	Apps string `json:"apps,omitempty" jsonschema:"可选：逗号分隔的 app 名（如 token,identity），只返回这些 app 的元数据——全量约 200KB 建议过滤；未知名会 400 报出可用清单"`
+}
+
 // idlMethodsArgs 镜像 AppMethods 的路径参数。
 type idlMethodsArgs struct {
 	AppName string `json:"appName" jsonschema:"必填：app 名（idl_apps 返回的 name，如 token）"`
@@ -799,7 +804,9 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[hashArgs](srv, exec, "rpc_resource", "按哈希查链上资源原文", RESTMapping{Method: "GET", PathTemplate: "/api/rpc/resources/{hash}", PathParams: []string{"hash"}})
 	registerTool[accessValueArgs](srv, exec, "rpc_access_value", "按 blob 哈希批量取 access value", RESTMapping{Method: "POST", PathTemplate: "/api/rpc/access-value"})
 	registerTool[hashArgs](srv, exec, "rpc_resource_path", "按哈希查资源路径", RESTMapping{Method: "GET", PathTemplate: "/api/rpc/resource-paths/{hash}", PathParams: []string{"hash"}})
-	registerTool[emptyArgs](srv, exec, "idl_metadata", "IDL 元数据发现：列出全部 app/方法/参数/返回值/signer 角色（调用合约工具前的第一站）", RESTMapping{Method: "GET", PathTemplate: "/api/idl/metadata"})
+	registerTool[idlMetadataArgs](srv, exec, "idl_metadata",
+		"IDL 元数据发现：列出 app/方法/参数/返回值/signer 角色/错误码（调用合约工具前的第一站）。全量约 200KB，建议只传 apps 过滤所需 app（如 apps=token），或先调 idl_apps 看清单",
+		RESTMapping{Method: "GET", PathTemplate: "/api/idl/metadata", QueryParams: []string{"apps"}})
 	registerTool[emptyArgs](srv, exec, "idl_apps",
 		"IDL app 轻量清单（名称/简介/方法数）——idl_metadata 全量约 200KB 易撑爆上下文，建议先调本工具看有什么，再按需调 idl_methods",
 		RESTMapping{Method: "GET", PathTemplate: "/api/idl/apps"})
