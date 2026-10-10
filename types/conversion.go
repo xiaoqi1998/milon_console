@@ -12,15 +12,22 @@ import (
 // Supported formats:
 //   - {"type":"pubkey","publicKey":"base58_pk"}
 //   - {"type":"multisig","index":2,"publicKey":"base58_pk"}
+//
+// 宽容化（2026-10 AI 易用性修复）：type 缺省/空串视为 "pubkey"（pubkey 语义
+// 不言自明，AI 高频省略）；解析失败统一附正确形态示例，调用方（多为 AI）
+// 可据此自纠。
 func ParseSignatureMode(modeMap map[string]interface{}) (lib.AccountSignatureMode, error) {
 	typeVal, ok := modeMap["type"]
 	if !ok {
-		return nil, fmt.Errorf("signatureMode missing 'type' field")
+		typeVal = "pubkey"
 	}
 
 	typeStr, ok := typeVal.(string)
 	if !ok {
 		return nil, fmt.Errorf("signatureMode 'type' must be a string")
+	}
+	if typeStr == "" {
+		typeStr = "pubkey"
 	}
 
 	pkStr, ok := modeMap["publicKey"].(string)
@@ -54,10 +61,24 @@ func ParseSignatureMode(modeMap map[string]interface{}) (lib.AccountSignatureMod
 }
 
 // ParseSignatureModeFromJSON parses a signature mode from raw JSON bytes.
+// 宽容化：对象被二次序列化成字符串再传（"{\"type\":...}"）时剥壳解析——
+// 这是 AI 真实使用中的高频误用；所有失败统一附正确形态示例。
 func ParseSignatureModeFromJSON(raw json.RawMessage) (lib.AccountSignatureMode, error) {
+	mode, err := parseSignatureModeFromJSON(raw)
+	if err != nil {
+		return nil, fmt.Errorf("invalid signatureMode %s: %w；正确形态：{\"type\":\"pubkey\",\"publicKey\":\"<base58公钥>\"} 或 {\"type\":\"multisig\",\"index\":N,\"publicKey\":\"<base58公钥>\"}", string(raw), err)
+	}
+	return mode, nil
+}
+
+func parseSignatureModeFromJSON(raw json.RawMessage) (lib.AccountSignatureMode, error) {
 	var modeMap map[string]interface{}
 	if err := json.Unmarshal(raw, &modeMap); err != nil {
-		return nil, fmt.Errorf("invalid signatureMode JSON: %w", err)
+		var str string
+		if json.Unmarshal(raw, &str) == nil && json.Unmarshal([]byte(str), &modeMap) == nil {
+			return ParseSignatureMode(modeMap)
+		}
+		return nil, err
 	}
 	return ParseSignatureMode(modeMap)
 }
