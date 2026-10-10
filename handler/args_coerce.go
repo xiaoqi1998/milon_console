@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/milon-labs/milon-go-sdk/provider"
@@ -546,13 +547,43 @@ func isNilValue(v any) bool {
 // Use this instead of pd.Encode when args originate from an HTTP request body.
 // 方法名大小写宽容解析（2026-10 AI 易用性）：IDL 指令名是 PascalCase（Transfer），
 // AI 高频按 snake_case 传——精确命中优先，否则不区分大小写唯一匹配即用。
+// 缺参前置校验（2026-10 AI 提速）：provider.Encode 遇到第一个缺失参数即返回，
+// AI 要 N 轮往返才能凑齐——这里一次性列出全部缺失（带类型）与已提供参数。
 func encodeWithCoercion(pd *provider.Provider, methodName string, args provider.Args) ([]byte, error) {
 	methodName = resolveMethodNameLenient(pd, methodName)
+	if err := checkMissingArgs(pd, methodName, args); err != nil {
+		return nil, err
+	}
 	coerced, err := CoerceArgsForEncode(pd, methodName, args)
 	if err != nil {
 		return nil, err
 	}
 	return pd.Encode(methodName, coerced)
+}
+
+// checkMissingArgs 一次性收集 instruction.Args 中未提供的参数（带类型）。
+// 参数名同时列出已提供的，帮助调用方对照定位。
+func checkMissingArgs(pd *provider.Provider, methodName string, args provider.Args) error {
+	instruction, err := pd.GetInstructionByName(methodName)
+	if err != nil {
+		return nil // 方法名错误交给下游报标准错误
+	}
+	var missing []string
+	provided := make([]string, 0, len(args))
+	for _, arg := range instruction.Args {
+		if _, ok := args[arg.Name]; !ok {
+			missing = append(missing, fmt.Sprintf("%s (%s)", arg.Name, strings.TrimSpace(arg.Type)))
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	for k := range args {
+		provided = append(provided, k)
+	}
+	sort.Strings(provided)
+	return fmt.Errorf("missing IDL arguments: %s；已提供: %s（%s.%s 的完整参数表见 idl_methods）",
+		strings.Join(missing, ", "), strings.Join(provided, ", "), pd.IDL.Metadata.Name, methodName)
 }
 
 // resolveMethodNameLenient 解析 IDL 指令名：精确命中直接用；否则不区分大小写
