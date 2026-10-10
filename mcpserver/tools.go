@@ -190,6 +190,8 @@ type contractMultiArgs struct {
 	OwnerAddress    string                     `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
 	Signers         []signerEntry              `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表（≥1 个，地址不可重复）"`
 	GasPayer        *signerEntry               `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
+	Wait            bool                       `json:"wait,omitempty" jsonschema:"可选：true 时同请求内等待确认（缺省 60s），响应带 confirmed/waitError——省一次 tx_track"`
+	WaitTimeoutSecs int                        `json:"waitTimeoutSecs,omitempty" jsonschema:"可选：wait 等待超时秒数，缺省 60"`
 }
 
 // contractWriteDedicatedArgs：multi-agent / multisig 专用端点的入参——
@@ -220,6 +222,8 @@ type contractWriteArgs struct {
 	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
 	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
 	KeyType         string             `json:"keyType,omitempty" jsonschema:"可选：各私钥的曲线 secp256k1(缺省)/ed25519/bls12381，仅在自动派生地址/签名模式时使用"`
+	Wait            bool               `json:"wait,omitempty" jsonschema:"可选：true 时同请求内等待确认（缺省 60s），响应带 confirmed/waitError——省一次 tx_track"`
+	WaitTimeoutSecs int                `json:"waitTimeoutSecs,omitempty" jsonschema:"可选：wait 等待超时秒数，缺省 60"`
 }
 
 // rawTransactionArgs 镜像 rawTransactionRequest（handler/transaction_handler.go:293，

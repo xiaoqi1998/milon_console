@@ -596,6 +596,28 @@ func (h *ContractHandler) parsePayerAndMode(mc *milon.Client, addrStr string, si
 	return addr, mode, nil
 }
 
+// mergeWaitInfo 在 wait=true 时同请求内等待交易确认，把 confirmed / waitError
+// 并入响应（2026-10 AI 提速：写+确认 2 次调用并 1 次；等待失败不改变 200 语义——
+// 交易已提交，与 faucet_claim 的处理一致）。timeoutSecs<=0 时缺省 60s。
+func mergeWaitInfo(mc *milon.Client, data gin.H, txHash string, wait bool, timeoutSecs int) {
+	if !wait {
+		return
+	}
+	if timeoutSecs <= 0 {
+		timeoutSecs = 60
+	}
+	_, err := mc.WaitForTransaction(txHash,
+		milon.WithWaitPollTimeout(time.Duration(timeoutSecs)*time.Second),
+		milon.WithWaitRequestID(lib.RequestID(time.Now().UnixMilli())))
+	if err != nil {
+		data["confirmed"] = false
+		data["waitError"] = err.Error()
+		data["tip"] = "交易已提交但等待确认失败：用 tx_track 查最终状态"
+		return
+	}
+	data["confirmed"] = true
+}
+
 // keyTypeOrDefault 归一曲线名：空串缺省 secp256k1（全服务端约定：32 字节
 // 经典私钥的曲线由调用方声明，无法从字节本身区分）。
 func keyTypeOrDefault(keyType string) string {
@@ -926,6 +948,10 @@ type writeContractRequest struct {
 	// KeyType 声明各私钥的曲线（secp256k1 缺省/ed25519/bls12381/fndsa512），
 	// 仅在地址/签名模式缺省、需从私钥自动派生时使用（2026-10 AI 易用性）。
 	KeyType string `json:"keyType,omitempty"`
+	// Wait=true 时同请求内等待确认（2026-10 AI 提速：省一次 tx_track 往返），
+	// 响应带 confirmed / waitError；WaitTimeoutSecs 缺省 60。
+	Wait            bool `json:"wait,omitempty"`
+	WaitTimeoutSecs int  `json:"waitTimeoutSecs,omitempty"`
 }
 
 // WriteContract handles POST /api/write
@@ -967,7 +993,9 @@ func (h *ContractHandler) WriteContract(c *gin.Context) {
 	}
 
 	logBusinessInfo(c, "WriteContract", "txHash", txHash, "appName", req.AppName, "methodName", req.MethodName)
-	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": txHash, "rawTx": serializeTx(tx)}, "ok"))
+	data := gin.H{"txHash": txHash, "rawTx": serializeTx(tx)}
+	mergeWaitInfo(mc, data, txHash, req.Wait, req.WaitTimeoutSecs)
+	c.JSON(http.StatusOK, types.SuccessResponse(data, "ok"))
 }
 
 // WriteContractMultiAgent handles POST /api/write/multi-agent
@@ -1006,7 +1034,9 @@ func (h *ContractHandler) WriteContractMultiAgent(c *gin.Context) {
 	}
 
 	logBusinessInfo(c, "WriteContractMultiAgent", "txHash", txHash, "appName", req.AppName, "methodName", req.MethodName)
-	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": txHash, "rawTx": serializeTx(tx)}, "ok"))
+	data := gin.H{"txHash": txHash, "rawTx": serializeTx(tx)}
+	mergeWaitInfo(mc, data, txHash, req.Wait, req.WaitTimeoutSecs)
+	c.JSON(http.StatusOK, types.SuccessResponse(data, "ok"))
 }
 
 // WriteContractMultisig handles POST /api/write/multisig
@@ -1045,7 +1075,9 @@ func (h *ContractHandler) WriteContractMultisig(c *gin.Context) {
 	}
 
 	logBusinessInfo(c, "WriteContractMultisig", "txHash", txHash, "appName", req.AppName, "methodName", req.MethodName)
-	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": txHash, "rawTx": serializeTx(tx)}, "ok"))
+	data := gin.H{"txHash": txHash, "rawTx": serializeTx(tx)}
+	mergeWaitInfo(mc, data, txHash, req.Wait, req.WaitTimeoutSecs)
+	c.JSON(http.StatusOK, types.SuccessResponse(data, "ok"))
 }
 
 // dispatchSubmit builds a fully-signed transaction based on paymentMode, submits it,
@@ -1272,6 +1304,9 @@ type multiContractRequest struct {
 	PaymentMode  string                 `json:"paymentMode" binding:"required"`
 	// KeyType 声明私钥曲线（缺省 secp256k1），自动派生地址/签名模式时使用。
 	KeyType string `json:"keyType,omitempty"`
+	// Wait=true 时同请求内等待确认，响应带 confirmed / waitError（AI 提速）。
+	Wait            bool `json:"wait,omitempty"`
+	WaitTimeoutSecs int  `json:"waitTimeoutSecs,omitempty"`
 	// unified_payer_all / unified_payer_only_gas / sponsored：payer 账户
 	PayerPrivateKey string          `json:"payerPrivateKey"`
 	PayerAddress    string          `json:"payerAddress"`
@@ -1507,7 +1542,9 @@ func (h *ContractHandler) WriteContractMulti(c *gin.Context) {
 	}
 
 	logBusinessInfo(c, "WriteContractMulti", "txHash", txHash, "instructionCount", len(req.Instructions))
-	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{"txHash": txHash, "rawTx": serializeTx(tx)}, "ok"))
+	data := gin.H{"txHash": txHash, "rawTx": serializeTx(tx)}
+	mergeWaitInfo(mc, data, txHash, req.Wait, req.WaitTimeoutSecs)
+	c.JSON(http.StatusOK, types.SuccessResponse(data, "ok"))
 }
 
 // dispatchSubmitMulti 构建多指令签名交易并提交上链，返回交易哈希。
@@ -1776,11 +1813,13 @@ func (h *ContractHandler) WriteSafe(c *gin.Context) {
 	}
 
 	logBusinessInfo(c, "WriteSafe", "txHash", txHash, "appName", req.AppName, "methodName", req.MethodName)
-	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
+	data := gin.H{
 		"stage":   "submitted",
 		"txHash":  txHash,
 		"receipt": simResult.BodySimulateReceipt,
 		"rawTx":   serializeTx(tx),
 		"tip":     "用 tx_track 工具（GET /api/transactions/{hash}/track）跟踪确认",
-	}, "ok"))
+	}
+	mergeWaitInfo(mc, data, txHash, req.Wait, req.WaitTimeoutSecs)
+	c.JSON(http.StatusOK, types.SuccessResponse(data, "ok"))
 }
