@@ -58,8 +58,9 @@ func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers ma
 }
 
 // wantToolCount 锁定工具总数。每新增一个 MCP 工具：+1 并在 TestToolsListBasics
-// 的 want 列表补名（本批 7 工具完成后应为 64）。
-const wantToolCount = 64
+// 的 want 列表补名。2026-10 变动：+guide=65；contract_write_multi_agent 与
+// contract_write_multisig 两个壳并入 contract_write 显式 paymentMode（-2）=63。
+const wantToolCount = 63
 
 func TestToolsListBasics(t *testing.T) {
 	srv := mcpHTTPServer(t, "")
@@ -69,7 +70,8 @@ func TestToolsListBasics(t *testing.T) {
 	for _, tl := range tools {
 		names = append(names, tl.(map[string]any)["name"].(string))
 	}
-	want := []string{"network_list", "network_current", "network_switch",
+	want := []string{"guide",
+		"network_list", "network_current", "network_switch",
 		"account_generate", "account_info", "account_resources", "account_summary",
 		"faucet_claim", "faucet_balance",
 		"tx_get", "tx_parse", "tx_events", "tx_wait", "tx_track",
@@ -79,7 +81,7 @@ func TestToolsListBasics(t *testing.T) {
 		"contract_read", "contract_read_multi",
 		"contract_simulate", "contract_simulate_multi",
 		"contract_write", "contract_write_multi",
-		"contract_write_multi_agent", "contract_write_multisig", "contract_write_safe",
+		"contract_write_safe",
 		"tx_simulate_raw", "tx_submit_raw", "tx_inspect_raw",
 		"view_single", "view_multi",
 		// Task 4：密钥与签名（5 个）
@@ -264,16 +266,6 @@ func TestContractToolCallMapping(t *testing.T) {
 			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/write/multi?",
 			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
-		// contract_write_multi_agent ← writeContractRequest（WriteContractMultiAgent，handler/contract.go:845）
-		{"contract_write_multi_agent",
-			`{"appName":"nft","methodName":"transfer","args":{},"paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2"}`,
-			"POST", "/api/write/multi-agent?",
-			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2"}`},
-		// contract_write_multisig ← writeContractRequest（WriteContractMultisig，handler/contract.go:881）
-		{"contract_write_multisig",
-			`{"appName":"nft","methodName":"burn","args":{},"paymentMode":"split","ownerPrivateKey":"sk","ownerAddress":"a1"}`,
-			"POST", "/api/write/multisig?",
-			`{"appName":"nft","methodName":"burn","paymentMode":"split","ownerPrivateKey":"sk","ownerAddress":"a1"}`},
 		// tx_simulate_raw ← rawTransactionRequest（handler/transaction_handler.go:293）
 		{"tx_simulate_raw",
 			`{"transactionPostcard":"pc1"}`,
@@ -322,10 +314,6 @@ func TestContractToolCallMapping(t *testing.T) {
 			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`,
 			"POST", "/api/write/multi?",
 			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`},
-		{"contract_write_multi_agent",
-			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`,
-			"POST", "/api/write/multi-agent?",
-			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`},
 	}
 	assertRestCalls(t, front.URL, seen, cases)
 }
@@ -657,10 +645,8 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"contract_simulate_multi": {"instructions", "paymentMode"},
 		"contract_write":          {"appName", "methodName", "paymentMode"},
 		"contract_write_multi":    {"instructions", "paymentMode"},
-		// multi-agent/multisig 端点已隐含模式：paymentMode 可缺省（2026-10
-		// handler 端点缺省化，contract_write_multi-agent.go 显式填充/校验）
-		"contract_write_multi_agent": {"appName", "methodName"},
-		"contract_write_multisig":    {"appName", "methodName"},
+		// multi-agent/multisig 两个 MCP 壳已移除（2026-10 瘦身）：REST 端点保留，
+		// MCP 侧统一走 contract_write 显式 paymentMode
 		"tx_simulate_raw":            {"transactionPostcard"},
 		"tx_submit_raw":              {"transactionPostcard"},
 		"tx_inspect_raw":             {"transactionPostcard"},
@@ -707,6 +693,8 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"transfer_mil":         {"to", "amount", "privateKey"},
 		"contract_write_safe":  {"appName", "methodName", "paymentMode"},
 		"error_lookup":         {"query"},
+		// guide 为本地工具（guide.go）：topic 必填六选一，q 可选
+		"guide": {"topic"},
 	}
 	if len(want) != wantToolCount {
 		t.Fatalf("用例表=%d, want %d（新工具须回 handler 事实源核对后补行）", len(want), wantToolCount)
@@ -848,6 +836,7 @@ func TestToolInventory(t *testing.T) {
 		"vc_flow":                "高层编排",
 		"sft_flow":               "高层编排",
 		"bulk_transfer_status":   "高层编排",
+		"guide":                  "快速手册",
 	}
 	for name, want := range spot {
 		if got := groupOf[name]; got != want {

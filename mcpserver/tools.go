@@ -157,12 +157,18 @@ type contractReadMultiArgs struct {
 	Instructions []readContractMultiItemArgs `json:"instructions" jsonschema:"只读指令列表（多条打包，单条用 contract_read）"`
 }
 
+// paymentMode 的字段描述分两级（2026-10 去重）：完整版（各模式字段组合）只在
+// contractWriteArgs.PaymentMode 一处维护——TestSchemasHaveDescriptions 锁其
+// 关键词；guide 的 chain 主题页为第二权威处。simulate/multi 等其余工具用短版
+// （六个枚举名内联，选模式无需跳转；字段组合指向上述两处）。schema tag 内
+// 禁用「WORD=」形态（go-sdk 解析为选项键直接 panic）。
+
 // contractSimulateArgs 镜像 simulateContractRequest（handler/contract.go:165，POST /api/simulate）。
 type contractSimulateArgs struct {
-	AppName         string             `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
-	MethodName      string             `json:"methodName" jsonschema:"IDL 方法名，用 idl_methods 返回的 name（PascalCase，如 Transfer；小写也能自动解析）"`
-	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
-	PaymentMode     string             `json:"paymentMode" jsonschema:"unified_payer_all：payerPrivateKey（payerAddress/signatureMode 可自动派生）；unified_dual_sign：另加 ixAddress/ixPrivateKey(/ixSignatureMode)；unified_payer_only_gas：payerPrivateKey+payerAddress+signatureMode；split：ownerPrivateKey(/ownerAddress)；multi_signer：signers[]（可加 gasPayer）；sponsored：payerAddress+signatureMode"`
+	AppName      string         `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
+	MethodName   string         `json:"methodName" jsonschema:"IDL 方法名，用 idl_methods 返回的 name（PascalCase，如 Transfer；小写也能自动解析）"`
+	Args         map[string]any `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
+	PaymentMode  string         `json:"paymentMode" jsonschema:"unified_payer_all / unified_dual_sign / unified_payer_only_gas / split / multi_signer / sponsored 六选一；各模式字段组合详见 contract_write.paymentMode 或 guide(chain)"`
 	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"payer 地址（模拟无私钥场景必填）"`
 	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"payer 签名模式；缺省时账户已上链用链上签名者列表模式，未上链则须显式传"`
 	IxAddress       string             `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
@@ -184,7 +190,7 @@ type multiInstructionItemArgs struct {
 // POST /api/simulate/multi 与 /api/write/multi 共用）。
 type contractMultiArgs struct {
 	Instructions    []multiInstructionItemArgs `json:"instructions" jsonschema:"指令列表（多条打包单笔交易）"`
-	PaymentMode     string                     `json:"paymentMode" jsonschema:"unified_payer_all：payerPrivateKey（payerAddress/signatureMode 可自动派生）；unified_dual_sign：另加 ixAddress/ixPrivateKey(/ixSignatureMode)；unified_payer_only_gas：payerPrivateKey+payerAddress+signatureMode；split：ownerPrivateKey(/ownerAddress)；multi_signer：signers[]（可加 gasPayer）；sponsored：payerAddress+signatureMode"`
+	PaymentMode     string                     `json:"paymentMode" jsonschema:"unified_payer_all / unified_dual_sign / unified_payer_only_gas / split / multi_signer / sponsored 六选一；各模式字段组合详见 contract_write.paymentMode 或 guide(chain)"`
 	PayerPrivateKey string                     `json:"payerPrivateKey,omitempty" jsonschema:"payer 私钥（hex 或 base58；unified_* 模式必填）"`
 	PayerAddress    string                     `json:"payerAddress,omitempty" jsonschema:"payer 地址；有 payerPrivateKey 时可缺省自动派生"`
 	SignatureMode   *signatureModeSpec         `json:"signatureMode,omitempty" jsonschema:"规则同 contract_write.signatureMode：缺省自动派生（有私钥时）"`
@@ -199,18 +205,10 @@ type contractMultiArgs struct {
 	WaitTimeoutSecs int                        `json:"waitTimeoutSecs,omitempty" jsonschema:"可选：wait 等待超时秒数，缺省 60"`
 }
 
-// contractWriteDedicatedArgs：multi-agent / multisig 专用端点的入参——
-// 嵌入 contractWriteArgs 并遮蔽 paymentMode 为可选（端点本身已隐含模式：
-// multi-agent=unified_dual_sign、multisig=split，缺省自动填充，2026-10 AI 易用性）。
-// encoding/json 浅层字段优先：序列化只出外层 paymentMode，wire 无重复键。
-type contractWriteDedicatedArgs struct {
-	contractWriteArgs
-	PaymentMode string `json:"paymentMode,omitempty" jsonschema:"可缺省：multi-agent 端点隐含 unified_dual_sign、multisig 端点隐含 split；显式传错值会被拒"`
-}
-
 // contractWriteArgs 镜像 writeContractRequest（handler/contract.go:789，
-// POST /api/write、/api/write/multi-agent（WriteContractMultiAgent:845）、
-// /api/write/multisig（WriteContractMultisig:881）共用）。
+// POST /api/write；/api/write-safe（WriteSafe）经 writeSafeArgs 别名共用）。
+// paymentMode 描述为全量权威版（各模式字段组合），simulate/multi 等其余
+// 工具的 paymentMode 描述指向本字段（见 contractSimulateArgs 上方说明）。
 type contractWriteArgs struct {
 	AppName         string             `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
 	MethodName      string             `json:"methodName" jsonschema:"IDL 方法名，用 idl_methods 返回的 name（PascalCase，如 Transfer；小写也能自动解析）"`
@@ -659,6 +657,8 @@ func ToolInventory() []ToolInfo {
 // 前缀只会归组变粗，不会从清单消失（有 TestToolInventory 空字段断言兜底）。
 func toolGroupOf(name string) string {
 	switch {
+	case name == "guide":
+		return "快速手册"
 	case name == "vc_flow", name == "sft_flow", strings.HasPrefix(name, "bulk_transfer"):
 		return "高层编排"
 	case name == "error_lookup" || strings.HasPrefix(name, "error_"):
@@ -778,10 +778,21 @@ func bearerAuth(token string, next http.Handler) http.Handler {
 	})
 }
 
-// RegisterTools 注册全部工具；基础 17 个 + Task 3 合约/视图/原始交易 13 个 +
-// Task 4 密钥/签名/VC 5 个 + Task 5 DID 12 个与保存指令 6 个 + Task 6 高层
-// flow 工具 4 个（共 57 个）。
+// RegisterTools 注册全部工具；基础 21 个 + 合约家族 7 个 + 原始交易 3 个 +
+// 视图 2 个 + 密钥/签名/VC 5 个 + DID 12 个 + 保存指令 6 个 + 高层 flow 6 个 +
+// guide 快速手册 1 个（共 63 个）。
+// 2026-10 瘦身：contract_write_multi_agent / contract_write_multisig 两个
+// MCP 壳并入 contract_write 的 paymentMode 显式传参（REST 端点保留）。
 func RegisterTools(srv *mcp.Server, exec *Executor) {
+	// 第一站：快速手册（本地工具，不触后端）。常驻描述只有两行，重内容按主题页
+	// 渐进披露——AI 不确定用法/链特性/限制时一次调用取整页（guide.go）。
+	registerLocalTool[guideArgs](srv, "guide",
+		"Milon MCP 快速手册（本地返回，不触后端）：一次调用返回 topic 整页——overview=工具地图、chain=链特性与 paymentMode 六模式、workflows=典型调用流程、limits=限制与不可逆清单、performance=提速技巧、keys=密钥曲线与 fndsa512；q 可按关键词过滤行。首次使用先取 overview；查错误码用 error_lookup",
+		func(args guideArgs) (string, bool) {
+			text, ok := guidePage(args.Topic, args.Q)
+			return text, !ok // guidePage 第二返回值=命中；isError=未命中
+		})
+
 	registerTool[emptyArgs](srv, exec, "network_list", "列出内置网络（devNet/localNet）及当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/list"})
 	registerTool[emptyArgs](srv, exec, "network_current", "查询当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/current"})
 	registerTool[networkSwitchArgs](srv, exec, "network_switch", "设置服务端默认网络（仅影响未携带 X-Milon-Network 头的请求；devNet/localNet）", RESTMapping{Method: "POST", PathTemplate: "/api/network/switch"})
@@ -824,11 +835,11 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[contractSimulateArgs](srv, exec, "contract_simulate", "模拟执行合约写调用（dry-run，模拟签名，无需私钥）", RESTMapping{Method: "POST", PathTemplate: "/api/simulate"})
 	registerTool[contractMultiArgs](srv, exec, "contract_simulate_multi", "多指令打包模拟执行（单笔交易原子 dry-run）", RESTMapping{Method: "POST", PathTemplate: "/api/simulate/multi"})
 
-	// 合约写（真实上链）
+	// 合约写（真实上链）。multi-agent / multisig 两个专用端点不再单独开 MCP 壳
+	// （2026-10 瘦身）：二者只是 paymentMode 预填的便捷变体，MCP 侧统一走
+	// contract_write 显式传 paymentMode=unified_dual_sign / split；REST 端点保留。
 	registerTool[contractWriteArgs](srv, exec, "contract_write", "构建并提交合约写交易（按 paymentMode 签名，真实上链）", RESTMapping{Method: "POST", PathTemplate: "/api/write"})
 	registerTool[contractMultiArgs](srv, exec, "contract_write_multi", "多指令打包写交易（单笔交易原子上链）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi"})
-	registerTool[contractWriteDedicatedArgs](srv, exec, "contract_write_multi_agent", "双账户写交易（unified_dual_sign：付 gas 与指令执行账户不同；paymentMode 可缺省，端点已隐含）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi-agent"})
-	registerTool[contractWriteDedicatedArgs](srv, exec, "contract_write_multisig", "split 模式写交易（owner 付 gas 并签指令；paymentMode 可缺省，端点已隐含）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multisig"})
 	registerTool[writeSafeArgs](srv, exec, "contract_write_safe",
 		"安全版合约写：先模拟（不消耗 gas）再真签提交——模拟失败返回 stage=simulate_failed 并阻止上链，模拟通过才走与 contract_write 完全相同的提交路径；请求参数与 contract_write 一致",
 		RESTMapping{Method: "POST", PathTemplate: "/api/write-safe"})
