@@ -210,7 +210,7 @@ func (h *ContractHandler) SimulateContract(c *gin.Context) {
 	result, tx, err := h.dispatchSimulate(mc, &req, requestId)
 	if err != nil {
 		logSDKError(c, "SimulateContract", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to simulate contract: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to simulate contract: "+withChainErrorHint(err.Error()), nil))
 		return
 	}
 
@@ -988,7 +988,7 @@ func (h *ContractHandler) WriteContract(c *gin.Context) {
 	txHash, tx, err := h.dispatchSubmit(mc, &req, requestId)
 	if err != nil {
 		logSDKError(c, "WriteContract", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write contract: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write contract: "+withChainErrorHint(err.Error()), nil))
 		return
 	}
 
@@ -1029,7 +1029,7 @@ func (h *ContractHandler) WriteContractMultiAgent(c *gin.Context) {
 	txHash, tx, err := h.dispatchSubmit(mc, &req, requestId)
 	if err != nil {
 		logSDKError(c, "WriteContractMultiAgent", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write contract: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write contract: "+withChainErrorHint(err.Error()), nil))
 		return
 	}
 
@@ -1070,7 +1070,7 @@ func (h *ContractHandler) WriteContractMultisig(c *gin.Context) {
 	txHash, tx, err := h.dispatchSubmit(mc, &req, requestId)
 	if err != nil {
 		logSDKError(c, "WriteContractMultisig", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write contract: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to write contract: "+withChainErrorHint(err.Error()), nil))
 		return
 	}
 
@@ -1377,7 +1377,7 @@ func (h *ContractHandler) SimulateContractMulti(c *gin.Context) {
 	result, tx, err := h.dispatchSimulateMulti(mc, &req, requestId)
 	if err != nil {
 		logSDKError(c, "SimulateContractMulti", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to simulate multi contract: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to simulate multi contract: "+withChainErrorHint(err.Error()), nil))
 		return
 	}
 

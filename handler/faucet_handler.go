@@ -98,7 +98,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 	}
 	if err := submitClaimFaucetTx(mc, tx); err != nil {
 		logSDKError(c, "ClaimFaucet", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to claim faucet: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to claim faucet: "+withChainErrorHint(err.Error()), nil))
 		return
 	}
 	txHash := txHashHex(tx)
@@ -112,7 +112,7 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 			"address": req.Address,
 			"claimed": false,
 			"txHash":  txHash,
-			"error":   "transaction submitted but wait failed: " + err.Error(),
+			"error":   "transaction submitted but wait failed: " + withChainErrorHint(err.Error()),
 		}, "submitted"))
 		return
 	}

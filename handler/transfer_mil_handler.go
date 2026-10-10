@@ -94,7 +94,7 @@ func (h *ContractHandler) TransferMil(c *gin.Context) {
 	txHash, tx, err := h.dispatchSubmit(mc, &writeReq, requestId)
 	if err != nil {
 		logSDKError(c, "TransferMil", err)
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to transfer: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to transfer: "+withChainErrorHint(err.Error()), nil))
 		return
 	}
 
