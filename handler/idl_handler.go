@@ -41,9 +41,82 @@ type idlInstructionMeta struct {
 	Discriminator uint16                         `json:"discriminator"`
 	Description   string                         `json:"description"` // 方法中文说明
 	Args          []idlArgMeta                   `json:"args"`
+	ExampleArgs   map[string]any                 `json:"exampleArgs,omitempty"`   // 按 args 生成的调用模板（AI 可直接填空，2026-10 提速）
 	Returns       *idlReturnMeta                 `json:"returns,omitempty"`       // view 必有
 	Sponsor       bool                           `json:"sponsor,omitempty"`       // entry 可有
 	SignerLookups map[string]idlSignerLookupMeta `json:"signerLookups,omitempty"` // entry 可有，签名者角色 -> 参数映射
+}
+
+// exampleValueForType 按 IDL 类型串生成示例值（exampleArgs 模板用）：
+// 数值 0 / bool false / 字符串与地址给占位符 / vec 单元素数组 / option null
+// / map 单键值 / 其他给类型占位。模板只求"形状可填"，具体值由调用方替换。
+func exampleValueForType(typ string) any {
+	t := typ
+	// 去掉具名引用前缀（如 "milon::types::Address" 形态，若出现）
+	if i := indexByteOutsideGeneric(t, ':'); i >= 0 {
+		t = t[i+1:]
+	}
+	switch {
+	case t == "u8" || t == "u16" || t == "u32" || t == "u64" || t == "u128" ||
+		t == "i8" || t == "i16" || t == "i32" || t == "i64" || t == "i128":
+		return float64(0)
+	case t == "bool":
+		return false
+	case t == "String" || t == "string":
+		return "<字符串>"
+	case t == "Address":
+		return "<base58地址>"
+	}
+	if inner, ok := unwrapGeneric(t, "vec"); ok {
+		return []any{exampleValueForType(inner)}
+	}
+	if _, ok := unwrapGeneric(t, "option"); ok {
+		return nil // 可选参数：模板给 null，调用方可直接删该键
+	}
+	if kv, ok := unwrapGeneric(t, "map"); ok {
+		if i := indexByteOutsideGeneric(kv, ','); i > 0 {
+			return map[string]any{"<key>": exampleValueForType(trimSpace(kv[i+1:]))}
+		}
+		return map[string]any{}
+	}
+	return "<" + t + ">"
+}
+
+// unwrapGeneric 解开 "T<inner>" 形态（vec<u64> → u64）；不匹配返回 false。
+func unwrapGeneric(t, name string) (string, bool) {
+	if len(t) <= len(name)+2 || t[:len(name)] != name || t[len(name)] != '<' || t[len(t)-1] != '>' {
+		return "", false
+	}
+	return t[len(name)+1 : len(t)-1], true
+}
+
+// indexByteOutsideGeneric 找泛型尖括号外第一个目标字节（map 的逗号、具名的
+// 冒号），找不到返回 -1。
+func indexByteOutsideGeneric(t string, target byte) int {
+	depth := 0
+	for i := 0; i < len(t); i++ {
+		switch t[i] {
+		case '<':
+			depth++
+		case '>':
+			depth--
+		case target:
+			if depth == 0 {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+func trimSpace(s string) string {
+	for len(s) > 0 && (s[0] == ' ' || s[0] == '\t') {
+		s = s[1:]
+	}
+	for len(s) > 0 && (s[len(s)-1] == ' ' || s[len(s)-1] == '\t') {
+		s = s[:len(s)-1]
+	}
+	return s
 }
 
 // idlArgMeta 描述一个方法参数。
@@ -143,6 +216,11 @@ func buildAppMeta(name string, pd *provider.Provider) idlAppMeta {
 
 		ixDesc := idlMethodDoc(name, ix.Name, ix.Handler, ix.Kind)
 
+		exampleArgs := make(map[string]any, len(ix.Args))
+		for _, a := range ix.Args {
+			exampleArgs[a.Name] = exampleValueForType(a.Type)
+		}
+
 		meta := idlInstructionMeta{
 			Name:          ix.Name,
 			Kind:          ix.Kind,
@@ -150,6 +228,7 @@ func buildAppMeta(name string, pd *provider.Provider) idlAppMeta {
 			Discriminator: ix.Discriminator,
 			Description:   ixDesc,
 			Args:          args,
+			ExampleArgs:   exampleArgs,
 			Sponsor:       ix.Sponsor,
 		}
 
