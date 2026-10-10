@@ -544,10 +544,35 @@ func isNilValue(v any) bool {
 
 // encodeWithCoercion coerces HTTP-JSON args then encodes the instruction.
 // Use this instead of pd.Encode when args originate from an HTTP request body.
+// 方法名大小写宽容解析（2026-10 AI 易用性）：IDL 指令名是 PascalCase（Transfer），
+// AI 高频按 snake_case 传——精确命中优先，否则不区分大小写唯一匹配即用。
 func encodeWithCoercion(pd *provider.Provider, methodName string, args provider.Args) ([]byte, error) {
+	methodName = resolveMethodNameLenient(pd, methodName)
 	coerced, err := CoerceArgsForEncode(pd, methodName, args)
 	if err != nil {
 		return nil, err
 	}
 	return pd.Encode(methodName, coerced)
+}
+
+// resolveMethodNameLenient 解析 IDL 指令名：精确命中直接用；否则不区分大小写
+// 查找，唯一命中即返回规范名；无命中返回原值（由下游报标准的 not found）。
+func resolveMethodNameLenient(pd *provider.Provider, name string) string {
+	if _, err := pd.GetInstructionByName(name); err == nil {
+		return name
+	}
+	want := strings.ToLower(name)
+	var hit string
+	for k := range pd.InstructionByName {
+		if strings.ToLower(k) == want {
+			if hit != "" {
+				return name // 多个大小写变体命中，无法消歧，保持原值
+			}
+			hit = k
+		}
+	}
+	if hit != "" {
+		return hit
+	}
+	return name
 }

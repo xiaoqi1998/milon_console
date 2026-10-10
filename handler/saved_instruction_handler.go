@@ -228,6 +228,8 @@ func (h *SavedInstructionHandler) CreateSavedInstruction(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("IDL app %q not found", req.AppName), nil))
 		return
 	}
+	// 大小写宽容解析并落库规范名（AI 传 snake_case 也能命中 PascalCase 指令）
+	req.MethodName = resolveMethodNameLenient(pd, req.MethodName)
 	instruction, err := pd.GetInstructionByName(req.MethodName)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("method %q not found in app %q: %s", req.MethodName, req.AppName, err.Error()), nil))

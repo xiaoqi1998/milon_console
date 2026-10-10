@@ -70,7 +70,8 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to load IDL for app %q", req.AppName), nil))
 		return
 	}
-	wire, err := encodeWithCoercion(pd, req.MethodName, req.Args)
+	methodName := resolveMethodNameLenient(pd, req.MethodName)
+	wire, err := encodeWithCoercion(pd, methodName, req.Args)
 	if err != nil {
 		logParamError(c, "ReadContract", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, fmt.Sprintf("failed to encode instruction: %s", err.Error()), nil))
@@ -84,7 +85,7 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 		return
 	}
 
-	bodyValues, err := pd.DecodeViewData(req.MethodName, result.HTTPResponseBody)
+	bodyValues, err := pd.DecodeViewData(methodName, result.HTTPResponseBody)
 	if err != nil {
 		// Ok 载荷按 IDL 返回类型解码失败（典型场景：链上部署的程序版本旧于 IDL，
 		// 实际返回形状与 IDL 声明不一致）。返回结构化降级而非 500，

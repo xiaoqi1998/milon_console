@@ -116,9 +116,17 @@ curl -H 'X-Milon-Network: devNet' http://localhost:8080/api/chain-head
 
 | 字段 | 类型 | 是否必填 | 说明 |
 | --- | --- | --- | --- |
-| `type` | string | 是 | 签名类型：`pubkey` 或 `multisig` |
-| `publicKey` | string | 是 | 公钥（hex 或 base58 编码） |
+| `type` | string | 缺省 `pubkey` | 签名类型：`pubkey` 或 `multisig`（缺省/空串按 `pubkey` 处理） |
+| `publicKey` | string | 条件必填 | 公钥（hex 或 base58）；**缺省时服务端用对应私钥自动派生**（按 `keyType`，fndsa512 无法派生须显式传） |
 | `index` | number | multisig 模式必填 | 多签账户中的索引位置 |
+
+**宽容化解析（2026-10）**
+
+- 对象被二次序列化成字符串再传（`"{\"type\":\"pubkey\",...}"`）会自动剥壳解析；
+- 解析失败的报错统一附正确形态示例，可直接按示例自纠；
+- **自动派生**：write/simulate/faucet 的地址与签名模式，在持有对应私钥时可缺省——
+  地址从显式 `signatureMode.publicKey` 或对应私钥（`keyType` 声明曲线，缺省 `secp256k1`）推导；
+  simulate（无私钥）时若账户已上链且唯一签名者，缺省用签名者列表模式（index 0）。
 
 **⚠️ 公钥模式（pubkey）的使用限制**
 
@@ -152,11 +160,12 @@ API returned error status 6: {Message:Account <addr> exists; pubkey mode not all
 | `methodName` | string | 是 | 方法名称 |
 | `args` | object | 否 | 方法参数键值对 |
 | `paymentMode` | string | 是 | 必须为 `multi_signer` |
-| `signers` | array | 是 | 签名者列表，每项含 `{address, privateKey, signatureMode}` |
+| `signers` | array | 是 | 签名者列表，每项含 `{address, privateKey, signatureMode, keyType?}` |
 | `signers[].address` | string | 是 | 签名者地址（base58） |
 | `signers[].privateKey` | string | 是 | 签名者私钥（hex 或 base58） |
-| `signers[].signatureMode` | object | 是 | 签名者签名模式 |
-| `gasPayer` | object | 否 | 独立 gas 付款方，含 `{address, privateKey, signatureMode}` |
+| `signers[].signatureMode` | object | 否（有 privateKey 时自动派生） | 签名者签名模式 |
+| `signers[].keyType` | string | 否 | 私钥曲线，缺省 `secp256k1`，仅在自动派生时使用 |
+| `gasPayer` | object | 否 | 独立 gas 付款方，含 `{address, privateKey, signatureMode, keyType?}` |
 | `gasPayer.address` | string | gasPayer 存在时必填 | gas 付款方地址（base58） |
 | `gasPayer.privateKey` | string | gasPayer 存在时必填 | gas 付款方私钥（hex 或 base58） |
 | `gasPayer.signatureMode` | object | gasPayer 存在时必填 | gas 付款方签名模式 |
@@ -1113,8 +1122,9 @@ curl -X POST http://localhost:8080/api/read/multi \
 | `methodName` | string | 是 | 方法名称 |
 | `args` | object | 否 | 方法参数键值对 |
 | `paymentMode` | string | 是 | 支付模式：`unified_payer_all` / `unified_dual_sign` / `unified_payer_only_gas` / `split` / `multi_signer` / `sponsored` |
-| `payerAddress` | string | 除 split/multi_signer 外必填 | 付款方地址（base58） |
-| `signatureMode` | object | 是 | 付款方签名模式 |
+| `payerAddress` | string | 有 payerPrivateKey 时可缺省（自动派生） | 付款方地址（base58） |
+| `signatureMode` | object | 可自动派生（见 signatureMode 格式） | 付款方签名模式；缺省时从对应私钥派生公钥模式 |
+| `keyType` | string | 否 | 各私钥曲线，缺省 `secp256k1`，仅在自动派生时使用 |
 | `ixAddress` | object | dual_sign 模式必填 | 指令账户地址（base58） |
 | `ixSignatureMode` | object | dual_sign 模式必填 | 指令账户签名模式 |
 | `ownerAddress` | string | split 模式可选 | 所有者地址（默认同 payerAddress） |
@@ -1171,8 +1181,9 @@ curl -X POST http://localhost:8080/api/simulate \
 | `args` | object | 否 | 方法参数键值对 |
 | `paymentMode` | string | 是 | 支付模式：`unified_payer_all` / `unified_dual_sign` / `unified_payer_only_gas` / `split` / `multi_signer` / `sponsored` |
 | `payerPrivateKey` | string | 除 split/multi_signer 外必填 | 付款方私钥（hex 或 base58） |
-| `payerAddress` | string | 除 split/multi_signer 外必填 | 付款方地址（base58） |
-| `signatureMode` | object | 是 | 付款方签名模式 |
+| `payerAddress` | string | 有 payerPrivateKey 时可缺省（自动派生） | 付款方地址（base58） |
+| `signatureMode` | object | 可自动派生（见 signatureMode 格式） | 付款方签名模式；缺省时从对应私钥派生公钥模式 |
+| `keyType` | string | 否 | 各私钥曲线，缺省 `secp256k1`，仅在自动派生时使用 |
 | `ixPrivateKey` | string | dual_sign 模式必填 | 指令账户私钥 |
 | `ixAddress` | string | dual_sign 模式必填 | 指令账户地址 |
 | `ixSignatureMode` | object | dual_sign 模式必填 | 指令账户签名模式 |
@@ -1229,13 +1240,14 @@ curl -X POST http://localhost:8080/api/write \
 | `appName` | string | 是 | 应用名称 |
 | `methodName` | string | 是 | 方法名称 |
 | `args` | object | 否 | 方法参数键值对 |
-| `paymentMode` | string | 是 | 必须为 `unified_dual_sign` |
+| `paymentMode` | string | 否（缺省 `unified_dual_sign`） | 端点已隐含模式；显式传其他值会被拒 |
 | `payerPrivateKey` | string | 是 | 付款方私钥 |
-| `payerAddress` | string | 是 | 付款方地址（base58） |
-| `signatureMode` | object | 是 | 付款方签名模式 |
+| `payerAddress` | string | 否（从私钥自动派生） | 付款方地址（base58） |
+| `signatureMode` | object | 否（从私钥自动派生） | 付款方签名模式 |
 | `ixPrivateKey` | string | 是 | 指令账户私钥 |
-| `ixAddress` | string | 是 | 指令账户地址（base58） |
-| `ixSignatureMode` | object | 是 | 指令账户签名模式 |
+| `ixAddress` | string | 否（从私钥自动派生） | 指令账户地址（base58） |
+| `ixSignatureMode` | object | 否（从私钥自动派生） | 指令账户签名模式 |
+| `keyType` | string | 否 | 各私钥曲线，缺省 `secp256k1`，仅在自动派生时使用 |
 
 **请求示例**
 
@@ -1285,7 +1297,7 @@ curl -X POST http://localhost:8080/api/write/multi-agent \
 | `appName` | string | 是 | 应用名称 |
 | `methodName` | string | 是 | 方法名称 |
 | `args` | object | 否 | 方法参数键值对 |
-| `paymentMode` | string | 是 | 必须为 `split` |
+| `paymentMode` | string | 否（缺省 `split`） | 端点已隐含模式；显式传其他值会被拒 |
 | `ownerPrivateKey` | string | 是 | 所有者私钥（未提供时回退到 `payerPrivateKey`） |
 | `ownerAddress` | string | 是 | 所有者地址（未提供时回退到 `payerAddress`） |
 | `signatureMode` | object | 是 | 所有者签名模式 |
@@ -1338,8 +1350,9 @@ curl -X POST http://localhost:8080/api/write/multisig \
 | --- | --- | --- | --- |
 | `instructions` | array | 是 | 指令数组，每条含 `appName` / `methodName` / `args` |
 | `paymentMode` | string | 是 | 支付模式：`unified_payer_all` / `unified_dual_sign` / `unified_payer_only_gas` / `split` / `multi_signer` / `sponsored` |
-| `payerAddress` | string | 除 split/multi_signer 外必填 | 付款方地址（base58） |
-| `signatureMode` | object | 是 | 付款方签名模式 |
+| `payerAddress` | string | 有 payerPrivateKey 时可缺省（自动派生） | 付款方地址（base58） |
+| `signatureMode` | object | 可自动派生（见 signatureMode 格式） | 付款方签名模式；缺省时从对应私钥派生公钥模式 |
+| `keyType` | string | 否 | 各私钥曲线，缺省 `secp256k1`，仅在自动派生时使用 |
 | `ixAddress` | object | dual_sign 模式必填 | 指令账户地址（base58） |
 | `ixSignatureMode` | object | dual_sign 模式必填 | 指令账户签名模式 |
 | `ownerAddress` | string | split 模式可选 | 所有者地址（默认同 payerAddress） |
@@ -1383,8 +1396,9 @@ curl -X POST http://localhost:8080/api/simulate/multi \
 | `instructions` | array | 是 | 指令数组，每条含 `appName` / `methodName` / `args` |
 | `paymentMode` | string | 是 | 支付模式（同 `/api/write`） |
 | `payerPrivateKey` | string | 除 split/multi_signer 外必填 | 付款方私钥（hex 或 base58） |
-| `payerAddress` | string | 除 split/multi_signer 外必填 | 付款方地址（base58） |
-| `signatureMode` | object | 是 | 付款方签名模式 |
+| `payerAddress` | string | 有 payerPrivateKey 时可缺省（自动派生） | 付款方地址（base58） |
+| `signatureMode` | object | 可自动派生（见 signatureMode 格式） | 付款方签名模式；缺省时从对应私钥派生公钥模式 |
+| `keyType` | string | 否 | 各私钥曲线，缺省 `secp256k1`，仅在自动派生时使用 |
 | `ixPrivateKey` | string | dual_sign 模式必填 | 指令账户私钥 |
 | `ixAddress` | string | dual_sign 模式必填 | 指令账户地址 |
 | `ixSignatureMode` | object | dual_sign 模式必填 | 指令账户签名模式 |
@@ -1666,7 +1680,8 @@ curl http://localhost:8080/api/rpc/resource-paths/a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3
 | --- | --- | --- | --- |
 | `privateKey` | string | 是 | 领取方私钥（hex 或 base58） |
 | `address` | string | 是 | 领取方地址（base58） |
-| `signatureMode` | object | 是 | 签名模式 |
+| `signatureMode` | object | 否（缺省从 privateKey 自动派生） | 签名模式 |
+| `keyType` | string | 否 | 私钥曲线，缺省 `secp256k1`，仅在自动派生时使用 |
 
 **请求示例**
 
@@ -2625,10 +2640,20 @@ curl http://localhost:8080/api/errors/Cooldown
 - **启用**: 无需额外配置，随服务自动可用
 - **鉴权**: 默认不鉴权；设置环境变量 `MCP_AUTH_TOKEN` 后要求 `Authorization: Bearer <token>`，不匹配返回 401
 - **行为**: 工具与 REST 端点一一对应，参数经校验后回环调用同进程 REST handler，响应 JSON 原样作为工具结果返回；REST 非 2xx 时工具结果标记 `isError=true` 并保留错误 JSON 原文
-- **超时**: 回环请求超时 120s；`vc_flow`（约 20 张凭证同步签发披露）在 devNet 上可能超时，`bulk_transfer` 为异步 jobId 轮询不受影响
+- **超时**: 回环请求超时 300s（2026-10 由 120s 提升，覆盖 sft_flow 最多 20 笔分发的同步等待）；`bulk_transfer` 为异步 jobId 轮询不受影响；超时错误与后端不可达分开措辞
 - **排除**: `mock`（前端调试辅助）与 `health` / `chain-head`（运维探活）4 个端点不映射
 - **工具清单**: `GET /api/mcp/tools` 返回全部工具的名称/描述/分组/REST 映射（与注册表同源），供程序化发现与前端展示
 - **网络选择**: 请求携带 X-Milon-Network 头即按该网络执行全部工具回环（缺省走服务端默认网络），与 REST 同构
+
+### AI 易用性约定（2026-10）
+
+为让 AI 宿主可靠调用，MCP 工具 schema 与 REST 契约做了如下对齐，调用侧按此约定即可：
+
+1. **签名自动派生**：`contract_write` / `contract_write_safe` 只传 `payerPrivateKey` 即可——`payerAddress` 与 `signatureMode`（含公钥）由服务端按 `keyType`（缺省 secp256k1）自动派生；`contract_simulate` 无私钥，传 `payerAddress` 即可（账户已上链且唯一签名者时签名模式自动缺省）。`faucet_claim` 与 `signers[]` 免传 `signatureMode`。
+2. **类型保真**：`timeoutSecs` 是数字、`wait`/`remote` 是布尔——按 schema 类型传，不要包字符串。
+3. **paymentMode 端点缺省**：`contract_write_multi_agent`（隐含 unified_dual_sign）与 `contract_write_multisig`（隐含 split）可不传；通用 `contract_write` / `contract_write_safe` 仍必填。
+4. **signatureMode 形态**：必须是对象 `{"type":"pubkey","publicKey":"..."}`（REST 侧兼容字符串化与 type 缺省，但 MCP schema 按对象传）；`publicKey` 缺省时服务端自动派生（fndsa512 必须显式传）。
+5. **报错自纠**：签名模式解析失败、multisig 索引越界、pubkey 模式被拒（285）等错误的报文都附正确形态示例或签名者列表，按示例重试即可；链上错误码用 `error_lookup` 工具翻译。
 
 ### 客户端配置
 

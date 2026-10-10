@@ -143,7 +143,7 @@ type contractReadArgs struct {
 // readContractMultiItemArgs 镜像 readContractMultiItem（handler/contract.go:107）。
 type readContractMultiItemArgs struct {
 	AppName    string         `json:"appName" jsonschema:"IDL 里的 app 名"`
-	MethodName string         `json:"methodName" jsonschema:"IDL 方法名（idl_methods 返回 name 是 PascalCase，这里用其小写 handler 名，如 transfer）"`
+	MethodName string         `json:"methodName" jsonschema:"IDL 方法名，用 idl_methods 返回的 name（PascalCase，如 Transfer；小写也能自动解析）"`
 	Args       map[string]any `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
 }
 
@@ -155,7 +155,7 @@ type contractReadMultiArgs struct {
 // contractSimulateArgs 镜像 simulateContractRequest（handler/contract.go:165，POST /api/simulate）。
 type contractSimulateArgs struct {
 	AppName         string             `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
-	MethodName      string             `json:"methodName" jsonschema:"IDL 方法名（小写 handler 名，如 transfer）"`
+	MethodName      string             `json:"methodName" jsonschema:"IDL 方法名，用 idl_methods 返回的 name（PascalCase，如 Transfer；小写也能自动解析）"`
 	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
 	PaymentMode     string             `json:"paymentMode" jsonschema:"unified_payer_all：payerPrivateKey（payerAddress/signatureMode 可自动派生）；unified_dual_sign：另加 ixAddress/ixPrivateKey(/ixSignatureMode)；unified_payer_only_gas：payerPrivateKey+payerAddress+signatureMode；split：ownerPrivateKey(/ownerAddress)；multi_signer：signers[]（可加 gasPayer）；sponsored：payerAddress+signatureMode"`
 	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"payer 地址（模拟无私钥场景必填）"`
@@ -171,7 +171,7 @@ type contractSimulateArgs struct {
 // multiInstructionItemArgs 镜像 multiInstructionItem（handler/contract.go:1125）。
 type multiInstructionItemArgs struct {
 	AppName    string         `json:"appName" jsonschema:"IDL 里的 app 名"`
-	MethodName string         `json:"methodName" jsonschema:"IDL 方法名（小写 handler 名，如 transfer）"`
+	MethodName string         `json:"methodName" jsonschema:"IDL 方法名，用 idl_methods 返回的 name（PascalCase，如 Transfer；小写也能自动解析）"`
 	Args       map[string]any `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
 }
 
@@ -206,7 +206,7 @@ type contractWriteDedicatedArgs struct {
 // /api/write/multisig（WriteContractMultisig:881）共用）。
 type contractWriteArgs struct {
 	AppName         string             `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
-	MethodName      string             `json:"methodName" jsonschema:"IDL 方法名（小写 handler 名，如 transfer）"`
+	MethodName      string             `json:"methodName" jsonschema:"IDL 方法名，用 idl_methods 返回的 name（PascalCase，如 Transfer；小写也能自动解析）"`
 	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
 	PaymentMode     string             `json:"paymentMode" jsonschema:"unified_payer_all：payerPrivateKey（payerAddress/signatureMode 可自动派生）；unified_dual_sign：另加 ixAddress/ixPrivateKey(/ixSignatureMode)；unified_payer_only_gas：payerPrivateKey+payerAddress+signatureMode；split：ownerPrivateKey(/ownerAddress)；multi_signer：signers[]（可加 gasPayer）；sponsored：payerAddress+signatureMode"`
 	PayerPrivateKey string             `json:"payerPrivateKey,omitempty" jsonschema:"payer 私钥（hex 或 base58；unified_* 模式必填）"`
@@ -800,7 +800,7 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		"IDL app 轻量清单（名称/简介/方法数）——idl_metadata 全量约 200KB 易撑爆上下文，建议先调本工具看有什么，再按需调 idl_methods",
 		RESTMapping{Method: "GET", PathTemplate: "/api/idl/apps"})
 	registerTool[idlMethodsArgs](srv, exec, "idl_methods",
-		"查单个 app 的全量方法明细（参数/返回值/signer 角色/错误码）；注意返回的 name 是 PascalCase（如 Transfer），而 contract_read/write 的 methodName 用 snake_case 的 handler 名（如 transfer）",
+		"查单个 app 的全量方法明细（参数/返回值/signer 角色/错误码）；contract_read/write 的 methodName 直接用返回的 name（PascalCase，如 Transfer；传小写也会被自动解析，但优先用原样）",
 		RESTMapping{Method: "GET", PathTemplate: "/api/idl/apps/{appName}/methods", PathParams: []string{"appName"}})
 
 	// ---- Task 3：合约/视图/原始交易家族（13 个，全部 POST 纯 JSON body，无 query/path 参数）----
