@@ -18,6 +18,21 @@ import (
 // emptyArgs 对应无参数的 REST 调用。
 type emptyArgs struct{}
 
+// signatureModeSpec 类型化镜像 signatureMode 的 wire 格式（types/conversion.go
+// ParseSignatureMode 支持的两种形态，JSON 序列化与原 any 完全等价）：
+//   - {"type":"pubkey","publicKey":"base58_pk"}
+//   - {"type":"multisig","index":N,"publicKey":"base58_pk"}
+//
+// 此前镜像为 any，schema 推断产出裸 true（无类型无描述），AI 宿主把 MCP schema
+// 二次编译为模型函数格式时无法识别字段形态；结构体推断出显式 object schema。
+// PublicKey/index 可缺省：handler 侧能拿到对应私钥时自动派生公钥（fndsa512
+// 无从派生、须显式传）；multisig 显式传 index 时 publicKey 可省（链端按索引验签）。
+type signatureModeSpec struct {
+	Type      string `json:"type" jsonschema:"必填：pubkey（单公钥模式）/multisig（多签索引模式）"`
+	PublicKey string `json:"publicKey,omitempty" jsonschema:"签名公钥（base58 或 hex）；缺省时服务端用对应私钥自动派生（fndsa512 必须显式传，account_generate 的返回里有）"`
+	Index     *int   `json:"index,omitempty" jsonschema:"multisig 模式必填：签名人索引（0 起，对应链上 signers 列表顺序）"`
+}
+
 type networkSwitchArgs struct {
 	Network string `json:"network" jsonschema:"目标网络名：devNet 或 localNet"`
 }
@@ -30,34 +45,34 @@ type accountGenerateArgs struct {
 }
 
 type addressArgs struct {
-	Address string `json:"address"`
+	Address string `json:"address" jsonschema:"账户地址（base58）"`
 }
 
 type faucetClaimArgs struct {
-	PrivateKey    string `json:"privateKey" jsonschema:"领款账户私钥（hex 或 base58）"`
-	Address       string `json:"address" jsonschema:"领款账户地址"`
-	SignatureMode any    `json:"signatureMode" jsonschema:"签名模式对象，如 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"} 或 {\"type\":\"multisig\",\"publicKey\":\"..\",\"index\":N}"`
+	PrivateKey    string            `json:"privateKey" jsonschema:"领款账户私钥（hex 或 base58）"`
+	Address       string            `json:"address" jsonschema:"领款账户地址"`
+	SignatureMode signatureModeSpec `json:"signatureMode" jsonschema:"领款签名模式：{\"type\":\"pubkey\",\"publicKey\":\"...\"} 或 {\"type\":\"multisig\",\"index\":N,\"publicKey\":\"...\"}"`
 }
 
 type txParseArgs struct {
-	Hash   string `json:"hash"`
-	Remote string `json:"remote,omitempty" jsonschema:"可选：true/1 时附取各 inline 写入资源的链上现值与外部 blob 值"`
+	Hash   string `json:"hash" jsonschema:"交易哈希"`
+	Remote bool   `json:"remote,omitempty" jsonschema:"可选：true 时附取各 inline 写入资源的链上现值与外部 blob 值"`
 }
 
 type txEventsArgs struct {
-	Hash    string `json:"hash"`
+	Hash    string `json:"hash" jsonschema:"交易哈希"`
 	TypeTag string `json:"typeTag,omitempty" jsonschema:"可选：按事件 typeTag 过滤（十进制整数）"`
 }
 
 type txWaitArgs struct {
-	Hash        string `json:"hash"`
-	TimeoutSecs string `json:"timeoutSecs,omitempty" jsonschema:"可选：等待超时秒数（十进制整数）"`
+	Hash        string `json:"hash" jsonschema:"交易哈希"`
+	TimeoutSecs int    `json:"timeoutSecs,omitempty" jsonschema:"可选：等待超时秒数，缺省 60"`
 }
 
 // txTrackArgs 镜像 TrackTransaction 的参数（hash 路径参数 + timeoutSecs query）。
 type txTrackArgs struct {
 	Hash        string `json:"hash" jsonschema:"必填：交易哈希（hex 或 base58）"`
-	TimeoutSecs string `json:"timeoutSecs,omitempty" jsonschema:"可选：等待确认超时秒数（十进制整数，缺省 60）"`
+	TimeoutSecs int    `json:"timeoutSecs,omitempty" jsonschema:"可选：等待确认超时秒数，缺省 60"`
 }
 
 // writeSafeArgs 与 contractWriteArgs 相同（请求体同 /api/write）。
@@ -88,31 +103,31 @@ type idlMethodsArgs struct {
 }
 
 type hashArgs struct {
-	Hash string `json:"hash"`
+	Hash string `json:"hash" jsonschema:"哈希（hex 或 base58）"`
 }
 
 type heightArgs struct {
-	Height string `json:"height"`
+	Height string `json:"height" jsonschema:"区块高度（十进制）"`
 }
 
 type accessValueArgs struct {
-	BlobHashes []string `json:"blobHashes"`
+	BlobHashes []string `json:"blobHashes" jsonschema:"blob 哈希列表"`
 }
 
 // ==================== Task 3：合约/视图/原始交易家族（13 个）====================
 // 字段 json tag 逐字镜像 handler 侧 request struct（唯一事实源），注释标注来源行号。
-// 注意：handler 侧的 json.RawMessage 字段（signatureMode 等）这里镜像为 any——
-// 实验证明 SDK 的 schema 推断会把 json.RawMessage（[]byte）判成 "null|array"，
-// 客户端传 JSON 对象会被校验拒绝；any 的 wire 序列化与 RawMessage 完全等价
-// （原始 JSON 值原样透传给 REST handler），且 Task 1 的 faucetClaimArgs 已有先例。
+// 注意：handler 侧的 json.RawMessage 字段（signatureMode 等）这里镜像为
+// signatureModeSpec 结构体——any 会让 schema 推断产出裸 true（AI 宿主二次编译
+// 无法识别），结构体的 wire 序列化与 RawMessage 完全等价（JSON 对象原样透传给
+// REST handler），且 schema 是显式 object（见 signatureModeSpec 注释）。
 
 // signerEntry 镜像 types.SignerEntry（types/request.go:17，multi_signer 模式的签名者）。
 // address/signatureMode 保持 required（镜像 handler 的 binding:"required"）；
 // privateKey 仅写交易需要（模拟走模拟签名），标 omitempty 允许省略。
 type signerEntry struct {
-	Address       string `json:"address" jsonschema:"签名者地址"`
-	PrivateKey    string `json:"privateKey,omitempty" jsonschema:"签名者私钥（写交易必填；模拟走模拟签名可省）"`
-	SignatureMode any    `json:"signatureMode" jsonschema:"签名模式对象：公钥模式 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"} 或多签 {\"type\":\"multisig\",\"publicKey\":\"..\",\"index\":N}"`
+	Address       string            `json:"address" jsonschema:"签名者地址"`
+	PrivateKey    string            `json:"privateKey,omitempty" jsonschema:"签名者私钥（写交易必填；模拟走模拟签名可省）"`
+	SignatureMode signatureModeSpec `json:"signatureMode" jsonschema:"签名者签名模式：{\"type\":\"pubkey\",\"publicKey\":\"...\"} 或 {\"type\":\"multisig\",\"index\":N,\"publicKey\":\"...\"}"`
 }
 
 // contractReadArgs 镜像 readContractRequest（handler/contract.go:43，POST /api/read）。
@@ -120,78 +135,78 @@ type contractReadArgs struct {
 	AppName      string         `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
 	MethodName   string         `json:"methodName" jsonschema:"IDL 里的方法名"`
 	Args         map[string]any `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
-	PayerAddress string         `json:"payerAddress,omitempty"`
+	PayerAddress string         `json:"payerAddress,omitempty" jsonschema:"可选：payer 地址（部分 entry 视图需要）"`
 }
 
 // readContractMultiItemArgs 镜像 readContractMultiItem（handler/contract.go:107）。
 type readContractMultiItemArgs struct {
-	AppName    string         `json:"appName"`
-	MethodName string         `json:"methodName"`
-	Args       map[string]any `json:"args,omitempty"`
+	AppName    string         `json:"appName" jsonschema:"IDL 里的 app 名"`
+	MethodName string         `json:"methodName" jsonschema:"IDL 方法名（idl_methods 返回 name 是 PascalCase，这里用其小写 handler 名，如 transfer）"`
+	Args       map[string]any `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
 }
 
 // contractReadMultiArgs 镜像 readContractMultiRequest（handler/contract.go:103，POST /api/read/multi）。
 type contractReadMultiArgs struct {
-	Instructions []readContractMultiItemArgs `json:"instructions"`
+	Instructions []readContractMultiItemArgs `json:"instructions" jsonschema:"只读指令列表（多条打包，单条用 contract_read）"`
 }
 
 // contractSimulateArgs 镜像 simulateContractRequest（handler/contract.go:165，POST /api/simulate）。
 type contractSimulateArgs struct {
-	AppName         string         `json:"appName"`
-	MethodName      string         `json:"methodName"`
-	Args            map[string]any `json:"args,omitempty"`
-	PaymentMode     string         `json:"paymentMode" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
-	PayerAddress    string         `json:"payerAddress,omitempty"`
-	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"签名模式对象（如 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"}）；缺省公钥模式"`
-	IxAddress       string         `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
-	IxSignatureMode any            `json:"ixSignatureMode,omitempty"`
-	OwnerAddress    string         `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
-	Signers         []signerEntry  `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
-	GasPayer        *signerEntry   `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
+	AppName         string             `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
+	MethodName      string             `json:"methodName" jsonschema:"IDL 方法名（小写 handler 名，如 transfer）"`
+	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
+	PaymentMode     string             `json:"paymentMode" jsonschema:"unified_payer_all：payerPrivateKey（payerAddress/signatureMode 可自动派生）；unified_dual_sign：另加 ixAddress/ixPrivateKey(/ixSignatureMode)；unified_payer_only_gas：payerPrivateKey+payerAddress+signatureMode；split：ownerPrivateKey(/ownerAddress)；multi_signer：signers[]（可加 gasPayer）；sponsored：payerAddress+signatureMode"`
+	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"payer 地址（模拟无私钥场景必填）"`
+	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"payer 签名模式；缺省时账户已上链用链上签名者列表模式，未上链则须显式传"`
+	IxAddress       string             `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
+	IxSignatureMode *signatureModeSpec `json:"ixSignatureMode,omitempty" jsonschema:"unified_dual_sign 专用：ix 账户签名模式，规则同 signatureMode"`
+	OwnerAddress    string             `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
+	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
+	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
 }
 
 // multiInstructionItemArgs 镜像 multiInstructionItem（handler/contract.go:1125）。
 type multiInstructionItemArgs struct {
-	AppName    string         `json:"appName"`
-	MethodName string         `json:"methodName"`
-	Args       map[string]any `json:"args,omitempty"`
+	AppName    string         `json:"appName" jsonschema:"IDL 里的 app 名"`
+	MethodName string         `json:"methodName" jsonschema:"IDL 方法名（小写 handler 名，如 transfer）"`
+	Args       map[string]any `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
 }
 
 // contractMultiArgs 镜像 multiContractRequest（handler/contract.go:1132，
 // POST /api/simulate/multi 与 /api/write/multi 共用）。
 type contractMultiArgs struct {
-	Instructions    []multiInstructionItemArgs `json:"instructions"`
-	PaymentMode     string                     `json:"paymentMode" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
-	PayerPrivateKey string                     `json:"payerPrivateKey,omitempty"`
-	PayerAddress    string                     `json:"payerAddress,omitempty"`
-	SignatureMode   any                        `json:"signatureMode,omitempty"`
+	Instructions    []multiInstructionItemArgs `json:"instructions" jsonschema:"指令列表（多条打包单笔交易）"`
+	PaymentMode     string                     `json:"paymentMode" jsonschema:"unified_payer_all：payerPrivateKey（payerAddress/signatureMode 可自动派生）；unified_dual_sign：另加 ixAddress/ixPrivateKey(/ixSignatureMode)；unified_payer_only_gas：payerPrivateKey+payerAddress+signatureMode；split：ownerPrivateKey(/ownerAddress)；multi_signer：signers[]（可加 gasPayer）；sponsored：payerAddress+signatureMode"`
+	PayerPrivateKey string                     `json:"payerPrivateKey,omitempty" jsonschema:"payer 私钥（hex 或 base58；unified_* 模式必填）"`
+	PayerAddress    string                     `json:"payerAddress,omitempty" jsonschema:"payer 地址；有 payerPrivateKey 时可缺省自动派生"`
+	SignatureMode   *signatureModeSpec         `json:"signatureMode,omitempty" jsonschema:"规则同 contract_write.signatureMode：缺省自动派生（有私钥时）"`
 	IxAddress       string                     `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户"`
-	IxPrivateKey    string                     `json:"ixPrivateKey,omitempty"`
-	IxSignatureMode any                        `json:"ixSignatureMode,omitempty"`
+	IxPrivateKey    string                     `json:"ixPrivateKey,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户私钥"`
+	IxSignatureMode *signatureModeSpec         `json:"ixSignatureMode,omitempty" jsonschema:"unified_dual_sign 专用：ix 账户签名模式，规则同 signatureMode"`
 	OwnerPrivateKey string                     `json:"ownerPrivateKey,omitempty" jsonschema:"split 专用：owner 私钥，缺省取 payerPrivateKey"`
-	OwnerAddress    string                     `json:"ownerAddress,omitempty"`
-	Signers         []signerEntry              `json:"signers,omitempty"`
-	GasPayer        *signerEntry               `json:"gasPayer,omitempty"`
+	OwnerAddress    string                     `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
+	Signers         []signerEntry              `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表（≥1 个，地址不可重复）"`
+	GasPayer        *signerEntry               `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
 }
 
 // contractWriteArgs 镜像 writeContractRequest（handler/contract.go:789，
 // POST /api/write、/api/write/multi-agent（WriteContractMultiAgent:845）、
 // /api/write/multisig（WriteContractMultisig:881）共用）。
 type contractWriteArgs struct {
-	AppName         string         `json:"appName"`
-	MethodName      string         `json:"methodName"`
-	Args            map[string]any `json:"args,omitempty"`
-	PaymentMode     string         `json:"paymentMode" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
-	PayerPrivateKey string         `json:"payerPrivateKey,omitempty"`
-	PayerAddress    string         `json:"payerAddress,omitempty"`
-	SignatureMode   any            `json:"signatureMode,omitempty"`
-	IxAddress       string         `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户"`
-	IxPrivateKey    string         `json:"ixPrivateKey,omitempty"`
-	IxSignatureMode any            `json:"ixSignatureMode,omitempty"`
-	OwnerPrivateKey string         `json:"ownerPrivateKey,omitempty" jsonschema:"split 专用：owner 私钥，缺省取 payerPrivateKey"`
-	OwnerAddress    string         `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
-	Signers         []signerEntry  `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
-	GasPayer        *signerEntry   `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
+	AppName         string             `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
+	MethodName      string             `json:"methodName" jsonschema:"IDL 方法名（小写 handler 名，如 transfer）"`
+	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
+	PaymentMode     string             `json:"paymentMode" jsonschema:"unified_payer_all：payerPrivateKey（payerAddress/signatureMode 可自动派生）；unified_dual_sign：另加 ixAddress/ixPrivateKey(/ixSignatureMode)；unified_payer_only_gas：payerPrivateKey+payerAddress+signatureMode；split：ownerPrivateKey(/ownerAddress)；multi_signer：signers[]（可加 gasPayer）；sponsored：payerAddress+signatureMode"`
+	PayerPrivateKey string             `json:"payerPrivateKey,omitempty" jsonschema:"payer 私钥（hex 或 base58；unified_* 模式必填）"`
+	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"payer 地址；有 payerPrivateKey 时可缺省自动派生"`
+	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"缺省时：有 payerPrivateKey 则自动派生公钥模式；否则须显式传"`
+	IxAddress       string             `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户"`
+	IxPrivateKey    string             `json:"ixPrivateKey,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户私钥"`
+	IxSignatureMode *signatureModeSpec `json:"ixSignatureMode,omitempty" jsonschema:"unified_dual_sign 专用：ix 账户签名模式，规则同 signatureMode"`
+	OwnerPrivateKey string             `json:"ownerPrivateKey,omitempty" jsonschema:"split 专用：owner 私钥，缺省取 payerPrivateKey"`
+	OwnerAddress    string             `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
+	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
+	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
 }
 
 // rawTransactionArgs 镜像 rawTransactionRequest（handler/transaction_handler.go:293，
@@ -280,7 +295,7 @@ type vcAttestationArgs struct {
 //     （updateSavedInstructionRequest:195，全字段 nil-able 部分更新）、
 //     delete 只读 c.Param("id")（:364，无 body）、execute 读 c.Param("id") +
 //     c.DefaultQuery "mode"（:395）/"wait"（:515）且不读 body。
-// handler 侧 json.RawMessage 字段（signatureMode 等）按 Task 3 规则镜像为 any。
+// handler 侧 json.RawMessage 字段（signatureMode 等）按 Task 3 规则镜像为 signatureModeSpec。
 
 // didCreateArgs 镜像 didCreateRequest（handler/did_handler.go:48，POST /api/tool/did/create）。
 // privateKey/address 被 validateDidCreateRequest（:188-194）校验必填，不标 omitempty；
@@ -379,22 +394,22 @@ type didNameBindingArgs struct {
 // 其余可选（entry 方法保存时 paymentMode 缺省 unified_payer_all）。
 // signatureMode/ixSignatureMode 为 handler 侧 json.RawMessage，按规则镜像为 any。
 type savedInstructionCreateArgs struct {
-	Name            string         `json:"name" jsonschema:"必填：展示名称"`
-	Description     string         `json:"description,omitempty"`
-	AppName         string         `json:"appName" jsonschema:"必填：IDL app 名（先用 idl_metadata 查）"`
-	MethodName      string         `json:"methodName" jsonschema:"必填：IDL 方法名"`
-	Args            map[string]any `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
-	PaymentMode     string         `json:"paymentMode,omitempty" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored；entry 缺省 unified_payer_all"`
-	PayerAddress    string         `json:"payerAddress,omitempty"`
-	PayerPrivateKey string         `json:"payerPrivateKey,omitempty"`
-	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"签名模式对象（如 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"}）"`
-	IxAddress       string         `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
-	IxPrivateKey    string         `json:"ixPrivateKey,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户私钥"`
-	IxSignatureMode any            `json:"ixSignatureMode,omitempty"`
-	OwnerAddress    string         `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
-	OwnerPrivateKey string         `json:"ownerPrivateKey,omitempty" jsonschema:"split 专用：owner 私钥，缺省取 payerPrivateKey"`
-	Signers         []signerEntry  `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
-	GasPayer        *signerEntry   `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
+	Name            string             `json:"name" jsonschema:"必填：展示名称"`
+	Description     string             `json:"description,omitempty" jsonschema:"可选：指令描述"`
+	AppName         string             `json:"appName" jsonschema:"必填：IDL app 名（先用 idl_metadata 查）"`
+	MethodName      string             `json:"methodName" jsonschema:"必填：IDL 方法名"`
+	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
+	PaymentMode     string             `json:"paymentMode,omitempty" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored；entry 缺省 unified_payer_all"`
+	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"payer 地址；有 payerPrivateKey 时可缺省自动派生"`
+	PayerPrivateKey string             `json:"payerPrivateKey,omitempty" jsonschema:"payer 私钥（hex 或 base58）"`
+	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"规则同 contract_write.signatureMode：缺省自动派生（有私钥时）"`
+	IxAddress       string             `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
+	IxPrivateKey    string             `json:"ixPrivateKey,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户私钥"`
+	IxSignatureMode *signatureModeSpec `json:"ixSignatureMode,omitempty" jsonschema:"unified_dual_sign 专用：ix 账户签名模式，规则同 signatureMode"`
+	OwnerAddress    string             `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
+	OwnerPrivateKey string             `json:"ownerPrivateKey,omitempty" jsonschema:"split 专用：owner 私钥，缺省取 payerPrivateKey"`
+	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
+	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
 }
 
 // savedInstructionUpdateArgs 镜像 updateSavedInstructionRequest
@@ -404,23 +419,23 @@ type savedInstructionCreateArgs struct {
 // omitempty 保持同样的可选语义（schema required 集只含路径参数 id）。
 // handler 不支持改 appName/methodName/kind（需换方法请删除后重建），
 // 故镜像不含这三字段。signatureMode/ixSignatureMode 为 handler 侧
-// json.RawMessage，按规则镜像为 any。
+// json.RawMessage，按规则镜像为 signatureModeSpec（指针保持部分更新语义）。
 type savedInstructionUpdateArgs struct {
-	Id              string         `json:"id" jsonschema:"必填：保存指令 ID"`
-	Name            *string        `json:"name,omitempty" jsonschema:"可选：新的展示名称；不传保持不变"`
-	Description     *string        `json:"description,omitempty" jsonschema:"可选：新的描述；不传保持不变"`
-	Args            map[string]any `json:"args,omitempty" jsonschema:"可选：新的方法参数对象；不传保持不变"`
-	PaymentMode     *string        `json:"paymentMode,omitempty" jsonschema:"可选：unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
-	PayerAddress    *string        `json:"payerAddress,omitempty"`
-	PayerPrivateKey *string        `json:"payerPrivateKey,omitempty"`
-	SignatureMode   any            `json:"signatureMode,omitempty" jsonschema:"可选：签名模式对象（如 {\"type\":\"pubkey\",\"publicKey\":\"0x..\"}）"`
-	IxAddress       *string        `json:"ixAddress,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户地址"`
-	IxPrivateKey    *string        `json:"ixPrivateKey,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户私钥"`
-	IxSignatureMode any            `json:"ixSignatureMode,omitempty"`
-	OwnerAddress    *string        `json:"ownerAddress,omitempty" jsonschema:"可选：split 专用：owner 地址"`
-	OwnerPrivateKey *string        `json:"ownerPrivateKey,omitempty" jsonschema:"可选：split 专用：owner 私钥"`
-	Signers         []signerEntry  `json:"signers,omitempty" jsonschema:"可选：multi_signer 专用：签名者列表"`
-	GasPayer        *signerEntry   `json:"gasPayer,omitempty" jsonschema:"可选：multi_signer 专用：独立 gas 代付账户"`
+	Id              string             `json:"id" jsonschema:"必填：保存指令 ID"`
+	Name            *string            `json:"name,omitempty" jsonschema:"可选：新的展示名称；不传保持不变"`
+	Description     *string            `json:"description,omitempty" jsonschema:"可选：新的描述；不传保持不变"`
+	Args            map[string]any     `json:"args,omitempty" jsonschema:"可选：新的方法参数对象；不传保持不变"`
+	PaymentMode     *string            `json:"paymentMode,omitempty" jsonschema:"可选：unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
+	PayerAddress    *string            `json:"payerAddress,omitempty" jsonschema:"可选：新的 payer 地址"`
+	PayerPrivateKey *string            `json:"payerPrivateKey,omitempty" jsonschema:"可选：新的 payer 私钥"`
+	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"可选：新的签名模式对象，规则同 contract_write.signatureMode"`
+	IxAddress       *string            `json:"ixAddress,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户地址"`
+	IxPrivateKey    *string            `json:"ixPrivateKey,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户私钥"`
+	IxSignatureMode *signatureModeSpec `json:"ixSignatureMode,omitempty" jsonschema:"unified_dual_sign 专用：ix 账户签名模式，规则同 signatureMode"`
+	OwnerAddress    *string            `json:"ownerAddress,omitempty" jsonschema:"可选：split 专用：owner 地址"`
+	OwnerPrivateKey *string            `json:"ownerPrivateKey,omitempty" jsonschema:"可选：split 专用：owner 私钥"`
+	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"可选：multi_signer 专用：签名者列表"`
+	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"可选：multi_signer 专用：独立 gas 代付账户"`
 }
 
 // savedInstructionIdArgs 镜像 GetSavedInstruction 的路径参数
@@ -436,7 +451,7 @@ type savedInstructionIdArgs struct {
 type savedInstructionExecuteArgs struct {
 	Id   string `json:"id" jsonschema:"必填：保存指令 ID"`
 	Mode string `json:"mode,omitempty" jsonschema:"可选：read/simulate/send；缺省 auto（view→read、entry→simulate）"`
-	Wait string `json:"wait,omitempty" jsonschema:"可选：send 模式是否等待确认（true/1 等待），缺省 true"`
+	Wait *bool  `json:"wait,omitempty" jsonschema:"可选：send 模式是否等待确认，缺省 true"`
 }
 
 // ==================== Task 6：高层 flow 工具（4 个）====================
@@ -509,11 +524,11 @@ type sftFlowMetadataArgs struct {
 // （handler/sft_flow_handler.go:76，IDL MetadataOverride，全可选指针；
 // 未提供的字段动态继承 SFT metadata）。
 type sftFlowMetadataOverrideArgs struct {
-	Name      *string `json:"name,omitempty"`
-	Symbol    *string `json:"symbol,omitempty"`
-	CoverUrl  *string `json:"coverUrl,omitempty"`
-	Metadata  *string `json:"metadata,omitempty"`
-	Attribute *string `json:"attribute,omitempty"`
+	Name      *string `json:"name,omitempty" jsonschema:"可选：名称覆盖"`
+	Symbol    *string `json:"symbol,omitempty" jsonschema:"可选：符号覆盖"`
+	CoverUrl  *string `json:"coverUrl,omitempty" jsonschema:"可选：封面 URL 覆盖"`
+	Metadata  *string `json:"metadata,omitempty" jsonschema:"可选：自由元数据覆盖"`
+	Attribute *string `json:"attribute,omitempty" jsonschema:"可选：属性（option<String>）覆盖"`
 }
 
 // sftFlowSlotOptionsArgs 镜像 sftFlowSlotOptions（handler/sft_flow_handler.go:85）。

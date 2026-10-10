@@ -3,6 +3,7 @@ package mcpserver
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -132,7 +133,7 @@ func TestBasicToolCallMapping(t *testing.T) {
 		{"account_info", `{"address":"a1"}`, "GET /api/accounts/a1? "},
 		{"faucet_balance", `{"address":"a1"}`, "GET /api/faucet/balance/a1? "},
 		{"tx_get", `{"hash":"h1"}`, "GET /api/transactions/h1? "},
-		{"tx_parse", `{"hash":"h1","remote":"true"}`, "GET /api/transactions/h1/parse?remote=true "},
+		{"tx_parse", `{"hash":"h1","remote":true}`, "GET /api/transactions/h1/parse?remote=true "},
 		{"tx_events", `{"hash":"h1","typeTag":"5"}`, "GET /api/transactions/h1/events?typeTag=5 "},
 		{"tx_wait", `{"hash":"h1"}`, "GET /api/transactions/h1/wait? "},
 		{"rpc_block", `{"height":"123"}`, "GET /api/rpc/blocks/123? "},
@@ -245,9 +246,9 @@ func TestContractToolCallMapping(t *testing.T) {
 		// contract_simulate ← simulateContractRequest（handler/contract.go:165）
 		// 可选字段标 omitempty：未传/零值键不出现在 REST body（与缺省传给 gin 等效）。
 		{"contract_simulate",
-			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"variant":0},"ixAddress":"a2","ixSignatureMode":{"variant":0}}`,
+			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`,
 			"POST", "/api/simulate?",
-			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"variant":0},"ixAddress":"a2","ixSignatureMode":{"variant":0}}`},
+			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`},
 		// contract_simulate_multi ← multiContractRequest（handler/contract.go:1132，SimulateContractMulti:1186）
 		{"contract_simulate_multi",
 			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"unified_payer_all","payerAddress":"a1"}`,
@@ -260,9 +261,9 @@ func TestContractToolCallMapping(t *testing.T) {
 			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1"}`},
 		// contract_write_multi ← multiContractRequest（handler/contract.go:1132，WriteContractMulti:1346）
 		{"contract_write_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/write/multi?",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
 		// contract_write_multi_agent ← writeContractRequest（WriteContractMultiAgent，handler/contract.go:845）
 		{"contract_write_multi_agent",
 			`{"appName":"nft","methodName":"transfer","args":{},"paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2"}`,
@@ -303,28 +304,28 @@ func TestContractToolCallMapping(t *testing.T) {
 		// contractSimulateArgs 的 ownerAddress/signers/gasPayer、
 		// contractMultiArgs 的 ix* 系列、contractWriteArgs 的 signers/gasPayer。----
 		{"contract_simulate",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/simulate?",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
 		{"contract_simulate_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0}}`,
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`,
 			"POST", "/api/simulate/multi?",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0}}`},
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`},
 		{"contract_write",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/write?",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
 		// ---- Task 5 顺手补：Task 4 审查遗留——contractMultiArgs 的
 		// payerPrivateKey/signatureMode/ownerPrivateKey/ownerAddress 与
 		// contractWriteArgs 的 ixSignatureMode 仍无正向传值用例，补 2 例锁拼写。----
 		{"contract_write_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"variant":0},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`,
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`,
 			"POST", "/api/write/multi?",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"variant":0},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`},
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`},
 		{"contract_write_multi_agent",
-			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2","ixSignatureMode":{"variant":0}}`,
+			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`,
 			"POST", "/api/write/multi-agent?",
-			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2","ixSignatureMode":{"variant":0}}`},
+			`{"appName":"nft","methodName":"transfer","paymentMode":"unified_dual_sign","payerPrivateKey":"sk","payerAddress":"a1","ixPrivateKey":"sk2","ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`},
 	}
 	assertRestCalls(t, front.URL, seen, cases)
 }
@@ -484,9 +485,9 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 			`{"name":"n1","appName":"identity","methodName":"m1"}`},
 		// saved_instruction_create：全 16 字段正向传值，锁住全部 json tag 拼写
 		{"saved_instruction_create",
-			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"variant":0},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/saved-instructions?",
-			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"variant":0},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
 		// saved_instruction_list ← ListSavedInstructions（handler/saved_instruction_handler.go:278）：
 		// handler 不读任何 query/param，无参 GET
 		{"saved_instruction_list",
@@ -516,9 +517,9 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 		// saved_instruction_update：全 14 body 字段正向传值（含 signers/gasPayer
 		// 嵌套与 signatureMode 对象），锁住全部 json tag 拼写
 		{"saved_instruction_update",
-			`{"id":"abcd1234","name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"variant":0},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`,
+			`{"id":"abcd1234","name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"PUT", "/api/saved-instructions/abcd1234?",
-			`{"name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"variant":0},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"variant":0},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"variant":0}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"variant":0}}}`},
+			`{"name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
 		// saved_instruction_delete ← DeleteSavedInstruction（handler/saved_instruction_handler.go:363）：
 		// DELETE + c.Param("id")，不读 query/body，无 body 路径
 		{"saved_instruction_delete",
@@ -531,9 +532,10 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 			`{"id":"abcd1234"}`,
 			"POST", "/api/saved-instructions/abcd1234/execute?",
 			`{}`},
-		// saved_instruction_execute：mode/wait 正向传值（query 渲染，handler 不读 body）
+		// saved_instruction_execute：mode/wait 正向传值（query 渲染，handler 不读 body；
+		// wait 类型化为 *bool——2026-10 AI 易用性修复，布尔 false 渲染 wait=false）
 		{"saved_instruction_execute",
-			`{"id":"abcd1234","mode":"send","wait":"false"}`,
+			`{"id":"abcd1234","mode":"send","wait":false}`,
 			"POST", "/api/saved-instructions/abcd1234/execute?mode=send&wait=false",
 			`{}`},
 	}
@@ -629,11 +631,11 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"account_generate":  {}, // keyType 缺省 secp256k1——Task 8 修复点
 		"account_info":      {"address"},
 		"account_resources": {"address"},
-		"account_summary":    {"address"},
+		"account_summary":   {"address"},
 		"faucet_claim":      {"privateKey", "address", "signatureMode"},
 		"faucet_balance":    {"address"},
-		"idl_apps":           {},
-		"idl_methods":        {"appName"},
+		"idl_apps":          {},
+		"idl_methods":       {"appName"},
 		"tx_get":            {"hash"},
 		"tx_parse":          {"hash"},
 		"tx_events":         {"hash"},
@@ -899,5 +901,182 @@ func TestNetworkHeaderPassthrough(t *testing.T) {
 	}
 	if gotNetworks[1] != "" {
 		t.Fatalf("无头回环不应带 X-Milon-Network, got %q", gotNetworks[1])
+	}
+}
+
+// TestSignatureModeSchemasAreTyped 锁定 AI 易用性修复（2026-10）：
+// signatureMode/ixSignatureMode 字段此前镜像为 any，schema 推断产出裸 true
+// （无类型无描述）或仅描述无类型——AI 宿主把 MCP schema 二次编译为模型
+// 函数格式时无法识别字段形态，签名参数等于不可用。
+// 修复后：全部工具 schema 中不得再有裸 true / 仅描述属性；签名模式字段必须是
+// 带 type/publicKey/index 三属性的 object 结构。
+func TestSignatureModeSchemasAreTyped(t *testing.T) {
+	srv := mcpHTTPServer(t, "")
+	out := rpcCall(t, srv.URL, "tools/list", map[string]any{})
+	tools := out["result"].(map[string]any)["tools"].([]any)
+
+	var bareTrue, descOnly []string
+	for _, tl := range tools {
+		toolName := tl.(map[string]any)["name"].(string)
+		sch, _ := tl.(map[string]any)["inputSchema"].(map[string]any)
+		var walk func(node map[string]any, path string)
+		walk = func(node map[string]any, path string) {
+			props, _ := node["properties"].(map[string]any)
+			for k, v := range props {
+				p := path + "." + k
+				switch s := v.(type) {
+				case bool:
+					if s {
+						bareTrue = append(bareTrue, toolName+p)
+					}
+				case map[string]any:
+					if _, hasType := s["type"]; !hasType {
+						if _, hasDesc := s["description"]; hasDesc {
+							descOnly = append(descOnly, toolName+p)
+						} else {
+							bareTrue = append(bareTrue, toolName+p+"(dict无type)")
+						}
+					}
+					walk(s, p)
+					if items, ok := s["items"].(map[string]any); ok {
+						walk(items, p+"[]")
+					}
+				}
+			}
+		}
+		walk(sch, "")
+	}
+	if len(bareTrue) > 0 || len(descOnly) > 0 {
+		t.Fatalf("schema 仍含不可识别字段：裸true=%v 仅描述无类型=%v", bareTrue, descOnly)
+	}
+
+	// contract_write.signatureMode 必须是结构化对象（可空指针 → type 数组含 null）
+	cw := map[string]map[string]any{}
+	for _, tl := range tools {
+		m := tl.(map[string]any)
+		cw[m["name"].(string)] = m["inputSchema"].(map[string]any)
+	}
+	smProps := cw["contract_write"]["properties"].(map[string]any)
+	sig, ok := smProps["signatureMode"].(map[string]any)
+	if !ok {
+		t.Fatalf("contract_write.signatureMode 缺失: %v", smProps["signatureMode"])
+	}
+	if !strings.Contains(strings.Join(fmtAny(sig["type"]), ","), "object") {
+		t.Errorf("signatureMode.type 应含 object, got %v", sig["type"])
+	}
+	sigProps, _ := sig["properties"].(map[string]any)
+	for _, f := range []string{"type", "publicKey", "index"} {
+		if _, ok := sigProps[f]; !ok {
+			t.Errorf("signatureMode.properties 缺少 %s: %v", f, sigProps)
+		}
+	}
+	if d, _ := sigProps["type"].(map[string]any)["description"].(string); !strings.Contains(d, "pubkey") {
+		t.Errorf("signatureMode.type 描述应说明取值, got %q", d)
+	}
+}
+
+func fmtAny(v any) []string {
+	switch s := v.(type) {
+	case []any:
+		var out []string
+		for _, e := range s {
+			out = append(out, fmt.Sprintf("%v", e))
+		}
+		return out
+	case string:
+		return []string{s}
+	default:
+		if v == nil {
+			return nil
+		}
+		return []string{fmt.Sprintf("%v", v)}
+	}
+}
+
+// TestNumericAndBooleanArgsPassSchema 锁定 AI 易用性修复（2026-10）：
+// timeoutSecs（tx_wait/tx_track）此前 schema 为 string、wait（saved_instruction_execute）
+// 与 remote（tx_parse）为 string——AI 按语义传数字/布尔会被 go-sdk 服务端 schema
+// 校验硬拒（"type: 60 has type integer, want string"）。修复后这些字段按真实
+// 类型建模：整数传整数、布尔传布尔，均应通过校验到达回环 REST（后端不可达的
+// 连接错误即证明已通过 schema 校验进入执行器）。
+func TestNumericAndBooleanArgsPassSchema(t *testing.T) {
+	front := httptest.NewServer(NewMCPHandler("")) // 默认 127.0.0.1:8080 不可达即可
+	t.Cleanup(front.Close)
+
+	cases := []struct {
+		name, tool string
+		args       map[string]any
+	}{
+		{"tx_wait timeoutSecs 数字", "tx_wait", map[string]any{"hash": "abc", "timeoutSecs": 60}},
+		{"tx_track timeoutSecs 数字", "tx_track", map[string]any{"hash": "abc", "timeoutSecs": 30}},
+		{"saved_instruction_execute wait 布尔", "saved_instruction_execute", map[string]any{"id": "x", "wait": false}},
+		{"tx_parse remote 布尔", "tx_parse", map[string]any{"hash": "abc", "remote": true}},
+	}
+	for _, c := range cases {
+		out := rpcCall(t, front.URL, "tools/call", map[string]any{"name": c.tool, "arguments": c.args})
+		res, _ := out["result"].(map[string]any)
+		if res == nil {
+			t.Fatalf("%s: 无 result: %v", c.name, out)
+		}
+		text := ""
+		if cs, ok := res["content"].([]any); ok && len(cs) > 0 {
+			text, _ = cs[0].(map[string]any)["text"].(string)
+		}
+		if v, _ := res["isError"].(bool); v && strings.Contains(text, "validating") {
+			t.Errorf("%s: 仍被 schema 校验拒绝: %s", c.name, text)
+		}
+	}
+}
+
+// TestSchemasHaveDescriptions 锁定 AI 易用性修复（2026-10）：
+// 此前 80 个属性无 description（payerAddress×10、payerPrivateKey×8、hash×6、
+// appName/methodName/args×5 等）——AI 只能靠字段名猜语义。修复后：所有工具
+// schema 中每个带 type 的属性都必须有 description；paymentMode 的描述必须
+// 写明每种模式的字段组合（AI 判断该填哪些字段的唯一依据）。
+func TestSchemasHaveDescriptions(t *testing.T) {
+	srv := mcpHTTPServer(t, "")
+	out := rpcCall(t, srv.URL, "tools/list", map[string]any{})
+	tools := out["result"].(map[string]any)["tools"].([]any)
+
+	var missing []string
+	var walkProps func(toolName string, node map[string]any)
+	walkProps = func(toolName string, node map[string]any) {
+		props, _ := node["properties"].(map[string]any)
+		for k, v := range props {
+			s, ok := v.(map[string]any)
+			if !ok {
+				continue
+			}
+			if _, hasType := s["type"]; hasType {
+				if _, hasDesc := s["description"]; !hasDesc {
+					missing = append(missing, toolName+"."+k)
+				}
+			}
+			walkProps(toolName+"."+k, s)
+			if items, ok := s["items"].(map[string]any); ok {
+				walkProps(toolName+"."+k+"[]", items)
+			}
+		}
+	}
+	var pmDesc string
+	for _, tl := range tools {
+		m := tl.(map[string]any)
+		name := m["name"].(string)
+		sch := m["inputSchema"].(map[string]any)
+		walkProps(name, sch)
+		if name == "contract_write" {
+			props := sch["properties"].(map[string]any)
+			if pm, ok := props["paymentMode"].(map[string]any); ok {
+				pmDesc, _ = pm["description"].(string)
+			}
+		}
+	}
+	if len(missing) > 0 {
+		t.Errorf("仍有无 description 的属性 %d 个: %v", len(missing), missing)
+	}
+	for _, kw := range []string{"unified_payer_all", "unified_dual_sign", "unified_payer_only_gas", "split", "multi_signer", "sponsored", "signers", "payerPrivateKey", "ownerPrivateKey", "ixPrivateKey"} {
+		if !strings.Contains(pmDesc, kw) {
+			t.Errorf("contract_write.paymentMode 描述缺模式/字段说明 %q，got %q", kw, pmDesc)
+		}
 	}
 }
