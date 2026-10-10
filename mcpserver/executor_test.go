@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // newFakeBackend 起一个记录请求的假 REST 后端。
@@ -134,4 +135,36 @@ func TestExecutorCall(t *testing.T) {
 			t.Fatal("want unreachable error")
 		}
 	})
+}
+
+// TestExecutorTimeoutMessage（2026-10 AI 易用性）：回环调用超时不得与
+// "REST 后端不可达" 混淆——sft_flow 最多 20 笔分发同步等待，此前 120s 超时
+// 报 "milon REST 后端不可达: context deadline exceeded" 误导排查。修复后：
+// 默认超时提到 300s，超时错误单独措辞并注明时长。
+func TestExecutorTimeoutMessage(t *testing.T) {
+	slow := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	t.Cleanup(slow.Close)
+	e := NewExecutor(slow.URL, &http.Client{Timeout: 30 * time.Millisecond})
+	_, err := e.Call(context.Background(), RESTMapping{Method: "GET", PathTemplate: "/api/network/list"}, nil)
+	if err == nil {
+		t.Fatal("want timeout error")
+	}
+	if !strings.Contains(err.Error(), "超时") {
+		t.Fatalf("超时错误应单独措辞: %v", err)
+	}
+	if strings.Contains(err.Error(), "不可达") {
+		t.Fatalf("超时不应报成不可达: %v", err)
+	}
+}
+
+// TestExecutorDefaultTimeout 锁定默认回环超时 300s（长任务 sft_flow 需要）。
+func TestExecutorDefaultTimeout(t *testing.T) {
+	e := NewExecutor("http://127.0.0.1:1", nil)
+	if e.http.Timeout != 300*time.Second {
+		t.Fatalf("默认超时=%v, want 300s", e.http.Timeout)
+	}
 }

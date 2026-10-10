@@ -5,10 +5,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -45,7 +47,9 @@ type Executor struct {
 
 func NewExecutor(baseURL string, httpClient *http.Client) *Executor {
 	if httpClient == nil {
-		httpClient = &http.Client{Timeout: 120 * time.Second}
+		// 300s：覆盖长任务（sft_flow 最多 20 笔分发同步等待确认），此前 120s
+		// 会在多笔分发场景撞线（2026-10 AI 易用性）。
+		httpClient = &http.Client{Timeout: 300 * time.Second}
 	}
 	return &Executor{baseURL: strings.TrimRight(baseURL, "/"), http: httpClient}
 }
@@ -101,6 +105,11 @@ func (e *Executor) Call(ctx context.Context, m RESTMapping, argsJSON json.RawMes
 	}
 	resp, err := e.http.Do(req)
 	if err != nil {
+		// 超时单独措辞：此前与"不可达"混在一起（context deadline exceeded 套在
+		// "REST 后端不可达" 里），误导长任务排障
+		if errors.Is(err, context.DeadlineExceeded) || os.IsTimeout(err) {
+			return nil, fmt.Errorf("milon REST 回环调用超时（长任务可改用 bulk_transfer 异步端点或拆小步骤）: %w", err)
+		}
 		return nil, fmt.Errorf("milon REST 后端不可达: %w", err)
 	}
 	defer resp.Body.Close()
