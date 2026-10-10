@@ -651,14 +651,16 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		// Task 3：contract.go appName/methodName/paymentMode/instructions 均
 		// binding:"required"；transaction_handler.go/view_handler.go postcard
 		// binding:"required"
-		"contract_read":              {"appName", "methodName"},
-		"contract_read_multi":        {"instructions"},
-		"contract_simulate":          {"appName", "methodName", "paymentMode"},
-		"contract_simulate_multi":    {"instructions", "paymentMode"},
-		"contract_write":             {"appName", "methodName", "paymentMode"},
-		"contract_write_multi":       {"instructions", "paymentMode"},
-		"contract_write_multi_agent": {"appName", "methodName", "paymentMode"},
-		"contract_write_multisig":    {"appName", "methodName", "paymentMode"},
+		"contract_read":           {"appName", "methodName"},
+		"contract_read_multi":     {"instructions"},
+		"contract_simulate":       {"appName", "methodName", "paymentMode"},
+		"contract_simulate_multi": {"instructions", "paymentMode"},
+		"contract_write":          {"appName", "methodName", "paymentMode"},
+		"contract_write_multi":    {"instructions", "paymentMode"},
+		// multi-agent/multisig 端点已隐含模式：paymentMode 可缺省（2026-10
+		// handler 端点缺省化，contract_write_multi-agent.go 显式填充/校验）
+		"contract_write_multi_agent": {"appName", "methodName"},
+		"contract_write_multisig":    {"appName", "methodName"},
 		"tx_simulate_raw":            {"transactionPostcard"},
 		"tx_submit_raw":              {"transactionPostcard"},
 		"tx_inspect_raw":             {"transactionPostcard"},

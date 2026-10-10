@@ -192,6 +192,15 @@ type contractMultiArgs struct {
 	GasPayer        *signerEntry               `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
 }
 
+// contractWriteDedicatedArgs：multi-agent / multisig 专用端点的入参——
+// 嵌入 contractWriteArgs 并遮蔽 paymentMode 为可选（端点本身已隐含模式：
+// multi-agent=unified_dual_sign、multisig=split，缺省自动填充，2026-10 AI 易用性）。
+// encoding/json 浅层字段优先：序列化只出外层 paymentMode，wire 无重复键。
+type contractWriteDedicatedArgs struct {
+	contractWriteArgs
+	PaymentMode string `json:"paymentMode,omitempty" jsonschema:"可缺省：multi-agent 端点隐含 unified_dual_sign、multisig 端点隐含 split；显式传错值会被拒"`
+}
+
 // contractWriteArgs 镜像 writeContractRequest（handler/contract.go:789，
 // POST /api/write、/api/write/multi-agent（WriteContractMultiAgent:845）、
 // /api/write/multisig（WriteContractMultisig:881）共用）。
@@ -807,8 +816,8 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	// 合约写（真实上链）
 	registerTool[contractWriteArgs](srv, exec, "contract_write", "构建并提交合约写交易（按 paymentMode 签名，真实上链）", RESTMapping{Method: "POST", PathTemplate: "/api/write"})
 	registerTool[contractMultiArgs](srv, exec, "contract_write_multi", "多指令打包写交易（单笔交易原子上链）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi"})
-	registerTool[contractWriteArgs](srv, exec, "contract_write_multi_agent", "双账户写交易（unified_dual_sign：付 gas 与指令执行账户不同）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi-agent"})
-	registerTool[contractWriteArgs](srv, exec, "contract_write_multisig", "split 模式写交易（owner 付 gas 并签指令）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multisig"})
+	registerTool[contractWriteDedicatedArgs](srv, exec, "contract_write_multi_agent", "双账户写交易（unified_dual_sign：付 gas 与指令执行账户不同；paymentMode 可缺省，端点已隐含）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi-agent"})
+	registerTool[contractWriteDedicatedArgs](srv, exec, "contract_write_multisig", "split 模式写交易（owner 付 gas 并签指令；paymentMode 可缺省，端点已隐含）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multisig"})
 	registerTool[writeSafeArgs](srv, exec, "contract_write_safe",
 		"安全版合约写：先模拟（不消耗 gas）再真签提交——模拟失败返回 stage=simulate_failed 并阻止上链，模拟通过才走与 contract_write 完全相同的提交路径；请求参数与 contract_write 一致",
 		RESTMapping{Method: "POST", PathTemplate: "/api/write-safe"})

@@ -908,7 +908,7 @@ type writeContractRequest struct {
 	AppName         string          `json:"appName" binding:"required"`
 	MethodName      string          `json:"methodName" binding:"required"`
 	Args            provider.Args   `json:"args"`
-	PaymentMode     string          `json:"paymentMode" binding:"required"`
+	PaymentMode     string          `json:"paymentMode"`
 	PayerPrivateKey string          `json:"payerPrivateKey"`
 	PayerAddress    string          `json:"payerAddress"`
 	SignatureMode   json.RawMessage `json:"signatureMode"`
@@ -934,6 +934,14 @@ func (h *ContractHandler) WriteContract(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logParamError(c, "WriteContract", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
+		return
+	}
+	// paymentMode 改为显式校验（shared struct 去掉 binding 以便专用端点缺省化）；
+	// 通用端点契约不变：必须显式指定
+	if req.PaymentMode == "" {
+		logParamError(c, "WriteContract", fmt.Errorf("paymentMode is required"))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER,
+			"paymentMode is required（unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored）", nil))
 		return
 	}
 
@@ -971,6 +979,10 @@ func (h *ContractHandler) WriteContractMultiAgent(c *gin.Context) {
 		return
 	}
 
+	// 端点本身已隐含模式：缺省自动填充，显式传错值仍被拒（2026-10 AI 易用性）
+	if req.PaymentMode == "" {
+		req.PaymentMode = PaymentModeUnifiedDualSign
+	}
 	if req.PaymentMode != PaymentModeUnifiedDualSign {
 		err := fmt.Errorf("multi-agent endpoint requires paymentMode=unified_dual_sign")
 		logParamError(c, "WriteContractMultiAgent", err)
@@ -1006,6 +1018,10 @@ func (h *ContractHandler) WriteContractMultisig(c *gin.Context) {
 		return
 	}
 
+	// 端点本身已隐含模式：缺省自动填充，显式传错值仍被拒（2026-10 AI 易用性）
+	if req.PaymentMode == "" {
+		req.PaymentMode = PaymentModeSplit
+	}
 	if req.PaymentMode != PaymentModeSplit {
 		err := fmt.Errorf("multisig endpoint requires paymentMode=split")
 		logParamError(c, "WriteContractMultisig", err)
