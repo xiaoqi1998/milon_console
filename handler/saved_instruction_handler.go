@@ -62,6 +62,40 @@ type SavedInstruction struct {
 	UpdatedAt int64 `json:"updatedAt"`
 }
 
+// scrubSecrets 就地清空 SavedInstruction 全部密钥字段，返回是否有变化。
+// 安全不变量：服务器不持久化任何私钥；saved-instructions 只存"怎么调用"
+//（方法/参数/地址/签名模式），签名身份在 send 执行时由请求方临时提供（过境即焚）。
+func scrubSecrets(item *SavedInstruction) bool {
+	changed := false
+	if item.PayerPrivateKey != "" {
+		item.PayerPrivateKey = ""
+		changed = true
+	}
+	if item.IxPrivateKey != "" {
+		item.IxPrivateKey = ""
+		changed = true
+	}
+	if item.OwnerPrivateKey != "" {
+		item.OwnerPrivateKey = ""
+		changed = true
+	}
+	if item.GasPayer != nil && item.GasPayer.PrivateKey != "" {
+		gp := *item.GasPayer
+		gp.PrivateKey = ""
+		item.GasPayer = &gp
+		changed = true
+	}
+	for i := range item.Signers {
+		if item.Signers[i].PrivateKey != "" {
+			s := item.Signers[i]
+			s.PrivateKey = ""
+			item.Signers[i] = s
+			changed = true
+		}
+	}
+	return changed
+}
+
 // ---------- Store ----------
 
 // SavedInstructionStore persists saved instructions to a JSON file.
@@ -99,8 +133,16 @@ func (s *SavedInstructionStore) load() error {
 		return fmt.Errorf("failed to parse %s: %w", s.filePath, err)
 	}
 	s.items = make(map[string]*SavedInstruction, len(list))
+	scrubbed := false
 	for _, item := range list {
+		if scrubSecrets(item) {
+			scrubbed = true
+		}
 		s.items[item.ID] = item
+	}
+	// 旧版本落盘的密钥一次性洗掉并重写文件
+	if scrubbed {
+		return s.save()
 	}
 	return nil
 }
@@ -114,7 +156,8 @@ func (s *SavedInstructionStore) save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(s.filePath, data, 0o644)
+	// 0600：文件内是调用配置，仍按敏感数据对待（同机其他用户不可读）
+	return os.WriteFile(s.filePath, data, 0o600)
 }
 
 func (s *SavedInstructionStore) List() []*SavedInstruction {
@@ -269,6 +312,9 @@ func (h *SavedInstructionHandler) CreateSavedInstruction(c *gin.Context) {
 		item.PaymentMode = PaymentModeUnifiedPayerAll
 	}
 
+	// 安全不变量：密钥过境即焚——请求里带的密钥字段仅作兼容，落盘前剥离
+	scrubSecrets(item)
+
 	if err := h.store.Create(item); err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to save instruction: "+err.Error(), nil))
 		return
@@ -354,6 +400,9 @@ func (h *SavedInstructionHandler) UpdateSavedInstruction(c *gin.Context) {
 	}
 	item.UpdatedAt = time.Now().UnixMilli()
 
+	// 安全不变量：Update 路径同样不落密钥
+	scrubSecrets(item)
+
 	if err := h.store.Update(item); err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to update instruction: "+err.Error(), nil))
 		return
@@ -377,6 +426,84 @@ func (h *SavedInstructionHandler) DeleteSavedInstruction(c *gin.Context) {
 }
 
 // --- Execute ---
+
+// executeSavedInstructionRequest 是 send 模式的一次性签名材料（过境即焚，不落盘）。
+// 字段与 create 请求的签名族字段同构，按 paymentMode 取所需子集。
+type executeSavedInstructionRequest struct {
+	PayerPrivateKey string              `json:"payerPrivateKey"`
+	IxPrivateKey    string              `json:"ixPrivateKey"`
+	OwnerPrivateKey string              `json:"ownerPrivateKey"`
+	Signers         []types.SignerEntry `json:"signers"`
+	GasPayer        *types.SignerEntry  `json:"gasPayer"`
+}
+
+// mergeSigners 把请求方临时提供的签名密钥按地址合并进存储的 signer 配置
+//（存储侧只有地址/签名模式，无密钥）；请求中带密钥但无对应存储条目的追加为完整 signer。
+func mergeSigners(stored, supplied []types.SignerEntry) []types.SignerEntry {
+	if len(supplied) == 0 {
+		return stored
+	}
+	out := make([]types.SignerEntry, len(stored))
+	copy(out, stored)
+	for _, s := range supplied {
+		if s.Address == "" || s.PrivateKey == "" {
+			continue
+		}
+		matched := false
+		for i := range out {
+			if out[i].Address == s.Address {
+				out[i].PrivateKey = s.PrivateKey
+				if s.SignatureMode != nil {
+					out[i].SignatureMode = s.SignatureMode
+				}
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// requireSendKeys 按 paymentMode 校验 send 模式所需的一次性签名材料是否齐备。
+// 错误信息显式指向"请求体"字段，引导调用方在执行请求（而非保存）时提供密钥。
+func requireSendKeys(item *SavedInstruction) error {
+	switch item.PaymentMode {
+	case PaymentModeUnifiedPayerAll, "":
+		if item.PayerPrivateKey == "" {
+			return fmt.Errorf("send 模式需要私钥：请求体缺少 payerPrivateKey（paymentMode=%s）", item.PaymentMode)
+		}
+	case PaymentModeUnifiedDualSign:
+		if item.PayerPrivateKey == "" || item.IxPrivateKey == "" {
+			return fmt.Errorf("send 模式需要私钥：请求体缺少 payerPrivateKey/ixPrivateKey（unified_dual_sign 需两者）")
+		}
+	case PaymentModeSplit:
+		if item.OwnerPrivateKey == "" && item.PayerPrivateKey == "" {
+			return fmt.Errorf("send 模式需要私钥：请求体缺少 ownerPrivateKey（split 模式，或以 payerPrivateKey 代 owner）")
+		}
+	case PaymentModeMultiSigner:
+		hasKey := false
+		for _, s := range item.Signers {
+			if s.PrivateKey != "" {
+				hasKey = true
+				break
+			}
+		}
+		if !hasKey {
+			return fmt.Errorf("send 模式需要私钥：请求体 signers 未提供任何 privateKey（multi_signer）")
+		}
+		if item.GasPayer != nil && item.GasPayer.PrivateKey == "" {
+			return fmt.Errorf("send 模式需要私钥：请求体 gasPayer 缺少 privateKey（multi_signer + 独立 gas 代付）")
+		}
+	case PaymentModeSponsored:
+		if item.PayerPrivateKey == "" {
+			return fmt.Errorf("send 模式需要私钥：请求体缺少 payerPrivateKey（sponsored）")
+		}
+	}
+	return nil
+}
 
 // ExecuteSavedInstruction handles POST /api/saved-instructions/:id/execute
 // Query params:
@@ -494,6 +621,36 @@ func (h *SavedInstructionHandler) executeSend(c *gin.Context, mc *milon.Client, 
 		return
 	}
 
+	// send 模式：签名材料由请求方临时提供（过境即焚，服务器不存密钥）。
+	// body 缺失/空/非法 JSON 一律视为未提供，由 requireSendKeys 给出明确 400。
+	// 密钥契约校验先于参数编码——"缺私钥"永远是第一错误。
+	var req executeSavedInstructionRequest
+	if c.Request != nil && c.Request.Body != nil {
+		_ = c.ShouldBindJSON(&req)
+	}
+	work := *item
+	work.PayerPrivateKey = req.PayerPrivateKey
+	work.IxPrivateKey = req.IxPrivateKey
+	work.OwnerPrivateKey = req.OwnerPrivateKey
+	work.Signers = mergeSigners(item.Signers, req.Signers)
+	if req.GasPayer != nil {
+		if item.GasPayer != nil && item.GasPayer.Address != "" && item.GasPayer.Address == req.GasPayer.Address {
+			// 存储里保留了 gasPayer 地址/签名模式，仅注入本次密钥
+			gp := *item.GasPayer
+			gp.PrivateKey = req.GasPayer.PrivateKey
+			if req.GasPayer.SignatureMode != nil {
+				gp.SignatureMode = req.GasPayer.SignatureMode
+			}
+			work.GasPayer = &gp
+		} else {
+			work.GasPayer = req.GasPayer
+		}
+	}
+	if err := requireSendKeys(&work); err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+
 	wire, err := encodeWithCoercion(pd, item.MethodName, item.Args)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "failed to encode instruction: "+err.Error(), nil))
@@ -501,7 +658,7 @@ func (h *SavedInstructionHandler) executeSend(c *gin.Context, mc *milon.Client, 
 	}
 	instructions := []api.PackedInstruction{wire}
 
-	tx, err := h.buildSignedTx(item, instructions)
+	tx, err := h.buildSignedTx(&work, instructions)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "failed to build signed tx: "+err.Error(), nil))
 		return

@@ -413,6 +413,8 @@ type didNameBindingArgs struct {
 // name/appName/methodName 带 binding:"required"，不标 omitempty；
 // 其余可选（entry 方法保存时 paymentMode 缺省 unified_payer_all）。
 // signatureMode/ixSignatureMode 为 handler 侧 json.RawMessage，按规则镜像为 any。
+// 安全不变量（scrubSecrets）：保存路径不持久化任何私钥，故本结构刻意不镜像
+// payerPrivateKey/ixPrivateKey/ownerPrivateKey——密钥只在 execute 请求体临时出现。
 type savedInstructionCreateArgs struct {
 	Name            string             `json:"name" jsonschema:"必填：展示名称"`
 	Description     string             `json:"description,omitempty" jsonschema:"可选：指令描述"`
@@ -420,16 +422,13 @@ type savedInstructionCreateArgs struct {
 	MethodName      string             `json:"methodName" jsonschema:"必填：IDL 方法名"`
 	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
 	PaymentMode     string             `json:"paymentMode,omitempty" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored；entry 缺省 unified_payer_all"`
-	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"payer 地址；有 payerPrivateKey 时可缺省自动派生"`
-	PayerPrivateKey string             `json:"payerPrivateKey,omitempty" jsonschema:"payer 私钥（hex 或 base58）"`
-	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"规则同 contract_write.signatureMode：缺省自动派生（有私钥时）"`
+	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"payer 地址（私钥不保存，send 执行时另行提供）"`
+	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"规则同 contract_write.signatureMode"`
 	IxAddress       string             `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
-	IxPrivateKey    string             `json:"ixPrivateKey,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户私钥"`
 	IxSignatureMode *signatureModeSpec `json:"ixSignatureMode,omitempty" jsonschema:"unified_dual_sign 专用：ix 账户签名模式，规则同 signatureMode"`
 	OwnerAddress    string             `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
-	OwnerPrivateKey string             `json:"ownerPrivateKey,omitempty" jsonschema:"split 专用：owner 私钥，缺省取 payerPrivateKey"`
-	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
-	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
+	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表（仅地址/签名模式入库，privateKey 不落盘）"`
+	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户（仅地址/签名模式入库）"`
 }
 
 // savedInstructionUpdateArgs 镜像 updateSavedInstructionRequest
@@ -440,6 +439,7 @@ type savedInstructionCreateArgs struct {
 // handler 不支持改 appName/methodName/kind（需换方法请删除后重建），
 // 故镜像不含这三字段。signatureMode/ixSignatureMode 为 handler 侧
 // json.RawMessage，按规则镜像为 signatureModeSpec（指针保持部分更新语义）。
+// 同 create：密钥字段不镜像（scrubSecrets 不变量，私钥永不落盘）。
 type savedInstructionUpdateArgs struct {
 	Id              string             `json:"id" jsonschema:"必填：保存指令 ID"`
 	Name            *string            `json:"name,omitempty" jsonschema:"可选：新的展示名称；不传保持不变"`
@@ -447,15 +447,12 @@ type savedInstructionUpdateArgs struct {
 	Args            map[string]any     `json:"args,omitempty" jsonschema:"可选：新的方法参数对象；不传保持不变"`
 	PaymentMode     *string            `json:"paymentMode,omitempty" jsonschema:"可选：unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
 	PayerAddress    *string            `json:"payerAddress,omitempty" jsonschema:"可选：新的 payer 地址"`
-	PayerPrivateKey *string            `json:"payerPrivateKey,omitempty" jsonschema:"可选：新的 payer 私钥"`
 	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"可选：新的签名模式对象，规则同 contract_write.signatureMode"`
 	IxAddress       *string            `json:"ixAddress,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户地址"`
-	IxPrivateKey    *string            `json:"ixPrivateKey,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户私钥"`
-	IxSignatureMode *signatureModeSpec `json:"ixSignatureMode,omitempty" jsonschema:"unified_dual_sign 专用：ix 账户签名模式，规则同 signatureMode"`
+	IxSignatureMode *signatureModeSpec `json:"ixSignatureMode,omitempty" jsonschema:"可选：unified_dual_sign 专用：ix 账户签名模式"`
 	OwnerAddress    *string            `json:"ownerAddress,omitempty" jsonschema:"可选：split 专用：owner 地址"`
-	OwnerPrivateKey *string            `json:"ownerPrivateKey,omitempty" jsonschema:"可选：split 专用：owner 私钥"`
-	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"可选：multi_signer 专用：签名者列表"`
-	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"可选：multi_signer 专用：独立 gas 代付账户"`
+	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"可选：multi_signer 专用：签名者列表（仅地址/签名模式入库）"`
+	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"可选：multi_signer 专用：独立 gas 代付账户（仅地址/签名模式入库）"`
 }
 
 // savedInstructionIdArgs 镜像 GetSavedInstruction 的路径参数
@@ -465,13 +462,21 @@ type savedInstructionIdArgs struct {
 }
 
 // savedInstructionExecuteArgs 镜像 ExecuteSavedInstruction 的参数
-// （handler/saved_instruction_handler.go:383：c.Param("id") + DefaultQuery
-// "mode"（:395，缺省 auto：view→read、entry→simulate）/"wait"（:515，仅 send
-// 模式读取，缺省 true））。handler 不读 body，mode/wait 渲染为 query。
+// （handler/saved_instruction_handler.go：c.Param("id") + DefaultQuery
+// "mode"（缺省 auto：view→read、entry→simulate）/"wait"（仅 send 模式读取，
+// 缺省 true））。send 模式额外读 body 的一次性签名材料（过境即焚，不落盘）：
+// 按 paymentMode 提供 payerPrivateKey（unified_*/sponsored）、
+// ixPrivateKey（unified_dual_sign 另加）、ownerPrivateKey（split）、
+// signers[].privateKey（multi_signer）。
 type savedInstructionExecuteArgs struct {
-	Id   string `json:"id" jsonschema:"必填：保存指令 ID"`
-	Mode string `json:"mode,omitempty" jsonschema:"可选：read/simulate/send；缺省 auto（view→read、entry→simulate）"`
-	Wait *bool  `json:"wait,omitempty" jsonschema:"可选：send 模式是否等待确认，缺省 true"`
+	Id              string         `json:"id" jsonschema:"必填：保存指令 ID"`
+	Mode            string         `json:"mode,omitempty" jsonschema:"可选：read/simulate/send；缺省 auto（view→read、entry→simulate）"`
+	Wait            *bool          `json:"wait,omitempty" jsonschema:"可选：send 模式是否等待确认，缺省 true"`
+	PayerPrivateKey string         `json:"payerPrivateKey,omitempty" jsonschema:"send 模式一次性 payer 私钥（hex/base58，过境即焚不落盘；unified_*/sponsored 必填）"`
+	IxPrivateKey    string         `json:"ixPrivateKey,omitempty" jsonschema:"send+unified_dual_sign 一次性 ix 私钥"`
+	OwnerPrivateKey string         `json:"ownerPrivateKey,omitempty" jsonschema:"send+split 一次性 owner 私钥（或以 payerPrivateKey 代）"`
+	Signers         []signerEntry  `json:"signers,omitempty" jsonschema:"send+multi_signer 一次性签名者列表（按地址匹配已存 signer 注入 privateKey）"`
+	GasPayer        *signerEntry   `json:"gasPayer,omitempty" jsonschema:"send+multi_signer 可选：一次性独立 gas 代付（含 privateKey）"`
 }
 
 // ==================== Task 6：高层 flow 工具（4 个）====================
@@ -931,7 +936,7 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	// ---- Task 5：保存指令（6 个）----
 
 	registerTool[savedInstructionCreateArgs](srv, exec, "saved_instruction_create",
-		"保存一条 IDL 方法调用（含账户/签名绑定）供后续反复执行；kind 由 IDL 自动检测（view/entry），entry 方法 paymentMode 缺省 unified_payer_all",
+		"保存一条 IDL 方法调用供后续反复执行（安全不变量：私钥不落盘，仅存方法/参数/地址/签名模式，send 执行时另行临时提供签名私钥）；kind 由 IDL 自动检测（view/entry），entry 方法 paymentMode 缺省 unified_payer_all",
 		RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions"})
 	registerTool[emptyArgs](srv, exec, "saved_instruction_list",
 		"列出全部保存的指令",
@@ -946,7 +951,7 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		"按 ID 删除保存的指令（不可恢复）",
 		RESTMapping{Method: "DELETE", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}})
 	registerTool[savedInstructionExecuteArgs](srv, exec, "saved_instruction_execute",
-		"执行保存的指令（mode 缺省 auto：view→read、entry→simulate；send 真实上链，可用 wait 控制是否等待确认）",
+		"执行保存的指令（mode 缺省 auto：view→read、entry→simulate；send 真实上链，可用 wait 控制是否等待确认；服务器不存密钥——send 模式须在参数临时提供签名私钥（过境即焚）：unified_*/sponsored 传 payerPrivateKey，dual_sign 另加 ixPrivateKey，split 传 ownerPrivateKey，multi_signer 传 signers[].privateKey）",
 		RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions/{id}/execute", PathParams: []string{"id"}, QueryParams: []string{"mode", "wait"}})
 
 	// ---- Task 6：高层 flow 工具（4 个）----

@@ -381,7 +381,9 @@ func TestUtilToolCallMapping(t *testing.T) {
 // 字段镜像自 handler/did_handler.go 与 handler/saved_instruction_handler.go 的
 // request struct（json tag 逐字一致）；GET+query 工具（did_name_binding、
 // saved_instruction_execute 的 mode/wait）有带 query 的正向断言；
-// saved_instruction_create 全 16 字段正向传值锁住全部 json tag 拼写；
+// saved_instruction_create 全 13 字段正向传值锁住全部 json tag 拼写
+//（密钥字段不在 create/update 契约——scrubSecrets 安全不变量，私钥只在
+// execute 请求体临时出现，见下方 send 用例）；
 // saved_instruction_update 有部分更新（指针语义 body）断言，delete 无 body。
 func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 	backend, seen := newFakeBackend(t, 200, `{"code":0}`)
@@ -471,11 +473,12 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 			`{"name":"n1","appName":"identity","methodName":"m1"}`,
 			"POST", "/api/saved-instructions?",
 			`{"name":"n1","appName":"identity","methodName":"m1"}`},
-		// saved_instruction_create：全 16 字段正向传值，锁住全部 json tag 拼写
+		// saved_instruction_create：全 13 字段正向传值，锁住全部 json tag 拼写。
+		// 安全不变量（scrubSecrets）：密钥字段不在 create 契约——服务器不持久化私钥
 		{"saved_instruction_create",
-			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
+			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","signers":[{"address":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/saved-instructions?",
-			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
+			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","signers":[{"address":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
 		// saved_instruction_list ← ListSavedInstructions（handler/saved_instruction_handler.go:278）：
 		// handler 不读任何 query/param，无参 GET
 		{"saved_instruction_list",
@@ -502,12 +505,12 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 			`{"id":"abcd1234","description":"d2","args":{"id":"a2"},"paymentMode":"split"}`,
 			"PUT", "/api/saved-instructions/abcd1234?",
 			`{"description":"d2","args":{"id":"a2"},"paymentMode":"split"}`},
-		// saved_instruction_update：全 14 body 字段正向传值（含 signers/gasPayer
-		// 嵌套与 signatureMode 对象），锁住全部 json tag 拼写
+		// saved_instruction_update：全 11 body 字段正向传值（含 signers/gasPayer
+		// 嵌套与 signatureMode 对象），锁住全部 json tag 拼写；密钥字段不在契约
 		{"saved_instruction_update",
-			`{"id":"abcd1234","name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
+			`{"id":"abcd1234","name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","signers":[{"address":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"PUT", "/api/saved-instructions/abcd1234?",
-			`{"name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","ownerPrivateKey":"sk3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
+			`{"name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","signers":[{"address":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
 		// saved_instruction_delete ← DeleteSavedInstruction（handler/saved_instruction_handler.go:363）：
 		// DELETE + c.Param("id")，不读 query/body，无 body 路径
 		{"saved_instruction_delete",
@@ -520,12 +523,18 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 			`{"id":"abcd1234"}`,
 			"POST", "/api/saved-instructions/abcd1234/execute?",
 			`{}`},
-		// saved_instruction_execute：mode/wait 正向传值（query 渲染，handler 不读 body；
+		// saved_instruction_execute：mode/wait 正向传值（query 渲染；
 		// wait 类型化为 *bool——2026-10 AI 易用性修复，布尔 false 渲染 wait=false）
 		{"saved_instruction_execute",
 			`{"id":"abcd1234","mode":"send","wait":false}`,
 			"POST", "/api/saved-instructions/abcd1234/execute?mode=send&wait=false",
 			`{}`},
+		// saved_instruction_execute：send 模式一次性签名私钥（过境即焚）——
+		// 密钥随 body 临时提供，id/mode/wait 之外的参数全部进 body
+		{"saved_instruction_execute",
+			`{"id":"abcd1234","mode":"send","payerPrivateKey":"sk1"}`,
+			"POST", "/api/saved-instructions/abcd1234/execute?mode=send",
+			`{"payerPrivateKey":"sk1"}`},
 	}
 	assertRestCalls(t, front.URL, seen, cases)
 }

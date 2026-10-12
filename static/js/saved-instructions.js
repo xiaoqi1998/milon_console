@@ -117,7 +117,7 @@ function buildSavedCard(item, ctx) {
     actions.appendChild(el('button', { class: 'btn btn-small btn-primary', text: '执行 read', onclick: function () { runSaved(item, 'read', ctx); } }));
   } else {
     actions.appendChild(el('button', { class: 'btn btn-small btn-primary', text: 'simulate', onclick: function () { runSaved(item, 'simulate', ctx); } }));
-    actions.appendChild(el('button', { class: 'btn btn-small btn-danger', text: 'send 上链', onclick: function () { runSaved(item, 'send', ctx); } }));
+    actions.appendChild(el('button', { class: 'btn btn-small btn-danger', text: 'send 上链', onclick: function () { confirmAndSendSaved(item, ctx); } }));
   }
   if (ctx === 'idl') {
     actions.appendChild(el('button', { class: 'btn btn-small', text: '载入表单', onclick: function () { loadSavedIntoIDLForm(item); } }));
@@ -143,12 +143,39 @@ function safeJSON(v) {
   try { return JSON.stringify(v); } catch (e) { return String(v); }
 }
 
+// stripSavedSecrets 就地剥掉保存载荷里的全部密钥字段（与后端 scrubSecrets 同一不变量：
+// 服务器不持久化任何私钥；signers/gasPayer 保留地址/签名模式，仅去掉 privateKey）。
+function stripSavedSecrets(payload) {
+  delete payload.payerPrivateKey;
+  delete payload.ownerPrivateKey;
+  delete payload.ixPrivateKey;
+  if (payload.signers) {
+    payload.signers = payload.signers.map(function (s) {
+      var c = Object.assign({}, s);
+      delete c.privateKey;
+      return c;
+    });
+  }
+  if (payload.gasPayer) {
+    var g = Object.assign({}, payload.gasPayer);
+    delete g.privateKey;
+    payload.gasPayer = g;
+  }
+  return payload;
+}
+
 // ---------- 执行 ----------
 
-async function runSaved(item, mode, ctx) {
+async function runSaved(item, mode, ctx, opts) {
   var start = performance.now();
   try {
-    var resp = await apiFetch('/api/saved-instructions/' + item.id + '/execute?mode=' + encodeURIComponent(mode), { method: 'POST' });
+    var init = { method: 'POST' };
+    // send 模式：签名密钥随请求体临时提供（过境即焚，服务器不存）
+    if (mode === 'send' && opts && opts.payerPrivateKey) {
+      init.headers = { 'Content-Type': 'application/json' };
+      init.body = JSON.stringify({ payerPrivateKey: opts.payerPrivateKey });
+    }
+    var resp = await apiFetch('/api/saved-instructions/' + item.id + '/execute?mode=' + encodeURIComponent(mode), init);
     var dur = Math.round(performance.now() - start);
     var text = await resp.text();
     var size = new Blob([text]).size;
@@ -164,6 +191,37 @@ async function runSaved(item, mode, ctx) {
   } catch (err) {
     showToast('执行失败: ' + (err.message || String(err)), 'error');
   }
+}
+
+// confirmAndSendSaved：send 上链前的确认弹窗。
+// 服务器不存密钥——签名使用本地当前活跃账户（请求体临时提供，过境即焚）。
+// 弹窗明示将执行的完整参数（尤其转账 to 地址），防"诱导一键签名"：
+// 任何人都能存一条 to=自己地址的指令，靠他人一键执行获利。
+function confirmAndSendSaved(item, ctx) {
+  var acc = (typeof getCurrentAccount === 'function') ? getCurrentAccount() : null;
+  var key = (acc && acc.privateKey) ? acc.privateKey : '';
+  var pm = item.paymentMode || '';
+  var needsMore = (pm === 'unified_dual_sign' || pm === 'multi_signer');
+  var modal = buildModalShell('确认上链执行');
+  modal.body.appendChild(el('div', { class: 'si-modal-desc', text: (item.name || item.id) + '（' + item.appName + '.' + item.methodName + '）' }));
+  modal.body.appendChild(el('pre', { class: 'saved-card-args', text: 'args: ' + safeJSON(item.args || {}) }));
+  modal.body.appendChild(el('div', { class: 'si-modal-desc', text: 'paymentMode: ' + (pm || '(未设置)') }));
+  modal.body.appendChild(el('div', {
+    class: 'si-modal-desc',
+    text: acc ? ('签名账户: ' + acc.address + (acc.label ? '（' + acc.label + '）' : '')) : '签名账户: 无——未选择本地账户，执行将被服务端拒绝（缺 payerPrivateKey）',
+  }));
+  if (needsMore) {
+    modal.body.appendChild(el('div', { class: 'si-modal-hint', text: '该指令需要多方签名材料（' + pm + '）：建议「载入表单」后在表单中执行，以提供完整签名配置' }));
+  }
+  modal.footer.appendChild(el('button', {
+    class: 'btn btn-danger',
+    text: '确认上链',
+    onclick: function () {
+      modal.close();
+      runSaved(item, 'send', ctx, { payerPrivateKey: key });
+    },
+  }));
+  modal.open();
 }
 
 // ---------- 控制台侧栏分组 ----------
@@ -217,7 +275,13 @@ function openSavedExecModal(id) {
   });
   modal.body.appendChild(modeRow);
   if (item.kind === 'entry') {
-    modal.body.appendChild(el('div', { class: 'si-modal-hint', text: 'send 会真实上链并默认等待确认，请确认参数与账户。' }));
+    var acc = (typeof getCurrentAccount === 'function') ? getCurrentAccount() : null;
+    modal.body.appendChild(el('div', {
+      class: 'si-modal-hint',
+      text: 'send 会真实上链并默认等待确认。' +
+        (acc ? ('签名账户: ' + acc.address + '。') : '未选择本地账户——send 将被服务端拒绝（缺 payerPrivateKey）。') +
+        '完整参数见上方 args。',
+    }));
   }
 
   modal.footer.appendChild(el('button', {
@@ -226,7 +290,13 @@ function openSavedExecModal(id) {
     onclick: function () {
       modal.close();
       switchView('console');
-      runSaved(item, picked, 'console');
+      if (picked === 'send') {
+        // 服务器不存密钥——send 时用本地活跃账户的密钥临时签名（过境即焚）
+        var acc = (typeof getCurrentAccount === 'function') ? getCurrentAccount() : null;
+        runSaved(item, picked, 'console', { payerPrivateKey: (acc && acc.privateKey) || '' });
+      } else {
+        runSaved(item, picked, 'console');
+      }
     },
   }));
   modal.footer.appendChild(el('button', { class: 'btn', text: '编辑', onclick: function () { modal.close(); openSavedEditor(item); } }));
@@ -353,9 +423,9 @@ function openSavedEditor(existing, prefill) {
   row('paymentMode', pmSel);
 
   var payerAddr = row('payerAddress', el('input', { class: 'param-input', value: src.payerAddress || '' }));
-  var payerSk = row('payerPrivateKey', el('input', { class: 'param-input', type: 'password', value: src.payerPrivateKey || '' }));
   var ownerAddr = row('ownerAddress (split)', el('input', { class: 'param-input', value: src.ownerAddress || '' }));
-  var ownerSk = row('ownerPrivateKey (split)', el('input', { class: 'param-input', type: 'password', value: src.ownerPrivateKey || '' }));
+  // 安全不变量：私钥不保存——保存的只是"怎么调用"，签名身份在 send 执行时临时提供
+  modal.body.appendChild(el('div', { class: 'si-modal-hint', text: '私钥不保存：send 执行时使用当前活跃账户签名，或「载入表单」后填写' }));
   var sigTa = row('signatureMode (JSON)', el('textarea', { class: 'si-modal-ta', rows: '3' }));
   sigTa.value = src.signatureMode ? (typeof src.signatureMode === 'string' ? src.signatureMode : JSON.stringify(src.signatureMode, null, 2)) : '';
 
@@ -371,23 +441,22 @@ function openSavedEditor(existing, prefill) {
         args: parseJSONField(argsTa.value, 'args'),
         paymentMode: pmSel.value,
         payerAddress: payerAddr.value.trim(),
-        payerPrivateKey: payerSk.value.trim(),
         ownerAddress: ownerAddr.value.trim(),
-        ownerPrivateKey: ownerSk.value.trim(),
         signatureMode: parseJSONField(sigTa.value, 'signatureMode'),
       };
       if (payload.args === PARSE_FAIL || payload.signatureMode === PARSE_FAIL) return;
       if (!payload.name) { showToast('名称不能为空', 'error'); return; }
-      // 保留编辑器未暴露的字段（signers/gasPayer/ix*）
+      // 保留编辑器未暴露的字段（signers/gasPayer/ix*，密钥除外）
       if (existing) {
-        ['ixAddress', 'ixPrivateKey', 'ixSignatureMode', 'signers', 'gasPayer'].forEach(function (k) {
+        ['ixAddress', 'ixSignatureMode', 'signers', 'gasPayer'].forEach(function (k) {
           if (existing[k] !== undefined) payload[k] = existing[k];
         });
       } else {
-        ['ixAddress', 'ixPrivateKey', 'ixSignatureMode', 'signers', 'gasPayer'].forEach(function (k) {
+        ['ixAddress', 'ixSignatureMode', 'signers', 'gasPayer'].forEach(function (k) {
           if (src[k] !== undefined) payload[k] = src[k];
         });
       }
+      stripSavedSecrets(payload);
       try {
         var url = existing ? '/api/saved-instructions/' + existing.id : '/api/saved-instructions';
         var resp = await apiFetch(url, {
