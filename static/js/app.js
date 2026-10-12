@@ -1252,10 +1252,15 @@ function formatJSON(obj) {
     )
     .replace(/([{}\[\],])/g, '<span class="json-punct">$1</span>')
     .replace(
-      /(<span class="json-key">"(?:txHash|tx_hash)"<\/span>:\s*<span class="json-string">)([^<]*)(<\/span>)/g,
+      // 高亮 pass 的实际产物是 <span class="json-key">"txHash":</span>（冒号在 span 内），
+      // 值 span 捕获组含 JSON 两侧引号——按钮正则须按此结构匹配，否则按钮永不生成（死代码）。
+      /(<span class="json-key">"(?:txHash|tx_hash)":<\/span>\s*<span class="json-string">)([^<]*)(<\/span>)/g,
       function (_m, pre, val, post) {
+        // 属性上下文转义：剥掉 JSON 字符串两侧引号后，把值内剩余引号实体化，
+        // 防止值内 " 逃逸出 data-hash 属性注入事件处理器（XSS）。
+        var attr = val.replace(/^"|"$/g, '').replace(/"/g, '&quot;');
         return pre + val + post +
-          ' <button class="txhash-convert-btn" data-hash="' + val + '" title="转换为 base58">⇄ base58</button>';
+          ' <button class="txhash-convert-btn" data-hash="' + attr + '" title="转换为 base58">⇄ base58</button>';
       }
     );
 }
@@ -6239,7 +6244,7 @@ function initApp() {
   document.addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('.txhash-convert-btn');
     if (!btn) return;
-    var raw = (btn.getAttribute('data-hash') || '').replace(/^&quot;|&quot;$/g, '');
+    var raw = btn.getAttribute('data-hash') || '';
     var b58 = hexToBase58(raw);
     if (!b58) {
       showToast('无法转换该哈希', 'error');
