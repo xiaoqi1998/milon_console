@@ -7,7 +7,7 @@
 <title>Milon Chain API 调试控制台 | 区块链接口测试与文档</title>
 <meta name="description" content="Milon Chain 区块链 API 调试控制台，提供合约读写、账户查询、交易查询、事件监听等 RESTful 接口的在线测试与 SDK 调用。" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='4' fill='%23141416' stroke='%23e0a458' stroke-width='2'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='%23e0a458' font-family='monospace' font-weight='700'>∞</text></svg>" type="image/svg+xml" />
-<link rel="stylesheet" href="/static/css/style.css?v=20261012" />
+<link rel="stylesheet" href="/static/css/style.css?v=20261013" />
 </head>
 <body>
 <div id="app">
@@ -519,6 +519,39 @@
     </section>
   </main>
 
+  <footer class="oss-footer" id="ossFooter">
+    <div class="oss-bar">
+      <span class="oss-tag">开源</span>
+      <a class="oss-repo" id="ossRepoLink" target="_blank" rel="noopener noreferrer">加载中…</a>
+      <span class="oss-meta" id="ossCommitShort">commit --</span>
+      <span class="oss-dirty-badge" id="ossDirtyBadge" style="display:none" title="构建时工作区有未提交修改，与该 commit 不完全一致">dirty</span>
+      <span class="oss-meta" id="ossBuildDate"></span>
+      <button class="oss-toggle" id="ossToggleBtn" type="button">
+        <span>核验版本一致性</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
+    <div class="oss-panel" id="ossPanel" style="display:none">
+      <div class="oss-cols">
+        <div class="oss-col">
+          <h4 class="oss-h">构建指纹<span class="oss-h-sub">（服务端自报，GET /api/version）</span></h4>
+          <dl class="oss-fp" id="ossFingerprint"></dl>
+        </div>
+        <div class="oss-col">
+          <h4 class="oss-h">本地核验步骤</h4>
+          <ol class="oss-steps" id="ossSteps"></ol>
+        </div>
+      </div>
+      <div class="oss-verify">
+        <span class="oss-verify-label">粘贴你本地构建产物的 SHA256：</span>
+        <input type="text" class="oss-hash-input" id="ossHashInput" placeholder="64 位十六进制" autocomplete="off" spellcheck="false" />
+        <button type="button" class="btn btn-primary btn-sm" id="ossVerifyBtn">比对</button>
+        <span class="oss-verify-result" id="ossVerifyResult"></span>
+      </div>
+      <p class="oss-note">说明：自报指纹可发现「部署了未开源/被改动的构建」等版本漂移；若服务端程序本身被篡改，自报信息同样不可信——完整核验请以上方步骤在本地从开源代码自行构建为准，并核对构建所用的 commit。</p>
+    </div>
+  </footer>
+
   <button class="history-fab" id="historyToggle" title="请求记录">
     <span class="fab-icon">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -601,7 +634,7 @@
 
   <div class="toast-container" id="toastContainer"></div>
 </div>
-<script src="/static/js/app.js?v=20261012"></script>
-<script src="/static/js/saved-instructions.js?v=20261012"></script>
+<script src="/static/js/app.js?v=20261013"></script>
+<script src="/static/js/saved-instructions.js?v=20261013"></script>
 </body>
 </html>

@@ -501,6 +501,59 @@ curl http://localhost:8080/api/mcp/tools
 
 ---
 
+#### 7. 版本指纹（开源核验）
+
+- **方法**: `GET`
+- **路径**: `/api/version`
+- **说明**: 返回服务端自报的构建指纹：git commit、构建时工作区是否 dirty、构建时间、Go 版本与平台、二进制 SHA256（进程启动时对自身可执行文件计算）、开源仓库地址与推荐的可复现构建命令。前端页脚「开源」条展示该信息，并提供「克隆开源仓库 → checkout 同 commit → 本地按相同参数构建 → 比对 SHA256」的核验入口。可发现「部署了未开源/被改动的构建」等版本漂移；若服务端程序本身被篡改，自报信息同样不可信，完整核验以本地构建为准。
+- **开源仓库**: 默认 `https://github.com/xiaoqi1998/milon_console`，可用环境变量 `OPEN_SOURCE_REPO_URL` 覆盖。
+- **commit 来源**: 优先读 Go VCS stamping（`go build` 在 git 仓库内自动嵌入）；`.git` 缺失时回落 ldflags 注入（`-X milon-api-server/handler.buildGitCommit=...`，Docker 构建走 `--build-arg GIT_COMMIT=...`）；均缺失时为 `"unknown"`。
+
+**请求参数**
+
+无
+
+**请求示例**
+
+```bash
+curl http://localhost:8080/api/version
+```
+
+**响应示例**
+
+```json
+{
+  "success": true,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "gitCommit": "872d950a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e",
+    "gitDirty": false,
+    "buildDate": "unknown",
+    "goVersion": "go1.25.9",
+    "goos": "windows",
+    "goarch": "amd64",
+    "binarySHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "repoURL": "https://github.com/xiaoqi1998/milon_console",
+    "buildCommand": "CGO_ENABLED=0 go build -trimpath -ldflags=\"-s -w\" -o milon-api-server ."
+  },
+  "timestamp": "2026-10-13T10:00:00+08:00"
+}
+```
+
+**本地核验步骤（与页脚展示一致）**
+
+```bash
+git clone https://github.com/xiaoqi1998/milon_console && cd milon_console
+git checkout <gitCommit>                      # 与 /api/version 所报一致
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o milon-api-server .
+sha256sum milon-api-server                    # Windows: certutil -hashfile milon-api-server.exe SHA256
+```
+
+哈希与 `binarySHA256` 一致即核验通过（需与服务端相同的 GOOS/GOARCH 与 Go 版本）。
+
+---
+
 ### 三、账户
 
 #### 6. 获取账户信息
@@ -2841,6 +2894,7 @@ ZCode / Claude 通用片段：
 | 3 | POST | `/api/network/switch` | 切换网络 |
 | 4 | GET | `/api/health` | 健康检查 |
 | 5 | GET | `/api/chain-head` | 获取链头 |
+| 6 | GET | `/api/version` | 版本指纹（开源地址 + commit + 二进制 SHA256，本地构建核验） |
 | 6 | GET | `/api/accounts/:address` | 获取账户信息 |
 | 7 | GET | `/api/accounts/:address/resources` | 获取账户资源列表 |
 | 8 | POST | `/api/accounts/generate` | 生成账户 |

@@ -54,6 +54,13 @@ func (h *SystemHandler) Health(c *gin.Context) {
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
 }
 
+// Version handles GET /api/version —— 自报构建指纹（commit/构建时间/二进制
+// SHA256/开源仓库地址），供页面展示开源地址并支持用户本地构建比对核验。
+// 不依赖链上网络 client。
+func (h *SystemHandler) Version(c *gin.Context) {
+	c.JSON(http.StatusOK, types.SuccessResponse(GetBuildInfo(), "ok"))
+}
+
 // GetChainHead handles GET /api/chain-head
 func (h *SystemHandler) GetChainHead(c *gin.Context) {
 	mc := middleware.ClientFrom(c)

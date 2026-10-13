@@ -17,6 +17,7 @@ const ENDPOINTS = [
     bodyTemplate: JSON.stringify({ network: 'devNet' }, null, 2) },
   { id: 'health', method: 'GET', path: '/api/health', summary: '健康检查', group: '系统' },
   { id: 'chain-head', method: 'GET', path: '/api/chain-head', summary: '获取链头', group: '系统' },
+  { id: 'version', method: 'GET', path: '/api/version', summary: '版本指纹(开源地址+commit+二进制SHA256,支持本地构建核验)', group: '系统' },
   { id: 'mcp-tools', method: 'GET', path: '/api/mcp/tools', summary: 'MCP 工具清单（与 /mcp 注册表同源，含分组与 REST 映射）', group: '系统' },
   { id: 'acc-info', method: 'GET', path: '/api/accounts/:address', summary: '获取账户信息', group: '账户',
     pathParams: [{ name: 'address', ph: 'base58地址' }] },
@@ -6129,6 +6130,186 @@ function reloadIDLHistory(h) {
   restore();
 }
 
+// ===== 开源核验页脚 =====
+// /api/version 自报构建指纹（commit/构建时间/二进制 SHA256/开源仓库地址），
+// 页脚常驻展示开源地址，展开可按步骤本地构建并比对哈希。
+// 所有来自接口的字符串一律用 DOM API（textContent 等）写入，不走 innerHTML。
+var ossVersionData = null;
+
+function ossShortCommit(c) {
+  return (c && c !== 'unknown') ? c.slice(0, 8) : 'unknown';
+}
+
+// 从 repoURL 提取 clone 后的目录名（末段去 .git）。
+function ossRepoDirName(url) {
+  try {
+    var u = new URL(url);
+    var segs = u.pathname.split('/').filter(Boolean);
+    return segs.length ? segs[segs.length - 1].replace(/\.git$/, '') : 'repo';
+  } catch (e) {
+    return 'repo';
+  }
+}
+
+// 指纹表的一行：dt + dd(text) + 可选复制按钮。
+function ossFpRow(dl, term, value, copyable) {
+  var dt = document.createElement('dt');
+  dt.textContent = term;
+  var dd = document.createElement('dd');
+  dd.textContent = value;
+  if (copyable && value && value !== 'unknown' && value !== '--') {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'oss-copy-btn';
+    btn.textContent = '复制';
+    btn.title = '复制 ' + term;
+    btn.addEventListener('click', function () {
+      copyToClipboard(value, function () {
+        showToast(term + ' 已复制', 'success');
+      });
+    });
+    dd.appendChild(document.createTextNode(' '));
+    dd.appendChild(btn);
+  }
+  dl.appendChild(dt);
+  dl.appendChild(dd);
+}
+
+// 核验步骤的一条命令行：文本 + 复制按钮（按平台注释标注）。
+function ossStepCmd(li, text) {
+  var code = document.createElement('code');
+  code.textContent = text;
+  li.appendChild(code);
+  li.appendChild(document.createTextNode(' '));
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'oss-copy-btn';
+  btn.textContent = '复制';
+  btn.addEventListener('click', function () {
+    copyToClipboard(text, function () {
+      showToast('命令已复制', 'success');
+    });
+  });
+  li.appendChild(btn);
+}
+
+function renderOssFingerprint(d) {
+  var dl = $('ossFingerprint');
+  dl.textContent = '';
+  ossFpRow(dl, 'gitCommit', d.gitCommit, true);
+  ossFpRow(dl, 'gitDirty', d.gitDirty ? 'true（构建时工作区有未提交修改）' : 'false');
+  ossFpRow(dl, 'buildDate', d.buildDate, false);
+  ossFpRow(dl, 'goVersion', d.goVersion, false);
+  ossFpRow(dl, '平台', (d.goos || '?') + '/' + (d.goarch || '?'));
+  ossFpRow(dl, 'binarySHA256', d.binarySHA256, true);
+  ossFpRow(dl, 'repoURL', d.repoURL, true);
+}
+
+function renderOssSteps(d) {
+  var ol = $('ossSteps');
+  ol.textContent = '';
+  var repo = (d.repoURL && d.repoURL !== 'unknown') ? d.repoURL : '<开源仓库地址>';
+  var dir = ossRepoDirName(repo);
+  var commit = (d.gitCommit && d.gitCommit !== 'unknown') ? d.gitCommit : '<commit>';
+  var isWin = (d.goos === 'windows');
+  var binName = isWin ? 'milon-api-server.exe' : 'milon-api-server';
+
+  var steps = [];
+  steps.push([
+    '克隆开源仓库并切换到服务端所报 commit：',
+    'git clone ' + repo + ' && cd ' + dir + ' && git checkout ' + commit
+  ]);
+  if (d.gitDirty) {
+    steps.push(['注意：服务端构建时工作区是 dirty 状态，本地按该 commit 构建的哈希可能与服务端不一致。', null]);
+  }
+  steps.push([
+    '在与服务端相同的平台（' + (d.goos || '?') + '/' + (d.goarch || '?') + '）与 Go 版本（' + (d.goVersion || '按 go.mod') + '）下构建：',
+    isWin
+      ? '$env:CGO_ENABLED="0"; go build -trimpath -ldflags="-s -w" -o ' + binName + ' .'
+      : 'CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ' + binName + ' .'
+  ]);
+  steps.push([
+    '计算本地构建产物的 SHA256：',
+    isWin
+      ? 'certutil -hashfile ' + binName + ' SHA256'
+      : 'sha256sum ' + binName
+  ]);
+
+  steps.forEach(function (s) {
+    var li = document.createElement('li');
+    var p = document.createElement('p');
+    p.textContent = s[0];
+    li.appendChild(p);
+    if (s[1]) {
+      ossStepCmd(li, s[1]);
+    }
+    ol.appendChild(li);
+  });
+}
+
+async function loadVersionFooter() {
+  try {
+    var resp = await fetch('/api/version');
+    var body = await resp.json();
+    var d = body && body.data;
+    if (!d) throw new Error('响应缺少 data');
+    ossVersionData = d;
+
+    var link = $('ossRepoLink');
+    if (/^https?:\/\//.test(d.repoURL)) {
+      link.href = d.repoURL;
+      link.textContent = d.repoURL.replace(/^https?:\/\//, '');
+    } else {
+      link.textContent = d.repoURL || 'unknown';
+      link.removeAttribute('href');
+      link.className = 'oss-repo oss-repo-plain';
+    }
+    $('ossCommitShort').textContent = 'commit ' + ossShortCommit(d.gitCommit);
+    if (d.gitDirty) {
+      $('ossDirtyBadge').style.display = '';
+    }
+    if (d.buildDate && d.buildDate !== 'unknown') {
+      $('ossBuildDate').textContent = '构建于 ' + d.buildDate;
+    }
+    renderOssFingerprint(d);
+    renderOssSteps(d);
+  } catch (err) {
+    $('ossRepoLink').textContent = '/api/version 不可用';
+    $('ossRepoLink').removeAttribute('href');
+    $('ossRepoLink').className = 'oss-repo oss-repo-plain';
+  }
+}
+
+function toggleOssPanel() {
+  var panel = $('ossPanel');
+  var open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  $('ossToggleBtn').classList.toggle('open', !open);
+}
+
+function ossVerify() {
+  var el = $('ossVerifyResult');
+  el.className = 'oss-verify-result';
+  if (!ossVersionData) {
+    el.textContent = '✕ 版本信息未加载';
+    el.classList.add('bad');
+    return;
+  }
+  var input = ($('ossHashInput').value || '').trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(input)) {
+    el.textContent = '✕ 请输入 64 位十六进制 SHA256';
+    el.classList.add('bad');
+    return;
+  }
+  if (ossVersionData.binarySHA256.toLowerCase() === input) {
+    el.textContent = '✓ 一致：服务端二进制与你本地构建的哈希相同';
+    el.classList.add('ok');
+  } else {
+    el.textContent = '✕ 不一致：服务端运行的可能不是该开源构建（或构建平台/环境不同）';
+    el.classList.add('bad');
+  }
+}
+
 function initApp() {
   $('endpointCount').textContent = String(ENDPOINTS.length);
   $('docsCount').textContent = String(ENDPOINTS.length);
@@ -6267,6 +6448,12 @@ function initApp() {
   $('accountModalOverlay').addEventListener('click', closeAccountModal);
   loadNetworks();
   checkHealth();
+  loadVersionFooter();
+  $('ossToggleBtn').addEventListener('click', toggleOssPanel);
+  $('ossVerifyBtn').addEventListener('click', ossVerify);
+  $('ossHashInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') ossVerify();
+  });
   renderSdkList();
   renderErrorCodes();
   if (SDK_EXAMPLES.length > 0) {

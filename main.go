@@ -72,6 +72,7 @@ func main() {
 		// System
 		api.GET("/health", systemHandler.Health)
 		api.GET("/chain-head", systemHandler.GetChainHead)
+		api.GET("/version", systemHandler.Version)
 
 		// Account
 		api.POST("/accounts/generate", accountHandler.GenerateAccount)
@@ -202,6 +203,7 @@ func main() {
 	fmt.Println("  Enable body log:", cfg.EnableBodyLog)
 	fmt.Println("  Endpoints:")
 	fmt.Println("    GET  /api/health                  - Health check")
+	fmt.Println("    GET  /api/version                 - Build fingerprint (open-source verify)")
 	fmt.Println("    GET  /api/chain-head              - Get chain head")
 	fmt.Println("    GET  /api/network/list            - List all networks")
 	fmt.Println("    GET  /api/network/current         - Get current network")
