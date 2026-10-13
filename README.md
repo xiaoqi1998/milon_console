@@ -52,6 +52,28 @@ docker compose logs -f
 docker compose down
 ```
 
+### 更新已部署服务器
+
+二进制与前端静态文件都烘焙在镜像里，拉取新代码后**必须重建镜像**才会生效：
+
+```bash
+git pull
+docker compose build
+docker compose up -d
+```
+
+更新后核对版本（页脚「开源」条与 `GET /api/version` 同源）：
+
+```bash
+curl http://localhost:8080/api/version
+```
+
+返回的 `gitCommit` 即构建所用 commit（Docker 构建靠上下文中的 `.git` 自动 VCS
+戳记，见 `Dockerfile`；从无 `.git` 的源码归档构建时用
+`--build-arg GIT_COMMIT=...` 兜底）。页面页脚展开「核验版本一致性」，按提示在
+本地克隆开源仓库、checkout 同 commit、以相同参数构建并比对 SHA256 即可验证
+部署产物与开源代码一致。
+
 ## 配置
 
 服务通过环境变量配置。

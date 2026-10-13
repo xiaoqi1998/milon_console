@@ -16,13 +16,15 @@ COPY gosdk-develop ./gosdk-develop
 
 RUN go mod download
 
-# 复制项目源码
+# 复制项目源码（含 .git：Go 借此自动 VCS stamping，把 commit 写进二进制供
+# /api/version 与页脚开源核验展示；.git 仅存在于 builder 阶段，不进最终镜像）
 COPY . .
 
-# .dockerignore 排除 .git/，VCS stamping 不生效——commit/时间由 build-arg 注入：
+# commit/时间兜底注入（仅当构建上下文无 .git 时才有机会生效，如 CI 从
+# 归档源码构建）：
 #   docker build --build-arg GIT_COMMIT=$(git rev-parse HEAD) \
 #     --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) ...
-# 未传时 /api/version 的 gitCommit/buildDate 为 "unknown"。
+# 有 .git 时 VCS stamping 优先，无需传参；均无时 /api/version 返回 "unknown"。
 ARG GIT_COMMIT=
 ARG BUILD_DATE=
 RUN go build -trimpath -ldflags="-s -w -X milon-api-server/handler.buildGitCommit=${GIT_COMMIT} -X milon-api-server/handler.buildBuildDate=${BUILD_DATE}" -o milon-api-server .
