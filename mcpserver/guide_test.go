@@ -19,7 +19,7 @@ import (
 // 锚点是「AI 靠本页能答出的问题」的最小集，删锚点等于删文档。
 func TestGuidePageTopics(t *testing.T) {
 	anchors := map[string][]string{
-		"overview":    {"idl_apps", "transfer_mil", "tx_track", "error_lookup"},
+		"overview":    {"idl_apps", "transfer_mil", "tx_track", "error_lookup", "源代码", "milon_console"},
 		"chain":       {"900000001", "unified_payer_all", "unified_dual_sign", "multi_signer", "fndsa512", "postcard"},
 		"workflows":   {"tx_track", "contract_write_safe", "sft_flow", "vc_flow", "bulk_transfer", "saved_instruction"},
 		"limits":      {"1042", "1026", "200KB", "20", "5000", "ENABLE_UTIL_SIGN"},
@@ -148,12 +148,35 @@ func TestGuideRegistered(t *testing.T) {
 	if !found {
 		t.Fatal("tools/list 缺 guide")
 	}
-	for _, kw := range []string{"overview", "chain", "workflows", "limits", "performance", "keys", "error_lookup"} {
+	for _, kw := range []string{"overview", "chain", "workflows", "limits", "performance", "keys", "error_lookup", "milon_console"} {
 		if !strings.Contains(desc, kw) {
 			t.Errorf("guide 描述缺关键词 %q: %q", kw, desc)
 		}
 	}
 	if g := toolGroupOf("guide"); g != "快速手册" {
 		t.Errorf("guide 分组=%q, want 快速手册", g)
+	}
+}
+
+// TestServerInstructions initialize 响应必须带 instructions 且含开源仓库地址——
+// 这是 AI 连接时看到的第一段话，「不懂看源码」的入口在这里；与 guide
+// overview 页、/api/version 的 repoURL 三处同源（2026-10-13 用户要求）。
+func TestServerInstructions(t *testing.T) {
+	srv := mcpHTTPServer(t, "")
+	out := rpcCall(t, srv.URL, "initialize", map[string]any{
+		"protocolVersion": "2025-06-18",
+		"capabilities":    map[string]any{},
+		"clientInfo":      map[string]any{"name": "guide-test", "version": "0"},
+	})
+	res, _ := out["result"].(map[string]any)
+	if res == nil {
+		t.Fatalf("initialize 无 result: %v", out)
+	}
+	instructions, _ := res["instructions"].(string)
+	if !strings.Contains(instructions, sourceRepoURL) {
+		t.Errorf("instructions 缺源码仓库地址 %q: %q", sourceRepoURL, instructions)
+	}
+	if !strings.Contains(instructions, "guide") {
+		t.Errorf("instructions 应指引先调 guide 取主题页: %q", instructions)
 	}
 }

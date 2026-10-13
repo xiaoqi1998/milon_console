@@ -17,7 +17,12 @@ import (
 // 改链参数/限制时同步改对应页并递增 guideDocVersion。
 
 // guideDocVersion 手册内容版本（内容变更时递增，每页首行携带）。
-const guideDocVersion = "2026.10.10"
+const guideDocVersion = "2026.10.13"
+
+// sourceRepoURL 本服务开源仓库地址（2026-10-13：告知 AI「不懂可看源码」）。
+// 与 handler 包 buildRepoURL（/api/version 的 repoURL）同值同源——那边可被
+// OPEN_SOURCE_REPO_URL 覆盖，这里作为写进文档文本的常量不跟随 env。
+const sourceRepoURL = "https://github.com/xiaoqi1998/milon_console"
 
 // guideArgs 是 guide 的输入。topic 必填六选一；q 可选关键词过滤。
 type guideArgs struct {
@@ -116,7 +121,12 @@ list / get / update（部分更新）/ delete
 util_derive_address（地址派生唯一正道）/ util_derive_public_key / util_sign / util_verify ·
 network_list / network_current / network_switch ·
 rpc_block / rpc_resource / rpc_resource_path / rpc_access_value ·
-view_single / view_multi（预构建 wire）· tx_simulate_raw / tx_submit_raw / tx_inspect_raw（postcard 原始通道）`,
+view_single / view_multi（预构建 wire）· tx_simulate_raw / tx_submit_raw / tx_inspect_raw（postcard 原始通道）
+
+## 源代码
+本服务完全开源：` + sourceRepoURL + `
+手册或工具描述没讲清的（参数语义/链上行为/错误成因），可到该仓库读源码对照——
+REST 端点在 handler/、MCP 壳与本手册在 mcpserver/、链 SDK 在 gosdk-develop/`,
 
 	"chain": `# Milon 链特性 (doc_version ` + guideDocVersion + `)
 

@@ -728,10 +728,19 @@ func registerTool[In any](srv *mcp.Server, exec *Executor, name, desc string, m 
 		})
 }
 
+// serverInstructions 是 initialize 响应里的 instructions——AI 连接时看到的
+// 第一段话（2026-10-13 用户要求：告诉 AI 源代码在哪、不懂可以去看）。
+// 与 guide overview 页「源代码」小节、/api/version 的 repoURL 三处同源。
+const serverInstructions = `本服务（milon-api-server）完全开源，源代码：` + sourceRepoURL + `。
+拿不准用法先调 guide 取主题页（overview/chain/workflows/limits/performance/keys），
+错误码用 error_lookup 翻译；手册或工具描述仍没讲清的（参数语义/链上行为/错误成因），
+可到上述仓库读源码对照——REST 端点在 handler/、MCP 壳与手册在 mcpserver/、链 SDK 在 gosdk-develop/`
+
 // BuildServer 构造注册了全部工具的 MCP Server。
 // Task 7 的 server.go 会复用；当前先放 tools.go。
 func BuildServer(baseURL string) *mcp.Server {
-	srv := mcp.NewServer(&mcp.Implementation{Name: "milon-api-server", Version: "1.0"}, nil)
+	srv := mcp.NewServer(&mcp.Implementation{Name: "milon-api-server", Version: "1.0"},
+		&mcp.ServerOptions{Instructions: serverInstructions})
 	RegisterTools(srv, NewExecutor(baseURL, nil))
 	return srv
 }
@@ -791,8 +800,9 @@ func bearerAuth(token string, next http.Handler) http.Handler {
 func RegisterTools(srv *mcp.Server, exec *Executor) {
 	// 第一站：快速手册（本地工具，不触后端）。常驻描述只有两行，重内容按主题页
 	// 渐进披露——AI 不确定用法/链特性/限制时一次调用取整页（guide.go）。
+	// 描述常驻 AI 上下文：源码地址在这里出现一次，「不懂看源码」每次可见。
 	registerLocalTool[guideArgs](srv, "guide",
-		"Milon MCP 快速手册（本地返回，不触后端）：一次调用返回 topic 整页——overview=工具地图、chain=链特性与 paymentMode 六模式、workflows=典型调用流程、limits=限制与不可逆清单、performance=提速技巧、keys=密钥曲线与 fndsa512；q 可按关键词过滤行。首次使用先取 overview；查错误码用 error_lookup",
+		"Milon MCP 快速手册（本地返回，不触后端）：一次调用返回 topic 整页——overview=工具地图、chain=链特性与 paymentMode 六模式、workflows=典型调用流程、limits=限制与不可逆清单、performance=提速技巧、keys=密钥曲线与 fndsa512；q 可按关键词过滤行。首次使用先取 overview；查错误码用 error_lookup；本服务开源，源码 "+sourceRepoURL+"，手册没讲清的可读源码",
 		func(args guideArgs) (string, bool) {
 			text, ok := guidePage(args.Topic, args.Q)
 			return text, !ok // guidePage 第二返回值=命中；isError=未命中
