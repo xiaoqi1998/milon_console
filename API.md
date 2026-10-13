@@ -505,9 +505,9 @@ curl http://localhost:8080/api/mcp/tools
 
 - **方法**: `GET`
 - **路径**: `/api/version`
-- **说明**: 返回服务端自报的构建指纹：git commit、构建时工作区是否 dirty、构建时间、Go 版本与平台、二进制 SHA256（进程启动时对自身可执行文件计算）、开源仓库地址与推荐的可复现构建命令。前端页脚「开源」条展示该信息，并提供「克隆开源仓库 → checkout 同 commit → 本地按相同参数构建 → 比对 SHA256」的核验入口。可发现「部署了未开源/被改动的构建」等版本漂移；若服务端程序本身被篡改，自报信息同样不可信，完整核验以本地构建为准。
+- **说明**: 返回服务端自报的构建指纹：git commit、构建时工作区是否 dirty、构建时间、Go 版本与平台、二进制 SHA256（进程启动时对自身可执行文件计算）、开源仓库地址与推荐的可复现构建命令。前端页脚「开源」条展示该信息，并提供「克隆开源仓库 → checkout 同 commit → Docker 同构构建 → 比对 SHA256」的核验入口（含 cgo 依赖，跨工具链构建的哈希不具可比性）。可发现「部署了未开源/被改动的构建」等版本漂移；若服务端程序本身被篡改，自报信息同样不可信，完整核验以本地构建为准。
 - **开源仓库**: 默认 `https://github.com/xiaoqi1998/milon_console`，可用环境变量 `OPEN_SOURCE_REPO_URL` 覆盖。
-- **commit 来源**: 优先读 Go VCS stamping（`go build` 在 git 仓库内自动嵌入）；`.git` 缺失时回落 ldflags 注入（`-X milon-api-server/handler.buildGitCommit=...`，Docker 构建走 `--build-arg GIT_COMMIT=...`）；均缺失时为 `"unknown"`。
+- **commit 来源**: 优先读 Go VCS stamping（`go build` 在 git 仓库内自动嵌入；Docker 构建靠上下文中的 `.git`，见 `.dockerignore` 注释）；从无 `.git` 的源码归档构建时回落 ldflags 注入（`-X milon-api-server/handler.buildGitCommit=...`，即 `docker build --build-arg GIT_COMMIT=...`）；均缺失时为 `"unknown"`。
 
 **请求参数**
 
@@ -535,7 +535,7 @@ curl http://localhost:8080/api/version
     "goarch": "amd64",
     "binarySHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "repoURL": "https://github.com/xiaoqi1998/milon_console",
-    "buildCommand": "CGO_ENABLED=0 go build -trimpath -ldflags=\"-s -w\" -o milon-api-server ."
+    "buildCommand": "CGO_ENABLED=1 go build -trimpath -ldflags=\"-s -w\" -o milon-api-server ."
   },
   "timestamp": "2026-10-13T10:00:00+08:00"
 }
@@ -543,14 +543,22 @@ curl http://localhost:8080/api/version
 
 **本地核验步骤（与页脚展示一致）**
 
+本项目含 cgo 依赖（BLS/blst），跨工具链构建的哈希不具可比性——推荐用与部署
+同构的 Docker 构建：
+
 ```bash
 git clone https://github.com/xiaoqi1998/milon_console && cd milon_console
 git checkout <gitCommit>                      # 与 /api/version 所报一致
-CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o milon-api-server .
-sha256sum milon-api-server                    # Windows: certutil -hashfile milon-api-server.exe SHA256
+docker compose build                          # 与部署同构（同基础镜像/工具链）
+# 从镜像提取产物并算哈希（Linux/macOS）：
+docker run --rm --entrypoint cat milon-api-server:latest /app/milon-api-server | sha256sum
+# Windows：
+docker create --name milon-verify milon-api-server:latest && docker cp milon-verify:/app/milon-api-server . && docker rm milon-verify && certutil -hashfile milon-api-server SHA256
 ```
 
-哈希与 `binarySHA256` 一致即核验通过（需与服务端相同的 GOOS/GOARCH 与 Go 版本）。
+哈希与 `binarySHA256` 一致即核验通过。非 Docker 部署时退化为源码级核验：在
+与服务端相同的 GOOS/GOARCH、Go 版本与 C 工具链下 `CGO_ENABLED=1 go build
+-trimpath -ldflags="-s -w"` 后比对 `sha256sum`/`certutil`。
 
 ---
 

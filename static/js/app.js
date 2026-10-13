@@ -6211,8 +6211,8 @@ function renderOssSteps(d) {
   var repo = (d.repoURL && d.repoURL !== 'unknown') ? d.repoURL : '<开源仓库地址>';
   var dir = ossRepoDirName(repo);
   var commit = (d.gitCommit && d.gitCommit !== 'unknown') ? d.gitCommit : '<commit>';
-  var isWin = (d.goos === 'windows');
-  var binName = isWin ? 'milon-api-server.exe' : 'milon-api-server';
+  // 哈希命令按访问者浏览器所在平台给（服务端构建在容器里，与访问者平台无关）
+  var isWinUser = /Win/i.test(navigator.platform || navigator.userAgent || '');
 
   var steps = [];
   steps.push([
@@ -6223,16 +6223,14 @@ function renderOssSteps(d) {
     steps.push(['注意：服务端构建时工作区是 dirty 状态，本地按该 commit 构建的哈希可能与服务端不一致。', null]);
   }
   steps.push([
-    '在与服务端相同的平台（' + (d.goos || '?') + '/' + (d.goarch || '?') + '）与 Go 版本（' + (d.goVersion || '按 go.mod') + '）下构建：',
-    isWin
-      ? '$env:CGO_ENABLED="0"; go build -trimpath -ldflags="-s -w" -o ' + binName + ' .'
-      : 'CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ' + binName + ' .'
+    '用与部署同构的 Docker 构建（推荐：本项目含 cgo/BLS 依赖，需相同 C 工具链产物哈希才可比对；Dockerfile 会自动戳记同一 commit）：',
+    'docker compose build'
   ]);
   steps.push([
-    '计算本地构建产物的 SHA256：',
-    isWin
-      ? 'certutil -hashfile ' + binName + ' SHA256'
-      : 'sha256sum ' + binName
+    '从镜像提取产物并计算 SHA256：',
+    isWinUser
+      ? 'docker create --name milon-verify milon-api-server:latest && docker cp milon-verify:/app/milon-api-server . && docker rm milon-verify && certutil -hashfile milon-api-server SHA256'
+      : 'docker run --rm --entrypoint cat milon-api-server:latest /app/milon-api-server | sha256sum'
   ]);
 
   steps.forEach(function (s) {

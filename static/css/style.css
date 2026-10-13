@@ -3701,7 +3701,8 @@ body {
   align-items: center;
   gap: 10px;
   height: 30px;
-  padding: 0 16px;
+  /* 右侧留出请求记录悬浮球的位置，避免遮挡「核验版本一致性」按钮 */
+  padding: 0 72px 0 16px;
 }
 
 .oss-tag {

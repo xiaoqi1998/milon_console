@@ -14,9 +14,9 @@ vendor/
 Thumbs.db
 .env
 .env.local
-# 注意：.git 必须保留在构建上下文中——Go 的 VCS stamping 靠它自动写入
-# commit(及脏标记)，供 /api/version 与页脚开源核验展示；.git 只进 builder
-# 阶段，不会进入最终镜像（runtime 只 COPY 二进制与 static）。
+# 注意：.git 与 .gitignore 必须保留在构建上下文中——Go 的 VCS stamping 靠
+# .git 自动写入 commit(及脏标记)，.gitignore 让容器内 git status 无视运行时
+# 残留(如 data/)，避免误报 dirty；二者只进 builder 阶段，不会进入最终镜像。
 .trae/
 README.md
 API.md
@@ -26,6 +26,9 @@ _*.txt
 docker-compose.yml
 Dockerfile
 .dockerignore
+
+# 运行时数据（saved instructions 等，容器内自行生成）
+data/
 
 # 本地调试产物与历史备份（不入构建上下文）
 gosdk-develop-backup-*/

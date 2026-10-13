@@ -1,10 +1,10 @@
 # --- Build Stage ---
 FROM golang:1.25-bookworm AS builder
 
-# CGO_ENABLED=0 + -trimpath：可复现构建（同 commit + 同 Go 版本 + 同平台
-# 产出哈希一致），供 /api/version 自报指纹与用户本地构建比对核验。
-# 项目无 cgo 依赖（纯 Go）。
-ENV CGO_ENABLED=0 \
+# CGO_ENABLED=1 必需：BLS 加密依赖 blst 只有 cgo 绑定，关闭 cgo 会构建失败
+# （undefined: Message）。-trimpath 消除本机路径差异；同一基础镜像内的构建
+# 产物哈希一致，供 /api/version 自报指纹与用户按同构方式构建比对核验。
+ENV CGO_ENABLED=1 \
     GOOS=linux \
     GOARCH=amd64
 

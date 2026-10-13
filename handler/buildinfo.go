@@ -32,10 +32,11 @@ var (
 // repoURLEnv 覆盖 buildRepoURL 的环境变量名。
 const repoURLEnv = "OPEN_SOURCE_REPO_URL"
 
-// reproducibleBuildCommand 是页面展示的可复现构建命令：
-// -trimpath 消除本机路径差异，CGO_ENABLED=0 排除 C 工具链差异，
-// 同 commit + 同 Go 版本 + 同 GOOS/GOARCH 下哈希一致。
-const reproducibleBuildCommand = `CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o milon-api-server .`
+// reproducibleBuildCommand 是页面展示的构建命令：-trimpath 消除本机路径差异；
+// CGO_ENABLED=1 必需（BLS 加密依赖 blst 只有 cgo 绑定，关闭则构建失败）。
+// 含 cgo 的产物需在同一工具链环境构建哈希才一致——页脚核验步骤推荐用与部署
+// 同构的 Docker 构建，同基础镜像内同 commit 产出哈希一致。
+const reproducibleBuildCommand = `CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o milon-api-server .`
 
 // BuildInfo 是 /api/version 返回的构建指纹快照。
 type BuildInfo struct {

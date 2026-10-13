@@ -71,8 +71,9 @@ curl http://localhost:8080/api/version
 返回的 `gitCommit` 即构建所用 commit（Docker 构建靠上下文中的 `.git` 自动 VCS
 戳记，见 `Dockerfile`；从无 `.git` 的源码归档构建时用
 `--build-arg GIT_COMMIT=...` 兜底）。页面页脚展开「核验版本一致性」，按提示在
-本地克隆开源仓库、checkout 同 commit、以相同参数构建并比对 SHA256 即可验证
-部署产物与开源代码一致。
+本地克隆开源仓库、checkout 同 commit、用 Docker 同构构建并比对 SHA256 即可验证
+部署产物与开源代码一致（本项目含 cgo 依赖，跨工具链构建的哈希不具可比性，
+故核验推荐走同构 Docker 构建）。
 
 ## 配置
 

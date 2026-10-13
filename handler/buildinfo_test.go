@@ -171,6 +171,10 @@ func TestVersionEndpoint(t *testing.T) {
 	if !strings.Contains(d.BuildCommand, "-trimpath") {
 		t.Errorf("buildCommand = %q, 应包含 -trimpath(可复现构建)", d.BuildCommand)
 	}
+	// 锁定 cgo 必需（blst BLS 依赖）：关掉 cgo 会构建失败，禁止再回退成 0
+	if !strings.Contains(d.BuildCommand, "CGO_ENABLED=1") {
+		t.Errorf("buildCommand = %q, 应包含 CGO_ENABLED=1(blst 需要 cgo)", d.BuildCommand)
+	}
 	if !isHex64OrUnknown(d.BinarySHA256) {
 		t.Errorf("binarySHA256 = %q, want 64 位 hex 或 unknown", d.BinarySHA256)
 	}

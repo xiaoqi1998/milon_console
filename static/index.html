@@ -7,7 +7,7 @@
 <title>Milon Chain API 调试控制台 | 区块链接口测试与文档</title>
 <meta name="description" content="Milon Chain 区块链 API 调试控制台，提供合约读写、账户查询、交易查询、事件监听等 RESTful 接口的在线测试与 SDK 调用。" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='4' fill='%23141416' stroke='%23e0a458' stroke-width='2'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='%23e0a458' font-family='monospace' font-weight='700'>∞</text></svg>" type="image/svg+xml" />
-<link rel="stylesheet" href="/static/css/style.css?v=20261013" />
+<link rel="stylesheet" href="/static/css/style.css?v=20261013b" />
 </head>
 <body>
 <div id="app">
@@ -548,7 +548,7 @@
         <button type="button" class="btn btn-primary btn-sm" id="ossVerifyBtn">比对</button>
         <span class="oss-verify-result" id="ossVerifyResult"></span>
       </div>
-      <p class="oss-note">说明：自报指纹可发现「部署了未开源/被改动的构建」等版本漂移；若服务端程序本身被篡改，自报信息同样不可信——完整核验请以上方步骤在本地从开源代码自行构建为准，并核对构建所用的 commit。</p>
+      <p class="oss-note">说明：自报指纹可发现「部署了未开源/被改动的构建」等版本漂移；若服务端程序本身被篡改，自报信息同样不可信——完整核验请以上方步骤在本地从开源代码自行构建为准（推荐 Docker 同构构建：本项目含 cgo 依赖，跨工具链构建的哈希不具可比性），并核对构建所用的 commit。</p>
     </div>
   </footer>
 
@@ -634,7 +634,7 @@
 
   <div class="toast-container" id="toastContainer"></div>
 </div>
-<script src="/static/js/app.js?v=20261013"></script>
+<script src="/static/js/app.js?v=20261013b"></script>
 <script src="/static/js/saved-instructions.js?v=20261013"></script>
 </body>
 </html>
