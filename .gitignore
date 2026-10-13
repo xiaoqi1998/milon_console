@@ -56,3 +56,9 @@ gosdk-develop-backup-*/
 
 # Runtime data (saved instructions contain private keys)
 data/
+
+# Debug response snapshots & stray logs (2026-10-13 开源清理)
+*.err
+h1.json
+acc*.json
+derive*.json
