@@ -1009,6 +1009,7 @@ func (h *ContractHandler) WriteContractMultiAgent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
+	h.fillWriteContractRequest(c, &req) // 配置账户「地址即引用」回填（payer/ix 双账户）
 
 	// 端点本身已隐含模式：缺省自动填充，显式传错值仍被拒（2026-10 AI 易用性）
 	if req.PaymentMode == "" {
@@ -1050,6 +1051,7 @@ func (h *ContractHandler) WriteContractMultisig(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
+	h.fillWriteContractRequest(c, &req) // 配置账户「地址即引用」回填（owner/signers 角色）
 
 	// 端点本身已隐含模式：缺省自动填充，显式传错值仍被拒（2026-10 AI 易用性）
 	if req.PaymentMode == "" {

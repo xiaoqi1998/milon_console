@@ -37,6 +37,7 @@ func newAccountsContractRouter(t *testing.T) *gin.Engine {
 	h := NewContractHandler(nm)
 	api.POST("/write", h.WriteContract)
 	api.POST("/simulate", h.SimulateContract)
+	api.POST("/write/multisig", h.WriteContractMultisig)
 	return r
 }
 
@@ -106,6 +107,22 @@ func TestContractWriteConfiguredAccount(t *testing.T) {
 		// 而不是「signatureMode is required」（无回填时离线账户+空模式必报此错）。
 		if strings.Contains(w.Body.String(), "signatureMode") {
 			t.Fatalf("签名模式未被配置账户注入, 错误仍指向签名模式缺失: %s", w.Body.String())
+		}
+	})
+	t.Run("multisig 专用端点无私钥+地址命中→回填后进链端路径", func(t *testing.T) {
+		// 端点缺省 paymentMode=split（owner 付 gas+签指令）；无私钥+命中地址
+		// → payer/owner 私钥均由配置账户回填，错误应来自链端而非私钥缺失。
+		body4 := `{"appName":"token","methodName":"Transfer","args":{"from":"` + cAddr + `","token":"` + cAddr + `","to":"` + cAddr + `","amount":1},"payerAddress":"` + cAddr + `"}`
+		req := httptest.NewRequest(http.MethodPost, "/api/write/multisig", strings.NewReader(body4))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set(middleware.AccountsHeader, hdr)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		if w.Code == http.StatusBadRequest {
+			t.Fatalf("multisig 仍被参数校验拦截: %s", w.Body.String())
+		}
+		if strings.Contains(w.Body.String(), "PrivateKey") {
+			t.Fatalf("私钥未被配置账户回填, 错误仍指向私钥缺失: %s", w.Body.String())
 		}
 	})
 }
