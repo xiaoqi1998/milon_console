@@ -22,6 +22,11 @@ type ConfiguredAccount struct {
 // 防客户端误贴超大数组把解析/校验拖成 CPU 热点（在逐条校验之前拦截）。
 const MaxConfiguredAccounts = 64
 
+// ConfiguredAccountHint 是「私钥必填但地址未配置」错误的追加提示（types 侧
+// 独立定义以避免 import handler 成环；文案与 handler.configuredAccountHint
+// 逐字一致，改文案须两侧同步）。
+const ConfiguredAccountHint = "；该地址未配置为操作账户——可在 MCP 客户端 mcp.json 的 milon.headers 配 X-Milon-Accounts（base64(JSON数组)，fndsa512 须带 publicKey）后免传私钥，或先调 account_config_list 核对已配置账户"
+
 // ParseConfiguredAccounts 解析并校验一段账户 JSON 数组（raw 为 base64 解码后
 // 的 JSON 原文，或 MILON_ACCOUNTS 环境变量原文）。sourceName 是来源名
 // （"X-Milon-Accounts" / "MILON_ACCOUNTS"），用于错误文案定位，避免 env

@@ -193,6 +193,7 @@ func (h *ContractHandler) SimulateContract(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
+	h.fillSimulateRequest(c, &req) // 配置账户「地址即引用」回填（签名模式注入）
 
 	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
@@ -333,14 +334,14 @@ func validatePaymentModeFields(paymentMode string, signers []types.SignerEntry, 
 			return fmt.Errorf("payerAddress (or ownerAddress) is required for split mode")
 		}
 		if requirePayerKey && payerPrivateKey == "" {
-			return fmt.Errorf("payerPrivateKey is required for split mode")
+			return fmt.Errorf("payerPrivateKey is required for split mode%s", configuredAccountHint)
 		}
 	case PaymentModeSponsored:
 		if payerAddress == "" {
 			return fmt.Errorf("payer is required for sponsored mode")
 		}
 		if requirePayerKey && payerPrivateKey == "" {
-			return fmt.Errorf("payerPrivateKey is required for sponsored mode")
+			return fmt.Errorf("payerPrivateKey is required for sponsored mode%s", configuredAccountHint)
 		}
 	}
 	return nil
@@ -963,6 +964,7 @@ func (h *ContractHandler) WriteContract(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
+	h.fillWriteContractRequest(c, &req) // 配置账户「地址即引用」回填（五类角色）
 	// paymentMode 改为显式校验（shared struct 去掉 binding 以便专用端点缺省化）；
 	// 通用端点契约不变：必须显式指定
 	if req.PaymentMode == "" {
@@ -1078,6 +1080,62 @@ func (h *ContractHandler) WriteContractMultisig(c *gin.Context) {
 	data := gin.H{"txHash": txHash, "rawTx": serializeTx(tx)}
 	mergeWaitInfo(mc, data, txHash, req.Wait, req.WaitTimeoutSecs)
 	c.JSON(http.StatusOK, types.SuccessResponse(data, "ok"))
+}
+
+// fillWriteContractRequest 「地址即引用」：按配置账户回填 write 请求五类角色。
+// 回填结果仅在本请求同步消费，不跨 goroutine 持有任何账户指针。
+func (h *ContractHandler) fillWriteContractRequest(c *gin.Context, req *writeContractRequest) {
+	roles := []accountRole{
+		{Addr: &req.PayerAddress, Priv: &req.PayerPrivateKey, SigMode: &req.SignatureMode, KeyType: &req.KeyType},
+		{Addr: &req.IxAddress, Priv: &req.IxPrivateKey, SigMode: &req.IxSignatureMode, KeyType: &req.KeyType},
+		{Addr: &req.OwnerAddress, Priv: &req.OwnerPrivateKey, KeyType: &req.KeyType},
+	}
+	for i := range req.Signers {
+		s := &req.Signers[i]
+		roles = append(roles, accountRole{Addr: &s.Address, Priv: &s.PrivateKey, SigMode: &s.SignatureMode, KeyType: &s.KeyType})
+	}
+	if req.GasPayer != nil {
+		g := req.GasPayer
+		roles = append(roles, accountRole{Addr: &g.Address, Priv: &g.PrivateKey, SigMode: &g.SignatureMode, KeyType: &g.KeyType})
+	}
+	fillFromConfiguredAccounts(c, roles...)
+}
+
+// fillMultiContractRequest multi 端点（write/multi 与 simulate/multi 共用请求体）。
+func (h *ContractHandler) fillMultiContractRequest(c *gin.Context, req *multiContractRequest) {
+	roles := []accountRole{
+		{Addr: &req.PayerAddress, Priv: &req.PayerPrivateKey, SigMode: &req.SignatureMode, KeyType: &req.KeyType},
+		{Addr: &req.IxAddress, Priv: &req.IxPrivateKey, SigMode: &req.IxSignatureMode, KeyType: &req.KeyType},
+		{Addr: &req.OwnerAddress, Priv: &req.OwnerPrivateKey, KeyType: &req.KeyType},
+	}
+	for i := range req.Signers {
+		s := &req.Signers[i]
+		roles = append(roles, accountRole{Addr: &s.Address, Priv: &s.PrivateKey, SigMode: &s.SignatureMode, KeyType: &s.KeyType})
+	}
+	if req.GasPayer != nil {
+		g := req.GasPayer
+		roles = append(roles, accountRole{Addr: &g.Address, Priv: &g.PrivateKey, SigMode: &g.SignatureMode, KeyType: &g.KeyType})
+	}
+	fillFromConfiguredAccounts(c, roles...)
+}
+
+// fillSimulateRequest simulate 单笔：无私钥字段，回填仅注入签名模式（离线账户
+// 原本要求显式 signatureMode，配置账户注入 pubkey 模式后纯地址可模拟）。
+func (h *ContractHandler) fillSimulateRequest(c *gin.Context, req *simulateContractRequest) {
+	roles := []accountRole{
+		{Addr: &req.PayerAddress, SigMode: &req.SignatureMode, KeyType: &req.KeyType},
+		{Addr: &req.IxAddress, SigMode: &req.IxSignatureMode, KeyType: &req.KeyType},
+		{Addr: &req.OwnerAddress, KeyType: &req.KeyType},
+	}
+	for i := range req.Signers {
+		s := &req.Signers[i]
+		roles = append(roles, accountRole{Addr: &s.Address, SigMode: &s.SignatureMode, KeyType: &s.KeyType})
+	}
+	if req.GasPayer != nil {
+		g := req.GasPayer
+		roles = append(roles, accountRole{Addr: &g.Address, SigMode: &g.SignatureMode, KeyType: &g.KeyType})
+	}
+	fillFromConfiguredAccounts(c, roles...)
 }
 
 // dispatchSubmit builds a fully-signed transaction based on paymentMode, submits it,
@@ -1260,7 +1318,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 			return "", nil, fmt.Errorf("payer is required for sponsored mode")
 		}
 		if req.PayerPrivateKey == "" {
-			return "", nil, fmt.Errorf("payerPrivateKey is required for sponsored mode")
+			return "", nil, fmt.Errorf("payerPrivateKey is required for sponsored mode%s", configuredAccountHint)
 		}
 		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
 		if err != nil {
@@ -1364,6 +1422,7 @@ func (h *ContractHandler) SimulateContractMulti(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
+	h.fillMultiContractRequest(c, &req) // 配置账户「地址即引用」回填（签名模式注入）
 
 	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
@@ -1524,6 +1583,7 @@ func (h *ContractHandler) WriteContractMulti(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
+	h.fillMultiContractRequest(c, &req) // 配置账户「地址即引用」回填（五类角色）
 
 	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
@@ -1724,7 +1784,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 			return "", nil, fmt.Errorf("payer is required for sponsored mode")
 		}
 		if req.PayerPrivateKey == "" {
-			return "", nil, fmt.Errorf("payerPrivateKey is required for sponsored mode")
+			return "", nil, fmt.Errorf("payerPrivateKey is required for sponsored mode%s", configuredAccountHint)
 		}
 		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
 		if err != nil {
@@ -1767,6 +1827,7 @@ func (h *ContractHandler) WriteSafe(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
 		return
 	}
+	h.fillWriteContractRequest(c, &req) // 配置账户「地址即引用」回填（与 /api/write 同请求体）
 
 	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())

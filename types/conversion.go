@@ -182,7 +182,7 @@ func ParseSignerList(signers []SignerEntry, requirePrivateKey bool) ([]crypto.Ad
 		var sk crypto.SecretKeyer
 		if requirePrivateKey {
 			if s.PrivateKey == "" {
-				return nil, nil, nil, fmt.Errorf("signer[%d] privateKey is required for write mode", i)
+				return nil, nil, nil, fmt.Errorf("signer[%d] privateKey is required for write mode%s", i, ConfiguredAccountHint)
 			}
 			sk, err = ParseSecretKey(s.PrivateKey)
 			if err != nil {
