@@ -60,6 +60,8 @@ func main() {
 	api := r.Group("/api")
 	// 请求级网络选择：X-Milon-Network 头 → 对应网络 client；缺省走服务端默认网络
 	api.Use(middleware.ResolveNetwork(nm))
+	// 请求级配置账户：X-Milon-Accounts 头（base64 JSON）或 MILON_ACCOUNTS env；缺省放行不改变现有行为
+	api.Use(middleware.ResolveAccounts())
 	{
 		// Network management
 		netGroup := api.Group("/network")
