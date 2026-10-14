@@ -20,13 +20,15 @@ func TestCORSPreflightAllowsNetworkHeader(t *testing.T) {
 	req.Host = "api.example.com"
 	req.Header.Set("Origin", "http://example.com")
 	req.Header.Set("Access-Control-Request-Method", "POST")
-	req.Header.Set("Access-Control-Request-Headers", "X-Milon-Network")
+	req.Header.Set("Access-Control-Request-Headers", "X-Milon-Network, X-Milon-Accounts")
 
 	resp := httptest.NewRecorder()
 	r.ServeHTTP(resp, req)
 
 	allowed := resp.Header().Get("Access-Control-Allow-Headers")
-	if !strings.Contains(allowed, "X-Milon-Network") {
-		t.Fatalf("Access-Control-Allow-Headers = %q, want it to contain X-Milon-Network (preflight would fail for browser clients)", allowed)
+	for _, h := range []string{"X-Milon-Network", "X-Milon-Accounts"} {
+		if !strings.Contains(allowed, h) {
+			t.Fatalf("Access-Control-Allow-Headers = %q, want it to contain %s (preflight would fail for browser clients)", allowed, h)
+		}
 	}
 }

@@ -102,20 +102,55 @@ func TestResolveAccounts(t *testing.T) {
 			t.Fatalf("want 400+条目定位 got %d: %s", w.Code, w.Body.String())
 		}
 	})
+	t.Run("65 条超上限 400", func(t *testing.T) {
+		// 上限在逐条校验之前拦截，65 个任意结构条目即可触发
+		entries := make([]string, 65)
+		for i := range entries {
+			entries[i] = `{"address":"x"}`
+		}
+		r, _ := newAccountsRouter()
+		req := httptest.NewRequest("GET", "/api/probe", nil)
+		req.Header.Set(AccountsHeader, b64("["+strings.Join(entries, ",")+"]"))
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		if w.Code != 400 || !strings.Contains(w.Body.String(), "X-Milon-Accounts: 账户数 65 超过上限 64") {
+			t.Fatalf("want 400+超上限文案 got %d: %s", w.Code, w.Body.String())
+		}
+	})
+	t.Run("env 校验失败定位 MILON_ACCOUNTS", func(t *testing.T) {
+		t.Setenv(AccountsEnv, `[{"address":"`+tAddr+`","privateKey":"`+tPrivHex+`","keyType":"fndsa512"}]`)
+		r, _ := newAccountsRouter()
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest("GET", "/api/probe", nil))
+		if w.Code != 400 || !strings.Contains(w.Body.String(), "MILON_ACCOUNTS[0]") {
+			t.Fatalf("want 400+env 前缀定位 got %d: %s", w.Code, w.Body.String())
+		}
+	})
 }
 
-// 不变量：账户头与私钥永不进日志。logging.go 只记 body 不记 header，本测试锁死该事实。
+// 不变量：账户头与私钥永不进日志。挂上生产 LoggerMiddleware(enableBodyLog=true)
+// 走 POST + 坏 header + 带 privateKey 的 body——reqBody 脱敏路径、respBody、
+// 400 warn 路径一并覆盖；断言捕获的 slog 输出里既无私钥也无 header 原文。
 func TestAccountsHeaderNeverLogged(t *testing.T) {
 	var buf strings.Builder
-	old := redirectLogOutput(&buf) // 见下方辅助；无此辅助则按 Step 3 补
+	old := redirectLogOutput(&buf) // 须在构造路由前生效，防构造期日志漏网
 	defer old()
-	r, _ := newAccountsRouter()
-	req := httptest.NewRequest("GET", "/api/probe", nil)
-	hv := b64(`[{"address":"` + tAddr + `","privateKey":"` + tPrivHex + `"}]`)
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	api := r.Group("/api", LoggerMiddleware(true), ResolveAccounts())
+	api.POST("/probe", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+	req := httptest.NewRequest("POST", "/api/probe", strings.NewReader(`{"privateKey":"`+tPrivHex+`"}`))
+	hv := "!!!" + b64(`[{"address":"`+tAddr+`","privateKey":"`+tPrivHex+`"}]`) + "!!!" // 坏 base64 且含私钥载荷
 	req.Header.Set(AccountsHeader, hv)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
+	if w.Code != 400 {
+		t.Fatalf("坏 base64 应 400, got %d: %s", w.Code, w.Body.String())
+	}
 	out := buf.String()
+	if !strings.Contains(out, "reqBody") || !strings.Contains(out, "respBody") {
+		t.Fatalf("日志中间件未进入 reqBody/respBody 记录路径, 覆盖无效: %s", out)
+	}
 	if strings.Contains(out, tPrivHex) || strings.Contains(out, hv) {
 		t.Fatalf("日志泄露账户/私钥: %s", out)
 	}

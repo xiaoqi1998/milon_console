@@ -33,6 +33,7 @@ func ResolveAccounts() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw := c.GetHeader(AccountsHeader)
 		source := "header"
+		sourceName := AccountsHeader // 错误文案前缀：指向真实来源，防 env 配错时误导排障
 		if raw == "" {
 			raw = os.Getenv(AccountsEnv)
 			if raw == "" {
@@ -40,6 +41,7 @@ func ResolveAccounts() gin.HandlerFunc {
 				return
 			}
 			source = "env"
+			sourceName = AccountsEnv
 		} else {
 			decoded, err := base64.StdEncoding.DecodeString(raw)
 			if err != nil {
@@ -49,7 +51,7 @@ func ResolveAccounts() gin.HandlerFunc {
 			}
 			raw = string(decoded)
 		}
-		accounts, err := types.ParseConfiguredAccounts([]byte(raw))
+		accounts, err := types.ParseConfiguredAccounts(sourceName, []byte(raw))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 			return

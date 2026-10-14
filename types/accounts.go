@@ -18,9 +18,16 @@ type ConfiguredAccount struct {
 	KeyType    string `json:"keyType,omitempty"`
 }
 
+// MaxConfiguredAccounts 是单次请求允许携带的配置账户数上限：
+// 防客户端误贴超大数组把解析/校验拖成 CPU 热点（在逐条校验之前拦截）。
+const MaxConfiguredAccounts = 64
+
 // ParseConfiguredAccounts 解析并校验一段账户 JSON 数组（raw 为 base64 解码后
-// 的 JSON 原文，或 MILON_ACCOUNTS 环境变量原文）。
+// 的 JSON 原文，或 MILON_ACCOUNTS 环境变量原文）。sourceName 是来源名
+// （"X-Milon-Accounts" / "MILON_ACCOUNTS"），用于错误文案定位，避免 env
+// 配错时误导排障方向。
 // 校验（任一失败即整包拒绝，错误定位到条目下标）：
+//  0. 条目数不超过 MaxConfiguredAccounts（JSON 解析后先查，逐条校验前拦）；
 //  1. address 非空且为合法地址；
 //  2. keyType 归一到四曲线之一（secp256k1/ed25519/bls12381/fndsa512）；
 //  3. privateKey 非空且可解析；
@@ -28,15 +35,18 @@ type ConfiguredAccount struct {
 //     （Go 无法从其私钥派生）；其余曲线从私钥按曲线派生；
 //  5. 公钥派生地址须与 address 一致（防配错 key）；
 //  6. 数组内地址唯一。
-func ParseConfiguredAccounts(raw []byte) ([]ConfiguredAccount, error) {
+func ParseConfiguredAccounts(sourceName string, raw []byte) ([]ConfiguredAccount, error) {
 	var accounts []ConfiguredAccount
 	if err := json.Unmarshal(raw, &accounts); err != nil {
-		return nil, fmt.Errorf("X-Milon-Accounts 不是合法 JSON 数组: %w", err)
+		return nil, fmt.Errorf("%s 不是合法 JSON 数组: %w", sourceName, err)
+	}
+	if len(accounts) > MaxConfiguredAccounts {
+		return nil, fmt.Errorf("%s: 账户数 %d 超过上限 %d", sourceName, len(accounts), MaxConfiguredAccounts)
 	}
 	seen := make(map[string]bool, len(accounts))
 	for i := range accounts {
 		a := &accounts[i]
-		where := fmt.Sprintf("X-Milon-Accounts[%d]", i)
+		where := fmt.Sprintf("%s[%d]", sourceName, i)
 		if a.Address == "" {
 			return nil, fmt.Errorf("%s: address is required", where)
 		}
