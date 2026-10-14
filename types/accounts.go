@@ -44,6 +44,8 @@ func ParseConfiguredAccounts(raw []byte) ([]ConfiguredAccount, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%s: invalid address: %w", where, err)
 		}
+		// 去重按归一键（地址串行化），防同一地址 hex/base58 双形态绕过唯一性
+		addrKey := addr.String()
 		if a.KeyType == "" {
 			a.KeyType = "secp256k1"
 		}
@@ -65,6 +67,19 @@ func ParseConfiguredAccounts(raw []byte) ([]ConfiguredAccount, error) {
 			if err != nil {
 				return nil, fmt.Errorf("%s: invalid publicKey: %w", where, err)
 			}
+			// 私钥配对校验：经典曲线用同曲线派生结果比对显式公钥，
+			// 防止「私钥 K2 + 公钥 P1（P1 与 address 配对）」配错组合
+			// 整体通过；fndsa512 无法从私钥派生，豁免（缺 publicKey 已被
+			// 上游路径拒绝，走到这里必显式携带）。
+			if a.KeyType != "fndsa512" {
+				derivedPk, derr := derivePubKeyByType(sk, a.KeyType)
+				if derr != nil {
+					return nil, fmt.Errorf("%s: 无法从私钥派生公钥以校验配对: %w", where, derr)
+				}
+				if derivedPk.ToHex() != pk.ToHex() {
+					return nil, fmt.Errorf("%s: privateKey 与 publicKey 不配对（同曲线派生结果不一致）", where)
+				}
+			}
 		} else if a.KeyType == "fndsa512" {
 			return nil, fmt.Errorf("%s: keyType fndsa512 必须显式携带 publicKey（Go 无法从私钥派生；account_generate 的返回里有）", where)
 		} else {
@@ -81,10 +96,10 @@ func ParseConfiguredAccounts(raw []byte) ([]ConfiguredAccount, error) {
 			return nil, fmt.Errorf("%s: 公钥派生地址 %s 与配置 address %s 不一致（key 配错）", where, derived.String(), a.Address)
 		}
 		a.PublicKey = pk.ToHex() // 归一为 hex 全文，供指纹与注入
-		if seen[a.Address] {
+		if seen[addrKey] {
 			return nil, fmt.Errorf("%s: 重复地址 %s", where, a.Address)
 		}
-		seen[a.Address] = true
+		seen[addrKey] = true
 	}
 	return accounts, nil
 }

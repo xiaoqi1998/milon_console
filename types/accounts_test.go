@@ -68,6 +68,25 @@ func TestParseConfiguredAccounts(t *testing.T) {
 			t.Fatal("重复地址应拒绝")
 		}
 	})
+	t.Run("同一地址 base58 与 hex 双形态重复拒绝", func(t *testing.T) {
+		// 同一地址以 base58 与 hex 两种编码各配一次，去重须按归一键而非原始串
+		const tAddrHex = "e141b55a80fada3b8b11a68cd9ad0e88c162e014"
+		raw := `[{"address":"` + tAddr + `","privateKey":"` + tPrivHex + `"},
+		         {"address":"` + tAddrHex + `","privateKey":"` + tPrivHex + `"}]`
+		_, err := ParseConfiguredAccounts([]byte(raw))
+		if err == nil || !strings.Contains(err.Error(), "X-Milon-Accounts[1]") {
+			t.Fatalf("want 编码差异重复被拒且定位到 [1], got %v", err)
+		}
+	})
+	t.Run("经典曲线私钥与显式公钥不配对拒绝", func(t *testing.T) {
+		// 公钥与 address 配对、但 privateKey 是另一把（K2+P1）——显式公钥路径也须校验配对
+		const tOtherPrivHex = "1111111111111111111111111111111111111111111111111111111111111111"
+		raw := `[{"address":"` + tAddr + `","privateKey":"` + tOtherPrivHex + `","publicKey":"` + tPubHex + `"}]`
+		_, err := ParseConfiguredAccounts([]byte(raw))
+		if err == nil || !strings.Contains(err.Error(), "不配对") {
+			t.Fatalf("want 私钥公钥不配对拒绝, got %v", err)
+		}
+	})
 	t.Run("空数组放行", func(t *testing.T) {
 		got, err := ParseConfiguredAccounts([]byte(`[]`))
 		if err != nil || len(got) != 0 {
