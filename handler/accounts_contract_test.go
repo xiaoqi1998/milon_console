@@ -78,9 +78,15 @@ func TestContractWriteConfiguredAccount(t *testing.T) {
 		t.Setenv(middleware.AccountsEnv, "")
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
-		// unified_payer_all 地址已传、无私钥：链上账户未上链时 parsePayerAndMode 要求签名模式——
-		// 该错误文案应含 hint 或 signatureMode 指引；此处宽松断言非 200 即可，
-		// 严格断言在 split 模式（validatePaymentModeFields 必报 payerPrivateKey）
+		// unified_payer_all 无私钥+未命中：主路径必填错误也应在 handler 层
+		// 以 400 拦截并附配置账户 hint（不再落成 500 invalid ...unsupported length 0）
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("unified_payer_all 缺私钥应 400, got %d: %s", w.Code, w.Body.String())
+		}
+		if !strings.Contains(w.Body.String(), "account_config_list") && !strings.Contains(w.Body.String(), "X-Milon-Accounts") {
+			t.Fatalf("unified_payer_all 错误文案缺配置账户提示: %s", w.Body.String())
+		}
+		// split 模式同型严格断言（validatePaymentModeFields 必报 payerPrivateKey）
 		body2 := `{"appName":"token","methodName":"Transfer","args":{},"paymentMode":"split","payerAddress":"` + cAddr + `"}`
 		req2 := httptest.NewRequest(http.MethodPost, "/api/write", strings.NewReader(body2))
 		req2.Header.Set("Content-Type", "application/json")

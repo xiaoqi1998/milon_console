@@ -323,11 +323,17 @@ func submitAndReturn(mc *milon.Client, tx *lib.Transaction, requestId lib.Reques
 // For multi_signer: signers must not be empty.
 // For split: payerAddress (or ownerAddress) is required; payerPrivateKey is required when requirePayerKey is true.
 // For sponsored: payerAddress is required; payerPrivateKey is required when requirePayerKey is true.
+// For unified_* write paths (requirePayerKey=true): payerPrivateKey is required
+// （空私钥在 handler 层以 400 拦截并附配置账户 hint，而非落进 dispatch 的 500）。
 func validatePaymentModeFields(paymentMode string, signers []types.SignerEntry, payerAddress, payerPrivateKey string, requirePayerKey bool) error {
 	switch paymentMode {
 	case PaymentModeMultiSigner:
 		if len(signers) == 0 {
 			return fmt.Errorf("signers cannot be empty")
+		}
+	case PaymentModeUnifiedPayerAll, PaymentModeUnifiedPayerOnlyGas, PaymentModeUnifiedDualSign:
+		if requirePayerKey && payerPrivateKey == "" {
+			return fmt.Errorf("payerPrivateKey is required for %s mode%s", paymentMode, configuredAccountHint)
 		}
 	case PaymentModeSplit:
 		if payerAddress == "" {
@@ -1167,6 +1173,9 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 
 	switch req.PaymentMode {
 	case PaymentModeUnifiedPayerAll:
+		if req.PayerPrivateKey == "" {
+			return "", nil, fmt.Errorf("payerPrivateKey is required for unified_payer_all mode%s", configuredAccountHint)
+		}
 		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
@@ -1191,6 +1200,9 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		return txHashHex(tx), tx, nil
 
 	case PaymentModeUnifiedDualSign:
+		if req.PayerPrivateKey == "" {
+			return "", nil, fmt.Errorf("payerPrivateKey is required for unified_dual_sign mode%s", configuredAccountHint)
+		}
 		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
@@ -1198,6 +1210,9 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
+		}
+		if req.IxPrivateKey == "" {
+			return "", nil, fmt.Errorf("ixPrivateKey is required for unified_dual_sign mode%s", configuredAccountHint)
 		}
 		ixSk, err := types.ParseSecretKey(req.IxPrivateKey)
 		if err != nil {
@@ -1224,6 +1239,9 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		return txHashHex(tx), tx, nil
 
 	case PaymentModeUnifiedPayerOnlyGas:
+		if req.PayerPrivateKey == "" {
+			return "", nil, fmt.Errorf("payerPrivateKey is required for unified_payer_only_gas mode%s", configuredAccountHint)
+		}
 		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
@@ -1251,6 +1269,9 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		ownerSkStr := req.OwnerPrivateKey
 		if ownerSkStr == "" {
 			ownerSkStr = req.PayerPrivateKey
+		}
+		if ownerSkStr == "" {
+			return "", nil, fmt.Errorf("ownerPrivateKey (or payerPrivateKey) is required for split mode%s", configuredAccountHint)
 		}
 		ownerSk, err := types.ParseSecretKey(ownerSkStr)
 		if err != nil {
@@ -1631,6 +1652,9 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 	switch req.PaymentMode {
 	case PaymentModeUnifiedPayerAll:
 		// payer 签全部指令 + gas（bit63）
+		if req.PayerPrivateKey == "" {
+			return "", nil, fmt.Errorf("payerPrivateKey is required for unified_payer_all mode%s", configuredAccountHint)
+		}
 		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
@@ -1652,6 +1676,9 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 
 	case PaymentModeUnifiedDualSign:
 		// payer 只签 gas，ix 账户签全部指令
+		if req.PayerPrivateKey == "" {
+			return "", nil, fmt.Errorf("payerPrivateKey is required for unified_dual_sign mode%s", configuredAccountHint)
+		}
 		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
@@ -1659,6 +1686,9 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		payerAddr, payerMode, err := h.parsePayerAndMode(mc, req.PayerAddress, req.SignatureMode, payerSk, req.KeyType)
 		if err != nil {
 			return "", nil, err
+		}
+		if req.IxPrivateKey == "" {
+			return "", nil, fmt.Errorf("ixPrivateKey is required for unified_dual_sign mode%s", configuredAccountHint)
 		}
 		ixSk, err := types.ParseSecretKey(req.IxPrivateKey)
 		if err != nil {
@@ -1682,6 +1712,9 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 
 	case PaymentModeUnifiedPayerOnlyGas:
 		// payer 只签 gas
+		if req.PayerPrivateKey == "" {
+			return "", nil, fmt.Errorf("payerPrivateKey is required for unified_payer_only_gas mode%s", configuredAccountHint)
+		}
 		payerSk, err := types.ParseSecretKey(req.PayerPrivateKey)
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid payerPrivateKey: %w", err)
@@ -1706,6 +1739,9 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		ownerSkStr := req.OwnerPrivateKey
 		if ownerSkStr == "" {
 			ownerSkStr = req.PayerPrivateKey
+		}
+		if ownerSkStr == "" {
+			return "", nil, fmt.Errorf("ownerPrivateKey (or payerPrivateKey) is required for split mode%s", configuredAccountHint)
 		}
 		ownerSk, err := types.ParseSecretKey(ownerSkStr)
 		if err != nil {
