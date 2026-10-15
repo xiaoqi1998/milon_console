@@ -16,7 +16,8 @@ const SeedDefaultPhrase = "milon-devnet-seed-v1"
 const seedPicsumBase = "https://picsum.photos/seed"
 
 func seedPicsum(seed string, w, h int) string {
-	return fmt.Sprintf("%s/%s/%d/%d", seedPicsumBase, seed, w, h)
+	// 带 .jpg 后缀:部分环境/预览组件无法打开无扩展名 URL
+	return fmt.Sprintf("%s/%s/%d/%d.jpg", seedPicsumBase, seed, w, h)
 }
 
 func seedAvatarURL(name string) string {

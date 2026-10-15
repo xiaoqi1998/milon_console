@@ -4,7 +4,7 @@ from seedlib import images
 
 
 def test_picsum_basic_format():
-    assert images.picsum("abc", 600, 600) == "https://picsum.photos/seed/abc/600/600"
+    assert images.picsum("abc", 600, 600) == "https://picsum.photos/seed/abc/600/600.jpg"
 
 
 def test_picsum_deterministic():
@@ -14,32 +14,32 @@ def test_picsum_deterministic():
 
 def test_avatar_url():
     u = images.avatar_url("test01")
-    assert u == "https://picsum.photos/seed/milon-ava-test01/200/200"
+    assert u == "https://picsum.photos/seed/milon-ava-test01/200/200.jpg"
 
 
 def test_token_icon_url():
     u = images.token_icon_url("SEED6")
-    assert u == "https://picsum.photos/seed/milon-icon-seed6/128/128"
+    assert u == "https://picsum.photos/seed/milon-icon-seed6/128/128.jpg"
 
 
 def test_token_uri():
     u = images.token_uri("SEED6")
-    assert u == "https://picsum.photos/seed/milon-meta-seed6/400/400"
+    assert u == "https://picsum.photos/seed/milon-meta-seed6/400/400.jpg"
 
 
 def test_sft_cover_url():
     u = images.sft_cover_url("genesis")
-    assert u == "https://picsum.photos/seed/milon-sft-genesis/600/600"
+    assert u == "https://picsum.photos/seed/milon-sft-genesis/600/600.jpg"
 
 
 def test_slot_cover_url():
     u = images.slot_cover_url("genesis", "burn_shell")
-    assert u == "https://picsum.photos/seed/milon-slot-genesis-burn_shell/600/600"
+    assert u == "https://picsum.photos/seed/milon-slot-genesis-burn_shell/600/600.jpg"
 
 
 def test_card_cover_url():
     u = images.card_cover_url("genesis", "multi_holder", 3)
-    assert u == "https://picsum.photos/seed/milon-card-genesis-multi_holder-3/600/600"
+    assert u == "https://picsum.photos/seed/milon-card-genesis-multi_holder-3/600/600.jpg"
 
 
 def test_all_urls_https_and_seed_stable():

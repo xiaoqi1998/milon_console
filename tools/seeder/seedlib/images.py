@@ -7,7 +7,8 @@ BASE = "https://picsum.photos/seed"
 
 
 def picsum(seed: str, w: int = 600, h: int = 600) -> str:
-    return f"{BASE}/{seed}/{w}/{h}"
+    # 带 .jpg 后缀:部分环境/预览组件无法打开无扩展名 URL
+    return f"{BASE}/{seed}/{w}/{h}.jpg"
 
 
 def avatar_url(name: str) -> str:
