@@ -1344,6 +1344,107 @@ function fallbackCopy(text, onSuccess, onFail) {
 // 工具清单（GET /api/mcp/tools 动态渲染 + 搜索过滤）。
 var mcpState = { client: 'zcode', tools: null };
 
+// buildAccountsConfig 把用户粘贴的账户数组 JSON 校验并编码为完整 mcpServers 配置。
+// 纯本地：base64 编码在浏览器完成，私钥不发送到服务端。
+// 返回 {ok:true, config} 或 {ok:false, error}；mcpUrl 缺省时配置里省略 url 字段。
+// 校验口径与服务端 types.ParseConfiguredAccounts 对齐（结构级：必填/四曲线/fndsa512
+// 公钥/地址唯一/上限 64；密钥派生级校验由服务端完成——浏览器无 SDK，不重复造轮子）。
+function buildAccountsConfig(input, mcpUrl) {
+  var text = (input || '').trim();
+  if (!text) {
+    return { ok: false, error: '请先粘贴账户数组 JSON' };
+  }
+  var arr;
+  try {
+    arr = JSON.parse(text);
+  } catch (e) {
+    return { ok: false, error: '不是合法 JSON：' + e.message };
+  }
+  if (!Array.isArray(arr)) {
+    return { ok: false, error: '必须是 JSON 数组（形如 [{...},{...}]）' };
+  }
+  if (arr.length === 0) {
+    return { ok: false, error: '数组为空：至少配置一个账户' };
+  }
+  if (arr.length > 64) {
+    return { ok: false, error: '账户数 ' + arr.length + ' 超过上限 64' };
+  }
+  var KEY_TYPES = ['secp256k1', 'ed25519', 'bls12381', 'fndsa512'];
+  var seen = {};
+  for (var i = 0; i < arr.length; i++) {
+    var a = arr[i] || {};
+    var where = 'X-Milon-Accounts[' + i + ']';
+    if (!a.address || typeof a.address !== 'string') {
+      return { ok: false, error: where + ': address 必填（base58 地址）' };
+    }
+    if (seen[a.address]) {
+      return { ok: false, error: where + ': 地址重复 ' + a.address };
+    }
+    seen[a.address] = true;
+    if (!a.privateKey || typeof a.privateKey !== 'string') {
+      return { ok: false, error: where + ': privateKey 必填（hex 或 base58）' };
+    }
+    if (a.keyType && KEY_TYPES.indexOf(a.keyType) < 0) {
+      return { ok: false, error: where + ': keyType ' + a.keyType + ' 不支持（可选 secp256k1/ed25519/bls12381/fndsa512）' };
+    }
+    if (a.keyType === 'fndsa512' && !a.publicKey) {
+      return { ok: false, error: where + ': keyType fndsa512 必须携带 publicKey（897 字节抗量子公钥，account_generate 返回里有；服务端无法从私钥派生）' };
+    }
+  }
+  var milon = { headers: { 'X-Milon-Accounts': utf8ToBase64(JSON.stringify(arr)) } };
+  if (mcpUrl) {
+    milon.url = mcpUrl;
+  }
+  return { ok: true, config: { mcpServers: { milon: milon } } };
+}
+
+// utf8ToBase64:TextEncoder 先转 UTF-8 字节再编码，中文等非 Latin1 字符安全
+//（直接 btoa(中文) 会抛 InvalidCharacterError）。
+function utf8ToBase64(s) {
+  var bytes = new TextEncoder().encode(s);
+  var bin = '';
+  for (var i = 0; i < bytes.length; i++) {
+    bin += String.fromCharCode(bytes[i]);
+  }
+  return btoa(bin);
+}
+
+// initMcpAccountsGen 接线「配置操作账户」生成器：粘贴 JSON → 本地校验+base64 →
+// 完整配置预览 + 一键复制；附带占位符示范配置。
+function initMcpAccountsGen(mcpUrl) {
+  var sample = {
+    mcpServers: {
+      milon: {
+        url: mcpUrl,
+        headers: { 'X-Milon-Accounts': '<base64(JSON数组)，用下方生成器或命令行产出>' }
+      }
+    }
+  };
+  $('mcpAccountsSample').textContent = JSON.stringify(sample, null, 2);
+
+  $('mcpAccountsGenBtn').addEventListener('click', function () {
+    var errEl = $('mcpAccountsErr');
+    var result = buildAccountsConfig($('mcpAccountsInput').value, mcpUrl);
+    if (!result.ok) {
+      errEl.textContent = result.error;
+      errEl.classList.remove('mcp-hidden');
+      $('mcpAccountsPreviewWrap').classList.add('mcp-hidden');
+      return;
+    }
+    errEl.classList.add('mcp-hidden');
+    $('mcpAccountsPreview').textContent = JSON.stringify(result.config, null, 2);
+    $('mcpAccountsPreviewWrap').classList.remove('mcp-hidden');
+  });
+
+  $('mcpAccountsCopyBtn').addEventListener('click', function () {
+    copyToClipboard($('mcpAccountsPreview').textContent, function () {
+      showToast('账户配置已复制', 'success');
+    }, function () {
+      showToast('复制失败', 'error');
+    });
+  });
+}
+
 function initMcpCard() {
   var mcpUrl = window.location.origin + '/mcp';
   var zcodeText = JSON.stringify(
@@ -1379,6 +1480,8 @@ function initMcpCard() {
       showToast('复制失败', 'error');
     });
   });
+
+  initMcpAccountsGen(mcpUrl);
 
   // 客户端 tab 切换（配置 JSON 与复制按钮跟随）
   document.querySelectorAll('.mcp-tab').forEach(function (tab) {

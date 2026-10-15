@@ -7,7 +7,7 @@
 <title>Milon Chain API 调试控制台 | 区块链接口测试与文档</title>
 <meta name="description" content="Milon Chain 区块链 API 调试控制台，提供合约读写、账户查询、交易查询、事件监听等 RESTful 接口的在线测试与 SDK 调用。" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='4' fill='%23141416' stroke='%23e0a458' stroke-width='2'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='%23e0a458' font-family='monospace' font-weight='700'>∞</text></svg>" type="image/svg+xml" />
-<link rel="stylesheet" href="/static/css/style.css?v=20261013b" />
+<link rel="stylesheet" href="/static/css/style.css?v=20261015a" />
 </head>
 <body>
 <div id="app">
@@ -60,6 +60,12 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
         </span>
         <span class="nav-label">MCP 接入</span>
+      </button>
+      <button class="nav-tab" data-view="vc">
+        <span class="nav-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        </span>
+        <span class="nav-label">VC 凭证</span>
       </button>
     </nav>
     <div class="topbar-right">
@@ -479,6 +485,54 @@
             </button>
           </div>
 
+          <div class="mcp-auth-sec">
+            <div class="mcp-sub-title">配置操作账户（可选）</div>
+            <p class="mcp-pane-desc">把操作账户常驻在 MCP 客户端配置里（<code>headers.X-Milon-Accounts</code>，值为 <code>base64(JSON 数组)</code>，上限 64 条），之后全部写工具<strong>只传地址、免传私钥</strong>：<code>contract_write</code> / <code>transfer_mil</code>（传 <code>fromAddress</code>）/ <code>faucet_claim</code> / DID / SFT / VC / 保存指令执行——私钥缺省时按地址自动引用配置账户，显式传私钥仍优先。服务端<strong>零持久化</strong>（账户只随单请求过境，多用户共用一台服务互不串）；该头等同于持有私钥的通道——能带此头即能签名，请像保管私钥一样保管客户端配置文件。</p>
+            <div class="docs-code-label">参数说明</div>
+            <div class="docs-table-wrap">
+              <table class="docs-table">
+                <thead><tr><th>字段</th><th>必填</th><th>说明</th></tr></thead>
+                <tbody>
+                  <tr><td><code>name</code></td><td>否</td><td>展示名，<code>account_config_list</code> 回显用</td></tr>
+                  <tr><td><code>address</code></td><td>是</td><td>base58 地址；数组内不可重复</td></tr>
+                  <tr><td><code>privateKey</code></td><td>是</td><td>hex 或 base58 私钥</td></tr>
+                  <tr><td><code>keyType</code></td><td>否</td><td><code>secp256k1</code>（缺省）/ <code>ed25519</code> / <code>bls12381</code> / <code>fndsa512</code></td></tr>
+                  <tr><td><code>publicKey</code></td><td>fndsa512 必填</td><td>抗量子曲线公钥无法从私钥派生，必须显式携带（<code>account_generate</code> 返回里有，897 字节）；其他曲线可省，服务端派生并校验与地址、私钥的配对</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="mcp-pane-desc">配置有误时所有请求返回 400，错误定位到具体条目（如 <code>X-Milon-Accounts[0]: privateKey 与 publicKey 不配对</code>）。用下方生成器粘贴账户数组，本地完成 base64 编码（私钥不发送到服务端），直接得到可粘贴的完整配置：</p>
+            <div class="docs-code-label">账户数组 JSON（粘贴此处）</div>
+            <textarea class="mcp-accounts-input" id="mcpAccountsInput" rows="5" spellcheck="false" placeholder='[{"name":"main","address":"<地址>","privateKey":"<私钥>"}]'></textarea>
+            <div class="mcp-accounts-err mcp-hidden" id="mcpAccountsErr"></div>
+            <button class="btn btn-secondary" id="mcpAccountsGenBtn">
+              <span class="btn-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              </span>
+              <span>生成配置（本地 base64 编码）</span>
+            </button>
+            <div class="mcp-accounts-preview mcp-hidden" id="mcpAccountsPreviewWrap">
+              <div class="docs-code-label">生成的完整配置（复制加入 mcpServers）</div>
+              <div class="docs-code-block"><pre id="mcpAccountsPreview">加载中...</pre></div>
+              <button class="btn btn-secondary" id="mcpAccountsCopyBtn">
+                <span class="btn-icon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </span>
+                <span>复制账户配置</span>
+              </button>
+            </div>
+            <div class="mcp-accounts-preview mcp-hidden" id="mcpAccountsSampleWrap">
+              <div class="docs-code-label">配置形态示范（占位符，手填 base64 时参照）</div>
+              <div class="docs-code-block"><pre id="mcpAccountsSample">加载中...</pre></div>
+            </div>
+            <p class="mcp-pane-desc">也可用命令行生成 base64（输出粘贴到 headers 的值里）：</p>
+            <div class="docs-code-block"><pre># bash（-n 去尾换行，-w0 不折行）
+echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;"}]' | base64 -w0
+# PowerShell
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;"}]'))</pre></div>
+            <p class="mcp-pane-desc">安全边界：账户头随每个请求过境，服务端不落盘、不跨请求共享、不进日志（<code>ENABLE_BODY_LOG</code> 记录的是请求体，不含该头）。<code>account_config_list</code> 工具可随时核对自己已配置的账户（脱敏回显，永不返回私钥）。</p>
+          </div>
+
           <p class="mcp-hint">注意事项：MCP 端点单次工具调用回环超时 120s（长任务如 sft_flow / vc_flow 请耐心等待）；开启 <code>ENABLE_BODY_LOG</code> 时 /mcp 工具入参（含私钥字段）会写入日志，仅限 devNet 调试，生产勿开；对外暴露服务务必设置 <code>MCP_AUTH_TOKEN</code>。多网络并存时可对 /mcp 请求携带 <code>X-Milon-Network</code> 头（客户端在 mcpServers 配置的 headers 中设置，如 <code>{"X-Milon-Network": "devNet"}</code>），全部工具调用按该网络执行，缺省走服务端默认网络。</p>
         </div>
 
@@ -514,6 +568,125 @@
             <li><span class="mcp-prompt-tag">编排</span>「跑一遍 SFT 全流程：建 SFT、建 slot、mint 100 份给我」</li>
             <li><span class="mcp-prompt-tag">排错</span>「这笔交易 0x… 卡住没确认，帮我解析一下它的内容和事件」</li>
           </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-vc">
+      <div class="vc-layout">
+        <div class="errors-header">
+          <div class="errors-title-block">
+            <h2>VC 凭证查询</h2>
+            <p>可验证凭证（identity app）只读视图：凭证 ID、组织能力、持证校验、生命周期、披露记录、DID 文档</p>
+          </div>
+        </div>
+        <div class="vc-grid">
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>凭证 ID 派生</h3>
+              <span class="vc-card-desc">identity.CredentialId — 由 issuer + schema 派生全局凭证 ID（合规代币引用它）</span>
+            </div>
+            <div class="vc-row">
+              <label>issuer 地址</label>
+              <input type="text" id="vcCredIssuer" placeholder="签发方地址（base58）" />
+            </div>
+            <div class="vc-row">
+              <label>schema 名称</label>
+              <input type="text" id="vcCredSchema" placeholder="如 SeedKyc1" />
+            </div>
+            <button class="btn btn-primary" id="vcCredBtn">查询凭证 ID</button>
+            <pre class="vc-result" id="vcCredResult">待查询</pre>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>组织能力</h3>
+              <span class="vc-card-desc">identity.OrganizationCapabilities — 组织声明的角色与凭证 schema</span>
+            </div>
+            <div class="vc-row">
+              <label>组织地址</label>
+              <input type="text" id="vcOrgSubject" placeholder="Organization 型 DID 地址" />
+            </div>
+            <button class="btn btn-primary" id="vcOrgBtn">查询组织</button>
+            <pre class="vc-result" id="vcOrgResult">待查询</pre>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>持证校验</h3>
+              <span class="vc-card-desc">identity.HasValidVcFromIssuer — 是否持有指定 issuer+schema 的有效凭证</span>
+            </div>
+            <div class="vc-row">
+              <label>subject 地址</label>
+              <input type="text" id="vcHasSubject" placeholder="持证人地址" />
+            </div>
+            <div class="vc-row">
+              <label>issuer 地址</label>
+              <input type="text" id="vcHasIssuer" placeholder="签发方地址" />
+            </div>
+            <div class="vc-row">
+              <label>schema 名称</label>
+              <input type="text" id="vcHasSchema" placeholder="如 SeedKyc1" />
+            </div>
+            <button class="btn btn-primary" id="vcHasBtn">校验持证</button>
+            <pre class="vc-result" id="vcHasResult">待查询</pre>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>凭证生命周期</h3>
+              <span class="vc-card-desc">identity.VcAttestationLifecycle — Active / Frozen / Revoked 与最近变更时间</span>
+            </div>
+            <div class="vc-row">
+              <label>subject 地址</label>
+              <input type="text" id="vcLifeSubject" placeholder="持证人地址" />
+            </div>
+            <div class="vc-row">
+              <label>issuer 地址</label>
+              <input type="text" id="vcLifeIssuer" placeholder="签发方地址" />
+            </div>
+            <div class="vc-row">
+              <label>schema 名称</label>
+              <input type="text" id="vcLifeSchema" placeholder="如 SeedPlayer1" />
+            </div>
+            <button class="btn btn-primary" id="vcLifeBtn">查询状态</button>
+            <pre class="vc-result" id="vcLifeResult">待查询</pre>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>已披露凭证</h3>
+              <span class="vc-card-desc">identity.DisclosedVcs — 某 subject 披露上链的全部凭证摘要</span>
+            </div>
+            <div class="vc-row">
+              <label>subject 地址</label>
+              <input type="text" id="vcDisSubject" placeholder="持证人地址" />
+            </div>
+            <div class="vc-row">
+              <label>offset / limit</label>
+              <div class="vc-pair">
+                <input type="text" id="vcDisOffset" value="0" inputmode="numeric" />
+                <input type="text" id="vcDisLimit" value="20" inputmode="numeric" />
+              </div>
+            </div>
+            <button class="btn btn-primary" id="vcDisBtn">查询披露</button>
+            <pre class="vc-result" id="vcDisResult">待查询</pre>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>DID 文档</h3>
+              <span class="vc-card-desc">identity.Document — 别名、头像、密钥、服务端点、停用状态</span>
+            </div>
+            <div class="vc-row">
+              <label>地址</label>
+              <input type="text" id="vcDidSubject" placeholder="任意已建 DID 的地址" />
+            </div>
+            <button class="btn btn-primary" id="vcDidBtn">查询文档</button>
+            <pre class="vc-result" id="vcDidResult">待查询</pre>
+          </div>
+
         </div>
       </div>
     </section>
@@ -634,7 +807,7 @@
 
   <div class="toast-container" id="toastContainer"></div>
 </div>
-<script src="/static/js/app.js?v=20261013b"></script>
+<script src="/static/js/app.js?v=20261015a"></script>
 <script src="/static/js/saved-instructions.js?v=20261013"></script>
 </body>
 </html>
