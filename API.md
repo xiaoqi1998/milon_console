@@ -2746,7 +2746,7 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 
 1. **签名自动派生**：`contract_write` / `contract_write_safe` 只传 `payerPrivateKey` 即可——`payerAddress` 与 `signatureMode`（含公钥）由服务端按 `keyType`（缺省 secp256k1）自动派生；`contract_simulate` 无私钥，传 `payerAddress` 即可（账户已上链且唯一签名者时签名模式自动缺省）。`faucet_claim` 与 `signers[]` 免传 `signatureMode`。
 2. **类型保真**：`timeoutSecs` 是数字、`wait`/`remote` 是布尔——按 schema 类型传，不要包字符串。
-3. **paymentMode 端点缺省**：`contract_write_multi_agent`（隐含 unified_dual_sign）与 `contract_write_multisig`（隐含 split）可不传；通用 `contract_write` / `contract_write_safe` 仍必填。
+3. **paymentMode 单壳覆盖（2026-10 瘦身）**：双账户、owner、多签、赞助等全部场景都由 `contract_write` / `contract_write_safe` 显式传 `paymentMode` 覆盖——`unified_dual_sign`（双签：payer\* + ixAddress/ixPrivateKey）、`split`（owner 模式）、`multi_signer`、`sponsored`；不再单独开 multi-agent / multisig 的 MCP 壳。旧名对应 REST 端点仍保留（`POST /api/write/multi-agent` 隐含 unified_dual_sign、`POST /api/write/multisig` 隐含 split，可免传 paymentMode），供直连 REST 的调用方使用。
 4. **signatureMode 形态**：必须是对象 `{"type":"pubkey","publicKey":"..."}`（REST 侧兼容字符串化与 type 缺省，但 MCP schema 按对象传）；`publicKey` 缺省时服务端自动派生（fndsa512 必须显式传）。
 5. **报错自纠**：签名模式解析失败、multisig 索引越界、pubkey 模式被拒（285）等错误的报文都附正确形态示例或签名者列表，按示例重试即可；链上错误码用 `error_lookup` 工具翻译；水龙头冷却/余额不足的错误消息已内联下一步动作提示。
 6. **提速约定（2026-10）**：缺参会一次性全部列出（带类型与已提供参数），一轮修对；`idl_methods` 每方法带 `exampleArgs` 调用模板；`idl_metadata` 传 `apps=token` 只取所需 app（全量约 200KB）；写交易传 `wait: true`（可配 `waitTimeoutSecs`，缺省 60s）同请求等确认，响应带 `confirmed`/`waitError`，省一次 `tx_track`。
