@@ -17,7 +17,8 @@ import (
 // 改链参数/限制时同步改对应页并递增 guideDocVersion。
 
 // guideDocVersion 手册内容版本（内容变更时递增，每页首行携带）。
-const guideDocVersion = "2026.10.13"
+// 2026.10.14：新增「客户端配置账户（地址即引用）」——keys/workflows 页。
+const guideDocVersion = "2026.10.14"
 
 // sourceRepoURL 本服务开源仓库地址（2026-10-13：告知 AI「不懂可看源码」）。
 // 与 handler 包 buildRepoURL（/api/version 的 repoURL）同值同源——那边可被
@@ -203,7 +204,11 @@ saved_instruction_create 绑定方法+账户+签名 → saved_instruction_execut
 
 ## 12. postcard 高级通道
 tx_inspect_raw 解析（不上链）→ tx_simulate_raw 干跑 → tx_submit_raw 提交；
-view_single / view_multi 走预构建 wire`,
+view_single / view_multi 走预构建 wire
+
+## 13. 配置账户（地址即引用）
+mcp.json 的 milon.headers 配 X-Milon-Accounts（详见 keys 主题「客户端配置账户」）→
+account_config_list 脱敏核对 → contract_write 等写工具只传地址免私钥`,
 
 	"limits": `# 限制与不可逆清单 (doc_version ` + guideDocVersion + `)
 
@@ -285,5 +290,18 @@ view_single / view_multi 走预构建 wire`,
 - keyType 参数只在「自动派生」路径用到；显式给了公钥就不用传
 
 ## VC 特例
-凭证签名仅支持 Ed25519 / FN-DSA-512；issuer 为 fndsa512 时 issuerPublicKey 必填`,
+凭证签名仅支持 Ed25519 / FN-DSA-512；issuer 为 fndsa512 时 issuerPublicKey 必填
+
+## 客户端配置账户（地址即引用）
+- mcp.json 的 milon.headers 加 X-Milon-Accounts：base64(JSON数组)，
+  元素 {name?, address, privateKey, keyType?, publicKey?}；env MILON_ACCOUNTS（raw JSON）
+  自托管兜底；header 优先；上限 64 条
+- fndsa512（抗量子）必须带 publicKey（Go 无法从私钥派生；account_generate 的返回里有）；
+  其他曲线可省，服务端派生并校验公钥↔地址、私钥↔公钥、地址唯一
+- 坏配置所有请求 400，错误定位到 X-Milon-Accounts[i] / MILON_ACCOUNTS[i] 条目
+- 写工具（contract_write 系/transfer_mil/faucet_claim/did/sft_flow/vc_flow/
+  saved_instruction send 等）私钥缺省时按地址自动引用回填；显式私钥优先；
+  未命中错误文案带配置账户 hint
+- account_config_list 脱敏核对：只回 name/address/keyType/公钥指纹/source，永不回私钥
+- 服务端零存储：账户随每个请求过境（日志不落），多用户共用一台服务也不会互串`,
 }

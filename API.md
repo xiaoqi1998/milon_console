@@ -2,7 +2,7 @@
 
 ## 概述
 
-Milon API Server 将 Milon Go SDK 封装为一组 RESTful HTTP 接口，提供网络管理、账户管理、交易查询与提交、合约读写、RPC 访问、水龙头领水、密钥工具以及 IDL 元数据发现等能力，共计 **39** 个端点。
+Milon API Server 将 Milon Go SDK 封装为一组 RESTful HTTP 接口，提供网络管理、账户管理、交易查询与提交、合约读写、RPC 访问、水龙头领水、密钥工具以及 IDL 元数据发现等能力，共计 **62** 个端点。
 
 - **Base URL**: `http://localhost:8080`
 - **默认端口**: `8080`（可通过环境变量 `SERVER_PORT` 修改）
@@ -20,6 +20,7 @@ Milon API Server 将 Milon Go SDK 封装为一组 RESTful HTTP 接口，提供�
 | `DEFAULT_NETWORK` | `devNet` | 默认网络 |
 | `MILON_RPC_URL` | (空) | 自定义 RPC 地址 |
 | `MILON_CHAIN_ID` | `0` | 自定义链 ID |
+| `MILON_ACCOUNTS` | (空) | 自托管兜底的操作账户（raw JSON 数组原文，非 base64）；请求头 `X-Milon-Accounts` 优先，详见「操作账户与地址即引用」 |
 
 ---
 
@@ -38,6 +39,24 @@ curl -H 'X-Milon-Network: devNet' http://localhost:8080/api/chain-head
 - 头为未知网络名：返回 400（`ERR_INVALID_PARAMETER`），message 指明未知名。
 - 多用户共享同一 server 时各带各的头，互不影响；`network_switch` 只改默认网络，不再影响显式指定网络的请求。
 - MCP 侧等价能力：对 /mcp 请求携带 X-Milon-Network 头（客户端在 mcpServers 配置的 headers 中设置），效果与 REST 相同。
+
+### 操作账户与地址即引用（X-Milon-Accounts，请求级）
+
+任何请求都可携带 `X-Milon-Accounts` 头声明一组操作账户；此后**全部需要私钥的入口都可以只传地址、免传私钥**（地址即引用）。
+
+- **头格式**：`base64(JSON 数组)`，数组元素 `{name?, address, privateKey, keyType?, publicKey?}`（上限 64 条）：
+
+```bash
+curl -H 'X-Milon-Accounts: <base64>' -X POST http://localhost:8080/api/write -d '{...}'
+```
+
+- **字段**：`keyType` 四选一（`secp256k1` 缺省 / `ed25519` / `bls12381` / `fndsa512`）；`fndsa512`（抗量子）**必须显式携带 `publicKey`**（897 字节，`account_generate` 的返回里有；Go 无法从私钥派生）；其他曲线公钥可省，服务端从私钥派生。
+- **校验**（任一失败整包拒绝，**所有端点**返回 400 且错误定位到条目，如 `X-Milon-Accounts[2]: ...`）：地址合法且数组内唯一（归一后比对）、keyType 受支持、私钥可解析、公钥↔地址一致、私钥↔公钥同曲线配对（fndsa512 豁免）。
+- **地址即引用生效范围**：合约写/模拟七入口（`/api/write`、`/api/write/multi`、`/api/write-safe`、`/api/simulate`、`/api/simulate/multi`、`/api/write/multi-agent`、`/api/write/multisig` 的各签名角色）、`/api/tool/transfer-mil`（传 `fromAddress`）、`/api/faucet/claim`、DID 全系 10 个写端点、`/api/tool/sft-flow`、`/api/tool/vc-flow`、`/api/saved-instructions/{id}/execute`（send 模式）——私钥参数缺省且地址命中配置账户时自动回填私钥/公钥/keyType/签名模式；**显式传私钥优先**（单次意图覆盖常驻配置）；未命中则按既有必填校验报 400，错误文案附配置账户提示。
+- **不接线的入口**：`/api/tool/bulk-transfer`（内部临时账户自管私钥）、`/api/util/vc-attestation`（subject 私钥/地址二选一语义，回填无增益）。
+- **env 兜底**：自托管单用户可设 `MILON_ACCOUNTS`（raw JSON 数组原文，非 base64）；头与 env 同时存在时头优先，错误文案按真实来源定位（`X-Milon-Accounts[i]` / `MILON_ACCOUNTS[i]`）。
+- **安全边界**：账户仅随单个请求过境解析——服务端**零持久化、零跨请求共享**（多用户共用一台服务互不串），日志不落账户头与私钥；该头等同于持有私钥的通道，请像保管私钥一样保管它。
+- **脱敏核对**：`GET /api/accounts-config`（MCP 工具 `account_config_list` 同源）回显本请求携带的账户（name/address/keyType/公钥指纹/source），永不返回私钥。
 
 ### 统一响应格式
 
@@ -2644,7 +2663,7 @@ curl http://localhost:8080/api/tool/did/QffKfGk3Jnp4k4qHJtbA8fwrW8E/document
 
 ## 十三、AI 辅助工具（聚合与快捷）
 
-面向 AI 代理高频工作流的高层封装：多步组合压成一步、易错参数内部化。与 MCP 端点的 7 个同名工具一一对应。
+面向 AI 代理高频工作流的高层封装：多步组合压成一步、易错参数内部化。与 MCP 端点的 8 个同名工具一一对应。
 
 #### 62. 交易全链路追踪
 
@@ -2668,10 +2687,12 @@ curl "http://localhost:8080/api/transactions/<hash>/track?timeoutSecs=30"
 #### 65. MIL 转账快捷封装
 
 - **方法**: `POST`　**路径**: `/api/tool/transfer-mil`
-- **说明**: 只需 `to` / `amount`（最小单位）/ `privateKey`（`keyType` 缺省 secp256k1），内部完成密钥派生地址、填充 token.Transfer 全部固定参数（MIL 代币地址、unified_payer_all、pubkey 签名模式自动修正），复用与 `/api/write` 完全相同的提交路径。
+- **说明**: 只需 `to` / `amount`（最小单位）/ `privateKey`（`keyType` 缺省 secp256k1），内部完成密钥派生地址、填充 token.Transfer 全部固定参数（MIL 代币地址、unified_payer_all、pubkey 签名模式自动修正），复用与 `/api/write` 完全相同的提交路径。**免私钥用法**：不传 `privateKey` 改传 `fromAddress`（转出方地址）——地址命中 `X-Milon-Accounts` 配置账户时自动回填私钥（见「操作账户与地址即引用」）；fndsa512 账户此时 `keyType` 也按配置回填。
 
 ```bash
 curl -X POST http://localhost:8080/api/tool/transfer-mil -H 'Content-Type: application/json'   -d '{"to":"<base58地址>","amount":1000000,"privateKey":"<hex私钥>"}'
+# 地址即引用（需 X-Milon-Accounts 已配置该地址）：
+curl -X POST http://localhost:8080/api/tool/transfer-mil -H 'Content-Type: application/json' -H 'X-Milon-Accounts: <base64>' -d '{"to":"<base58地址>","amount":1000000,"fromAddress":"<转出方地址>"}'
 ```
 
 #### 66. 地址全景聚合
@@ -2692,6 +2713,15 @@ curl -X POST http://localhost:8080/api/tool/transfer-mil -H 'Content-Type: appli
 ```bash
 curl http://localhost:8080/api/errors/521   # → token.VcRequired
 curl http://localhost:8080/api/errors/Cooldown
+```
+
+#### 69. 客户端配置账户脱敏回显
+
+- **方法**: `GET`　**路径**: `/api/accounts-config`
+- **说明**: 回显**当前请求**携带的操作账户（`X-Milon-Accounts` 头或 `MILON_ACCOUNTS` 兜底，即当前用户客户端配置的那份）。每条返回 `{name, address, keyType, publicKeyFingerprint, source}`——公钥只回 sha256 指纹前 8 hex、`source` 为 `"header"` / `"env"`，**永不返回 privateKey 与公钥全文**。未携带账户时 `data` 为空数组，`message` 提示配置方法。与 MCP 工具 `account_config_list` 同源。
+
+```bash
+curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 ```
 
 ---
@@ -2720,6 +2750,7 @@ curl http://localhost:8080/api/errors/Cooldown
 4. **signatureMode 形态**：必须是对象 `{"type":"pubkey","publicKey":"..."}`（REST 侧兼容字符串化与 type 缺省，但 MCP schema 按对象传）；`publicKey` 缺省时服务端自动派生（fndsa512 必须显式传）。
 5. **报错自纠**：签名模式解析失败、multisig 索引越界、pubkey 模式被拒（285）等错误的报文都附正确形态示例或签名者列表，按示例重试即可；链上错误码用 `error_lookup` 工具翻译；水龙头冷却/余额不足的错误消息已内联下一步动作提示。
 6. **提速约定（2026-10）**：缺参会一次性全部列出（带类型与已提供参数），一轮修对；`idl_methods` 每方法带 `exampleArgs` 调用模板；`idl_metadata` 传 `apps=token` 只取所需 app（全量约 200KB）；写交易传 `wait: true`（可配 `waitTimeoutSecs`，缺省 60s）同请求等确认，响应带 `confirmed`/`waitError`，省一次 `tx_track`。
+7. **地址即引用（2026-10-14）**：客户端在 mcpServers 的 milon.headers 配 `X-Milon-Accounts`（base64(JSON 数组)，fndsa512 须带 publicKey，详见「操作账户与地址即引用」）后，全部写工具的私钥参数都可缺省——只传对应地址（如 `contract_write` 的 `payerAddress`、`transfer_mil` 的 `fromAddress`）即自动引用配置账户签名；显式私钥优先；`account_config_list` 可脱敏核对已配置账户。
 
 ### 客户端配置
 
@@ -2746,7 +2777,20 @@ ZCode / Claude 通用片段：
 }
 ```
 
-> **日志风险**：`ENABLE_BODY_LOG=true` 时 `/mcp` 的工具入参会进入请求日志，且脱敏只覆盖裸 `privateKey` 等字段名——`payerPrivateKey` 等带前缀私钥参数会明文落日志，仅供 devNet 调试，生产勿开。
+配置操作账户（地址即引用）：headers 加 `X-Milon-Accounts`（base64(JSON 数组)，完整契约见通用说明「操作账户与地址即引用」），配置后写工具只传地址即可：
+
+```json
+{
+  "mcpServers": {
+    "milon": {
+      "url": "http://127.0.0.1:8080/mcp",
+      "headers": { "X-Milon-Accounts": "<base64(JSON数组)>" }
+    }
+  }
+}
+```
+
+> **日志风险**：`ENABLE_BODY_LOG=true` 时 `/mcp` 的工具入参会进入请求日志，且脱敏只覆盖裸 `privateKey` 等字段名——`payerPrivateKey` 等带前缀私钥参数会明文落日志，仅供 devNet 调试，生产勿开。`X-Milon-Accounts` 头本身不进任何日志（零持久化、逐请求过境）。
 
 ### 工具对照表（64 个）
 
@@ -2758,7 +2802,7 @@ ZCode / Claude 通用片段：
 | `network_current` | GET /api/network/current |
 | `network_switch` | POST /api/network/switch |
 
-#### 账户（3）
+#### 账户（5）
 
 | 工具 | REST 端点 |
 |---|---|
@@ -2766,8 +2810,9 @@ ZCode / Claude 通用片段：
 | `account_info` | GET /api/accounts/{address} |
 | `account_resources` | GET /api/accounts/{address}/resources |
 | `account_summary` | GET /api/accounts/{address}/summary |
+| `account_config_list` | GET /api/accounts-config（配置账户脱敏回显，永不回私钥） |
 
-#### 交易查询（4）
+#### 交易查询（5）
 
 | 工具 | REST 端点 |
 |---|---|
@@ -2794,7 +2839,7 @@ ZCode / Claude 通用片段：
 | `rpc_access_value` | POST /api/rpc/access-value |
 | `rpc_resource_path` | GET /api/rpc/resource-paths/{hash} |
 
-#### 合约与 IDL 发现（9）
+#### 合约与 IDL 发现（10）
 
 | 工具 | REST 端点 |
 |---|---|
@@ -2805,13 +2850,11 @@ ZCode / Claude 通用片段：
 | `contract_read_multi` | POST /api/read/multi |
 | `contract_simulate` | POST /api/simulate |
 | `contract_simulate_multi` | POST /api/simulate/multi |
-| `contract_write` | POST /api/write |
+| `contract_write` | POST /api/write（multi-agent / multisig 端点 2026-10 起不再单独开 MCP 壳，由 paymentMode 显式传参覆盖；两 REST 端点保留） |
 | `contract_write_multi` | POST /api/write/multi |
-| `contract_write_multi_agent` | POST /api/write/multi-agent |
-| `contract_write_multisig` | POST /api/write/multisig |
 | `contract_write_safe` | POST /api/write-safe |
 
-#### 高层 flow 工具（4）
+#### 高层 flow 工具（6）
 
 | 工具 | REST 端点 |
 |---|---|
@@ -2873,6 +2916,12 @@ ZCode / Claude 通用片段：
 |---|---|
 | `view_single` | POST /api/view/single |
 | `view_multi` | POST /api/view/multi |
+
+#### 本地工具（1）
+
+| 工具 | REST 端点 |
+|---|---|
+| `guide` | （本地，不触后端）快速手册：topic 六选一取整页（overview/chain/workflows/limits/performance/keys），q 可过滤行 |
 
 ---
 
@@ -2959,5 +3008,6 @@ ZCode / Claude 通用片段：
 | 59 | GET | `/api/accounts/:address/summary` | 地址全景聚合（余额+冻结+冷却+DID） |
 | 60 | POST | `/api/write-safe` | 安全版合约写（先模拟阻上链再真签提交） |
 | 61 | GET | `/api/errors/:query` | 错误码翻译（API 码表+IDL 链上错误） |
+| 62 | GET | `/api/accounts-config` | 客户端配置账户脱敏回显（MCP 工具 account_config_list 同源，永不回私钥） |
 
-**统计**：共 61 个端点，分布于 13 个功能组（网络管理 3、系统 4、账户 4、交易 8、合约 10、RPC 4、水龙头 2、工具 20、IDL 元数据 3、VC 全流程 1、SFT 全流程 1、DID 12、AI 辅助 7）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 62 个端点，分布于 13 个功能组（网络管理 3、系统 4、账户 5、交易 8、合约 10、RPC 4、水龙头 2、工具 20、IDL 元数据 3、VC 全流程 1、SFT 全流程 1、DID 12、AI 辅助 8）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。

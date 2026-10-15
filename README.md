@@ -90,6 +90,7 @@ curl http://localhost:8080/api/version
 | `MILON_CHAIN_ID` | `0` | 自定义 chain id |
 | `ENABLE_BODY_LOG` | `false` | 是否记录请求体与响应体（脱敏后输出，见下方说明） |
 | `MCP_AUTH_TOKEN` | 空 | `/mcp` 端点的 Bearer 鉴权令牌；为空时不鉴权 |
+| `MILON_ACCOUNTS` | 空 | 自托管兜底的操作账户（raw JSON 数组，非 base64）；`X-Milon-Accounts` 请求头优先，详见 MCP 章「客户端配置操作账户」 |
 
 示例：
 
@@ -342,6 +343,59 @@ ZCode / Claude 通用配置片段（加入 `mcpServers` 配置后重连即可）
 ```
 
 连接后建议先调用 `idl_metadata` 工具发现当前可用的 app 与方法，再按需调用合约读写、账户、交易等工具。
+
+### 客户端配置操作账户（地址即引用）
+
+把操作账户常驻在 MCP 客户端配置里，之后所有写工具**只传地址、免传私钥**：`X-Milon-Accounts` 头的值是 `base64(JSON 数组)`，数组元素为 `{name?, address, privateKey, keyType?, publicKey?}`（上限 64 条）。
+
+```json
+{
+  "mcpServers": {
+    "milon": {
+      "url": "http://127.0.0.1:8080/mcp",
+      "headers": {
+        "X-Milon-Accounts": "<base64(JSON数组)，生成方式见下>"
+      }
+    }
+  }
+}
+```
+
+base64 值由账户数组原文编码而来（bash 与 PowerShell 各一行，输出直接粘贴到上面的占位处）：
+
+```bash
+echo -n '[{"name":"main","address":"<地址>","privateKey":"<hex或base58私钥>","keyType":"ed25519"},{"name":"quantum","address":"<地址>","privateKey":"<1281字节fndsa512私钥>","keyType":"fndsa512","publicKey":"<897字节公钥>"}]' | base64 -w0
+```
+
+```powershell
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('[{"name":"main","address":"<地址>","privateKey":"<hex或base58私钥>","keyType":"ed25519"},{"name":"quantum","address":"<地址>","privateKey":"<1281字节fndsa512私钥>","keyType":"fndsa512","publicKey":"<897字节公钥>"}]'))
+```
+
+字段与校验规则：
+
+| 字段 | 必填 | 说明 |
+| --- | --- | --- |
+| `name` | 否 | 展示名，`account_config_list` 回显用 |
+| `address` | 是 | base58 地址；数组内不可重复 |
+| `privateKey` | 是 | hex 或 base58 |
+| `keyType` | 否 | `secp256k1`（缺省）/ `ed25519` / `bls12381` / `fndsa512` |
+| `publicKey` | fndsa512 必填 | **抗量子曲线公钥无法从私钥派生，必须显式携带**（`account_generate` 的返回里有，897 字节）；其他曲线可省，服务端派生并校验与地址、私钥的配对 |
+
+配置有误时**所有请求**返回 400，错误信息定位到具体条目（如 `X-Milon-Accounts[2]: privateKey 与 publicKey 不配对`）。
+
+生效行为：
+
+- **地址即引用**：合约写/模拟七类 REST 入口（`/api/write`、`/api/write/multi`、`/api/write-safe`、`/api/simulate`、`/api/simulate/multi`、`/api/write/multi-agent`、`/api/write/multisig` 的各签名角色；MCP 侧统一经 `contract_write` 系工具的 paymentMode 覆盖），以及 `transfer_mil`（传 `fromAddress`）、`faucet_claim`、DID 全系（`did_create` 等 10 个）、`sft_flow` / `vc_flow`、`saved_instruction_execute`（send 模式）——私钥缺省时按地址自动回填对应账户私钥；**显式传私钥优先**；地址未命中则按既有错误报出并附配置账户提示。
+- **脱敏核对**：MCP 工具 `account_config_list`（同源 REST 端点 `GET /api/accounts-config`）回显 name / address / keyType / 公钥指纹（sha256 前 8 hex）/ source，**永不返回私钥**。
+- 不接线的入口：`bulk_transfer`（内部临时账户）、`vc_attestation`（subject 二选一语义）。
+
+自托管单用户兜底：不配 header 时可设环境变量 `MILON_ACCOUNTS`（**raw JSON 数组原文，非 base64**）；两者同时存在时 header 优先。
+
+安全边界：
+
+- **零持久化**：账户只随单个请求过境解析，服务端不落盘、不跨请求共享——多用户共用一台服务互不干扰。
+- **日志不落**：账户头与解析结果不进任何请求日志（`ENABLE_BODY_LOG` 记录的是请求体，不含该头）。
+- **能带 header 即能签名**：该头等同于持有私钥的通道——任何能向该服务发送此头的主体都能以配置账户签名上链，请像保管私钥一样保管 mcp.json。
 
 ### 鉴权（MCP_AUTH_TOKEN）
 

@@ -21,10 +21,10 @@ func TestGuidePageTopics(t *testing.T) {
 	anchors := map[string][]string{
 		"overview":    {"idl_apps", "transfer_mil", "tx_track", "error_lookup", "源代码", "milon_console"},
 		"chain":       {"900000001", "unified_payer_all", "unified_dual_sign", "multi_signer", "fndsa512", "postcard"},
-		"workflows":   {"tx_track", "contract_write_safe", "sft_flow", "vc_flow", "bulk_transfer", "saved_instruction"},
+		"workflows":   {"tx_track", "contract_write_safe", "sft_flow", "vc_flow", "bulk_transfer", "saved_instruction", "配置账户"},
 		"limits":      {"1042", "1026", "200KB", "20", "5000", "ENABLE_UTIL_SIGN"},
 		"performance": {"contract_read_multi", "wait", "account_summary", "idl_apps"},
-		"keys":        {"secp256k1", "ed25519", "bls12381", "fndsa512", "897"},
+		"keys":        {"secp256k1", "ed25519", "bls12381", "fndsa512", "897", "X-Milon-Accounts", "account_config_list"},
 	}
 	for topic, wants := range anchors {
 		page, ok := guidePage(topic, "")
@@ -41,6 +41,20 @@ func TestGuidePageTopics(t *testing.T) {
 			if !strings.Contains(page, w) {
 				t.Errorf("%s 页缺锚点 %q", topic, w)
 			}
+		}
+	}
+}
+
+// TestGuideAccountsSection 客户端配置账户（地址即引用）必须有文档：
+// keys 页讲配置格式与回填语义，workflows 页给典型流。锚点缺失=文档缺失。
+func TestGuideAccountsSection(t *testing.T) {
+	for _, topic := range []string{"keys", "workflows"} {
+		page, ok := guidePage(topic, "")
+		if !ok {
+			t.Fatalf("主题 %s 不存在", topic)
+		}
+		if !strings.Contains(page, "X-Milon-Accounts") || !strings.Contains(page, "account_config_list") {
+			t.Fatalf("%s 页应包含客户端配置账户内容: %.200s", topic, page)
 		}
 	}
 }
