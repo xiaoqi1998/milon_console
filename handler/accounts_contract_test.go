@@ -38,6 +38,9 @@ func newAccountsContractRouter(t *testing.T) *gin.Engine {
 	api.POST("/write", h.WriteContract)
 	api.POST("/simulate", h.SimulateContract)
 	api.POST("/write/multisig", h.WriteContractMultisig)
+	// Task 5：transfer_mil / faucet_claim 接线路由（路径与 main.go 一致）
+	api.POST("/tool/transfer-mil", h.TransferMil)
+	api.POST("/faucet/claim", NewFaucetHandler(nm).ClaimFaucet)
 	return r
 }
 

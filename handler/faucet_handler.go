@@ -30,9 +30,10 @@ func NewFaucetHandler(nm *client.NetworkManager) *FaucetHandler {
 
 // claimFaucetRequest is the request body for POST /api/faucet/claim.
 // 宽容化（2026-10 AI 易用性）：signatureMode 缺省时从 privateKey 自动派生
-// （keyType 声明曲线，缺省 secp256k1）。
+// （keyType 声明曲线，缺省 secp256k1）；privateKey 放开 required——address 命中
+// 已配置操作账户时免私钥领水（ClaimFaucet 内显式校验并回填）。
 type claimFaucetRequest struct {
-	PrivateKey    string          `json:"privateKey" binding:"required"`
+	PrivateKey    string          `json:"privateKey,omitempty"`
 	Address       string          `json:"address" binding:"required"`
 	SignatureMode json.RawMessage `json:"signatureMode"`
 	KeyType       string          `json:"keyType,omitempty"`
@@ -45,6 +46,18 @@ func (h *FaucetHandler) ClaimFaucet(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logParamError(c, "ClaimFaucet", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
+		return
+	}
+
+	// 地址即引用：无私钥且 address 命中配置账户 → 回填私钥/签名模式/曲线
+	fillFromConfiguredAccounts(c, accountRole{
+		Addr: &req.Address, Priv: &req.PrivateKey, SigMode: &req.SignatureMode, KeyType: &req.KeyType,
+	})
+	if req.PrivateKey == "" {
+		// 原「必填」语义改为显式校验，附配置账户 hint
+		logParamError(c, "ClaimFaucet", fmt.Errorf("privateKey is required（或地址为已配置操作账户，免私钥领水）"+configuredAccountHint))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER,
+			"privateKey is required（或地址为已配置操作账户，免私钥领水）"+configuredAccountHint, nil))
 		return
 	}
 

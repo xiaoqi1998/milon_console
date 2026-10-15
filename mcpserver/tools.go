@@ -49,7 +49,8 @@ type addressArgs struct {
 }
 
 type faucetClaimArgs struct {
-	PrivateKey    string             `json:"privateKey" jsonschema:"领款账户私钥（hex 或 base58）"`
+	// PrivateKey 放开必填（Task 5）：address 命中已配置操作账户时免私钥领水
+	PrivateKey    string             `json:"privateKey,omitempty" jsonschema:"领款账户私钥（hex 或 base58；或地址为已配置操作账户时免传）"`
 	Address       string             `json:"address" jsonschema:"领款账户地址"`
 	SignatureMode *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"可选：领款签名模式；缺省时从 privateKey 自动派生公钥模式"`
 	KeyType       string             `json:"keyType,omitempty" jsonschema:"可选：privateKey 的曲线 secp256k1(缺省)/ed25519/bls12381，仅在自动派生签名模式时使用"`
@@ -91,11 +92,12 @@ type accountSummaryArgs struct {
 
 // transferMilArgs 镜像 transferMilRequest（POST /api/tool/transfer-mil 纯 body）。
 type transferMilArgs struct {
-	To         string `json:"to" jsonschema:"必填：接收方地址（base58）"`
-	Amount     uint64 `json:"amount" jsonschema:"必填：转账数量（最小单位，6 位精度下 1 MIL = 10^6）"`
-	PrivateKey string `json:"privateKey" jsonschema:"必填：转出方私钥（hex 或 base58）"`
-	KeyType    string `json:"keyType,omitempty" jsonschema:"可选：私钥曲线 secp256k1(缺省)/ed25519/bls12381/fndsa512"`
-	PublicKey  string `json:"publicKey,omitempty" jsonschema:"fndsa512 时必填（897 字节公钥，Go 无法从私钥派生；account_generate 的返回里有）"`
+	To          string `json:"to" jsonschema:"必填：接收方地址（base58）"`
+	Amount      uint64 `json:"amount" jsonschema:"必填：转账数量（最小单位，6 位精度下 1 MIL = 10^6）"`
+	PrivateKey  string `json:"privateKey,omitempty" jsonschema:"与 fromAddress 二选一：转出方私钥（hex 或 base58）"`
+	FromAddress string `json:"fromAddress,omitempty" jsonschema:"可选：转出方地址（已配置操作账户时免传 privateKey）"`
+	KeyType     string `json:"keyType,omitempty" jsonschema:"可选：私钥曲线 secp256k1(缺省)/ed25519/bls12381/fndsa512"`
+	PublicKey   string `json:"publicKey,omitempty" jsonschema:"fndsa512 时必填（897 字节公钥，Go 无法从私钥派生；account_generate 的返回里有）"`
 }
 
 // idlMetadataArgs 镜像 GetIDLMetadata 的 query 参数（apps 过滤，2026-10 AI 提速）。
@@ -165,10 +167,10 @@ type contractReadMultiArgs struct {
 
 // contractSimulateArgs 镜像 simulateContractRequest（handler/contract.go:165，POST /api/simulate）。
 type contractSimulateArgs struct {
-	AppName      string         `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
-	MethodName   string         `json:"methodName" jsonschema:"IDL 方法名，用 idl_methods 返回的 name（PascalCase，如 Transfer；小写也能自动解析）"`
-	Args         map[string]any `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
-	PaymentMode  string         `json:"paymentMode" jsonschema:"unified_payer_all / unified_dual_sign / unified_payer_only_gas / split / multi_signer / sponsored 六选一；各模式字段组合详见 contract_write.paymentMode 或 guide(chain)"`
+	AppName         string             `json:"appName" jsonschema:"IDL 里的 app 名，先用 idl_metadata 查"`
+	MethodName      string             `json:"methodName" jsonschema:"IDL 方法名，用 idl_methods 返回的 name（PascalCase，如 Transfer；小写也能自动解析）"`
+	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
+	PaymentMode     string             `json:"paymentMode" jsonschema:"unified_payer_all / unified_dual_sign / unified_payer_only_gas / split / multi_signer / sponsored 六选一；各模式字段组合详见 contract_write.paymentMode 或 guide(chain)"`
 	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"payer 地址（模拟无私钥场景必填）"`
 	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"payer 签名模式；缺省时账户已上链用链上签名者列表模式，未上链则须显式传"`
 	IxAddress       string             `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
@@ -469,14 +471,14 @@ type savedInstructionIdArgs struct {
 // ixPrivateKey（unified_dual_sign 另加）、ownerPrivateKey（split）、
 // signers[].privateKey（multi_signer）。
 type savedInstructionExecuteArgs struct {
-	Id              string         `json:"id" jsonschema:"必填：保存指令 ID"`
-	Mode            string         `json:"mode,omitempty" jsonschema:"可选：read/simulate/send；缺省 auto（view→read、entry→simulate）"`
-	Wait            *bool          `json:"wait,omitempty" jsonschema:"可选：send 模式是否等待确认，缺省 true"`
-	PayerPrivateKey string         `json:"payerPrivateKey,omitempty" jsonschema:"send 模式一次性 payer 私钥（hex/base58，过境即焚不落盘；unified_*/sponsored 必填）"`
-	IxPrivateKey    string         `json:"ixPrivateKey,omitempty" jsonschema:"send+unified_dual_sign 一次性 ix 私钥"`
-	OwnerPrivateKey string         `json:"ownerPrivateKey,omitempty" jsonschema:"send+split 一次性 owner 私钥（或以 payerPrivateKey 代）"`
-	Signers         []signerEntry  `json:"signers,omitempty" jsonschema:"send+multi_signer 一次性签名者列表（按地址匹配已存 signer 注入 privateKey）"`
-	GasPayer        *signerEntry   `json:"gasPayer,omitempty" jsonschema:"send+multi_signer 可选：一次性独立 gas 代付（含 privateKey）"`
+	Id              string        `json:"id" jsonschema:"必填：保存指令 ID"`
+	Mode            string        `json:"mode,omitempty" jsonschema:"可选：read/simulate/send；缺省 auto（view→read、entry→simulate）"`
+	Wait            *bool         `json:"wait,omitempty" jsonschema:"可选：send 模式是否等待确认，缺省 true"`
+	PayerPrivateKey string        `json:"payerPrivateKey,omitempty" jsonschema:"send 模式一次性 payer 私钥（hex/base58，过境即焚不落盘；unified_*/sponsored 必填）"`
+	IxPrivateKey    string        `json:"ixPrivateKey,omitempty" jsonschema:"send+unified_dual_sign 一次性 ix 私钥"`
+	OwnerPrivateKey string        `json:"ownerPrivateKey,omitempty" jsonschema:"send+split 一次性 owner 私钥（或以 payerPrivateKey 代）"`
+	Signers         []signerEntry `json:"signers,omitempty" jsonschema:"send+multi_signer 一次性签名者列表（按地址匹配已存 signer 注入 privateKey）"`
+	GasPayer        *signerEntry  `json:"gasPayer,omitempty" jsonschema:"send+multi_signer 可选：一次性独立 gas 代付（含 privateKey）"`
 }
 
 // ==================== Task 6：高层 flow 工具（4 个）====================
@@ -817,7 +819,7 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	registerTool[accountSummaryArgs](srv, exec, "account_summary",
 		"地址全景聚合：MIL 余额 + 冻结量 + faucet 冷却剩余 + DID 文档一站返回；子项失败不整体失败（字段置 null 并在 errors 说明，DID 未创建属正常态记 did:null）",
 		RESTMapping{Method: "GET", PathTemplate: "/api/accounts/{address}/summary", PathParams: []string{"address"}})
-	registerTool[faucetClaimArgs](srv, exec, "faucet_claim", "从 faucet 领取代币（需私钥签名，等待确认后返回 txHash）", RESTMapping{Method: "POST", PathTemplate: "/api/faucet/claim"})
+	registerTool[faucetClaimArgs](srv, exec, "faucet_claim", "从 faucet 领取代币（需私钥签名，或地址为已配置操作账户时免私钥领水；等待确认后返回 txHash）", RESTMapping{Method: "POST", PathTemplate: "/api/faucet/claim"})
 	registerTool[addressArgs](srv, exec, "faucet_balance", "查询账户余额（faucet 口径）", RESTMapping{Method: "GET", PathTemplate: "/api/faucet/balance/{address}", PathParams: []string{"address"}})
 	registerTool[hashArgs](srv, exec, "tx_get", "按哈希查询交易", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}", PathParams: []string{"hash"}})
 	registerTool[txParseArgs](srv, exec, "tx_parse", "解析交易（结构化 postcard）", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/parse", PathParams: []string{"hash"}, QueryParams: []string{"remote"}})
@@ -986,7 +988,7 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		"错误码翻译：按十进制错误码或名字子串查 API 层码表与全部 IDL app 的链上错误码（如 521=VcRequired / Cooldown=FaucetCooldownActive），返回来源(api/app:名)+码+名字+说明+处置建议",
 		RESTMapping{Method: "GET", PathTemplate: "/api/errors/{query}", PathParams: []string{"query"}})
 	registerTool[transferMilArgs](srv, exec, "transfer_mil",
-		"MIL 转账快捷封装：只给 to/amount/privateKey，内部完成密钥派生地址 + 填充 token.Transfer 全部固定参数（MIL 代币地址/unified_payer_all/pubkey 签名模式自动修正），复用与 contract_write 完全相同的提交路径；返回 txHash，建议接着用 tx_track 跟踪确认",
+		"MIL 转账快捷封装：只给 to/amount/privateKey（或 fromAddress 引用已配置操作账户免传私钥），内部完成密钥派生地址 + 填充 token.Transfer 全部固定参数（MIL 代币地址/unified_payer_all/pubkey 签名模式自动修正），复用与 contract_write 完全相同的提交路径；返回 txHash，建议接着用 tx_track 跟踪确认",
 		RESTMapping{Method: "POST", PathTemplate: "/api/tool/transfer-mil"})
 	registerTool[bulkTransferStatusArgs](srv, exec, "bulk_transfer_status",
 		"查询批量转账任务进度与结果（含 done/success/failed 计数、归集总额与逐账户明细；jobId 来自 bulk_transfer 的返回）",

@@ -629,9 +629,10 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"account_info":      {"address"},
 		"account_resources": {"address"},
 		"account_summary":   {"address"},
-		// faucet_handler.go：privateKey/address binding required；signatureMode
-		// 已宽容化——缺省从 privateKey 自动派生（2026-10 AI 易用性修复），不再必填
-		"faucet_claim":      {"address", "privateKey"},
+		// faucet_handler.go：address binding required；signatureMode 已宽容化——
+		// 缺省从 privateKey 自动派生（2026-10 AI 易用性修复）；Task 5 privateKey
+		// 放开 required——address 命中已配置操作账户时免私钥领水（显式校验）
+		"faucet_claim":      {"address"},
 		"faucet_balance":    {"address"},
 		"idl_apps":          {},
 		"idl_methods":       {"appName"},
@@ -699,7 +700,9 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"sft_flow":             {"ownerPrivateKey", "ownerAddress"},
 		"bulk_transfer":        {"count", "toAddress"},
 		"bulk_transfer_status": {"id"},
-		"transfer_mil":         {"to", "amount", "privateKey"},
+		// Task 5：privateKey 放开 required——fromAddress 命中已配置操作账户时免传
+		// （transfer_mil_handler.go 显式校验），故必填集只剩 to/amount
+		"transfer_mil":         {"to", "amount"},
 		"contract_write_safe":  {"appName", "methodName", "paymentMode"},
 		"error_lookup":         {"query"},
 		// guide 为本地工具（guide.go）：topic 必填六选一，q 可选

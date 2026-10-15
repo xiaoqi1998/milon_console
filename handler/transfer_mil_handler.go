@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -19,11 +20,13 @@ const milTokenAddress = "M11on1111111111111111111111"
 
 // transferMilRequest is the request body for POST /api/tool/transfer-mil.
 type transferMilRequest struct {
-	To         string `json:"to" binding:"required"`
-	Amount     uint64 `json:"amount" binding:"required"`
-	PrivateKey string `json:"privateKey" binding:"required"`
-	KeyType    string `json:"keyType,omitempty"`
-	PublicKey  string `json:"publicKey,omitempty"`
+	To     string `json:"to" binding:"required"`
+	Amount uint64 `json:"amount" binding:"required"`
+	// PrivateKey 与 FromAddress 二选一：后者须为已配置操作账户地址（地址即引用）。
+	PrivateKey  string `json:"privateKey,omitempty"`
+	FromAddress string `json:"fromAddress,omitempty"`
+	KeyType     string `json:"keyType,omitempty"`
+	PublicKey   string `json:"publicKey,omitempty"`
 }
 
 // TransferMil handles POST /api/tool/transfer-mil
@@ -36,6 +39,17 @@ func (h *ContractHandler) TransferMil(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logParamError(c, "TransferMil", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body", err.Error()))
+		return
+	}
+
+	// 地址即引用：无私钥且 fromAddress 命中配置账户 → 回填私钥/公钥/曲线
+	fillFromConfiguredAccounts(c, accountRole{
+		Addr: &req.FromAddress, Priv: &req.PrivateKey, Pub: &req.PublicKey, KeyType: &req.KeyType,
+	})
+	if req.PrivateKey == "" {
+		logParamError(c, "TransferMil", fmt.Errorf("privateKey is required（或传 fromAddress 引用已配置账户）"+configuredAccountHint))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER,
+			"privateKey is required（或传 fromAddress 引用已配置账户）"+configuredAccountHint, nil))
 		return
 	}
 
