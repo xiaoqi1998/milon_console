@@ -3945,3 +3945,16 @@ body {
 @media (max-width: 900px) {
   .oss-cols { grid-template-columns: 1fr; }
 }
+
+/* ==================== seed / vc 共用卡片 ==================== */
+.vc-layout { padding: 18px 22px; }
+.vc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; margin-top: 12px; }
+.vc-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px 16px; }
+.vc-card-header h3 { margin: 0 0 4px; font-size: 14px; color: var(--text-primary); }
+.vc-card-desc { font-size: 11px; color: var(--text-muted); }
+.vc-row { margin: 8px 0; display: flex; flex-direction: column; gap: 4px; }
+.vc-row > label { font-size: 11px; color: var(--text-muted); }
+.vc-row input[type="text"], .vc-row select { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); padding: 7px 9px; font-size: 12px; font-family: var(--font-mono, monospace); }
+.vc-pair { display: flex; gap: 8px; }
+.vc-result { background: var(--bg-primary, #141416); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-size: 11px; line-height: 1.5; color: var(--text-secondary); white-space: pre-wrap; word-break: break-all; margin: 10px 0 6px; min-height: 38px; max-height: 300px; overflow: auto; }
+.vc-result.is-error { color: #e06c60; }

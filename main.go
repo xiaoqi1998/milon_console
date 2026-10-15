@@ -50,6 +50,7 @@ func main() {
 	vcFlowHandler := handler.NewVcFlowHandler(nm)
 	sftFlowHandler := handler.NewSftFlowHandler(nm)
 	didHandler := handler.NewDidHandler(nm)
+	seedJobHandler := handler.NewSeedJobHandler(nm)
 	savedInstructionHandler, err := handler.NewSavedInstructionHandler(nm, "./data")
 	if err != nil {
 		log.Fatalf("failed to init saved instruction store: %v", err)
@@ -151,6 +152,11 @@ func main() {
 		// Bulk transfer (generate accounts, claim faucet, consolidate MIL)
 		api.POST("/tool/bulk-transfer", bulkTransferHandler.BulkTransfer)
 		api.GET("/tool/bulk-transfer/:id", bulkTransferHandler.GetBulkTransferStatus)
+
+		// Seed (一键测试数据播种, 异步任务: plan 预览 / 启动 / 进度)
+		api.GET("/tool/seed/plan", seedJobHandler.SeedPlanPreview)
+		api.POST("/tool/seed", seedJobHandler.Seed)
+		api.GET("/tool/seed/status/:id", seedJobHandler.SeedStatus)
 
 		// VC flow (faucet + DID + credentials issuance + disclosure, end-to-end)
 		api.POST("/tool/vc-flow", vcFlowHandler.VcFlow)
@@ -256,6 +262,9 @@ func main() {
 	fmt.Println("    GET  /api/idl/metadata            - IDL 方法元数据（app/方法/参数 schema）")
 	fmt.Println("    GET  /api/idl/apps                - IDL app 轻量清单（名称/简介/方法数）")
 	fmt.Println("    GET  /api/idl/apps/:app/methods   - 单 app 全量方法明细")
+	fmt.Println("    POST /api/tool/seed              - 一键测试数据播种（异步任务）")
+	fmt.Println("    GET  /api/tool/seed/plan         - 播种计划预览（不上链）")
+	fmt.Println("    GET  /api/tool/seed/status/:id   - 播种任务进度")
 	fmt.Println("    POST /api/tool/bulk-transfer      - 批量生成账户并归集 MIL（异步任务）")
 	fmt.Println("    GET  /api/tool/bulk-transfer/:id  - 查询批量归集任务进度")
 	fmt.Println("    POST /api/tool/vc-flow            - VC 签发披露全流程（领水+DID+组织+凭证，同步）")

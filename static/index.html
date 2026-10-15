@@ -61,11 +61,11 @@
         </span>
         <span class="nav-label">MCP 接入</span>
       </button>
-      <button class="nav-tab" data-view="vc">
+      <button class="nav-tab" data-view="seed">
         <span class="nav-icon">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v6m0 0c-4.4 0-8 3.6-8 8 0 1.5.4 2.9 1.1 4.1L12 22l6.9-1.9c.7-1.2 1.1-2.6 1.1-4.1 0-4.4-3.6-8-8-8z"/><path d="M12 8c-2 2-2 5 0 8 2-3 2-6 0-8z"/></svg>
         </span>
-        <span class="nav-label">VC 凭证</span>
+        <span class="nav-label">测试数据</span>
       </button>
     </nav>
     <div class="topbar-right">
@@ -572,121 +572,73 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
       </div>
     </section>
 
-    <section class="view" id="view-vc">
+    <section class="view" id="view-seed">
       <div class="vc-layout">
         <div class="errors-header">
           <div class="errors-title-block">
-            <h2>VC 凭证查询</h2>
-            <p>可验证凭证（identity app）只读视图：凭证 ID、组织能力、持证校验、生命周期、披露记录、DID 文档</p>
+            <h2>一键测试数据播种</h2>
+            <p>重新创世后一条命令还原整条 devNet 测试环境;确定性派生,同 seed 短语重建后地址不变</p>
           </div>
         </div>
         <div class="vc-grid">
-
           <div class="vc-card">
             <div class="vc-card-header">
-              <h3>凭证 ID 派生</h3>
-              <span class="vc-card-desc">identity.CredentialId — 由 issuer + schema 派生全局凭证 ID（合规代币引用它）</span>
+              <h3>播种配置</h3>
+              <span class="vc-card-desc">POST /api/tool/seed — 异步任务,同刻仅允许一个;模块选 compliance 自动带上 vc</span>
             </div>
             <div class="vc-row">
-              <label>issuer 地址</label>
-              <input type="text" id="vcCredIssuer" placeholder="签发方地址（base58）" />
+              <label>规模</label>
+              <select id="seedScale" class="network-select" style="width:100%">
+                <option value="full">full(12 用户 / 10 代币 / 2 SFT / 17 人持证)</option>
+                <option value="small">small(4 用户 / 3 代币 / 1 SFT / 4 人持证)</option>
+              </select>
             </div>
             <div class="vc-row">
-              <label>schema 名称</label>
-              <input type="text" id="vcCredSchema" placeholder="如 SeedKyc1" />
-            </div>
-            <button class="btn btn-primary" id="vcCredBtn">查询凭证 ID</button>
-            <pre class="vc-result" id="vcCredResult">待查询</pre>
-          </div>
-
-          <div class="vc-card">
-            <div class="vc-card-header">
-              <h3>组织能力</h3>
-              <span class="vc-card-desc">identity.OrganizationCapabilities — 组织声明的角色与凭证 schema</span>
+              <label>seed 短语</label>
+              <input type="text" id="seedPhrase" value="milon-devnet-seed-v1" />
             </div>
             <div class="vc-row">
-              <label>组织地址</label>
-              <input type="text" id="vcOrgSubject" placeholder="Organization 型 DID 地址" />
-            </div>
-            <button class="btn btn-primary" id="vcOrgBtn">查询组织</button>
-            <pre class="vc-result" id="vcOrgResult">待查询</pre>
-          </div>
-
-          <div class="vc-card">
-            <div class="vc-card-header">
-              <h3>持证校验</h3>
-              <span class="vc-card-desc">identity.HasValidVcFromIssuer — 是否持有指定 issuer+schema 的有效凭证</span>
-            </div>
-            <div class="vc-row">
-              <label>subject 地址</label>
-              <input type="text" id="vcHasSubject" placeholder="持证人地址" />
-            </div>
-            <div class="vc-row">
-              <label>issuer 地址</label>
-              <input type="text" id="vcHasIssuer" placeholder="签发方地址" />
-            </div>
-            <div class="vc-row">
-              <label>schema 名称</label>
-              <input type="text" id="vcHasSchema" placeholder="如 SeedKyc1" />
-            </div>
-            <button class="btn btn-primary" id="vcHasBtn">校验持证</button>
-            <pre class="vc-result" id="vcHasResult">待查询</pre>
-          </div>
-
-          <div class="vc-card">
-            <div class="vc-card-header">
-              <h3>凭证生命周期</h3>
-              <span class="vc-card-desc">identity.VcAttestationLifecycle — Active / Frozen / Revoked 与最近变更时间</span>
-            </div>
-            <div class="vc-row">
-              <label>subject 地址</label>
-              <input type="text" id="vcLifeSubject" placeholder="持证人地址" />
-            </div>
-            <div class="vc-row">
-              <label>issuer 地址</label>
-              <input type="text" id="vcLifeIssuer" placeholder="签发方地址" />
-            </div>
-            <div class="vc-row">
-              <label>schema 名称</label>
-              <input type="text" id="vcLifeSchema" placeholder="如 SeedPlayer1" />
-            </div>
-            <button class="btn btn-primary" id="vcLifeBtn">查询状态</button>
-            <pre class="vc-result" id="vcLifeResult">待查询</pre>
-          </div>
-
-          <div class="vc-card">
-            <div class="vc-card-header">
-              <h3>已披露凭证</h3>
-              <span class="vc-card-desc">identity.DisclosedVcs — 某 subject 披露上链的全部凭证摘要</span>
-            </div>
-            <div class="vc-row">
-              <label>subject 地址</label>
-              <input type="text" id="vcDisSubject" placeholder="持证人地址" />
-            </div>
-            <div class="vc-row">
-              <label>offset / limit</label>
-              <div class="vc-pair">
-                <input type="text" id="vcDisOffset" value="0" inputmode="numeric" />
-                <input type="text" id="vcDisLimit" value="20" inputmode="numeric" />
+              <label>模块(不勾 = 全部)</label>
+              <div class="vc-pair" style="flex-wrap:wrap;gap:6px">
+                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="accounts">账户</label>
+                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="tokens">代币</label>
+                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="sft">SFT</label>
+                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="vc">VC</label>
+                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="compliance">合规</label>
+                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="txs">交易流</label>
               </div>
             </div>
-            <button class="btn btn-primary" id="vcDisBtn">查询披露</button>
-            <pre class="vc-result" id="vcDisResult">待查询</pre>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center">
+                <input type="checkbox" id="seedReset"> 忽略历史状态从头重播(--reset)
+              </label>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-secondary" id="seedPreviewBtn">计划预览</button>
+              <button class="btn btn-primary" id="seedStartBtn">开始播种</button>
+            </div>
+            <pre class="vc-result" id="seedPreview">点「计划预览」查看将要创建的数据</pre>
           </div>
 
           <div class="vc-card">
             <div class="vc-card-header">
-              <h3>DID 文档</h3>
-              <span class="vc-card-desc">identity.Document — 别名、头像、密钥、服务端点、停用状态</span>
+              <h3>执行进度</h3>
+              <span class="vc-card-desc">job <span id="seedJobId">—</span> 状态 <span id="seedStatus">idle</span>(2s 轮询)</span>
             </div>
-            <div class="vc-row">
-              <label>地址</label>
-              <input type="text" id="vcDidSubject" placeholder="任意已建 DID 的地址" />
+            <div id="seedProgressBox" style="display:none">
+              <pre class="vc-result" id="seedStages">-</pre>
+              <pre class="vc-result" id="seedLog" style="max-height:420px;overflow:auto">-</pre>
             </div>
-            <button class="btn btn-primary" id="vcDidBtn">查询文档</button>
-            <pre class="vc-result" id="vcDidResult">待查询</pre>
           </div>
 
+          <div class="vc-card" id="seedAccountsBox" style="display:none">
+            <div class="vc-card-header">
+              <h3>关键地址</h3>
+              <span class="vc-card-desc">完成后可引用的确定性地址(私钥见 data/seed_state.json,页面不返回)</span>
+            </div>
+            <pre class="vc-result" id="seedAccounts">-</pre>
+            <button class="btn btn-secondary" id="seedCopyBtn">复制地址表</button>
+          </div>
         </div>
       </div>
     </section>
@@ -809,5 +761,6 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
 </div>
 <script src="/static/js/app.js?v=20261015a"></script>
 <script src="/static/js/saved-instructions.js?v=20261013"></script>
+<script src="/static/js/seed.js?v=20261015"></script>
 </body>
 </html>
