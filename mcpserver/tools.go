@@ -701,6 +701,112 @@ func toolGroupOf(name string) string {
 	}
 }
 
+// ==================== 2025-06-18 规范字段（审计整改第 1 刀）====================
+
+// envelopeOutputSchema 是 REST 统一信封（types.Response）的宽松出参 schema：
+// 只描述公共骨架，data 结构随工具而异不约束；不带 required / 不限
+// additionalProperties——SDK 会对声明了 outputSchema 的出参做校验（校验失败
+// 整个调用报错），任何真实信封回包都必须能通过。
+var envelopeOutputSchema = json.RawMessage(`{
+	"type": "object",
+	"description": "Milon REST 统一信封；data 结构随工具而异",
+	"properties": {
+		"success":   {"type": "boolean", "description": "业务成败（机器读这个，不读散文）"},
+		"message":   {"type": "string",  "description": "人类可读信息"},
+		"code":      {"type": "integer", "description": "业务码，0=成功"},
+		"timestamp": {"type": "string",  "description": "服务端时间戳（RFC3339）"},
+		"data":      {"description": "REST 载荷；结构随工具而异，不在此约束"}
+	}
+}`)
+
+// postButReadOnly 列出 HTTP POST 但零状态副作用的工具：视图调用 / dry-run
+// 模拟 / 本地计算——对 agent 而言与 GET 同为只读。
+var postButReadOnly = map[string]bool{
+	"contract_read": true, "contract_read_multi": true,
+	"contract_simulate": true, "contract_simulate_multi": true,
+	"tx_simulate_raw": true, "tx_inspect_raw": true,
+	"view_single": true, "view_multi": true,
+	"util_derive_address": true, "util_derive_public_key": true,
+	"util_sign": true, "util_verify": true,
+	"vc_attestation": true,
+	// account_generate 本地生成密钥对、零链上/服务端状态，只读成立；但每次
+	// 产出新密钥，非幂等——幂等例外在 toolAnnotationsFor 里显式扣除。
+	"account_generate": true,
+}
+
+// idempotentWrites 是写类工具中「同参重放终态不变」的例外白名单。
+var idempotentWrites = map[string]bool{
+	"did_create":               true, // 幂等聚合：链上已有则按请求补差异
+	"network_switch":           true, // 同参重复设置同一网络，终态不变
+	"saved_instruction_update": true, // 部分更新，同参重放等价
+}
+
+// destructiveWrites 是移除 / 停用 / 不可逆操作——destructiveHint=true。
+var destructiveWrites = map[string]bool{
+	"did_deactivate": true, "did_remove_key": true,
+	"did_remove_service": true, "saved_instruction_delete": true,
+}
+
+// toolAnnotationsFor 按方法与工具名单派生 annotations：GET / LOCAL / 零副作用
+// POST → 只读 + 幂等；写类默认增量写（destructiveHint=false），白名单覆盖幂等
+// 与破坏性两维。效果域封闭于 milon 单链（openWorldHint=false）。
+func toolAnnotationsFor(name string, m RESTMapping) *mcp.ToolAnnotations {
+	readOnly := m.Method == "GET" || m.Method == "LOCAL" || postButReadOnly[name]
+	idempotent := readOnly || idempotentWrites[name]
+	if name == "account_generate" {
+		// 本地生成密钥对无状态副作用（只读成立），但每次产出新密钥，非幂等。
+		idempotent = false
+	}
+	ann := &mcp.ToolAnnotations{
+		ReadOnlyHint:   readOnly,
+		IdempotentHint: idempotent,
+		OpenWorldHint:  new(bool), // false：效果域 = milon devNet/localNet，封闭
+	}
+	if !readOnly {
+		ann.DestructiveHint = new(bool)
+		if destructiveWrites[name] {
+			*ann.DestructiveHint = true
+		}
+	}
+	return ann
+}
+
+// toolTitleOf 从描述首段截人类可读短标题：取到第一个分隔符（括号 / 冒号 /
+// 逗号 / 句号）为止，超 40 rune 截断，空则回退工具名。工具描述均以「一句话
+// 功能概括（细节……）」起笔，此规则零维护——新工具不用登记 title。
+func toolTitleOf(name, desc string) string {
+	if i := strings.IndexFunc(desc, func(r rune) bool {
+		switch r {
+		case '(', '（', ':', '：', ',', '，', ';', '；', '。':
+			return true
+		}
+		return false
+	}); i > 0 {
+		desc = desc[:i]
+	}
+	if r := []rune(strings.TrimSpace(desc)); len(r) > 0 {
+		if len(r) > 40 {
+			r = r[:40]
+		}
+		return string(r)
+	}
+	return name
+}
+
+// parseEnvelope 判定 REST 回包是否为统一信封（types.Response）：JSON 对象且
+// 含布尔 success 字段时返回其值。非信封回包（无 success 的旧端点 / 裸文本）
+// ok=false：isError 退回 HTTP 状态码判定，structuredContent 不出（防撞出参
+// 校验——SDK 校验失败会废掉整个调用）。
+func parseEnvelope(body []byte) (success bool, ok bool) {
+	var probe struct {
+		Success *bool `json:"success"`
+	}
+	if err := json.Unmarshal(body, &probe); err != nil || probe.Success == nil {
+		return false, false
+	}
+	return *probe.Success, true
+}
+
 // registerTool 把"输入结构 → REST 映射"注册为 MCP 工具。
 func registerTool[In any](srv *mcp.Server, exec *Executor, name, desc string, m RESTMapping) {
 	if !inventorySeen[name] {
@@ -713,7 +819,13 @@ func registerTool[In any](srv *mcp.Server, exec *Executor, name, desc string, m 
 			Path:        m.PathTemplate,
 		})
 	}
-	mcp.AddTool[In, any](srv, &mcp.Tool{Name: name, Description: desc},
+	mcp.AddTool[In, any](srv, &mcp.Tool{
+			Name:         name,
+			Title:        toolTitleOf(name, desc),
+			Description:  desc,
+			Annotations:  toolAnnotationsFor(name, m),
+			OutputSchema: envelopeOutputSchema,
+		},
 		func(ctx context.Context, req *mcp.CallToolRequest, args In) (*mcp.CallToolResult, any, error) {
 			raw, err := json.Marshal(args)
 			if err != nil {
@@ -721,12 +833,24 @@ func registerTool[In any](srv *mcp.Server, exec *Executor, name, desc string, m 
 			}
 			out, err := exec.Call(ctx, m, raw)
 			if err != nil {
+				// 传输层错误：SDK 会把普通 error 包成 isError=true 的
+				// CallToolResult（协议错误与工具执行错误分流）。
 				return nil, nil, err
 			}
+			isError := out.IsError
+			var structured any
+			if success, ok := parseEnvelope(out.Body); ok {
+				// REST 层业务失败的典型形态是 HTTP 200 + success:false——
+				// 信封解析补上 isError 判定，错误信号不再藏在散文里。
+				isError = isError || !success
+				// 原字节透传：json.RawMessage 避免大整数经 map[string]any
+				// 的 float64 往返（9.8e10 会变指数形态丢精度观感）。
+				structured = json.RawMessage(out.Body)
+			}
 			return &mcp.CallToolResult{
-				IsError: out.IsError,
+				IsError: isError,
 				Content: []mcp.Content{&mcp.TextContent{Text: string(out.Body)}},
-			}, nil, nil
+			}, structured, nil
 		})
 }
 
@@ -738,12 +862,15 @@ const serverInstructions = `本服务（milon-api-server）完全开源，源代
 错误码用 error_lookup 翻译；手册或工具描述仍没讲清的（参数语义/链上行为/错误成因），
 可到上述仓库读源码对照——REST 端点在 handler/、MCP 壳与手册在 mcpserver/、链 SDK 在 gosdk-develop/`
 
-// BuildServer 构造注册了全部工具的 MCP Server。
+// BuildServer 构造注册了全部工具、资源与 prompts 的 MCP Server。
 // Task 7 的 server.go 会复用；当前先放 tools.go。
 func BuildServer(baseURL string) *mcp.Server {
 	srv := mcp.NewServer(&mcp.Implementation{Name: "milon-api-server", Version: "1.0"},
 		&mcp.ServerOptions{Instructions: serverInstructions})
-	RegisterTools(srv, NewExecutor(baseURL, nil))
+	exec := NewExecutor(baseURL, nil)
+	RegisterTools(srv, exec)
+	RegisterResources(srv, exec)
+	RegisterPrompts(srv)
 	return srv
 }
 

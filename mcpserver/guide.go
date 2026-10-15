@@ -69,7 +69,14 @@ func registerLocalTool[In any](srv *mcp.Server, name, desc string, fn func(args 
 			Path:        "(local)",
 		})
 	}
-	mcp.AddTool[In, any](srv, &mcp.Tool{Name: name, Description: desc},
+	mcp.AddTool[In, any](srv, &mcp.Tool{
+			Name:        name,
+			Title:       toolTitleOf(name, desc),
+			Description: desc,
+			// 本地手册：LOCAL 方法 → 只读 + 幂等；返回 markdown 文本，不带
+			// outputSchema / structuredContent（无 JSON 出参）。
+			Annotations: toolAnnotationsFor(name, RESTMapping{Method: "LOCAL"}),
+		},
 		func(ctx context.Context, req *mcp.CallToolRequest, args In) (*mcp.CallToolResult, any, error) {
 			text, isErr := fn(args)
 			return &mcp.CallToolResult{
