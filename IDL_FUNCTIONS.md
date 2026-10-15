@@ -1,13 +1,12 @@
 # Milon IDL 函数清单
 
-> 导出自 `gosdk-develop/provider/IDL/`，共 **11** 个 app、**245** 个函数（view 94 + entry 151）。
+> 导出自 `gosdk-develop/provider/IDL/`，共 **10** 个 app、**272** 个函数（view 103 + entry 169）。
 
 > 表格列：`appname`(应用名) · `meth`(方法名/指令名) · `handler`(链上入口名) · `id`(discriminator 指令编号) · `说明`(中文释义，来自 handler/idl_method_docs.go 的文档映射，与 /api/idl/metadata 输出一致)
 
-
 ## View（只读查询，kind=view）
 
-共 **94** 个。
+共 **103** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -21,9 +20,12 @@
 | token | ApprovalOf | approval_of | 43638 | 【功能】查询 owner 授权给 spender 的剩余额度。<br>【返回】u64，最小单位。 |
 | token | TotalSupply | total_supply | 35429 | 【功能】查询代币总供应量。<br>【返回】u64，最小单位。 |
 | token | Metadata | metadata | 7880 | 【功能】查询代币元数据。<br>【返回】Metadata：{name, symbol, decimals, icon, uri}。 |
-| token | Compliance | compliance | 43186 | 【功能】查询代币合规策略配置。<br>【返回】Compliance：{mode: "All"\|"Any", requirements: [凭证 ID 数组]}。 |
+| token | Compliance | compliance | 43186 | 【功能】查询代币合规策略配置。<br>【返回】Compliance：{mode: "All"|"Any", requirements: [凭证 ID 数组]}。 |
 | token | FaucetCooldownRemaining | faucet_cooldown_remaining | 29892 | 【功能】查询某地址水龙头冷却剩余时间。<br>【返回】u64 毫秒数；0 表示可立即领取。 |
-| staking | ValidatorProfile | validator_profile | 43284 | 【功能】查询验证人基本档案。<br>【返回】ValidatorProfile：{validator, operator, status: Inactive\|Candidate\|Active\|Leaving, commission_rate_bps}；不存在报 768。 |
+| token | GiftInfo | gift_info | 11780 | 【功能】查询红包实时状态。<br>【返回】GiftState：{creator, gift_id, token, total_amount, remaining_amount, claim_count, claimed_count, expires_at_ms, allocation, rules}。 |
+| token | GiftSettlement | gift_settlement | 57835 | 【功能】查询红包清算进度。<br>【返回】GiftSettlement：{creator, status, claim_records, cleanup_cursor}。 |
+| token | CanClaimGift | can_claim_gift | 8017 | 【功能】判断某地址当前能否领取某红包。<br>【返回】bool。 |
+| staking | ValidatorProfile | validator_profile | 43284 | 【功能】查询验证人基本档案。<br>【返回】ValidatorProfile：{validator, operator, status: Inactive|Candidate|Active|Leaving, commission_rate_bps}；不存在报 768。 |
 | staking | ValidatorPool | validator_pool | 51337 | 【功能】查询验证人池记账快照（自有/受托质押、奖励累计等）。<br>【返回】ValidatorPoolView：{operator_stake, delegated_stake, total_stake, total_shares, reward_index, claimable_operator_commission, commission_rate_bps}（金额均为最小单位）。 |
 | staking | StakePosition | stake_position | 24660 | 【功能】查询某用户在某验证人处的质押仓位原始数据。<br>【返回】StakePosition：{shares, reward_debt, claimable_rewards}；无仓位报 783。 |
 | staking | PositionSummary | position_summary | 24212 | 【功能】查询质押仓位汇总（面向前端的聚合视图）。<br>【返回】PositionSummary：{pending_stake, settled_shares, pending_unstake_shares, unstakeable_shares, claimable_rewards, next_settlement_epoch}。 |
@@ -35,7 +37,7 @@
 | staking | HeldPrincipal | held_principal | 45674 | 【功能】查询某地址被质押模块托管的本金总额（含 pending 与待释放部分）。<br>【返回】u64（最小单位）。 |
 | staking | ListDeclaredValidatorsForEpoch | list_declared_validators_for_epoch | 13153 | 【功能】查询某 epoch 已声明可用性的验证人列表。<br>【返回】地址 JSON 数组。 |
 | identity | VcAttestationCore | vc_attestation_core | 18681 | 【功能】查询某 (subject, schema, issuer) 组合下 VC 凭证的不可变核心内容。<br>【返回】VcAttestationCore：{credential_schema, credential_hash, valid_until_ms}；不存在报 1033。 |
-| identity | VcAttestationLifecycle | vc_attestation_lifecycle | 41850 | 【功能】查询 VC 的生命周期状态（是否被撤销/冻结、最近变更时间）。<br>【返回】VcAttestationLifecycle：{status: "Active"\|"Revoked"\|"Frozen", updated_at_ms}。 |
+| identity | VcAttestationLifecycle | vc_attestation_lifecycle | 41850 | 【功能】查询 VC 的生命周期状态（是否被撤销/冻结、最近变更时间）。<br>【返回】VcAttestationLifecycle：{status: "Active"|"Revoked"|"Frozen", updated_at_ms}。 |
 | identity | AcceptedVcIssuerIndexMeta | accepted_vc_issuer_index_meta | 57307 | 【功能】查询 subject 某 schema 下「已接受 VC 签发方索引」的元信息。<br>【返回】String；索引不存在报 VcAcceptanceIndexNotFound（1068）。 |
 | identity | AcceptedVcIssuers | accepted_vc_issuers | 6419 | 【功能】列出 subject 某 schema 下已接受凭证的签发方及凭证哈希。<br>【返回】[{issuer, credential_hash}]；数量有上限（TooManyAcceptedVcIssuers 1065）。 |
 | identity | DisclosedVcSchemas | disclosed_vc_schemas | 48906 | 【功能】列出 subject 已披露 VC 的全部 schema。<br>【返回】字符串 JSON 数组；种类数有上限（TooManyDisclosedVcSchemas 1066）。 |
@@ -73,6 +75,9 @@
 | sftoken | MintAuthority | mint_authority | 57868 | 【功能】查询 SFT 的铸造权限人地址。<br>【返回】Address。 |
 | sftoken | UpdateAuthor | update_author | 6459 | 【功能】查询 SFT 的内容更新权限人地址。<br>【返回】Address。 |
 | sftoken | FreezeAuthority | freeze_authority | 10975 | 【功能】查询 SFT 的冻结权限人地址。<br>【返回】Address。 |
+| dex | AmmPoolInfo | amm_pool_info | 60394 | 【功能】查询 AMM 池当前状态。<br>【返回】AmmPoolInfo：{market_id, vault, vault_seed, status, reserve_base, reserve_quote, total_lp_supply}。 |
+| dex | AmmLpBalance | amm_lp_balance | 18436 | 【功能】查询某地址在某 AMM 池的 LP 份额。<br>【返回】u64。 |
+| dex | AmmSwapEnabled | amm_swap_enabled | 52994 | 【功能】查询市场 AMM 池是否处于可交易状态。<br>【返回】bool。 |
 | dex | MarketInfo | market_info | 2326 | 【功能】查询市场完整配置。<br>【返回】Market：{base_token, quote_token, base_lot_atoms, quote_atoms_per_lot_tick, min_tick, max_tick, max_order_lots, max_fills_per_action, maker_fee_ppm, taker_fee_ppm, authority, status}。 |
 | dex | OrderInfoView | order_info_view | 23456 | 【功能】按 order_id 查询订单实时状态（含锁定量 reserved_amount）。<br>【返回】OrderInfo。 |
 | dex | BestBidAsk | best_bid_ask | 12137 | 【功能】查询订单簿最优买价/卖价档。<br>【返回】{bid: {tick, order_count, total_base_lots} 或 null, ask: 同}；空簿一侧为 null。 |
@@ -81,45 +86,40 @@
 | dex | VaultLiability | vault_liability | 6759 | 【功能】查询市场金库对某代币的负债总额（所有用户托管资金之和）。<br>【返回】u64。 |
 | keyless | GetSessions | get_sessions | 58087 | 【功能】查询某账户的全部活跃会话。<br>【返回】[{session_id, provider_id, audience_hash, session_version, session_pubkey, expires_at_ms, created_at_ms}]。 |
 | keyless | GetBinding | get_binding | 4855 | 【功能】查询某 keyless 地址的绑定信息。<br>【返回】null 或 {owner, slot_index, bound_at_ms, active_at_ms}。 |
-| keyless | ListProviders | list_providers | 12570 | 【功能】列出全部 provider（内置 + 自定义，无参数）。<br>【返回】[{provider_id, kind: "BuiltinOidc"\|"StaticJwk", display_name, issuer, allowed_algs, max_id_token_age_ms, max_session_ttl_ms, owner, keys, key_revision}]。 |
+| keyless | ListProviders | list_providers | 12570 | 【功能】列出全部 provider（内置 + 自定义，无参数）。<br>【返回】[{provider_id, kind: "BuiltinOidc"|"StaticJwk", display_name, issuer, allowed_algs, max_id_token_age_ms, max_session_ttl_ms, owner, keys, key_revision}]。 |
 | keyless | GetProvider | get_provider | 20071 | 【功能】按 ID 查询单个 provider。<br>【返回】KeylessProvider 或 null。 |
 | keyless | GetProviderStatus | get_provider_status | 62602 | 【功能】查询 provider 的启用状态与会话版本。<br>【返回】{enabled, session_version} 或 null。 |
 | keyless | GetAudience | get_audience | 13840 | 【功能】查询某 provider 下某 audience 的注册信息。<br>【返回】{provider_id, audience, registered_at_ms} 或 null。 |
 | keyless | GetParams | get_params | 12312 | 【功能】查询 keyless 全局参数（无参数）。<br>【返回】KeylessParams：{max_session_ttl_ms（默认 1 天）, bind_activation_delay_ms（默认 1 天）}。 |
 | keyless | IsKeylessAccount | is_keyless_account | 33494 | 【功能】判断某地址是否已绑定 keyless 身份。<br>【返回】bool。 |
-| lucky_box | BoxView | box_view | 58937 | 【功能】查询盒子状态。<br>【返回】BoxState：{creator, box_id, status, claim_count, claimed_count, expires_at_ms, randomness_version}。 |
-| lucky_box | AssetPool | asset_pool | 45729 | 【功能】查询盒子资产池。<br>【返回】AssetPoolState：{asset: {variant:"Token", value:{token}}, total_amount, remaining_amount, allocation: "Equal"\|"Lucky"}。 |
 | social | SocialProfile | social_profile | 5863 | 【功能】查询某地址的 profile URI。<br>【返回】String。 |
 | social | SourceApp | source_app | 2147 | 【功能】查询源应用信息。<br>【返回】SourceApp：{owner, publishing_enabled}；不存在报 2564。 |
 | social | IsSourceAppPublisher | is_source_app_publisher | 14357 | 【功能】判断某地址是否为源应用的发布者。<br>【返回】bool。 |
-| social | GetReference | get_reference | 7408 | 【功能】查询对象引用记录。<br>【返回】Reference：{subject, content_hash, uri, status("Active"\|"Retired")}；不存在报 ReferenceNotFound（2574）。 |
+| social | GetReference | get_reference | 7408 | 【功能】查询对象引用记录。<br>【返回】Reference：{subject, content_hash, uri, status("Active"|"Retired")}；不存在报 ReferenceNotFound（2574）。 |
 | social | Community | community | 59279 | 【功能】查询社区控制信息。<br>【返回】CommunityControl：{owner, join_mode, mutations_enabled, member_count, uri}。 |
 | social | IsCommunityAdmin | is_community_admin | 56720 | 【功能】判断某地址是否为社区管理员（含 owner）。<br>【返回】bool。 |
 | social | JoinRequest | join_request | 38404 | 【功能】查询某成员是否有 pending 的加入申请。<br>【返回】bool。 |
 | social | CommunityMembership | community_membership | 36616 | 【功能】查询某地址是否为社区成员。<br>【返回】bool。 |
-| demo | OrderBalance | order_balance | 24910 | 【功能】查询演示订单在某代币上的托管余额。<br>【返回】u64。 |
-| demo | SponsorPoolOf | sponsor_pool_of | 35462 | 【功能】按池编号查询赞助池地址。<br>【返回】Address。 |
-| demo | LabelOf | label_of | 10409 | 【功能】查询池标签。<br>【返回】Label：{text}。 |
-| demo | ScoreOf | score_of | 54597 | 【功能】查询池内某账户的积分。<br>【返回】u64。 |
-| demo | TierCapOf | tier_cap_of | 48456 | 【功能】查询某层级的积分上限。<br>【返回】u64。 |
-| demo | EchoMode | echo_mode | 47924 | 【功能】枚举编码回显演示：传入 DemoMode 原样返回（用于验证枚举编码）。<br>【返回】DemoMode。 |
-| demo | LabelTotal | label_total | 4770 | 【功能】map 类型演示：对传入的标签-数值映射求和。<br>【返回】u32。 |
-| demo | SpecialTypes | special_types | 43240 | 【功能】复杂类型编码演示（enum/option/vec/map/tuple 全覆盖）。<br>【返回】u32（各输入的汇总校验值）。 |
+| social | CanClaimCommunityGift | can_claim_community_gift | 62612 | 【功能】判断某地址当前能否领取某社区红包。<br>【返回】bool。 |
+| social | GiftCommunity | gift_community | 46934 | 【功能】查询社区红包所属的社区 ID。<br>【返回】u32。 |
+| demo | OrderVault | order_vault | 9625 | 【功能】查询演示订单托管户头地址。<br>【返回】Address。 |
+| demo | OrderLastInbound | order_last_inbound | 56285 | 【功能】查询演示订单最新一笔入账明细。<br>【返回】LastInbound：{token, from, amount}。 |
+| demo | OrderBalance | order_balance | 23229 | 【功能】查询演示订单在某代币上的托管余额。<br>【返回】u64。 |
+| demo | LabelOf | label_of | 36952 | 【功能】查询池标签。<br>【返回】Label：{text}。 |
+| demo | ScoreOf | score_of | 24200 | 【功能】查询池内某账户的积分。<br>【返回】u64。 |
+| demo | TierCapOf | tier_cap_of | 63079 | 【功能】查询某层级的积分上限。<br>【返回】u64。 |
+| demo | EchoMode | echo_mode | 48471 | 【功能】枚举编码回显演示：传入 DemoMode 原样返回（用于验证枚举编码）。<br>【返回】DemoMode。 |
+| demo | LabelTotal | label_total | 9869 | 【功能】map 类型演示：对传入的标签-数值映射求和。<br>【返回】u32。 |
+| demo | SpecialTypes | special_types | 37219 | 【功能】复杂类型编码演示（enum/option/vec/map/tuple 全覆盖）。<br>【返回】u32（各输入的汇总校验值）。 |
+| demo | SponsorPoolOf | sponsor_pool_of | 38217 | 【功能】按池编号查询赞助池地址。<br>【返回】Address。 |
+| demo | ScheduledWakeCount | scheduled_wake_count | 45310 | 【功能】查询当前已登记待执行的定时唤醒数量。<br>【返回】u64。 |
 
 ## Entry（写操作，kind=entry）
 
-共 **151** 个。
+共 **169** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
-| system | Noop | noop | 13507 | 【功能】空操作指令，无参数、无任何链上效果，常用于测试交易链路或触发账户资源的懒创建。<br>【限制】无。 |
-| system | BootstrapEpochClock | bootstrap_epoch_clock | 57604 | 【功能】初始化协议 epoch 时钟（计时起点 + 最短纪元时长），是 staking 纪元结算（InitializeEpochConfig / SettleStakingEpoch）的前置条件。<br>【限制】一次性初始化，重复调用会失败（EpochClockFailure）；仅在链引导阶段调用。 |
-| system | BootstrapValidatorSetConfig | bootstrap_validator_set_config | 37696 | 【功能】初始化验证人集合配置：最大验证人数，以及分组/出块/批次委员会三类阈值比例，全局一次性配置。<br>【限制】一次性初始化；比例以「分子/分母」分数表示。 |
-| system | RegisterValidatorIdentity | register_validator_identity | 16918 | 【功能】为验证人登记系统层共识身份：共识账户地址与共识/BLS/ed25519 三把公钥，生成共识验证人身份记录（与 staking.CreateValidator 的绑定配套）。<br>【限制】共识账户必须对交易签名；公钥长度按曲线校验（secp256k1 压缩 33 字节 / BLS 48 字节 / ed25519 32 字节）；地址与公钥唯一性由链上校验。 |
-| system | PrepareValidatorSet | prepare_validator_set | 55212 | 【功能】为目标 epoch 准备验证人集合：提交随机种子作为集合选举输入（两阶段提交第一步，之后 CommitValidatorSet 生效）。<br>【限制】依赖 epoch 时钟已初始化；同一 epoch 不可重复准备。 |
-| system | SettleStakingEpoch | settle_staking_epoch | 61700 | 【功能】结算当前 epoch 的质押：处理 pending 质押/解冻意向、候选池进出申请，并按配置发放奖励（即触发 staking 的 epoch 结算）。<br>【限制】需先 InitializeEpochConfig 且 epoch 时钟就绪；失败以 StakingFailure 包装返回；同一 epoch 不可重复结算。 |
-| system | CommitValidatorSet | commit_validator_set | 59552 | 【功能】提交已准备的验证人集合并使其生效（PrepareValidatorSet 的第二步）。<br>【限制】须先成功执行 PrepareValidatorSet，否则报 ValidatorSetFailure。 |
-| system | CommitBlockSeed | commit_block_seed | 49456 | 【功能】提交/更新区块随机种子（链上随机数信标的数据源）。<br>【限制】种子未初始化时不可提交（BlockSeedNotInitialized）；重复初始化报 BlockSeedAlreadyInitialized；底层失败以 RandomnessFailure 包装。 |
 | account | Create | create | 2182 | 【功能】为给定公钥显式创建链上账户资源（区别于首笔交易时的懒创建），账户默认单签模式。<br>【限制】账户已存在报 AccountAlreadyExists（257）；公钥非法报 InvalidPublicKey（273）。 |
 | account | EnsureAccount | ensure_account | 38184 | 【功能】确保账户存在：不存在则创建、已存在则什么都不做（幂等建户）。<br>【限制】幂等，已存在不报错（与 Create 的区别）。 |
 | account | CreateMultisig | create_multisig | 20289 | 【功能】将签名者账户配置为多签账户：登记 signer 公钥列表、每个 signer 的权重与生效阈值（权重和 ≥ 阈值才可通过）。<br>【限制】signer 总权重 1..=255（WeightSumExceeded 263）；signers 与 weights 长度须一致（264）；signer 槽位 0..63（261）；权重不得为 0（262）；阈值非法报 ThresholdIncorrect（265）。 |
@@ -129,6 +129,7 @@
 | account | SetThreshold | set_threshold | 2386 | 【功能】修改多签账户的生效阈值。<br>【限制】阈值须合法且不超过当前总权重（ThresholdIncorrect 265）。 |
 | account | SetSignerWeight | set_signer_weight | 43270 | 【功能】修改指定槽位 signer 的权重。<br>【限制】槽位须已有 signer（259）；权重 1..=255；总权重不得超过 255（263）。 |
 | account | VoteInit | vote_init | 52917 | 【功能】登记一个投票意图（MIP-25 意图重放）：提交 intent_hash 与提案内容（待重放的编码指令 + 授权位图），设置过期时间，等待账户 signer 们投票。<br>【限制】提案编码后 ≤1024 字节（VoteProposalTooLarge 283）；提案须与 intent_hash 匹配（282）；过期时间必须晚于当前时间（276）且 TTL ≤24 小时（VoteTtlExceeded 281）；活跃意图数量有上限（VoteIndexFull 280）。 |
+| account | SweepExpiredVotes | sweep_expired_votes | 37954 | 【功能】一次性清理自己名下已过期的投票意向，腾出投票索引位。<br>【限制】仅可清理已过期意向（VoteExpired 276）；清扫手续费不足报 VoteSweepFeeInsufficient 285；清扫唤醒被拒报 VoteWakeRejected 286。 |
 | account | Vote | vote | 24406 | 【功能】对已登记的投票意图投出一票（按投票者权重累加），达到阈值后意图可被重放执行。<br>【限制】意图须存在且未过期（VoteExpired 277）；未达阈值时重放会被拒（VoteNotReady 278）。 |
 | token | Create | create | 2581 | 【功能】创建新代币资源：登记名称/符号/精度/图标等元数据并设定 owner（管理权限）。发币方调用；token 地址由专用密钥对派生，且该密钥必须参与交易签名。<br>【限制】token 地址已被占用报 TokenAlreadyExists（516）；token 私钥必须签名，否则报 AddressNotSignatured（519）。 |
 | token | AbandonOwner | abandon_owner | 64710 | 【功能】永久放弃代币 owner 权限，代币变为无主，此后所有管理操作（增发/冻结/合规配置等）失效。<br>【限制】仅当前 owner 生效（链上校验）；不可逆。 |
@@ -153,6 +154,11 @@
 | token | RemoveComplianceRequirement | remove_compliance_requirement | 14909 | 【功能】从合规要求列表批量移除凭证 ID（credential_ids 可一次移除多个）。<br>【限制】仅 owner 生效。 |
 | token | ClearComplianceRequirements | clear_compliance_requirements | 50437 | 【功能】清空全部合规凭证要求，代币恢复为无合规限制。<br>【限制】仅 owner 生效。 |
 | token | ClaimFaucet | claim_faucet | 63796 | 【功能】从水龙头领取原生 MIL 代币（新账户获取 gas 费用）。本指令 gas 由链上赞助池代付（sponsor）。<br>【限制】每次领取 10^10 最小单位（6 位精度下 10,000 token）；每地址 24 小时冷却，冷却期内任何尝试（含失败）都会触发/续期冷却（FaucetCooldownActive 524），脚本领水务必单次尝试；低链 ID 下水龙头禁用（FaucetDisabled 523）。 |
+| token | CreateEqualGift | create_equal_gift | 15225 | 【功能】创建均分红包：创建者托管 total_amount，供 claim_count 人均分领取；领取资格由 rules 约束（可选 VC 凭证要求 / 指定收款人名单 / 过期时间）。gift_id 由链上派生，经交易事件或 GiftInfo 回读。<br>【限制】红包定义不合法报 InvalidGiftDefinition 529（claim_count 须非零等）；gift_id 不可重复（GiftAlreadyExists 525）；托管转入失败报 token 层错误。 |
+| token | CreateLuckyGift | create_lucky_gift | 4265 | 【功能】创建拼手气红包：创建者托管 total_amount，claim_count 人随机份额领取（份额由链上安全随机源决定）。<br>【限制】同 CreateEqualGift；随机源不可用报 GiftRandomnessUnavailable 533。 |
+| token | ClaimGift | claim_gift | 5582 | 【功能】领取红包（claimant 签名）。<br>【限制】红包须存在（GiftNotFound 524）；须在有效期内（GiftExpired 526）；资格不符报 GiftNotEligible 530（rules 名单 / VC 要求）；不可重复领取（GiftAlreadyClaimed 531）。 |
+| token | RefundGift | refund_gift | 44430 | 【功能】红包过期后把剩余托管金额退回创建者。<br>【限制】红包须存在（524）；须已过期（GiftNotExpired 527）；仍在进行中报 GiftStillActive 528。 |
+| token | RunGiftCleanup | run_gift_cleanup | 27946 | 【功能】推进过期红包的清算（结算领取记录、回收托管），配合到期唤醒机制逐批执行。<br>【限制】红包须已过期（GiftStillActive 528）；清扫唤醒被拒报 GiftCleanupWakeRejected 534。 |
 | staking | CreateValidator | create_validator | 16533 | 【功能】注册验证人：绑定 validator 地址与 operator、共识账户、共识公钥、BLS 公钥并设定佣金率（参与候选池/出块的基础）。<br>【限制】validator/operator/共识账户三者须互不相同（771）；地址与公钥均不可被其他验证人占用（772-776）；不可重复注册（767）；佣金率 ≤10000 基点。 |
 | staking | SetStakingToken | set_staking_token | 3396 | 【功能】设置质押/奖励所用的代币地址（全局一次性配置，通常设为原生 MIL）。<br>【限制】一次性配置，权限由链上校验（协议引导阶段调用）。 |
 | staking | InitializeEpochConfig | initialize_epoch_config | 36863 | 【功能】初始化 epoch 配置：设定每个验证人每个 epoch 的奖励额度。<br>【限制】只能初始化一次（EpochConfigAlreadySet 779）；需 epoch 时钟就绪（EpochClockNotReady 801，先调 system.BootstrapEpochClock）。 |
@@ -210,6 +216,12 @@
 | sftoken | Merge | merge | 110 | 【功能】把源 token 的全部份额并入目标 token 并删除源 token（同槽位份额合并）。<br>【限制】由源份额持有人签名；两个 token 必须属于同一槽位（SlotMismatch 1281）；不可自我合并（SelfMerge 1289）；token/slot 须存在（1283/1284）；被冻结份额报 TokenFrozen（1290）。 |
 | sftoken | Transfer | transfer | 48437 | 【功能】转移份额：把持有人的 amount 数量记到接收方名下（token_id 不变，同一 token 可多人持有；全量转出后持有人余额记录清零）。<br>【限制】由份额持有人签名；amount >0（1286）且不超过持有量（InsufficientBalance 1282）；要求槽位 transferable=true；接收者不得为本人（SelfTransfer 1287）；被冻结份额报 TokenFrozen（1290）。 |
 | sftoken | TransferFrom | transfer_from | 19098 | 【功能】被授权方（spender）动用 Approve 额度，把持有人 from 的份额转给接收者 to（额度按转移量扣减）。<br>【限制】spender 须有足额授权（InsufficientApproval 1296）；amount >0（1286）；其余同 Transfer：槽位可转移、不可自转（1287）、冻结报 1290。 |
+| dex | CreateAmmPool | create_amm_pool | 60506 | 【功能】为已有市场创建 AMM 做市池并注入首笔流动性（恒定乘积池，与订单簿并行，供 SwapExactIn 混合路由）；authority 为市场管理员签名，provider 为流动性提供者签名。<br>【返回】AmmPoolInfo：{market_id, vault, vault_seed, status, reserve_base, reserve_quote, total_lp_supply}。<br>【限制】市场须存在（MarketNotFound 1542）；同市场不可重复建池（AmmPoolAlreadyExists 1559）；数量参数须非零（ZeroLiquidityParameter 1564）；资金转入失败报 TokenFailure 1555。 |
+| dex | InitializeAmmPool | initialize_amm_pool | 37332 | 【功能】初始化市场的 AMM 池并注入流动性（参数与 CreateAmmPool 一致的显式初始化路径）。<br>【返回】AmmPoolInfo。<br>【限制】池须存在（AmmPoolNotFound 1560）；数量参数须非零（ZeroLiquidityParameter 1564）；资金转入失败报 TokenFailure 1555。 |
+| dex | SetAmmStatus | set_amm_status | 20736 | 【功能】切换 AMM 池状态：Active（启用做市）/ Stopped（停止做市，停池后仍可撤流动性）。<br>【限制】须市场 authority 签名（MarketAuthorityMismatch 1546）；池须存在（AmmPoolNotFound 1560）；状态机校验（AmmPoolNotActive 1561 / AmmPoolNotStopped 1562）。 |
+| dex | AddLiquidity | add_liquidity | 50155 | 【功能】向 AMM 池追加双边流动性：按当前池比例实际转入（不超过 base_max/quote_max），铸造 LP 份额。<br>【返回】AddLiquidityResult：{base_amount, quote_amount, lp_shares}（实际转入量与铸得份额）。<br>【限制】池须为 Active（AmmPoolNotActive 1561）；参数须非零（ZeroLiquidityParameter 1564）；铸得份额为零报 ZeroLpShares 1566、低于 min_lp_shares 报 MinLpSharesNotMet 1567；溢出报 AmmLiquidityOverflow 1565。 |
+| dex | RemoveLiquidity | remove_liquidity | 15914 | 【功能】销毁 LP 份额，按池比例赎回 base/quote 双边资产。<br>【返回】RemoveLiquidityResult：{base_amount, quote_amount, lp_shares}。<br>【限制】LP 余额不足报 InsufficientLpShares 1568；实际赎回低于 min_base_out/min_quote_out 报 MinLiquidityOutputNotMet 1569。 |
+| dex | SwapExactIn | swap_exact_in | 34800 | 【功能】混合换币（精确输入）：先吃订单簿（至多 max_book_makers 档成交），余量走 AMM 分段成交（至多 max_amm_segments 段），输入 input_token 的 amount_in，带 min_amount_out / worst_tick 保护。<br>【返回】HybridSwapResult：{amount_in_used, amount_out, refund, clob_fills, amm_segments}。<br>【限制】input_token 须属于该市场（InvalidSwapInputToken 1571）；保护/限额参数不合法报 InvalidSwapParameter 1570；输出低于 min_amount_out 报 MinSwapOutputNotMet 1573；算术溢出报 SwapOverflow 1572。 |
 | dex | CreateMarket | create_market | 122 | 【功能】创建订单簿交易市场（base/quote 代币对），调用者成为市场 authority（管理员）。maker/taker 费率由链上常量固定为 0.3%/0.5%。<br>【返回】Address 新市场地址（由链上种子派生）。<br>【限制】base≠quote（SameTokenPair 1536）；所有数值参数非 0（ZeroMarketParameter 1537）；同代币对不可重复建市场（MarketAlreadyExists 1541）。 |
 | dex | InitializeMarketDid | initialize_market_did | 27598 | 【功能】为市场初始化 DID 文档（市场身份/资质展示）。<br>【限制】须市场 authority 签名（MarketAuthorityMismatch 1546）；市场须存在（MarketNotFound 1542）；subject_type 必须为 Organization（MarketDidMustBeOrganization 1562）。 |
 | dex | DiscloseMarketVcAttestation | disclose_market_vc_attestation | 47697 | 【功能】为市场披露一条 VC 凭证：登记签发方、schema、凭证哈希与签发方签名，供合规展示。<br>【限制】须市场 authority 签名；签发方身份须可解析（IdentityFailure 1561）。 |
@@ -226,10 +238,6 @@
 | keyless | RegisterAudience | register_audience | 44901 | 【功能】为 provider 注册允许的 audience（OIDC client ID），之后该 audience 的 JWT 才能通过校验。<br>【限制】provider 须已注册（ProviderNotRegistered 2091）；audience 长度 1..=256 字节（AudienceInvalid 2118）；内置 provider 元数据不可修改（BuiltinProviderImmutable 2122）。 |
 | keyless | CreateStaticProvider | create_static_provider | 19418 | 【功能】注册自定义「静态 JWK」验证 provider（自带公钥集，不依赖内置 OIDC）。provider_id 由 (issuer, salt) 派生。<br>【限制】issuer 必须 https:// 开头（IssuerUrlInvalid 2094）；名称非空且 ≤64 字节（2095）；密钥 1..=8 把（StaticKeyCountInvalid 2124）；kid 唯一且 1..=128 字节（2125）；不可用保留命名空间（ReservedProviderId 2123）；重复注册报 ProviderAlreadyRegistered（2092）。 |
 | keyless | UpdateStaticProviderKeys | update_static_provider_keys | 19292 | 【功能】轮换自定义 provider 的验证密钥集；invalidate_sessions=true 可使全部旧会话立即失效。<br>【限制】仅静态 provider 可改（BuiltinProviderImmutable 2122）；仅 provider owner（ProviderOwnerMismatch 2121）。 |
-| lucky_box | CreateEqual | create_equal | 51385 | 【功能】创建「等概率」盲盒：total_amount 平分为 claim_count 份，每份金额相同；资金从创建者账户托管进盒子资产池。<br>【返回】u64（每份金额）。<br>【限制】box_id 不可重复（BoxAlreadyExists 2305）；金额/份数须非 0（InvalidDefinition 2310）；份数 ≤10000（TooManyItems 2311）；创建者须有足够代币托管；资格 bloom bits 32..=32768 字节；未设过期时间默认 24 小时（DEFAULT_EXPIRATION_MS）。 |
-| lucky_box | CreateLucky | create_lucky | 12885 | 【功能】创建「拼手气」盲盒：领取时按链上安全随机数分配不等金额；参数与资金托管同 CreateEqual。<br>【返回】u64。<br>【限制】同 CreateEqual；随机数不可用报 SecureRandomnessUnavailable（2314）。 |
-| lucky_box | Claim | claim | 62102 | 【功能】领取盲盒一份：Equal 得等份金额、Lucky 得随机金额，代币从托管转入领取者。gas 由赞助池代付（sponsor）。<br>【限制】盒子须存在且活跃（BoxNotFound 2304 / BoxNotActive 2306）、未过期（BoxExpired 2307）、尚有余量（BoxExhausted 2309）；须通过资格 bloom 校验（NotEligible 2312）；每人限领一次（QuotaExceeded 2313）。 |
-| lucky_box | Refund | refund | 9120 | 【功能】盒子过期后回收剩余资产（未领完的资金退回创建者）。无需签名者，任何人可触发执行。<br>【限制】盒子必须已过期（BoxNotExpired 2308）且存在（2304）。 |
 | social | UpsertSocialProfile | upsert_social_profile | 13067 | 【功能】写入/更新自己的社交 profile URI（链上只存 URI，内容存链下）。<br>【限制】须有有效未停用 DID（DidNotActive 2560）；URI 须合法（InvalidUri 2563）。 |
 | social | RegisterSourceApp | register_source_app | 23225 | 【功能】注册「源应用」（公共数据发布主体），链上分配自增 ID。<br>【返回】u32 source_app_id。<br>【限制】owner 须有有效 DID；ID 序列耗尽报 SourceAppIdExhausted（2572）。 |
 | social | AddSourceAppPublisher | add_source_app_publisher | 55820 | 【功能】为源应用添加发布者（允许其发布公共数据）。<br>【限制】仅应用 owner（SourceAppOwnerRequired 2567）；应用须存在（SourceAppNotFound 2564）；已是发布者报 2569。 |
@@ -253,30 +261,47 @@
 | social | RejectJoinRequest | reject_join_request | 21924 | 【功能】管理员拒绝某用户的加入申请。<br>【限制】同 ApproveJoinRequest：管理员权限 + pending 申请存在。 |
 | social | LeaveCommunity | leave_community | 7711 | 【功能】成员主动退出社区。<br>【限制】须是活跃成员（MembershipNotActive 2588）；owner 不能退出（CannotLeaveCommunityOwner 2596，须先转让）。 |
 | social | RemoveCommunityMember | remove_community_member | 7071 | 【功能】管理员移除某成员。<br>【限制】须管理员（2582）；目标须是成员（2588）；不能移除 owner（CannotRemoveCommunityOwner 2583）。 |
-| demo | OpenOrder | open_order | 57564 | 【功能】演示订单支付流第一步：operator 开一个演示订单（收款托管户头）。<br>【限制】order_id 不可重复（OrderAlreadyExists 65285）。 |
-| demo | PayOrder | pay_order | 58464 | 【功能】演示订单支付流第二步：付款人向订单打入指定代币与数量（进订单托管）。<br>【限制】订单须存在（OrderNotFound 65284）；付款人余额须充足。 |
-| demo | SettleOrder | settle_order | 1751 | 【功能】演示订单支付流第三步：operator 把订单托管余额结算转出给指定收款地址。<br>【限制】须与开单相同的 operator（OrderOperatorMismatch 65286）；订单须存在（65284）；结算额不得超过托管余额。 |
-| demo | OpenGasSponsorPool | open_gas_sponsor_pool | 6639 | 【功能】注册 gas 赞助池，使 sponsor 标记的指令（keyless.Authenticate、lucky_box.Claim、demo.ClaimSponsoredScore 等）可由该池代付 gas。<br>【返回】u16 sponsor_seed（池编号，供赞助类指令引用）。<br>【限制】pool 地址的管理员（signer_lookup 从 pool 参数解析 admin）必须与交易付款人一致。 |
-| demo | ClaimSponsoredScore | claim_sponsored_score | 11876 | 【功能】演示从赞助池领取 gas 赞助并给领取者记积分。gas 由赞助池代付（sponsor）。<br>【限制】池须已注册（SponsorPoolNotFound 65287）。 |
-| demo | InitPool | init_pool | 27056 | 【功能】初始化一个演示池（标签/积分载体），由 pool 资源账户签名。<br>【限制】不可重复初始化（PoolAlreadyExists 65281）。 |
-| demo | InitDex | init_dex | 44919 | 【功能】同 InitPool，以 dex 为主题的演示初始化。<br>【限制】不可重复初始化（65281）。 |
-| demo | SetLabel | set_label | 58132 | 【功能】修改池的标签。<br>【限制】池须存在（PoolNotFound 65280）。 |
-| demo | BatchCredit | batch_credit | 8311 | 【功能】给一批接收者在池内加积分（触发 EventCreditApplied 事件）。<br>【限制】池须存在（65280）；接收者须已在池内登记（RecipientNotFound 65282）。 |
-| demo | SetTierCap | set_tier_cap | 58369 | 【功能】设置某层级的积分上限（配合领用限速演示）。<br>【限制】池须存在（65280）。 |
+| social | CreateGift | create_gift | 36253 | 【功能】创建社区红包：创建者向社区（community_id）发放 token 红包，total_amount 供 claim_count 人按 allocation（Equal 均分 / Lucky 拼手气）领取，可设过期时间。<br>【限制】创建者须有有效 DID（DidNotActive 2560）；社区须存在（CommunityNotFound 2578）；托管转入失败透传 token 层错误（TokenError 2595）。 |
+| social | ClaimGift | claim_gift | 30437 | 【功能】领取社区红包（claimant 签名）。<br>【限制】红包须存在（CommunityGiftNotFound 2596）；领取规则校验同 token 红包语义。 |
+| demo | OpenOrder | open_order | 47185 | 【功能】演示订单支付流第一步：operator 开一个演示订单（收款托管户头）。<br>【限制】order_id 不可重复（OrderAlreadyExists 65029）。 |
+| demo | RejectOrderInbound | reject_order_inbound | 33284 | 【功能】演示订单拒收入账：operator 主动拒绝订单托管户头收到的最新一笔入账转账。<br>【限制】订单须存在（OrderNotFound 65028）；须开单 operator 本人（OrderOperatorMismatch 65030）；无可拒入账或状态不符报 InboundRejected 65032。 |
+| demo | ForwardOrderInbound | forward_order_inbound | 12070 | 【功能】演示订单转发入账：operator 把订单最新一笔入账转发出去（转发目标由 forward_seed 参与派生）。<br>【限制】订单须存在（65028）；须开单 operator 本人（65030）；转发被拒报 InboundRejected 65032。 |
+| demo | SplitOrderInbound | split_order_inbound | 2755 | 【功能】演示订单拆分入账：operator 把订单最新一笔入账按 first_bps 基点拆给 first，剩余部分给 second。<br>【限制】订单须存在（65028）；须开单 operator 本人（65030）；拆分被拒报 InboundRejected 65032。 |
+| demo | PayOrder | pay_order | 49571 | 【功能】演示订单支付流第二步：付款人向订单打入指定代币与数量（进订单托管）。<br>【限制】订单须存在（OrderNotFound 65028）；付款人余额须充足。 |
+| demo | SettleOrder | settle_order | 62622 | 【功能】演示订单支付流第三步：operator 把订单托管余额结算转出给指定收款地址。<br>【限制】须与开单相同的 operator（OrderOperatorMismatch 65030）；订单须存在（65028）；结算额不得超过托管余额。 |
+| demo | InitPool | init_pool | 51459 | 【功能】初始化一个演示池（标签/积分载体），由 pool 资源账户签名。<br>【限制】不可重复初始化（PoolAlreadyExists 65281）。 |
+| demo | InitDex | init_dex | 50094 | 【功能】同 InitPool，以 dex 为主题的演示初始化。<br>【限制】不可重复初始化（65281）。 |
+| demo | SetLabel | set_label | 47391 | 【功能】修改池的标签。<br>【限制】池须存在（PoolNotFound 65280）。 |
+| demo | BatchCredit | batch_credit | 60858 | 【功能】给一批接收者在池内加积分（触发 EventCreditApplied 事件）。<br>【限制】池须存在（65280）；接收者须已在池内登记（RecipientNotFound 65282）。 |
+| demo | SetTierCap | set_tier_cap | 55600 | 【功能】设置某层级的积分上限（配合领用限速演示）。<br>【限制】池须存在（65280）。 |
+| demo | DrawU64 | draw_u64 | 1414 | 【功能】演示安全随机数：从链上安全随机源抽取一个 u64。<br>【返回】u64。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
+| demo | DrawBytes32 | draw_bytes32 | 52945 | 【功能】演示安全随机数：从链上安全随机源抽取 32 字节。<br>【返回】B256。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
+| demo | DrawRange | draw_range | 31302 | 【功能】演示安全随机数：从链上安全随机源抽取 [lo, hi] 区间内的一个 u64。<br>【返回】u64。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
+| demo | OpenGasSponsorPool | open_gas_sponsor_pool | 49440 | 【功能】注册 gas 赞助池，使 sponsor 标记的指令（keyless.Authenticate、lucky_box.Claim、demo.ClaimSponsoredScore 等）可由该池代付 gas。<br>【返回】u16 sponsor_seed（池编号，供赞助类指令引用）。<br>【限制】pool 地址的管理员（signer_lookup 从 pool 参数解析 admin）必须与交易付款人一致。 |
+| demo | ClaimSponsoredScore | claim_sponsored_score | 1595 | 【功能】演示从赞助池领取 gas 赞助并给领取者记积分。gas 由赞助池代付（sponsor）。<br>【限制】池须已注册（SponsorPoolNotFound 65031）。 |
+| demo | ScheduleWake | schedule_wake | 8376 | 【功能】演示定时唤醒：登记一个 due_ms 毫秒后到期的定时器，到期后由 RunScheduledWake 执行演示回调。<br>【限制】登记被拒报 WakeRejected 65033。 |
+| demo | RunScheduledWake | run_scheduled_wake | 9624 | 【功能】执行已到期的定时唤醒（演示链上定时回调的执行半步，任何人可触发）。<br>【限制】无到期项或状态不符报 WakeRejected 65033。 |
+| system | Noop | noop | 13507 | 【功能】空操作指令，无参数、无任何链上效果，常用于测试交易链路或触发账户资源的懒创建。<br>【限制】无。 |
+| system | BootstrapEpochClock | bootstrap_epoch_clock | 57604 | 【功能】初始化协议 epoch 时钟（计时起点 + 最短纪元时长），是 staking 纪元结算（InitializeEpochConfig / SettleStakingEpoch）的前置条件。<br>【限制】一次性初始化，重复调用会失败（EpochClockFailure）；仅在链引导阶段调用。 |
+| system | BootstrapValidatorSetConfig | bootstrap_validator_set_config | 37696 | 【功能】初始化验证人集合配置：最大验证人数，以及分组/出块/批次委员会三类阈值比例，全局一次性配置。<br>【限制】一次性初始化；比例以「分子/分母」分数表示。 |
+| system | RegisterValidatorIdentity | register_validator_identity | 16918 | 【功能】为验证人登记系统层共识身份：共识账户地址与共识/BLS/ed25519 三把公钥，生成共识验证人身份记录（与 staking.CreateValidator 的绑定配套）。<br>【限制】共识账户必须对交易签名；公钥长度按曲线校验（secp256k1 压缩 33 字节 / BLS 48 字节 / ed25519 32 字节）；地址与公钥唯一性由链上校验。 |
+| system | PrepareValidatorSet | prepare_validator_set | 55212 | 【功能】为目标 epoch 准备验证人集合：提交随机种子作为集合选举输入（两阶段提交第一步，之后 CommitValidatorSet 生效）。<br>【限制】依赖 epoch 时钟已初始化；同一 epoch 不可重复准备。 |
+| system | SettleStakingEpoch | settle_staking_epoch | 61700 | 【功能】结算当前 epoch 的质押：处理 pending 质押/解冻意向、候选池进出申请，并按配置发放奖励（即触发 staking 的 epoch 结算）。<br>【限制】需先 InitializeEpochConfig 且 epoch 时钟就绪；失败以 StakingFailure 包装返回；同一 epoch 不可重复结算。 |
+| system | CommitValidatorSet | commit_validator_set | 59552 | 【功能】提交已准备的验证人集合并使其生效（PrepareValidatorSet 的第二步）。<br>【限制】须先成功执行 PrepareValidatorSet，否则报 ValidatorSetFailure。 |
+| system | CommitBlockSeed | commit_block_seed | 49456 | 【功能】提交/更新区块随机种子（链上随机数信标的数据源）。<br>【限制】种子未初始化时不可提交（BlockSeedNotInitialized）；重复初始化报 BlockSeedAlreadyInitialized；底层失败以 RandomnessFailure 包装。 |
 
 ## 各 App 统计
 
 | appname | app_id | view | entry | 合计 |
 |---------|--------|------|-------|------|
-| system | 0 | 0 | 8 | 8 |
-| account | 1 | 5 | 10 | 15 |
-| token | 2 | 7 | 23 | 30 |
+| account | 1 | 5 | 11 | 16 |
+| token | 2 | 10 | 28 | 38 |
 | staking | 3 | 11 | 12 | 23 |
 | identity | 4 | 25 | 19 | 44 |
 | sftoken | 5 | 14 | 26 | 40 |
-| dex | 6 | 6 | 8 | 14 |
+| dex | 6 | 9 | 14 | 23 |
 | keyless | 8 | 8 | 8 | 16 |
-| lucky_box | 9 | 2 | 4 | 6 |
-| social | 10 | 8 | 23 | 31 |
-| demo | 255 | 8 | 10 | 18 |
-| **合计** | — | **94** | **151** | **245** |
+| social | 10 | 10 | 25 | 35 |
+| demo | 254 | 11 | 18 | 29 |
+| system | 0 | 0 | 8 | 8 |
+| **合计** | — | **103** | **169** | **272** |

@@ -53,7 +53,8 @@ var idlMethodDocs = map[string]string{
 
 	"account.GetVote": "【功能】查询某个投票意图的详情。\n【返回】[VoteMeta{intent_hash, expires_at_ms, source_tx_hash}, 已投票 signer 位图, 是否已达阈值]。",
 
-	"account.ListActiveVotes": "【功能】列出账户当前全部活跃投票意图。\n【返回】[[VoteMeta, 已投票位图, 是否达标], ...] 数组。",
+	"account.ListActiveVotes":   "【功能】列出账户当前全部活跃投票意图。\n【返回】[[VoteMeta, 已投票位图, 是否达标], ...] 数组。",
+	"account.SweepExpiredVotes": "【功能】一次性清理自己名下已过期的投票意向，腾出投票索引位。\n【限制】仅可清理已过期意向（VoteExpired 276）；清扫手续费不足报 VoteSweepFeeInsufficient 285；清扫唤醒被拒报 VoteWakeRejected 286。",
 
 	// ==================== token 模块（app_id=2，23 entry + 7 view）====================
 
@@ -116,6 +117,14 @@ var idlMethodDocs = map[string]string{
 	"token.Compliance": "【功能】查询代币合规策略配置。\n【返回】Compliance：{mode: \"All\"|\"Any\", requirements: [凭证 ID 数组]}。",
 
 	"token.FaucetCooldownRemaining": "【功能】查询某地址水龙头冷却剩余时间。\n【返回】u64 毫秒数；0 表示可立即领取。",
+	"token.CreateEqualGift":         "【功能】创建均分红包：创建者托管 total_amount，供 claim_count 人均分领取；领取资格由 rules 约束（可选 VC 凭证要求 / 指定收款人名单 / 过期时间）。gift_id 由链上派生，经交易事件或 GiftInfo 回读。\n【限制】红包定义不合法报 InvalidGiftDefinition 529（claim_count 须非零等）；gift_id 不可重复（GiftAlreadyExists 525）；托管转入失败报 token 层错误。",
+	"token.CreateLuckyGift":         "【功能】创建拼手气红包：创建者托管 total_amount，claim_count 人随机份额领取（份额由链上安全随机源决定）。\n【限制】同 CreateEqualGift；随机源不可用报 GiftRandomnessUnavailable 533。",
+	"token.ClaimGift":               "【功能】领取红包（claimant 签名）。\n【限制】红包须存在（GiftNotFound 524）；须在有效期内（GiftExpired 526）；资格不符报 GiftNotEligible 530（rules 名单 / VC 要求）；不可重复领取（GiftAlreadyClaimed 531）。",
+	"token.RefundGift":              "【功能】红包过期后把剩余托管金额退回创建者。\n【限制】红包须存在（524）；须已过期（GiftNotExpired 527）；仍在进行中报 GiftStillActive 528。",
+	"token.RunGiftCleanup":          "【功能】推进过期红包的清算（结算领取记录、回收托管），配合到期唤醒机制逐批执行。\n【限制】红包须已过期（GiftStillActive 528）；清扫唤醒被拒报 GiftCleanupWakeRejected 534。",
+	"token.GiftInfo":                "【功能】查询红包实时状态。\n【返回】GiftState：{creator, gift_id, token, total_amount, remaining_amount, claim_count, claimed_count, expires_at_ms, allocation, rules}。",
+	"token.GiftSettlement":          "【功能】查询红包清算进度。\n【返回】GiftSettlement：{creator, status, claim_records, cleanup_cursor}。",
+	"token.CanClaimGift":            "【功能】判断某地址当前能否领取某红包。\n【返回】bool。",
 
 	// ==================== staking 模块（app_id=3，12 entry + 11 view）====================
 
@@ -367,7 +376,16 @@ var idlMethodDocs = map[string]string{
 
 	"dex.OrdersAtLevel": "【功能】分页查询某一价格档上的订单列表。\n【返回】LevelOrderPage：{orders: [OrderInfo], next_order_id（翻页游标，0 表示没有更多）}。\n【限制】limit 1..=100（1552）；档位不存在报 PriceLevelNotFound（1553）；游标非法报 InvalidOrderCursor（1554）。",
 
-	"dex.VaultLiability": "【功能】查询市场金库对某代币的负债总额（所有用户托管资金之和）。\n【返回】u64。",
+	"dex.VaultLiability":    "【功能】查询市场金库对某代币的负债总额（所有用户托管资金之和）。\n【返回】u64。",
+	"dex.CreateAmmPool":     "【功能】为已有市场创建 AMM 做市池并注入首笔流动性（恒定乘积池，与订单簿并行，供 SwapExactIn 混合路由）；authority 为市场管理员签名，provider 为流动性提供者签名。\n【返回】AmmPoolInfo：{market_id, vault, vault_seed, status, reserve_base, reserve_quote, total_lp_supply}。\n【限制】市场须存在（MarketNotFound 1542）；同市场不可重复建池（AmmPoolAlreadyExists 1559）；数量参数须非零（ZeroLiquidityParameter 1564）；资金转入失败报 TokenFailure 1555。",
+	"dex.InitializeAmmPool": "【功能】初始化市场的 AMM 池并注入流动性（参数与 CreateAmmPool 一致的显式初始化路径）。\n【返回】AmmPoolInfo。\n【限制】池须存在（AmmPoolNotFound 1560）；数量参数须非零（ZeroLiquidityParameter 1564）；资金转入失败报 TokenFailure 1555。",
+	"dex.SetAmmStatus":      "【功能】切换 AMM 池状态：Active（启用做市）/ Stopped（停止做市，停池后仍可撤流动性）。\n【限制】须市场 authority 签名（MarketAuthorityMismatch 1546）；池须存在（AmmPoolNotFound 1560）；状态机校验（AmmPoolNotActive 1561 / AmmPoolNotStopped 1562）。",
+	"dex.AddLiquidity":      "【功能】向 AMM 池追加双边流动性：按当前池比例实际转入（不超过 base_max/quote_max），铸造 LP 份额。\n【返回】AddLiquidityResult：{base_amount, quote_amount, lp_shares}（实际转入量与铸得份额）。\n【限制】池须为 Active（AmmPoolNotActive 1561）；参数须非零（ZeroLiquidityParameter 1564）；铸得份额为零报 ZeroLpShares 1566、低于 min_lp_shares 报 MinLpSharesNotMet 1567；溢出报 AmmLiquidityOverflow 1565。",
+	"dex.RemoveLiquidity":   "【功能】销毁 LP 份额，按池比例赎回 base/quote 双边资产。\n【返回】RemoveLiquidityResult：{base_amount, quote_amount, lp_shares}。\n【限制】LP 余额不足报 InsufficientLpShares 1568；实际赎回低于 min_base_out/min_quote_out 报 MinLiquidityOutputNotMet 1569。",
+	"dex.AmmPoolInfo":       "【功能】查询 AMM 池当前状态。\n【返回】AmmPoolInfo：{market_id, vault, vault_seed, status, reserve_base, reserve_quote, total_lp_supply}。",
+	"dex.AmmLpBalance":      "【功能】查询某地址在某 AMM 池的 LP 份额。\n【返回】u64。",
+	"dex.SwapExactIn":       "【功能】混合换币（精确输入）：先吃订单簿（至多 max_book_makers 档成交），余量走 AMM 分段成交（至多 max_amm_segments 段），输入 input_token 的 amount_in，带 min_amount_out / worst_tick 保护。\n【返回】HybridSwapResult：{amount_in_used, amount_out, refund, clob_fills, amm_segments}。\n【限制】input_token 须属于该市场（InvalidSwapInputToken 1571）；保护/限额参数不合法报 InvalidSwapParameter 1570；输出低于 min_amount_out 报 MinSwapOutputNotMet 1573；算术溢出报 SwapOverflow 1572。",
+	"dex.AmmSwapEnabled":    "【功能】查询市场 AMM 池是否处于可交易状态。\n【返回】bool。",
 
 	// ==================== keyless 模块（app_id=8，8 entry + 8 view）====================
 
@@ -479,21 +497,25 @@ var idlMethodDocs = map[string]string{
 
 	"social.JoinRequest": "【功能】查询某成员是否有 pending 的加入申请。\n【返回】bool。",
 
-	"social.CommunityMembership": "【功能】查询某地址是否为社区成员。\n【返回】bool。",
+	"social.CommunityMembership":   "【功能】查询某地址是否为社区成员。\n【返回】bool。",
+	"social.CreateGift":            "【功能】创建社区红包：创建者向社区（community_id）发放 token 红包，total_amount 供 claim_count 人按 allocation（Equal 均分 / Lucky 拼手气）领取，可设过期时间。\n【限制】创建者须有有效 DID（DidNotActive 2560）；社区须存在（CommunityNotFound 2578）；托管转入失败透传 token 层错误（TokenError 2595）。",
+	"social.ClaimGift":             "【功能】领取社区红包（claimant 签名）。\n【限制】红包须存在（CommunityGiftNotFound 2596）；领取规则校验同 token 红包语义。",
+	"social.CanClaimCommunityGift": "【功能】判断某地址当前能否领取某社区红包。\n【返回】bool。",
+	"social.GiftCommunity":         "【功能】查询社区红包所属的社区 ID。\n【返回】u32。",
 
 	// ==================== demo 模块（app_id=255，10 entry + 8 view）====================
 
-	"demo.OpenOrder": "【功能】演示订单支付流第一步：operator 开一个演示订单（收款托管户头）。\n【限制】order_id 不可重复（OrderAlreadyExists 65285）。",
+	"demo.OpenOrder": "【功能】演示订单支付流第一步：operator 开一个演示订单（收款托管户头）。\n【限制】order_id 不可重复（OrderAlreadyExists 65029）。",
 
-	"demo.PayOrder": "【功能】演示订单支付流第二步：付款人向订单打入指定代币与数量（进订单托管）。\n【限制】订单须存在（OrderNotFound 65284）；付款人余额须充足。",
+	"demo.PayOrder": "【功能】演示订单支付流第二步：付款人向订单打入指定代币与数量（进订单托管）。\n【限制】订单须存在（OrderNotFound 65028）；付款人余额须充足。",
 
-	"demo.SettleOrder": "【功能】演示订单支付流第三步：operator 把订单托管余额结算转出给指定收款地址。\n【限制】须与开单相同的 operator（OrderOperatorMismatch 65286）；订单须存在（65284）；结算额不得超过托管余额。",
+	"demo.SettleOrder": "【功能】演示订单支付流第三步：operator 把订单托管余额结算转出给指定收款地址。\n【限制】须与开单相同的 operator（OrderOperatorMismatch 65030）；订单须存在（65028）；结算额不得超过托管余额。",
 
 	"demo.OrderBalance": "【功能】查询演示订单在某代币上的托管余额。\n【返回】u64。",
 
 	"demo.OpenGasSponsorPool": "【功能】注册 gas 赞助池，使 sponsor 标记的指令（keyless.Authenticate、lucky_box.Claim、demo.ClaimSponsoredScore 等）可由该池代付 gas。\n【返回】u16 sponsor_seed（池编号，供赞助类指令引用）。\n【限制】pool 地址的管理员（signer_lookup 从 pool 参数解析 admin）必须与交易付款人一致。",
 
-	"demo.ClaimSponsoredScore": "【功能】演示从赞助池领取 gas 赞助并给领取者记积分。gas 由赞助池代付（sponsor）。\n【限制】池须已注册（SponsorPoolNotFound 65287）。",
+	"demo.ClaimSponsoredScore": "【功能】演示从赞助池领取 gas 赞助并给领取者记积分。gas 由赞助池代付（sponsor）。\n【限制】池须已注册（SponsorPoolNotFound 65031）。",
 
 	"demo.SponsorPoolOf": "【功能】按池编号查询赞助池地址。\n【返回】Address。",
 
@@ -517,7 +539,18 @@ var idlMethodDocs = map[string]string{
 
 	"demo.LabelTotal": "【功能】map 类型演示：对传入的标签-数值映射求和。\n【返回】u32。",
 
-	"demo.SpecialTypes": "【功能】复杂类型编码演示（enum/option/vec/map/tuple 全覆盖）。\n【返回】u32（各输入的汇总校验值）。",
+	"demo.SpecialTypes":        "【功能】复杂类型编码演示（enum/option/vec/map/tuple 全覆盖）。\n【返回】u32（各输入的汇总校验值）。",
+	"demo.RejectOrderInbound":  "【功能】演示订单拒收入账：operator 主动拒绝订单托管户头收到的最新一笔入账转账。\n【限制】订单须存在（OrderNotFound 65028）；须开单 operator 本人（OrderOperatorMismatch 65030）；无可拒入账或状态不符报 InboundRejected 65032。",
+	"demo.ForwardOrderInbound": "【功能】演示订单转发入账：operator 把订单最新一笔入账转发出去（转发目标由 forward_seed 参与派生）。\n【限制】订单须存在（65028）；须开单 operator 本人（65030）；转发被拒报 InboundRejected 65032。",
+	"demo.SplitOrderInbound":   "【功能】演示订单拆分入账：operator 把订单最新一笔入账按 first_bps 基点拆给 first，剩余部分给 second。\n【限制】订单须存在（65028）；须开单 operator 本人（65030）；拆分被拒报 InboundRejected 65032。",
+	"demo.DrawU64":             "【功能】演示安全随机数：从链上安全随机源抽取一个 u64。\n【返回】u64。\n【限制】随机源不可用报 RandomnessUnavailable 65034。",
+	"demo.DrawBytes32":         "【功能】演示安全随机数：从链上安全随机源抽取 32 字节。\n【返回】B256。\n【限制】随机源不可用报 RandomnessUnavailable 65034。",
+	"demo.DrawRange":           "【功能】演示安全随机数：从链上安全随机源抽取 [lo, hi] 区间内的一个 u64。\n【返回】u64。\n【限制】随机源不可用报 RandomnessUnavailable 65034。",
+	"demo.ScheduleWake":        "【功能】演示定时唤醒：登记一个 due_ms 毫秒后到期的定时器，到期后由 RunScheduledWake 执行演示回调。\n【限制】登记被拒报 WakeRejected 65033。",
+	"demo.RunScheduledWake":    "【功能】执行已到期的定时唤醒（演示链上定时回调的执行半步，任何人可触发）。\n【限制】无到期项或状态不符报 WakeRejected 65033。",
+	"demo.OrderVault":          "【功能】查询演示订单托管户头地址。\n【返回】Address。",
+	"demo.OrderLastInbound":    "【功能】查询演示订单最新一笔入账明细。\n【返回】LastInbound：{token, from, amount}。",
+	"demo.ScheduledWakeCount":  "【功能】查询当前已登记待执行的定时唤醒数量。\n【返回】u64。",
 }
 
 // IDL 参数中文文档映射。键为 "app.Method:arg"，值为一行说明（含义 + 输入格式 + 约束）。
@@ -661,6 +694,24 @@ var idlArgDocs = map[string]string{
 	"token.Metadata:token":                             "代币资源地址，base58 字符串",
 	"token.Compliance:token":                           "代币资源地址，base58 字符串",
 	"token.FaucetCooldownRemaining:account":            "查询地址，base58 字符串",
+	"token.CreateEqualGift:creator":                    "创建者地址，须其私钥参与交易签名",
+	"token.CreateEqualGift:token":                      "红包代币地址，base58 字符串",
+	"token.CreateEqualGift:total_amount":               "托管总额，最小单位十进制数字",
+	"token.CreateEqualGift:claim_count":                "可领取人数，十进制数字（须非零）",
+	"token.CreateEqualGift:rules":                      "领取规则对象 {credential_id?, recipients?, expires_at_ms?}：可选 VC 凭证要求 / 指定收款人名单 / 过期时间（Unix 毫秒）",
+	"token.CreateLuckyGift:creator":                    "创建者地址，须其私钥参与交易签名",
+	"token.CreateLuckyGift:token":                      "红包代币地址，base58 字符串",
+	"token.CreateLuckyGift:total_amount":               "托管总额，最小单位十进制数字",
+	"token.CreateLuckyGift:claim_count":                "可领取人数，十进制数字（须非零）",
+	"token.CreateLuckyGift:rules":                      "领取规则对象，同 token.CreateEqualGift:rules",
+	"token.ClaimGift:claimant":                         "领取者地址，须其私钥参与交易签名",
+	"token.ClaimGift:gift_id":                          "红包地址，base58 字符串",
+	"token.RefundGift:gift_id":                         "红包地址，base58 字符串",
+	"token.RunGiftCleanup:gift_id":                     "红包地址，base58 字符串",
+	"token.GiftInfo:gift_id":                           "红包地址，base58 字符串",
+	"token.GiftSettlement:gift_id":                     "红包地址，base58 字符串",
+	"token.CanClaimGift:gift_id":                       "红包地址，base58 字符串",
+	"token.CanClaimGift:claimant":                      "待查询的领取人地址，base58 字符串",
 
 	// ==================== staking ====================
 
@@ -986,6 +1037,42 @@ var idlArgDocs = map[string]string{
 	"dex.OrdersAtLevel:limit":                           "每页条数，十进制数字（1..=100）",
 	"dex.VaultLiability:market_id":                      "市场地址，base58 字符串",
 	"dex.VaultLiability:token":                          "查询的代币地址，base58 字符串",
+	"dex.CreateAmmPool:authority":                       "市场管理员地址，须其私钥参与交易签名",
+	"dex.CreateAmmPool:provider":                        "流动性提供者地址，须其私钥参与交易签名",
+	"dex.CreateAmmPool:market_id":                       "市场地址，base58 字符串",
+	"dex.CreateAmmPool:base_amount":                     "注入 base 代币数量，最小单位十进制数字",
+	"dex.CreateAmmPool:quote_amount":                    "注入 quote 代币数量，最小单位十进制数字",
+	"dex.InitializeAmmPool:authority":                   "市场管理员地址，须其私钥参与交易签名",
+	"dex.InitializeAmmPool:provider":                    "流动性提供者地址，须其私钥参与交易签名",
+	"dex.InitializeAmmPool:market_id":                   "市场地址，base58 字符串",
+	"dex.InitializeAmmPool:base_amount":                 "注入 base 代币数量，最小单位十进制数字",
+	"dex.InitializeAmmPool:quote_amount":                "注入 quote 代币数量，最小单位十进制数字",
+	"dex.SetAmmStatus:authority":                        "市场管理员地址，须其私钥参与交易签名",
+	"dex.SetAmmStatus:market_id":                        "市场地址，base58 字符串",
+	"dex.SetAmmStatus:status":                           "AMM 池状态枚举：Active（启用做市）/ Stopped（停止做市）",
+	"dex.AddLiquidity:owner":                            "流动性提供者地址，须其私钥参与交易签名",
+	"dex.AddLiquidity:market_id":                        "市场地址，base58 字符串",
+	"dex.AddLiquidity:base_max":                         "最多注入 base 数量，最小单位十进制数字（实际按池比例可能少于该值）",
+	"dex.AddLiquidity:quote_max":                        "最多注入 quote 数量，最小单位十进制数字",
+	"dex.AddLiquidity:min_lp_shares":                    "最低铸得 LP 份额，实际铸得低于该值即整体回滚",
+	"dex.RemoveLiquidity:owner":                         "LP 持有者地址，须其私钥参与交易签名",
+	"dex.RemoveLiquidity:market_id":                     "市场地址，base58 字符串",
+	"dex.RemoveLiquidity:lp_shares":                     "销毁的 LP 份额，十进制数字",
+	"dex.RemoveLiquidity:min_base_out":                  "最低赎回 base 数量，实际低于该值即整体回滚",
+	"dex.RemoveLiquidity:min_quote_out":                 "最低赎回 quote 数量，实际低于该值即整体回滚",
+	"dex.AmmPoolInfo:market_id":                         "市场地址，base58 字符串",
+	"dex.AmmLpBalance:market_id":                        "市场地址，base58 字符串",
+	"dex.AmmLpBalance:owner":                            "LP 持有者地址，base58 字符串",
+	"dex.SwapExactIn:owner":                             "换币人地址，须其私钥参与交易签名",
+	"dex.SwapExactIn:market_id":                         "市场地址，base58 字符串",
+	"dex.SwapExactIn:input_token":                       "输入代币地址，base58 字符串（须为该市场的 base 或 quote）",
+	"dex.SwapExactIn:amount_in":                         "输入数量，最小单位十进制数字",
+	"dex.SwapExactIn:min_amount_out":                    "最低换得数量，实际低于该值即整体回滚",
+	"dex.SwapExactIn:worst_tick":                        "最差可成交价格档（u32 tick），超出即停止成交",
+	"dex.SwapExactIn:max_book_makers":                   "订单簿最多吃单档数",
+	"dex.SwapExactIn:max_amm_segments":                  "AMM 最多分段成交段数",
+	"dex.SwapExactIn:channel":                           "返佣渠道地址，base58 字符串（无渠道可传零地址）",
+	"dex.AmmSwapEnabled:market_id":                      "市场地址，base58 字符串",
 
 	// ==================== keyless ====================
 
@@ -1120,6 +1207,18 @@ var idlArgDocs = map[string]string{
 	"social.JoinRequest:member":                     "成员地址，base58 字符串",
 	"social.CommunityMembership:community_id":       "社区 ID，十进制数字",
 	"social.CommunityMembership:member":             "成员地址，base58 字符串",
+	"social.CreateGift:creator":                     "创建者地址，须其私钥参与交易签名",
+	"social.CreateGift:community_id":                "社区 ID，十进制数字",
+	"social.CreateGift:token":                       "红包代币地址，base58 字符串",
+	"social.CreateGift:total_amount":                "托管总额，最小单位十进制数字",
+	"social.CreateGift:claim_count":                 "可领取人数，十进制数字（须非零）",
+	"social.CreateGift:allocation":                  "分配方式枚举：Equal（均分）/ Lucky（拼手气）",
+	"social.CreateGift:expires_at_ms":               "过期时间，Unix 毫秒时间戳；null 表示永不过期",
+	"social.ClaimGift:claimant":                     "领取者地址，须其私钥参与交易签名",
+	"social.ClaimGift:gift_id":                      "社区红包地址，base58 字符串",
+	"social.CanClaimCommunityGift:gift_id":          "社区红包地址，base58 字符串",
+	"social.CanClaimCommunityGift:claimant":         "待查询的领取人地址，base58 字符串",
+	"social.GiftCommunity:gift_id":                  "社区红包地址，base58 字符串",
 
 	// ==================== demo ====================
 
@@ -1166,4 +1265,26 @@ var idlArgDocs = map[string]string{
 	"demo.SpecialTypes:tags":                "字符串 JSON 数组",
 	"demo.SpecialTypes:labels":              "JSON 对象，键为字符串、值为数字",
 	"demo.SpecialTypes:pair":                "两元素数组 [数字, 数字]（tuple<u8,i16>，第二个可为负）",
+	"demo.RejectOrderInbound:operator":      "开单 operator 地址，须其私钥参与交易签名",
+	"demo.RejectOrderInbound:order_id":      "订单编号，字符串",
+	"demo.ForwardOrderInbound:operator":     "开单 operator 地址，须其私钥参与交易签名",
+	"demo.ForwardOrderInbound:order_id":     "订单编号，字符串",
+	"demo.ForwardOrderInbound:forward_seed": "转发种子，十进制数字（参与转发目标派生）",
+	"demo.SplitOrderInbound:operator":       "开单 operator 地址，须其私钥参与交易签名",
+	"demo.SplitOrderInbound:order_id":       "订单编号，字符串",
+	"demo.SplitOrderInbound:first":          "第一收款地址，base58 字符串",
+	"demo.SplitOrderInbound:second":         "第二收款地址，base58 字符串",
+	"demo.SplitOrderInbound:first_bps":      "第一收款人份额，基点（万分之一，0-10000）",
+	"demo.DrawU64:caller":                   "调用者地址，须其私钥参与交易签名",
+	"demo.DrawU64:tag":                      "随机数用途标签，字符串",
+	"demo.DrawBytes32:caller":               "调用者地址，须其私钥参与交易签名",
+	"demo.DrawBytes32:tag":                  "随机数用途标签，字符串",
+	"demo.DrawRange:caller":                 "调用者地址，须其私钥参与交易签名",
+	"demo.DrawRange:tag":                    "随机数用途标签，字符串",
+	"demo.DrawRange:lo":                     "随机区间下界，十进制数字（含）",
+	"demo.DrawRange:hi":                     "随机区间上界，十进制数字（含）",
+	"demo.ScheduleWake:caller":              "登记人地址，须其私钥参与交易签名",
+	"demo.ScheduleWake:due_ms":              "多少毫秒后到期，十进制数字",
+	"demo.OrderVault:order_id":              "订单编号，字符串",
+	"demo.OrderLastInbound:order_id":        "订单编号，字符串",
 }
