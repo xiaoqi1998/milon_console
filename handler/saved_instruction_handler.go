@@ -468,20 +468,22 @@ func mergeSigners(stored, supplied []types.SignerEntry) []types.SignerEntry {
 }
 
 // requireSendKeys 按 paymentMode 校验 send 模式所需的一次性签名材料是否齐备。
-// 错误信息显式指向"请求体"字段，引导调用方在执行请求（而非保存）时提供密钥。
+// 错误信息显式指向"请求体"字段，引导调用方在执行请求（而非保存）时提供密钥；
+// 回填未命中时同样落到这里——错误文案统一追加 configuredAccountHint，
+// 引导走 X-Milon-Accounts 配置账户（地址即引用，免传私钥）。
 func requireSendKeys(item *SavedInstruction) error {
 	switch item.PaymentMode {
 	case PaymentModeUnifiedPayerAll, "":
 		if item.PayerPrivateKey == "" {
-			return fmt.Errorf("send 模式需要私钥：请求体缺少 payerPrivateKey（paymentMode=%s）", item.PaymentMode)
+			return fmt.Errorf("send 模式需要私钥：请求体缺少 payerPrivateKey（paymentMode=%s）%s", item.PaymentMode, configuredAccountHint)
 		}
 	case PaymentModeUnifiedDualSign:
 		if item.PayerPrivateKey == "" || item.IxPrivateKey == "" {
-			return fmt.Errorf("send 模式需要私钥：请求体缺少 payerPrivateKey/ixPrivateKey（unified_dual_sign 需两者）")
+			return fmt.Errorf("send 模式需要私钥：请求体缺少 payerPrivateKey/ixPrivateKey（unified_dual_sign 需两者）%s", configuredAccountHint)
 		}
 	case PaymentModeSplit:
 		if item.OwnerPrivateKey == "" && item.PayerPrivateKey == "" {
-			return fmt.Errorf("send 模式需要私钥：请求体缺少 ownerPrivateKey（split 模式，或以 payerPrivateKey 代 owner）")
+			return fmt.Errorf("send 模式需要私钥：请求体缺少 ownerPrivateKey（split 模式，或以 payerPrivateKey 代 owner）%s", configuredAccountHint)
 		}
 	case PaymentModeMultiSigner:
 		hasKey := false
@@ -492,14 +494,14 @@ func requireSendKeys(item *SavedInstruction) error {
 			}
 		}
 		if !hasKey {
-			return fmt.Errorf("send 模式需要私钥：请求体 signers 未提供任何 privateKey（multi_signer）")
+			return fmt.Errorf("send 模式需要私钥：请求体 signers 未提供任何 privateKey（multi_signer）%s", configuredAccountHint)
 		}
 		if item.GasPayer != nil && item.GasPayer.PrivateKey == "" {
-			return fmt.Errorf("send 模式需要私钥：请求体 gasPayer 缺少 privateKey（multi_signer + 独立 gas 代付）")
+			return fmt.Errorf("send 模式需要私钥：请求体 gasPayer 缺少 privateKey（multi_signer + 独立 gas 代付）%s", configuredAccountHint)
 		}
 	case PaymentModeSponsored:
 		if item.PayerPrivateKey == "" {
-			return fmt.Errorf("send 模式需要私钥：请求体缺少 payerPrivateKey（sponsored）")
+			return fmt.Errorf("send 模式需要私钥：请求体缺少 payerPrivateKey（sponsored）%s", configuredAccountHint)
 		}
 	}
 	return nil
@@ -646,6 +648,37 @@ func (h *SavedInstructionHandler) executeSend(c *gin.Context, mc *milon.Client, 
 			work.GasPayer = req.GasPayer
 		}
 	}
+
+	// 深拷贝 signer 切片与 gasPayer：work 是 item 的浅拷贝，两者可能仍与
+	// store 内存条目共享底层（请求未提供 signers 时 mergeSigners 原样返回
+	// 存储切片；req.GasPayer 为 nil 时 work.GasPayer 即存储指针）。
+	// 回填只允许落在本次请求的 work 上，绝不写回存储条目。
+	if work.Signers != nil {
+		signersCopy := make([]types.SignerEntry, len(work.Signers))
+		copy(signersCopy, work.Signers)
+		work.Signers = signersCopy
+	}
+	if work.GasPayer != nil {
+		gasPayerCopy := *work.GasPayer
+		work.GasPayer = &gasPayerCopy
+	}
+
+	// 地址即引用：存储侧只绑地址无密钥（scrubSecrets 不变量），send 时按地址
+	// 从本请求配置账户回填一次性私钥——仍过境即焚，不落盘。
+	fillFromConfiguredAccounts(c,
+		accountRole{Addr: &work.PayerAddress, Priv: &work.PayerPrivateKey, SigMode: &work.SignatureMode},
+		accountRole{Addr: &work.IxAddress, Priv: &work.IxPrivateKey, SigMode: &work.IxSignatureMode},
+		accountRole{Addr: &work.OwnerAddress, Priv: &work.OwnerPrivateKey},
+	)
+	for i := range work.Signers {
+		s := &work.Signers[i]
+		fillFromConfiguredAccounts(c, accountRole{Addr: &s.Address, Priv: &s.PrivateKey, SigMode: &s.SignatureMode, KeyType: &s.KeyType})
+	}
+	if work.GasPayer != nil {
+		g := work.GasPayer
+		fillFromConfiguredAccounts(c, accountRole{Addr: &g.Address, Priv: &g.PrivateKey, SigMode: &g.SignatureMode, KeyType: &g.KeyType})
+	}
+
 	if err := requireSendKeys(&work); err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 		return
