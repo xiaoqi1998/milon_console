@@ -22,6 +22,20 @@ type ConfiguredAccount struct {
 // 防客户端误贴超大数组把解析/校验拖成 CPU 热点（在逐条校验之前拦截）。
 const MaxConfiguredAccounts = 64
 
+// MarshalJSON 脱敏护栏：PrivateKey 永不序列化原文，固定输出 "***"——任何
+// 路径（调试日志、缓存快照、未来的回显端点等）把本结构走 JSON 序列化都
+// 不会漏私钥。PublicKey 非机密（脱敏回显端点本就只回指纹，但全量公钥
+// 可公开），连同其余字段保持原样。需要私钥的内部路径（签名注入）只走
+// 内存字段访问，不存在 JSON 反序列化回填需求，Unmarshal 不受影响。
+// 用值接收者：单值与切片元素（context 注入的常见形态）均命中。
+func (a ConfiguredAccount) MarshalJSON() ([]byte, error) {
+	type alias ConfiguredAccount // 别名剥离本方法，避免递归调用
+	masked := alias(a)
+	masked.PrivateKey = "***"
+	return json.Marshal(masked)
+}
+
+
 // ConfiguredAccountHint 是「私钥必填但地址未配置」错误的追加提示（types 侧
 // 独立定义以避免 import handler 成环；文案与 handler.configuredAccountHint
 // 逐字一致，改文案须两侧同步）。

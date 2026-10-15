@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -108,6 +109,63 @@ func TestParseConfiguredAccounts(t *testing.T) {
 		_, err := ParseConfiguredAccounts("MILON_ACCOUNTS", raw)
 		if err == nil || !strings.Contains(err.Error(), "MILON_ACCOUNTS: 账户数 65 超过上限 64") {
 			t.Fatalf("want 来源前缀+超上限文案, got %v", err)
+		}
+	})
+}
+
+// TestConfiguredAccountMarshalJSON：脱敏护栏——任何路径把 ConfiguredAccount
+// 走 JSON 序列化（单值、切片），私钥原文永不出现、固定为 "***"；
+// 公钥/地址/曲线等非机密字段保持原文（内部需要私钥的路径只走内存字段
+// 访问，不存在反序列化回填需求）。
+func TestConfiguredAccountMarshalJSON(t *testing.T) {
+	a := ConfiguredAccount{
+		Name:       "main",
+		Address:    tAddr,
+		PrivateKey: tPrivHex,
+		PublicKey:  tPubHex,
+		KeyType:    "secp256k1",
+	}
+
+	t.Run("单值序列化脱敏", func(t *testing.T) {
+		out, err := json.Marshal(a)
+		if err != nil {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		s := string(out)
+		if strings.Contains(s, tPrivHex) {
+			t.Fatalf("私钥原文泄露: %s", s)
+		}
+		if !strings.Contains(s, `"privateKey":"***"`) {
+			t.Fatalf("privateKey 应固定输出 ***, got %s", s)
+		}
+		if !strings.Contains(s, `"publicKey":"`+tPubHex+`"`) {
+			t.Fatalf("publicKey 全文应保留（非机密）, got %s", s)
+		}
+		if !strings.Contains(s, `"address":"`+tAddr+`"`) {
+			t.Fatalf("address 应保留, got %s", s)
+		}
+	})
+
+	t.Run("切片序列化同样脱敏（context 注入的常见形态）", func(t *testing.T) {
+		out, err := json.Marshal([]ConfiguredAccount{a})
+		if err != nil {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if strings.Contains(string(out), tPrivHex) {
+			t.Fatalf("切片序列化私钥原文泄露: %s", out)
+		}
+		if !strings.Contains(string(out), `"***"`) {
+			t.Fatalf("切片序列化 privateKey 应为 ***, got %s", out)
+		}
+	})
+
+	t.Run("序列化不改原结构体字段（内部路径仍可读私钥）", func(t *testing.T) {
+		_, err := json.Marshal(a)
+		if err != nil {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if a.PrivateKey != tPrivHex {
+			t.Fatalf("Marshal 不应改写原字段, got %q", a.PrivateKey)
 		}
 	})
 }

@@ -58,6 +58,17 @@ func main() {
 	errorLookupHandler := handler.NewErrorLookupHandler()
 	accountsConfigHandler := handler.NewAccountsConfigHandler()
 
+	// 运维探活子组：只挂 ResolveNetwork、不挂 ResolveAccounts——MILON_ACCOUNTS
+	// env 配错时 /api/health、/api/chain-head、/api/version 仍可用，K8s liveness
+	// 探针不因账户配置错误被 400 劫持而误重启容器。health/chain-head 拉链头
+	// 需要网络 client；version 不读 client，统一挂载与原行为一致且无害。
+	ops := r.Group("/api", middleware.ResolveNetwork(nm))
+	{
+		ops.GET("/health", systemHandler.Health)
+		ops.GET("/chain-head", systemHandler.GetChainHead)
+		ops.GET("/version", systemHandler.Version)
+	}
+
 	api := r.Group("/api")
 	// 请求级网络选择：X-Milon-Network 头 → 对应网络 client；缺省走服务端默认网络
 	api.Use(middleware.ResolveNetwork(nm))
@@ -71,11 +82,6 @@ func main() {
 			netGroup.GET("/current", networkHandler.GetCurrentNetwork)
 			netGroup.POST("/switch", networkHandler.SwitchNetwork)
 		}
-
-		// System
-		api.GET("/health", systemHandler.Health)
-		api.GET("/chain-head", systemHandler.GetChainHead)
-		api.GET("/version", systemHandler.Version)
 
 		// Account
 		api.POST("/accounts/generate", accountHandler.GenerateAccount)
