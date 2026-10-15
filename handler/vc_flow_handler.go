@@ -65,10 +65,10 @@ type vcFlowRequest struct {
 // /api/util/vc-attestation 的语义)。
 func validateVcFlowRequest(req vcFlowRequest, nowMs int64) error {
 	if strings.TrimSpace(req.IssuerPrivateKey) == "" {
-		return fmt.Errorf("issuerPrivateKey is required")
+		return fmt.Errorf("issuerPrivateKey is required" + configuredAccountHint)
 	}
 	if strings.TrimSpace(req.UserPrivateKey) == "" {
-		return fmt.Errorf("userPrivateKey is required")
+		return fmt.Errorf("userPrivateKey is required" + configuredAccountHint)
 	}
 	if strings.TrimSpace(req.UserAddress) == "" {
 		return fmt.Errorf("userAddress is required(必填:32字节私钥在不同曲线下派生不同地址,请传账户生成时返回的地址,服务端按其自动匹配曲线)")
@@ -189,6 +189,12 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
+	// 地址即引用回填：issuer/user 双角色独立按各自地址命中配置账户时注入
+	// 私钥/公钥（仅本请求同步消费，不跨 goroutine 持有账户）。
+	fillFromConfiguredAccounts(c,
+		accountRole{Addr: &req.IssuerAddress, Priv: &req.IssuerPrivateKey, Pub: &req.IssuerPublicKey},
+		accountRole{Addr: &req.UserAddress, Priv: &req.UserPrivateKey, Pub: &req.UserPublicKey},
+	)
 	req = normalizeVcFlowRequest(req)
 	if err := validateVcFlowRequest(req, time.Now().UnixMilli()); err != nil {
 		logParamError(c, "VcFlow", err)

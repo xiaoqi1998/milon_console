@@ -188,7 +188,7 @@ func normalizeDidCreateRequest(req didCreateRequest) didCreateRequest {
 // 预检,scheme 白名单等更严校验交链端(1048-1050)。
 func validateDidCreateRequest(req didCreateRequest) error {
 	if strings.TrimSpace(req.PrivateKey) == "" {
-		return fmt.Errorf("privateKey is required")
+		return fmt.Errorf("privateKey is required" + configuredAccountHint)
 	}
 	if strings.TrimSpace(req.Address) == "" {
 		return fmt.Errorf("address is required(必填:32字节私钥在不同曲线下派生不同地址,请传账户生成时返回的地址,服务端按其自动匹配曲线)")
@@ -415,6 +415,9 @@ func (h *DidHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
+	// 地址即引用回填：私钥缺省且地址命中配置账户时注入私钥/公钥
+	// （did 请求无 keyType 字段——曲线由公钥长度消歧，Pub 回填对经典曲线无害）。
+	fillFromConfiguredAccounts(c, accountRole{Addr: &req.Address, Priv: &req.PrivateKey, Pub: &req.PublicKey})
 	req = normalizeDidCreateRequest(req)
 	if err := validateDidCreateRequest(req); err != nil {
 		logParamError(c, "DidCreate", err)
@@ -872,6 +875,10 @@ func (h *DidHandler) NameBinding(c *gin.Context) {
 // ==================== 内部辅助 ====================
 
 // bindMutate 绑定并校验细粒度端点的完整请求体(含端点特有字段);失败时已写好 400 响应。
+// 绑定成功后先做「地址即引用」回填——九个细粒度端点(set-alias/add-service/
+// update-service/remove-service/set-avatar-uri/add-key/update-key/remove-key/
+// deactivate)共用此路径，一处插入即全部接线(请求无 keyType 字段，曲线由
+// 公钥长度消歧)。
 func (h *DidHandler) bindMutate(c *gin.Context, endpoint string, req didMutateProvider) bool {
 	if err := c.ShouldBindJSON(req); err != nil {
 		logParamError(c, endpoint, err)
@@ -879,8 +886,9 @@ func (h *DidHandler) bindMutate(c *gin.Context, endpoint string, req didMutatePr
 		return false
 	}
 	base := req.didBase()
+	fillFromConfiguredAccounts(c, accountRole{Addr: &base.Address, Priv: &base.PrivateKey, Pub: &base.PublicKey})
 	if strings.TrimSpace(base.PrivateKey) == "" {
-		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "privateKey is required", nil))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "privateKey is required"+configuredAccountHint, nil))
 		return false
 	}
 	if strings.TrimSpace(base.Address) == "" {

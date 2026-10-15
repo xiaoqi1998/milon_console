@@ -115,7 +115,7 @@ type sftFlowTransferOptions struct {
 // slotId 与创建参数互斥;分发依赖 slot(显式复用或本次创建)。
 func validateSftFlowRequest(req sftFlowRequest) error {
 	if strings.TrimSpace(req.OwnerPrivateKey) == "" {
-		return fmt.Errorf("ownerPrivateKey is required")
+		return fmt.Errorf("ownerPrivateKey is required" + configuredAccountHint)
 	}
 	if strings.TrimSpace(req.OwnerAddress) == "" {
 		return fmt.Errorf("ownerAddress is required(必填:32字节私钥在不同曲线下派生不同地址,请传账户生成时返回的地址,服务端按其自动匹配曲线)")
@@ -295,6 +295,9 @@ func (h *SftFlowHandler) SftFlow(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
+	// 地址即引用回填：owner 私钥缺省且地址命中配置账户时注入私钥/公钥
+	// （仅本请求同步消费，不跨 goroutine 持有账户）。
+	fillFromConfiguredAccounts(c, accountRole{Addr: &req.OwnerAddress, Priv: &req.OwnerPrivateKey, Pub: &req.OwnerPublicKey})
 	if err := validateSftFlowRequest(req); err != nil {
 		logParamError(c, "SftFlow", err)
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))

@@ -41,6 +41,23 @@ func newAccountsContractRouter(t *testing.T) *gin.Engine {
 	// Task 5：transfer_mil / faucet_claim 接线路由（路径与 main.go 一致）
 	api.POST("/tool/transfer-mil", h.TransferMil)
 	api.POST("/faucet/claim", NewFaucetHandler(nm).ClaimFaucet)
+	// Task 6：did×10 / sft-flow / vc-flow 接线路由（路径与 main.go 一致）
+	didH := NewDidHandler(nm)
+	didGroup := api.Group("/tool/did")
+	{
+		didGroup.POST("/create", didH.Create)
+		didGroup.POST("/set-alias", didH.SetAlias)
+		didGroup.POST("/add-service", didH.AddService)
+		didGroup.POST("/update-service", didH.UpdateService)
+		didGroup.POST("/remove-service", didH.RemoveService)
+		didGroup.POST("/set-avatar-uri", didH.SetAvatarUri)
+		didGroup.POST("/add-key", didH.AddKey)
+		didGroup.POST("/update-key", didH.UpdateKey)
+		didGroup.POST("/remove-key", didH.RemoveKey)
+		didGroup.POST("/deactivate", didH.Deactivate)
+	}
+	api.POST("/tool/sft-flow", NewSftFlowHandler(nm).SftFlow)
+	api.POST("/tool/vc-flow", NewVcFlowHandler(nm).VcFlow)
 	return r
 }
 
