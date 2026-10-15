@@ -5,7 +5,7 @@ type Network struct {
 	ChainId  uint64
 	RpcUrl   string
 	InxUrl   string
-	GrpcAddr string // 区块流 gRPC 地址,host:port,供 StreamBlocks / NewBlockStream 使用
+	GrpcAddr string // block stream gRPC address, host:port, used by StreamBlocks / NewBlockStream
 }
 
 var LocalNet = Network{

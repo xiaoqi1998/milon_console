@@ -172,7 +172,30 @@
       ],
       "kind": "struct",
       "name": "ConsensusValidatorIdentity",
-      "typeTag": 16798500351373647328
+      "typeTag": 10024551326690382556
+    },
+    {
+      "fields": [
+        {
+          "name": "registered",
+          "type": "bool"
+        },
+        {
+          "name": "due_timestamp_ms",
+          "type": "u64"
+        },
+        {
+          "name": "method",
+          "type": "bytes"
+        },
+        {
+          "name": "sponsor",
+          "type": "Address"
+        }
+      ],
+      "kind": "struct",
+      "name": "WakeRecord",
+      "typeTag": 14699626089141530756
     },
     {
       "kind": "builtin",
@@ -183,6 +206,11 @@
       "kind": "builtin",
       "name": "B256",
       "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
     },
     {
       "kind": "builtin",
@@ -198,11 +226,6 @@
       "kind": "builtin",
       "name": "u64",
       "typeTag": 5563585020063213298
-    },
-    {
-      "kind": "builtin",
-      "name": "bool",
-      "typeTag": 14785269867199075517
     }
   ],
   "resources": [
@@ -219,22 +242,32 @@
     {
       "name": "_ConsensusValidatorIdentity",
       "type": "ConsensusValidatorIdentity",
-      "typeTag": 16798500351373647328
+      "typeTag": 10024551326690382556
     },
     {
       "name": "_ConsensusValidatorByAccount",
       "type": "Address",
-      "typeTag": 7031394024774032867
+      "typeTag": 6478658475801454583
     },
     {
       "name": "_ConsensusValidatorByPubkey",
       "type": "Address",
-      "typeTag": 7031394024774032867
+      "typeTag": 6478658475801454583
     },
     {
       "name": "_ConsensusValidatorByBls",
       "type": "Address",
-      "typeTag": 7031394024774032867
+      "typeTag": 6478658475801454583
+    },
+    {
+      "name": "_AppWake",
+      "type": "WakeRecord",
+      "typeTag": 14699626089141530756
+    },
+    {
+      "name": "_WakeRegistry",
+      "type": "bytes",
+      "typeTag": 10405529814227927951
     }
   ],
   "constants": [
@@ -246,39 +279,44 @@
   ],
   "errors": [
     {
-      "code": 0,
+      "code": 96,
       "message": "Randomness action failed: {0}",
       "name": "RandomnessFailure"
     },
     {
-      "code": 1,
+      "code": 97,
       "message": "System staking action failed: {0}",
       "name": "StakingFailure"
     },
     {
-      "code": 2,
+      "code": 98,
       "message": "Epoch clock action failed: {0}",
       "name": "EpochClockFailure"
     },
     {
-      "code": 3,
+      "code": 99,
       "message": "ValidatorSet action failed: {0}",
       "name": "ValidatorSetFailure"
     },
     {
-      "code": 4,
+      "code": 100,
       "message": "Block seed is not initialized",
       "name": "BlockSeedNotInitialized"
     },
     {
-      "code": 5,
+      "code": 101,
       "message": "Block seed is already initialized",
       "name": "BlockSeedAlreadyInitialized"
     },
     {
-      "code": 6,
+      "code": 102,
       "message": "Invalid random range {0}..{1}",
       "name": "InvalidRandomRange"
+    },
+    {
+      "code": 103,
+      "message": "App wake rejected",
+      "name": "WakeRejected"
     }
   ]
 }

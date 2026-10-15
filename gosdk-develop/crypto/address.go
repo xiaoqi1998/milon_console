@@ -1,10 +1,12 @@
 package crypto
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/milon-labs/milon-go-sdk/postcard"
+	"math"
 	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -16,16 +18,57 @@ const AddressRawLen = 20
 // AddressHexLen hexadecimal literal length of a address
 const AddressHexLen = AddressRawLen * 2
 
-// NewAddressFromPublicKey derives a address from a public key
+// ContractAppID is the App ID reserved for future third-party contracts; the
+// whole address space whose first byte is 0xFF is reserved.
+const ContractAppID uint8 = 0xFF
+
+// NewAddressFromPublicKey derives an ordinary account address from a public key
+// and guarantees IsAppReserved() is false.
+//
+// KeylessDerived keys use the dedicated KeylessAddressDomainBytes domain. The
+// first candidate is the domain-separated Blake3 hash truncated to AddressRawLen
+// bytes; when a candidate hits the reserved space it is re-hashed with
+// PkAddressRetryDomainBytes, the original domain, the public key bytes and a
+// big-endian u64 counter starting from 1. Retrying never changes the private
+// key, mnemonic or public key.
 func NewAddressFromPublicKey(pk *PublicKey) (*Address, error) {
-	// Derive the BLAKE3 hash of the public key (32 bytes).
-	hash := Hash32(PkAddressDomainBytes, pk.Bytes)
+	domain := PkAddressDomainBytes
+	if pk.Variant == PublicKeyTypeKeylessDerived {
+		domain = KeylessAddressDomainBytes
+	}
+	keyBytes := pk.Bytes
 
-	// Take the first 20 bytes as the address.
-	var digest [AddressRawLen]byte
-	copy(digest[:], hash[:AddressRawLen])
+	address := firstAccountCandidate(func(counter uint64) *Address {
+		var hash [32]byte
+		if counter == 0 {
+			hash = Hash32(domain, keyBytes)
+		} else {
+			var counterBytes [8]byte
+			binary.BigEndian.PutUint64(counterBytes[:], counter)
+			hash = Hash32(PkAddressRetryDomainBytes, domain, keyBytes, counterBytes[:])
+		}
 
-	return &Address{Bytes: digest}, nil
+		var digest [AddressRawLen]byte
+		copy(digest[:], hash[:AddressRawLen])
+		return &Address{Bytes: digest}
+	})
+
+	return address, nil
+}
+
+// firstAccountCandidate returns the first candidate usable for an ordinary
+// account and never returns a reserved address; it panics when the counter is
+// exhausted.
+func firstAccountCandidate(candidate func(counter uint64) *Address) *Address {
+	for counter := uint64(0); ; counter++ {
+		address := candidate(counter)
+		if !address.IsAppReserved() {
+			return address
+		}
+		if counter == math.MaxUint64 {
+			panic("public key address retry counter exhausted")
+		}
+	}
 }
 
 // NewAddressFromBytes parses an address from a 20-byte slice
@@ -39,8 +82,39 @@ func NewAddressFromBytes(bytes []byte) (*Address, error) {
 	return &Address{Bytes: digest}, nil
 }
 
+// NewAddressFromAppSeed derives an App address from (appID, seed). This is a
+// runtime-internal derivation without a corresponding private key, not a client
+// API. Layout: [appID | seed u64 BE | Blake3(SeedAddressDomainBytes || appID || seed)[0..11]].
+func NewAddressFromAppSeed(appID uint8, seed uint64) *Address {
+	appIDBytes := [1]byte{appID}
+	var seedBytes [8]byte
+	binary.BigEndian.PutUint64(seedBytes[:], seed)
+
+	hash := Hash32(SeedAddressDomainBytes, appIDBytes[:], seedBytes[:])
+
+	var digest [AddressRawLen]byte
+	digest[0] = appID
+	copy(digest[1:9], seedBytes[:])
+	copy(digest[9:], hash[:11])
+	return &Address{Bytes: digest}
+}
+
+// NewAddressFromAppSeed32 derives a truncated-hash address from (appID, seed)
+// without embedding a recoverable seed; this derivation is not guaranteed to
+// be app reserved.
+func NewAddressFromAppSeed32(appID uint8, seed [32]byte) *Address {
+	appIDBytes := [1]byte{appID}
+	hash := Hash32(SeedAddress32DomainBytes, appIDBytes[:], seed[:])
+
+	var digest [AddressRawLen]byte
+	copy(digest[:], hash[:AddressRawLen])
+	return &Address{Bytes: digest}
+}
+
 // NewAddressFromRelaxed parses an address from an *Address, an Address,
-// a hex string (with or without 0x prefix), or a base58 string.
+// a hex string (with or without 0x prefix), or a base58 string. Hex-shaped
+// inputs try hex first and fall back to base58; other inputs try base58 first
+// and fall back to hex.
 func NewAddressFromRelaxed(addressRelaxed any) (*Address, error) {
 	switch v := addressRelaxed.(type) {
 	case *Address:
@@ -57,14 +131,33 @@ func NewAddressFromRelaxed(addressRelaxed any) (*Address, error) {
 		if len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X') {
 			hexBody = str[2:]
 		}
-		if len(hexBody) == AddressHexLen {
-			return newAddressFromHex(hexBody)
+
+		tryHexFirst := len(hexBody) == AddressHexLen && isHexString(hexBody)
+		if tryHexFirst {
+			if addr, err := newAddressFromHex(str); err == nil {
+				return addr, nil
+			}
+			return newAddressFromBase58(str)
 		}
 
-		return newAddressFromBase58(str)
+		if addr, err := newAddressFromBase58(str); err == nil {
+			return addr, nil
+		}
+		return newAddressFromHex(str)
 	default:
 		return nil, fmt.Errorf("unsupported address input type %T", addressRelaxed)
 	}
+}
+
+// isHexString reports whether s consists only of hexadecimal digits
+func isHexString(s string) bool {
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F') {
+			return false
+		}
+	}
+	return true
 }
 
 func newAddressFromHex(s string) (*Address, error) {
@@ -111,6 +204,32 @@ func (a *Address) ToHex() string {
 
 func (a *Address) ToBase58() string {
 	return base58.Encode(a.Bytes[:])
+}
+
+// IsAppReserved reports whether the address is forbidden for ordinary account
+// registration and external authentication: every address whose first byte is
+// 0xFF, plus any valid u64 seed address of any App, belongs to the reserved
+// space. This check does not grant App authorization and does not restrict
+// address parsing, receiving or balance queries.
+func (a Address) IsAppReserved() bool {
+	if a.Bytes[0] == ContractAppID {
+		return true
+	}
+	_, _, ok := a.AppSeed()
+	return ok
+}
+
+// AppSeed re-computes the u64 seed layout and returns (appID, seed, true) only
+// when the whole checksum matches. Public-key derived addresses always return
+// false; the 32-byte seed derivation does not encode this layout.
+func (a Address) AppSeed() (uint8, uint64, bool) {
+	appID := a.Bytes[0]
+	seed := binary.BigEndian.Uint64(a.Bytes[1:9])
+
+	if a == *NewAddressFromAppSeed(appID, seed) {
+		return appID, seed, true
+	}
+	return 0, 0, false
 }
 
 func (a *Address) MarshalJSON() ([]byte, error) {

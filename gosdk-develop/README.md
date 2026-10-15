@@ -334,7 +334,7 @@ Provider 基于 IDL JSON 实现合约方法的序列化与反序列化，支持�
 
 > `opts...` 为 `RequestOption`（类型安全的函数式选项），详见 [请求选项](#请求选项requestoption--waitoption)。
 >
-> 区块流配套：`milon.ResolveResourcePaths(client, rsHashSet)` 批量解析资源路径（PrintFramedHistory 展示 access path 需要）、`milon.PrintFramedHistory(client, idx, fh, pathMap)` 打印交易帧完整明细（指令/资源 before-after/事件）。
+> 区块流配套：`milon.ResolveResourcePaths(client, rsHashSet)` 批量解析资源路径（PrintFramedHistory 展示 access path 需要）、`milon.PrintFramedHistory(client, idx, fh, pathMap, logger...)` 打印交易帧完整明细（指令/资源 before-after/事件）；`logger` 为可选变参（`milon.FramedHistoryLogger` 接口，`*log.Logger` 直接满足），不传时走 `fmt.Println` 输出到 stdout。
 
 ## 高级用法
 

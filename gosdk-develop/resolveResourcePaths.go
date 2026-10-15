@@ -6,14 +6,14 @@ import (
 	"github.com/milon-labs/milon-go-sdk/api"
 )
 
-// resolvePathBatchSize 单次 BatchGetResourcePathByHash 的最大 hash 数。
-// SDK 走 JSON RPC 且把请求体编码为十进制字节数组(相对二进制膨胀约 4 倍),
-// 大块资源数可上千,不分片会有请求体过大/超时的风险;任何一批失败都返回 error,
-// 由上层断流重试(绝不静默跳过,保证整块路径完整)。
+// resolvePathBatchSize is the max number of hashes per BatchGetResourcePathByHash call.
+// The SDK uses JSON RPC and encodes the request body as a decimal byte array (~4x larger than binary);
+// a big block can have thousands of resources, so without sharding the body risks being too large/timing out.
+// Any failed batch returns an error for the upper layer to break the stream and retry (never silently skipped, ensuring complete paths for the whole block).
 const resolvePathBatchSize = 500
 
-// ResolveResourcePaths 按块批量查询资源路径,分批 RPC 拿回本块所有资源的 path;
-// RPC 失败返回 error,调用方中断本块处理,避免整块路径缺失被静默跳过。
+// ResolveResourcePaths queries resource paths per block in batches, fetching the path of every resource in the block via batched RPC;
+// on RPC failure it returns an error so the caller aborts processing the block, avoiding a whole block's missing paths being silently skipped.
 func ResolveResourcePaths(client *Client, rsHashSet map[api.RsHash]struct{}) (map[api.RsHash]string, error) {
 	pathMap := make(map[api.RsHash]string, len(rsHashSet))
 	if len(rsHashSet) == 0 {

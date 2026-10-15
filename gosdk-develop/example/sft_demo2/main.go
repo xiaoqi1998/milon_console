@@ -15,31 +15,31 @@ func main() {
 	example(milon.DevNet)
 }
 
-// example 演示 SFT 简单场景：mint 一次后，同一个 token_id 由三个人同时持有。
+// example demonstrates a simple SFT scenario: after a single mint, the same token_id is held by three people at once.
 //
-// 说明：SFT 的份额按 (token_id, owner) 独立记账，transfer 只搬运份额而不派生新 TOKEN，
-// 因此“同 1 个 token_id 由三人持有”是链上原生支持的状态，不再需要靠 split 拆成多个 TOKEN。
-// （若业务上需要各自独立的 token_id，才使用 split。）
+// Note: SFT shares are accounted independently by (token_id, owner), and transfer only moves shares without deriving a new TOKEN,
+// so "one token_id held by three people" is a natively supported on-chain state, no longer needing split to break it into multiple TOKENs.
+// (Use split only when the business requires separate token_ids.)
 //
-// 流程：
-//  1. ClaimFaucet(owner，付 gas 的账户；sft 仅签指令，无需 MIL)
+// Flow:
+//  1. ClaimFaucet(owner, the account paying gas; sft only signs instructions, no MIL needed)
 //  2. CreateSft(sft sign, owner pays gas)
 //  3. CreateSlot(owner sign, is_transferable=true)
-//  4. Mint 100 to owner              -> token1，owner 持有 100
-//  5. Transfer 40 to alice           -> token1：owner 60 / alice 40
-//  6. Transfer 30 to bob             -> token1：owner 30 / alice 40 / bob 30
-//  7. Transfer 30 to carol           -> token1：owner 0 / alice 40 / bob 30 / carol 30
+//  4. Mint 100 to owner              -> token1, owner holds 100
+//  5. Transfer 40 to alice           -> token1: owner 60 / alice 40
+//  6. Transfer 30 to bob             -> token1: owner 30 / alice 40 / bob 30
+//  7. Transfer 30 to carol           -> token1: owner 0 / alice 40 / bob 30 / carol 30
 //
-// 最终 alice / bob / carol 三人共持同一个 token_id（同 slot、同 metadata）。
+// Finally alice / bob / carol co-hold the same token_id (same slot, same metadata).
 func example(networkConfig milon.Network) {
 	client := milon.NewClient(networkConfig)
 
-	// 账户角色：
-	//   sft   : SFT 资源账户，仅作为 create_sft 的指令签名者（gas 由 owner 代付，无需领水）
-	//   owner : SFT owner，同时是默认的 mint authority，初始份额持有人
-	//   alice : 第一份接收者（transfer）
-	//   bob   : 第二份接收者（transfer）
-	//   carol : 第三份接收者（transfer）
+	// Account roles:
+	//   sft   : SFT resource account, only the instruction signer for create_sft (gas paid by owner, no faucet needed)
+	//   owner : SFT owner, also the default mint authority and initial share holder
+	//   alice : first-share recipient (transfer)
+	//   bob   : second-share recipient (transfer)
+	//   carol : third-share recipient (transfer)
 	sftSk, sftPk, sft := newAccount()
 	ownerSk, ownerPk, owner := newAccount()
 	_, _, alice := newAccount()
@@ -52,12 +52,12 @@ func example(networkConfig milon.Network) {
 	fmt.Printf("bob = %v \n", bob)
 	fmt.Printf("carol = %v \n\n", carol)
 
-	// 份额查询用的持有人清单。
+	// Holder list for share queries.
 	holders := []holder{{"owner", owner}, {"alice", alice}, {"bob", bob}, {"carol", carol}}
 
 	fmt.Printf("\n================ 1.ClaimFaucet ================\n")
-	// 只有发起交易（付 gas）的 owner 需要 MIL；sft 仅签指令且 gas 由 owner 代付，
-	// alice / bob / carol 仅作为接收方，均无需 faucet。
+	// Only owner, which initiates transactions (pays gas), needs MIL; sft only signs instructions with gas paid by owner,
+	// and alice / bob / carol are just recipients, so none of them need the faucet.
 	if err := client.ClaimFaucet(ownerSk, owner, lib.PubKeySignatureMode{PublicKey: *ownerPk}); err != nil {
 		panic("failed to ClaimFaucet owner:" + err.Error())
 	}
@@ -68,10 +68,10 @@ func example(networkConfig milon.Network) {
 	fmt.Printf("owner MIL: %d\n", ownerBalance)
 
 	fmt.Printf("\n================ 2.CreateSft(sft sign, owner pays gas) ================\n")
-	// create_sft 由 sft 资源账户签名指令（owner 指定为 owner 账户），gas 由 owner 代付：
-	// sft 仅签 ix0，owner 作为 payer 签 bit63(gas)。
-	// metadata 是结构体：name / symbol 必填，cover_url / metadata 为 URI，attribute 可选；
-	// royalty_bps 是二级市场版税万分比，版税接收人初始为 owner。
+	// create_sft is signed by the sft resource account (owner set to the owner account), gas paid by owner:
+	// sft signs only ix0, owner signs bit63 (gas) as payer.
+	// metadata is a struct: name / symbol are required, cover_url / metadata are URIs, attribute is optional;
+	// royalty_bps is the secondary-market royalty in basis points, and the royalty recipient is initially owner.
 	wire, err := gen.Sftoken.CreateSft.Args(sft, owner, gen.SftokenMetadata{
 		Name:      "Three Holders Demo",
 		Symbol:    "THD",
@@ -93,8 +93,8 @@ func example(networkConfig milon.Network) {
 	submitAndWait(client, tx)
 
 	fmt.Printf("\n================ 3.CreateSlot(owner sign, is_transferable=true) ================\n")
-	// slot 只能由 SFT owner 创建；份额要能在持有人之间流转，is_transferable 必须为 true。
-	// SlotData.metadata 是可选覆盖项，未提供的字段动态继承 SFT metadata。
+	// a slot can only be created by the SFT owner; for shares to move between holders, is_transferable must be true.
+	// SlotData.metadata is an optional override; fields not provided dynamically inherit the SFT metadata.
 	wire, err = gen.Sftoken.CreateSlot.Args(owner, sft, gen.SftokenSlotData{
 		Metadata: &gen.SftokenMetadataOverride{
 			Name:      strPtr("VIP Card"),
@@ -111,14 +111,14 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	// slot_id 由链上全局递增分配，从回执事件中提取，避免硬编码。
+	// slot_id is assigned by a global on-chain increment; extract it from the receipt event to avoid hardcoding.
 	slotID := receiptEventU64(client, submitAndWait(client, tx), "SlotCreatedEvent", "slot_id")
 	fmt.Printf("slot created: slot_id = %d\n", slotID)
 	requireU64(slotID, 1, "slot_id")
 
 	fmt.Printf("\n================ 4.Mint 100 to owner(owner sign) ================\n")
-	// mint 需要 mint authority 签名（未转移时即 SFT owner）；amount 必须大于 0。
-	// 本次只 mint 这一份 TOKEN，后面三人共持的都是它。
+	// mint requires the mint authority's signature (the SFT owner when not transferred); amount must be greater than 0.
+	// Only this one TOKEN is minted here; the three people co-hold it afterwards.
 	wire, err = gen.Sftoken.Mint.Args(owner, sft, slotID, owner, 100, &gen.SftokenMetadataOverride{
 		Name:      strPtr("Gold Card #1"),
 		Attribute: strPtr("grade=A"),
@@ -140,8 +140,8 @@ func example(networkConfig milon.Network) {
 	displayToken(client, sft, token1, holders...)
 
 	fmt.Printf("\n================ 5.Transfer 40 of token %d to alice(owner sign) ================\n", token1)
-	// transfer 由份额持有人签名，把份额记到接收方名下：token_id 不变，
-	// 于是同一个 TOKEN 出现多个持有人。要求 slot is_transferable=true。
+	// transfer is signed by the share holder and records shares under the recipient: token_id is unchanged,
+	// so the same TOKEN ends up with multiple holders. Requires slot is_transferable=true.
 	wire, err = gen.Sftoken.Transfer.Args(owner, sft, token1, alice, 40).Encode()
 	if err != nil {
 		panic("failed to encode Transfer instruction:" + err.Error())
@@ -154,7 +154,7 @@ func example(networkConfig milon.Network) {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
 	txHistory := submitAndWait(client, tx)
-	// 份额转移不派生新 TOKEN：事件里 to_token_id 与 from_token_id 相同。
+	// A share transfer does not derive a new TOKEN: in the event, to_token_id equals from_token_id.
 	requireU64(receiptEventU64(client, txHistory, "TokenTransferredEvent", "to_token_id"), token1, "transfer to_token_id")
 	fmt.Printf("transfer: token %d -> owner 60, alice 40\n", token1)
 	requireU64(balanceOf(client, sft, token1, owner), 60, "owner balance after transfer to alice")
@@ -180,7 +180,7 @@ func example(networkConfig milon.Network) {
 	displayToken(client, sft, token1, holders...)
 
 	fmt.Printf("\n================ 7.Transfer 30 of token %d to carol(owner sign) ================\n", token1)
-	// owner 把剩余份额全部转出后，它在 token1 上的份额记录被删除（balance_of 返回 0）。
+	// After owner transfers out all remaining shares, its share record on token1 is deleted (balance_of returns 0).
 	wire, err = gen.Sftoken.Transfer.Args(owner, sft, token1, carol, 30).Encode()
 	if err != nil {
 		panic("failed to encode Transfer instruction:" + err.Error())
@@ -205,23 +205,23 @@ func example(networkConfig milon.Network) {
 	slotMeta := viewValue(client, gen.Sftoken.SlotMetadata.Args(sft, slotID), gen.Sftoken.SlotMetadata.DecodeView)
 	tokenMeta := viewValue(client, gen.Sftoken.Token.Args(sft, token1), gen.Sftoken.Token.DecodeView)
 	fmt.Printf("slot %d metadata: name=%q attribute=%s\n", slotID, slotMeta.Name, optStr(slotMeta.Attribute))
-	fmt.Printf("token %d metadata: name=%q attribute=%s (继承 slot，覆盖项优先生效)\n",
+	fmt.Printf("token %d metadata: name=%q attribute=%s (inherits slot, overrides take precedence)\n",
 		token1, tokenMeta.Name, optStr(tokenMeta.Attribute))
 	displayToken(client, sft, token1, holders...)
 }
 
 // **************************************** local helpers ****************************************//
 
-// holder 给份额查询附带可读名字。
+// holder attaches a readable name to a share query.
 type holder struct {
 	name string
 	addr *crypto.Address
 }
 
-// strPtr 构造 IDL option<String> 字段需要的字符串指针。
+// strPtr builds the string pointer required by an IDL option<String> field.
 func strPtr(s string) *string { return &s }
 
-// optStr 打印可选字符串：nil 显示为 <none>，便于区分“未设置”与空串。
+// optStr prints an optional string: nil is shown as <none>, to distinguish "unset" from an empty string.
 func optStr(v *string) string {
 	if v == nil {
 		return "<none>"
@@ -229,14 +229,14 @@ func optStr(v *string) string {
 	return *v
 }
 
-// requireU64 校验链上返回值符合预期，不符合直接 panic。
+// requireU64 checks that an on-chain return value matches the expectation, panicking directly if not.
 func requireU64(got, want uint64, what string) {
 	if got != want {
 		panic(fmt.Sprintf("unexpected %s: got %d, want %d", what, got, want))
 	}
 }
 
-// newAccount 生成一个新账户：由 Ed25519 公钥派生地址的 classical 密钥对。
+// newAccount generates a new account: a classical key pair whose address is derived from the Ed25519 public key.
 func newAccount() (*crypto.ClassicalSecretKey, *crypto.PublicKey, *crypto.Address) {
 	sk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	pk := sk.Ed25519Public()
@@ -247,7 +247,7 @@ func newAccount() (*crypto.ClassicalSecretKey, *crypto.PublicKey, *crypto.Addres
 	return sk, pk, addr
 }
 
-// submitAndWait 提交交易、等待上链成功，并返回回执全文供事件提取。
+// submitAndWait submits a transaction, waits for it to be committed on-chain, and returns the full receipt for event extraction.
 func submitAndWait(client *milon.Client, tx *lib.Transaction) *api.TxHistory {
 	if err := client.SubmitTx(tx); err != nil {
 		panic("failed to submit transaction:" + err.Error())
@@ -262,12 +262,12 @@ func submitAndWait(client *milon.Client, tx *lib.Transaction) *api.TxHistory {
 	return getTxByHashResult.BodyTxHistory
 }
 
-// encoder 抽象 gen 指令参数对象的 Encode 方法。
+// encoder abstracts the Encode method of a gen instruction-args object.
 type encoder interface {
 	Encode() (api.PackedInstruction, error)
 }
 
-// viewValue 调用 view 指令并用对应的 DecodeView 解码返回值。
+// viewValue calls a view instruction and decodes the return value with the corresponding DecodeView.
 func viewValue[T any](client *milon.Client, args encoder, decode func([]byte) (T, error)) T {
 	wire, err := args.Encode()
 	if err != nil {
@@ -284,12 +284,12 @@ func viewValue[T any](client *milon.Client, args encoder, decode func([]byte) (T
 	return value
 }
 
-// balanceOf 查询某个地址在指定 TOKEN 上的份额。
+// balanceOf queries an address's shares on a given TOKEN.
 func balanceOf(client *milon.Client, sft *crypto.Address, tokenID uint64, owner *crypto.Address) uint64 {
 	return viewValue(client, gen.Sftoken.BalanceOf.Args(sft, tokenID, owner), gen.Sftoken.BalanceOf.DecodeView)
 }
 
-// sftokenEventTypeTag 从已绑定的 sftoken IDL 中查询事件 typeTag（避免硬编码）。
+// sftokenEventTypeTag looks up an event's typeTag from the bound sftoken IDL (avoiding hardcoding).
 func sftokenEventTypeTag(eventName string) uint64 {
 	for typeTag, event := range gen.Sftoken.Pd.EventByTypeTag {
 		if event.Name == eventName {
@@ -299,7 +299,7 @@ func sftokenEventTypeTag(eventName string) uint64 {
 	panic("sftoken event not found in IDL: " + eventName)
 }
 
-// receiptEventU64 从交易回执中提取指定事件的 u64 字段（如 slot_id / token_id / to_token_id）。
+// receiptEventU64 extracts a u64 field (e.g. slot_id / token_id / to_token_id) of the given event from the transaction receipt.
 func receiptEventU64(client *milon.Client, txHistory *api.TxHistory, eventName, fieldName string) uint64 {
 	typeTag := sftokenEventTypeTag(eventName)
 	for _, event := range txHistory.Receipt.Events {
@@ -323,12 +323,12 @@ func receiptEventU64(client *milon.Client, txHistory *api.TxHistory, eventName, 
 	panic("event " + eventName + " not found in receipt")
 }
 
-// displayToken 打印 TOKEN 的链上最新状态：继承解析后的元数据，以及每个持有人的份额与冻结状态。
+// displayToken prints a TOKEN's latest on-chain state: the inheritance-resolved metadata, plus each holder's shares and freeze status.
 func displayToken(client *milon.Client, sft *crypto.Address, tokenID uint64, holders ...holder) {
 	slotID := viewValue(client, gen.Sftoken.SlotOf.Args(sft, tokenID), gen.Sftoken.SlotOf.DecodeView)
 	meta := viewValue(client, gen.Sftoken.Token.Args(sft, tokenID), gen.Sftoken.Token.DecodeView)
-	fmt.Printf("  token_id=%d slot_id=%d name=%q symbol=%q cover_url=%q attribute=%s\n",
-		tokenID, slotID, meta.Name, meta.Symbol, meta.CoverUrl, optStr(meta.Attribute))
+	fmt.Printf("  token_id=%d slot_id=%d name=%q symbol=%q cover_url=%q attribute=%s\n", tokenID, slotID, meta.Name, meta.Symbol, meta.CoverUrl, optStr(meta.Attribute))
+
 	for _, h := range holders {
 		balance := balanceOf(client, sft, tokenID, h.addr)
 		frozen := viewValue(client, gen.Sftoken.FrozenOf.Args(sft, tokenID, h.addr), gen.Sftoken.FrozenOf.DecodeView)

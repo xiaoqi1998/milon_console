@@ -189,7 +189,30 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "ConsensusValidatorIdentity",
-				TypeTag: 16798500351373647328,
+				TypeTag: 10024551326690382556,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "registered",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "due_timestamp_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "method",
+						Type: "bytes",
+					},
+					provider.StructField{
+						Name: "sponsor",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "WakeRecord",
+				TypeTag: 14699626089141530756,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -200,6 +223,11 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "B256",
 				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "bool",
+				TypeTag: 14785269867199075517,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -216,11 +244,6 @@ provider.IDL{
 				Name: "u64",
 				TypeTag: 5563585020063213298,
 			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "bool",
-				TypeTag: 14785269867199075517,
-			},
 		},
 		Resources: []provider.Resource{
 			provider.Resource{
@@ -236,58 +259,74 @@ provider.IDL{
 			provider.Resource{
 				Name: "_ConsensusValidatorIdentity",
 				Type: "ConsensusValidatorIdentity",
-				TypeTag: 16798500351373647328,
+				TypeTag: 10024551326690382556,
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByAccount",
 				Type: "Address",
-				TypeTag: 7031394024774032867,
+				TypeTag: 6478658475801454583,
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByPubkey",
 				Type: "Address",
-				TypeTag: 7031394024774032867,
+				TypeTag: 6478658475801454583,
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByBls",
 				Type: "Address",
-				TypeTag: 7031394024774032867,
+				TypeTag: 6478658475801454583,
+			},
+			provider.Resource{
+				Name: "_AppWake",
+				Type: "WakeRecord",
+				TypeTag: 14699626089141530756,
+			},
+			provider.Resource{
+				Name: "_WakeRegistry",
+				Type: "bytes",
+				TypeTag: 10405529814227927951,
 			},
 		},
 		Errors: []provider.ErrorDef{
 			provider.ErrorDef{
+				Code: 96,
 				Message: "Randomness action failed: {0}",
 				Name: "RandomnessFailure",
 			},
 			provider.ErrorDef{
-				Code: 1,
+				Code: 97,
 				Message: "System staking action failed: {0}",
 				Name: "StakingFailure",
 			},
 			provider.ErrorDef{
-				Code: 2,
+				Code: 98,
 				Message: "Epoch clock action failed: {0}",
 				Name: "EpochClockFailure",
 			},
 			provider.ErrorDef{
-				Code: 3,
+				Code: 99,
 				Message: "ValidatorSet action failed: {0}",
 				Name: "ValidatorSetFailure",
 			},
 			provider.ErrorDef{
-				Code: 4,
+				Code: 100,
 				Message: "Block seed is not initialized",
 				Name: "BlockSeedNotInitialized",
 			},
 			provider.ErrorDef{
-				Code: 5,
+				Code: 101,
 				Message: "Block seed is already initialized",
 				Name: "BlockSeedAlreadyInitialized",
 			},
 			provider.ErrorDef{
-				Code: 6,
+				Code: 102,
 				Message: "Invalid random range {0}..{1}",
 				Name: "InvalidRandomRange",
+			},
+			provider.ErrorDef{
+				Code: 103,
+				Message: "App wake rejected",
+				Name: "WakeRejected",
 			},
 		},
 		Constants: []provider.Constant{
@@ -498,6 +537,13 @@ provider.IDL{
 				Name: "VoteInit",
 			},
 			provider.Instruction{
+				Args: nil,
+				Discriminator: 37954,
+				Handler: "sweep_expired_votes",
+				Kind: "entry",
+				Name: "SweepExpiredVotes",
+			},
+			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
 						Name: "owner",
@@ -633,7 +679,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "Account",
-				TypeTag: 17390915333023917609,
+				TypeTag: 4728916202331225981,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -648,7 +694,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "AccountSigner",
-				TypeTag: 3011419475387808271,
+				TypeTag: 18411492065370272939,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -659,7 +705,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "ResolvePolicy",
-				TypeTag: 11593087574756389960,
+				TypeTag: 15157821980119277780,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -674,7 +720,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "VoteProposal",
-				TypeTag: 18092943681097927401,
+				TypeTag: 13591436575871712325,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -693,7 +739,37 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "VoteMeta",
-				TypeTag: 2370275984328722986,
+				TypeTag: 17310772253093986646,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "bitmap",
+						Type: "Bitmap64",
+					},
+					provider.StructField{
+						Name: "sweep_expires_at_ms",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "VoteOccupancy",
+				TypeTag: 3131795771474447668,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "expires_at_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "owner",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "VoteSweepOwner",
+				TypeTag: 16828239814514078564,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -745,27 +821,37 @@ provider.IDL{
 			provider.Resource{
 				Name: "_Account",
 				Type: "Account",
-				TypeTag: 5121685491907179737,
+				TypeTag: 8001620250894669925,
 			},
 			provider.Resource{
 				Name: "_AccountSigner",
 				Type: "AccountSigner",
-				TypeTag: 862513842932132671,
+				TypeTag: 7240099799980548627,
 			},
 			provider.Resource{
 				Name: "_VoteProgress",
 				Type: "Bitmap64",
-				TypeTag: 14664585694504875734,
+				TypeTag: 8890526009784221754,
 			},
 			provider.Resource{
 				Name: "_VoteOccupancy",
-				Type: "Bitmap64",
-				TypeTag: 14664585694504875734,
+				Type: "VoteOccupancy",
+				TypeTag: 3131795771474447668,
 			},
 			provider.Resource{
 				Name: "_VoteSlot",
 				Type: "VoteMeta",
-				TypeTag: 2370275984328722986,
+				TypeTag: 17310772253093986646,
+			},
+			provider.Resource{
+				Name: "_VoteSweepShard",
+				Type: "vec<VoteSweepOwner>",
+				TypeTag: 5617274569088890347,
+			},
+			provider.Resource{
+				Name: "_VoteSweepShards",
+				Type: "bytes",
+				TypeTag: 10405529814227927951,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -861,63 +947,73 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 274,
-				Message: "Address not signed in current transaction: {0:?}",
-				Name: "AddressNotSignatured",
-			},
-			provider.ErrorDef{
-				Code: 275,
 				Message: "Account is not a multisig account",
 				Name: "AccountNotMultisig",
 			},
 			provider.ErrorDef{
-				Code: 276,
+				Code: 275,
 				Message: "expires_at_ms must be greater than tx stamp",
 				Name: "ExpiresAtInvalid",
 			},
 			provider.ErrorDef{
-				Code: 277,
+				Code: 276,
 				Message: "Vote intent expired",
 				Name: "VoteExpired",
 			},
 			provider.ErrorDef{
-				Code: 278,
+				Code: 277,
 				Message: "Vote not ready for replay",
 				Name: "VoteNotReady",
 			},
 			provider.ErrorDef{
-				Code: 279,
+				Code: 278,
 				Message: "Vote expires_at_ms does not match registered intent",
 				Name: "VoteExpiresMismatch",
 			},
 			provider.ErrorDef{
-				Code: 280,
+				Code: 279,
 				Message: "Vote active intent index full (max 8)",
 				Name: "VoteIndexFull",
 			},
 			provider.ErrorDef{
-				Code: 281,
+				Code: 280,
 				Message: "Vote TTL exceeds 24 hours",
 				Name: "VoteTtlExceeded",
 			},
 			provider.ErrorDef{
-				Code: 282,
+				Code: 281,
 				Message: "Vote proposal does not match intent_hash",
 				Name: "VoteProposalMismatch",
 			},
 			provider.ErrorDef{
-				Code: 283,
+				Code: 282,
 				Message: "Vote proposal wire exceeds size limit",
 				Name: "VoteProposalTooLarge",
 			},
 			provider.ErrorDef{
-				Code: 284,
+				Code: 283,
 				Message: "Vote proposal wire is invalid",
 				Name: "VoteProposalInvalid",
 			},
 			provider.ErrorDef{
-				Code: 285,
+				Code: 284,
 				Message: "Account {0:?} exists; pubkey mode not allowed",
 				Name: "PubkeyModeForbidden",
+			},
+			provider.ErrorDef{
+				Code: 285,
+				Message: "Vote sweep fee balance insufficient",
+				Name: "VoteSweepFeeInsufficient",
+			},
+			provider.ErrorDef{
+				Code: 286,
+				Message: "Vote wake registration rejected",
+				Name: "VoteWakeRejected",
+			},
+			provider.ErrorDef{
+				Code: 287,
+				Message: "App-reserved address {0:?} cannot register or authenticate an account",
+				Name: "ReservedAppAddress",
 			},
 		},
 		Constants: []provider.Constant{
@@ -940,6 +1036,16 @@ provider.IDL{
 				Name: "MAX_VOTE_TTL_MS",
 				Type: "u64",
 				Value: "24 * 3_600_000",
+			},
+			provider.Constant{
+				Name: "VOTE_SWEEP_FEE",
+				Type: "u64",
+				Value: 100000,
+			},
+			provider.Constant{
+				Name: "VOTE_SWEEP_SPONSOR_SEED",
+				Type: "u64",
+				Value: 1,
 			},
 			provider.Constant{
 				Name: "MAX_VOTE_PROPOSAL_BYTES",
@@ -1664,6 +1770,118 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "creator",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "token",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "total_amount",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "claim_count",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "rules",
+						Role: "input",
+						Type: "GiftRules",
+					},
+				},
+				Discriminator: 15225,
+				Handler: "create_equal_gift",
+				Kind: "entry",
+				Name: "CreateEqualGift",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "creator",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "token",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "total_amount",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "claim_count",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "rules",
+						Role: "input",
+						Type: "GiftRules",
+					},
+				},
+				Discriminator: 4265,
+				Handler: "create_lucky_gift",
+				Kind: "entry",
+				Name: "CreateLuckyGift",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "claimant",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "gift_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 5582,
+				Handler: "claim_gift",
+				Kind: "entry",
+				Name: "ClaimGift",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "gift_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 44430,
+				Handler: "refund_gift",
+				Kind: "entry",
+				Name: "RefundGift",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "gift_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 27946,
+				Handler: "run_gift_cleanup",
+				Kind: "entry",
+				Name: "RunGiftCleanup",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "token",
 						Role: "input",
 						Type: "Address",
@@ -1693,6 +1911,59 @@ provider.IDL{
 					Type: "u64",
 				},
 			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "gift_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 11780,
+				Handler: "gift_info",
+				Kind: "view",
+				Name: "GiftInfo",
+				Returns: provider.ReturnValue{
+					Type: "GiftState",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "gift_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 57835,
+				Handler: "gift_settlement",
+				Kind: "view",
+				Name: "GiftSettlement",
+				Returns: provider.ReturnValue{
+					Type: "GiftSettlement",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "gift_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "claimant",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 8017,
+				Handler: "can_claim_gift",
+				Kind: "view",
+				Name: "CanClaimGift",
+				Returns: provider.ReturnValue{
+					Type: "bool",
+				},
+			},
 		},
 		Types: []provider.IDLType{
 			provider.IDLType{
@@ -1720,7 +1991,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "Metadata",
-				TypeTag: 13005725662941815531,
+				TypeTag: 12540935430733747277,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -1737,7 +2008,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "ComplianceMode",
-				TypeTag: 3455626085043900630,
+				TypeTag: 11826989465527443636,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -1752,7 +2023,159 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "Compliance",
-				TypeTag: 1113559040641697305,
+				TypeTag: 11316838900449406443,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Equal",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Lucky",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "GiftAllocation",
+				TypeTag: 12211908797870093821,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Credential",
+						Kind: "struct",
+						Fields: []provider.StructField{
+							provider.StructField{
+								Name: "credential_id",
+								Type: "String",
+							},
+						},
+					},
+					provider.EnumVariant{
+						Name: "Recipients",
+						Kind: "struct",
+						Fields: []provider.StructField{
+							provider.StructField{
+								Name: "addresses",
+								Type: "vec<Address>",
+							},
+						},
+					},
+				},
+				Kind: "enum",
+				Name: "GiftEligibility",
+				TypeTag: 8046041254037002544,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "credential_id",
+						Type: "option<String>",
+					},
+					provider.StructField{
+						Name: "recipients",
+						Type: "vec<Address>",
+					},
+					provider.StructField{
+						Name: "expires_at_ms",
+						Type: "option<u64>",
+					},
+				},
+				Kind: "struct",
+				Name: "GiftRules",
+				TypeTag: 15766145922554532178,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "creator",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "gift_id",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "token",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "total_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "remaining_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "claim_count",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "claimed_count",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "expires_at_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "allocation",
+						Type: "GiftAllocation",
+					},
+					provider.StructField{
+						Name: "eligibility",
+						Type: "GiftEligibility",
+					},
+					provider.StructField{
+						Name: "claimed_recipients",
+						Type: "u32",
+					},
+				},
+				Kind: "struct",
+				Name: "GiftState",
+				TypeTag: 8047344484983905260,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "creator",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "status",
+						Type: "u8",
+					},
+					provider.StructField{
+						Name: "claim_records",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "cleanup_cursor",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "GiftSettlement",
+				TypeTag: 373282345846871664,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "head",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "tail",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "GiftCleanupQueueState",
+				TypeTag: 5496675755488506181,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -1766,6 +2189,16 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "u64",
 				TypeTag: 5563585020063213298,
 			},
@@ -1774,22 +2207,27 @@ provider.IDL{
 				Name: "u8",
 				TypeTag: 631772817358541784,
 			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
 		},
 		Resources: []provider.Resource{
 			provider.Resource{
 				Name: "_Owner",
 				Type: "Address",
-				TypeTag: 10794467625820907094,
+				TypeTag: 8792131286149488520,
 			},
 			provider.Resource{
 				Name: "_Freezer",
 				Type: "Address",
-				TypeTag: 10794467625820907094,
+				TypeTag: 8792131286149488520,
 			},
 			provider.Resource{
 				Name: "_Metadata",
 				Type: "Metadata",
-				TypeTag: 13005725662941815531,
+				TypeTag: 12540935430733747277,
 			},
 			provider.Resource{
 				Name: "_TotalSupply",
@@ -1819,15 +2257,76 @@ provider.IDL{
 			provider.Resource{
 				Name: "_Compliance",
 				Type: "Compliance",
-				TypeTag: 2365014396550645377,
+				TypeTag: 10948379151966397787,
 			},
 			provider.Resource{
 				Name: "_FaucetLastClaim",
 				Type: "u64",
 				TypeTag: 5563585020063213298,
 			},
+			provider.Resource{
+				Name: "_Gift",
+				Type: "GiftState",
+				TypeTag: 8047344484983905260,
+			},
+			provider.Resource{
+				Name: "_GiftUsed",
+				Type: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.Resource{
+				Name: "_GiftClaimed",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_GiftClaimIndex",
+				Type: "Address",
+				TypeTag: 12935543434248877639,
+			},
+			provider.Resource{
+				Name: "_GiftSettlement",
+				Type: "GiftSettlement",
+				TypeTag: 373282345846871664,
+			},
+			provider.Resource{
+				Name: "_GiftCleanupQueue",
+				Type: "GiftCleanupQueueState",
+				TypeTag: 5496675755488506181,
+			},
+			provider.Resource{
+				Name: "_GiftCleanupNext",
+				Type: "Address",
+				TypeTag: 12935543434248877639,
+			},
+			provider.Resource{
+				Name: "_GiftClaimApp",
+				Type: "u8",
+				TypeTag: 631772817358541784,
+			},
 		},
 		Events: []provider.Event{
+			provider.Event{
+				Name: "GiftCreated",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "gift_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "creator",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "token",
+						Type: "Address",
+						Indexed: true,
+					},
+				},
+				TypeTag: 5552105765182429402,
+			},
 			provider.Event{
 				Name: "Mint",
 				Fields: []provider.EventField{
@@ -1846,7 +2345,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 2296236597943485210,
+				TypeTag: 2074136101726433888,
 			},
 			provider.Event{
 				Name: "Burn",
@@ -1866,7 +2365,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 1494582981033727655,
+				TypeTag: 17989347192277165893,
 			},
 			provider.Event{
 				Name: "Transfer",
@@ -1891,7 +2390,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 10783566858265554069,
+				TypeTag: 8500236251342700043,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -1932,33 +2431,93 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 519,
-				Message: "地址未参与当前交易签名: {0:?}",
-				Name: "AddressNotSignatured",
-			},
-			provider.ErrorDef{
-				Code: 520,
 				Message: "Invalid parameters: {0}",
 				Name: "InvalidParameters",
 			},
 			provider.ErrorDef{
-				Code: 521,
+				Code: 520,
 				Message: "VC `{3}` from issuer {2:?} required for token recipient (token: {0:?}, recipient: {1:?})",
 				Name: "VcRequired",
 			},
 			provider.ErrorDef{
-				Code: 522,
+				Code: 521,
 				Message: "VC policy required for token recipient (token: {0:?}, recipient: {1:?})",
 				Name: "VcPolicyRequired",
 			},
 			provider.ErrorDef{
-				Code: 523,
+				Code: 522,
 				Message: "faucet is disabled on this chain",
 				Name: "FaucetDisabled",
 			},
 			provider.ErrorDef{
-				Code: 524,
+				Code: 523,
 				Message: "faucet cooldown active ({0} ms remaining)",
 				Name: "FaucetCooldownActive",
+			},
+			provider.ErrorDef{
+				Code: 524,
+				Message: "gift not found: {0:?}",
+				Name: "GiftNotFound",
+			},
+			provider.ErrorDef{
+				Code: 525,
+				Message: "gift id already used: {0:?}",
+				Name: "GiftAlreadyExists",
+			},
+			provider.ErrorDef{
+				Code: 526,
+				Message: "gift expired: {0:?}",
+				Name: "GiftExpired",
+			},
+			provider.ErrorDef{
+				Code: 527,
+				Message: "gift is not expired: {0:?}",
+				Name: "GiftNotExpired",
+			},
+			provider.ErrorDef{
+				Code: 528,
+				Message: "gift is still active: {0:?}",
+				Name: "GiftStillActive",
+			},
+			provider.ErrorDef{
+				Code: 529,
+				Message: "invalid gift definition: {0}",
+				Name: "InvalidGiftDefinition",
+			},
+			provider.ErrorDef{
+				Code: 530,
+				Message: "gift claimant is not eligible: {0:?}",
+				Name: "GiftNotEligible",
+			},
+			provider.ErrorDef{
+				Code: 531,
+				Message: "gift already claimed by: {0:?}",
+				Name: "GiftAlreadyClaimed",
+			},
+			provider.ErrorDef{
+				Code: 532,
+				Message: "gift escrow invariant violated: {0:?}",
+				Name: "GiftEscrowInvariantViolation",
+			},
+			provider.ErrorDef{
+				Code: 533,
+				Message: "secure randomness unavailable: {0}",
+				Name: "GiftRandomnessUnavailable",
+			},
+			provider.ErrorDef{
+				Code: 534,
+				Message: "gift cleanup wake rejected",
+				Name: "GiftCleanupWakeRejected",
+			},
+			provider.ErrorDef{
+				Code: 535,
+				Message: "Transparent IdentityError",
+				Name: "IdentityError",
+			},
+			provider.ErrorDef{
+				Code: 536,
+				Message: "delivery rejected for {0:?}: {1}",
+				Name: "DeliveryRejected",
 			},
 		},
 		Constants: []provider.Constant{
@@ -1974,7 +2533,7 @@ provider.IDL{
 			},
 			provider.Constant{
 				Name: "GAS_SPONSOR_SEED",
-				Type: "u16",
+				Type: "u64",
 				Value: 1,
 			},
 			provider.Constant{
@@ -1996,6 +2555,36 @@ provider.IDL{
 				Name: "FAUCET_CHAIN_ID_MIN",
 				Type: "u64",
 				Value: 9.00000001e+08,
+			},
+			provider.Constant{
+				Name: "MAX_GIFT_CLAIMS",
+				Type: "u64",
+				Value: 1024,
+			},
+			provider.Constant{
+				Name: "GIFT_FEE_PER_CLAIM",
+				Type: "u64",
+				Value: 100000,
+			},
+			provider.Constant{
+				Name: "MAX_GIFT_RECIPIENTS",
+				Type: "usize",
+				Value: 32,
+			},
+			provider.Constant{
+				Name: "DEFAULT_GIFT_EXPIRATION_MS",
+				Type: "u64",
+				Value: 8.64e+07,
+			},
+			provider.Constant{
+				Name: "GIFT_CLEANUP_BATCH",
+				Type: "u64",
+				Value: 64,
+			},
+			provider.Constant{
+				Name: "GIFT_CLEANUP_INTERVAL_MS",
+				Type: "u64",
+				Value: 1000,
 			},
 		},
 	},
@@ -2442,7 +3031,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "ValidatorStatus",
-				TypeTag: 13509400494765011086,
+				TypeTag: 6879883576545234008,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2465,7 +3054,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "ValidatorProfile",
-				TypeTag: 16695034029787395057,
+				TypeTag: 13062373705154008667,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2512,7 +3101,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "ValidatorPoolView",
-				TypeTag: 7437681117283915955,
+				TypeTag: 11854155496224838661,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2531,7 +3120,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "OperatorRewardReceipt",
-				TypeTag: 1325950726438733487,
+				TypeTag: 18322346193701716769,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2542,7 +3131,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "CandidatePool",
-				TypeTag: 1908106665584351733,
+				TypeTag: 18013819884557156931,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -2559,7 +3148,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "CandidateAction",
-				TypeTag: 4277444653471940101,
+				TypeTag: 7266417073453319327,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2582,7 +3171,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "StakeIntent",
-				TypeTag: 10739020572355126226,
+				TypeTag: 463322865422871864,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2605,7 +3194,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "UnstakeIntent",
-				TypeTag: 3909489337029280671,
+				TypeTag: 4619880209720658249,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2628,7 +3217,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "CandidateIntent",
-				TypeTag: 442123803344805093,
+				TypeTag: 2513136358547319627,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2647,7 +3236,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "ValidatorAvailabilityDeclaration",
-				TypeTag: 14461394089017771297,
+				TypeTag: 4179626686199785279,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2674,7 +3263,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "StakePosition",
-				TypeTag: 17519088700529435799,
+				TypeTag: 14190113807758788125,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2713,7 +3302,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "PositionSummary",
-				TypeTag: 10483531860509511527,
+				TypeTag: 3726447748782674837,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -2725,7 +3314,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "CandidateRejectionReason",
-				TypeTag: 13094854944792351326,
+				TypeTag: 17201629756416083620,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2744,7 +3333,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "CandidateRejection",
-				TypeTag: 16749092228488017642,
+				TypeTag: 15654288327322174056,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2755,7 +3344,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "EligibleValidator",
-				TypeTag: 18331887239788035103,
+				TypeTag: 12967353812923512353,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2798,7 +3387,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "EpochTransition",
-				TypeTag: 15918548627764098664,
+				TypeTag: 9344730928551392874,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2809,7 +3398,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "EpochConfig",
-				TypeTag: 16686700291657106181,
+				TypeTag: 790403047666676143,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2820,7 +3409,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "EpochState",
-				TypeTag: 10464001984863153512,
+				TypeTag: 15778165943840037534,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2843,7 +3432,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "RewardTreasury",
-				TypeTag: 303897710074356804,
+				TypeTag: 1442178874165866558,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2862,7 +3451,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "ValidatorMetadata",
-				TypeTag: 5113745851405436789,
+				TypeTag: 17511599964102826003,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2893,7 +3482,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "PoolAccounting",
-				TypeTag: 8885911992509280689,
+				TypeTag: 16988373117473174839,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2908,7 +3497,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "RewardAccounting",
-				TypeTag: 17782288577908561212,
+				TypeTag: 1181440605041224790,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2919,7 +3508,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "AddressList",
-				TypeTag: 14016723206793154190,
+				TypeTag: 9080845241225858752,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2934,7 +3523,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "StoredEpochConfig",
-				TypeTag: 6676851746566294408,
+				TypeTag: 9512231142407357626,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -2966,107 +3555,107 @@ provider.IDL{
 			provider.Resource{
 				Name: "_ValidatorMetadata",
 				Type: "ValidatorMetadata",
-				TypeTag: 5113745851405436789,
+				TypeTag: 17511599964102826003,
 			},
 			provider.Resource{
 				Name: "_ValidatorByOperator",
 				Type: "Address",
-				TypeTag: 2932656090694604690,
+				TypeTag: 9806102218600167672,
 			},
 			provider.Resource{
 				Name: "_ValidatorStatus",
 				Type: "ValidatorStatus",
-				TypeTag: 13064668281266539954,
+				TypeTag: 5132077725531038584,
 			},
 			provider.Resource{
 				Name: "_PoolAccounting",
 				Type: "PoolAccounting",
-				TypeTag: 8885911992509280689,
+				TypeTag: 16988373117473174839,
 			},
 			provider.Resource{
 				Name: "_StakePosition",
 				Type: "StakePosition",
-				TypeTag: 4315718473348021435,
+				TypeTag: 14859013463693066045,
 			},
 			provider.Resource{
 				Name: "_CandidatePool",
 				Type: "CandidatePool",
-				TypeTag: 13697025346691171769,
+				TypeTag: 15437757413694511843,
 			},
 			provider.Resource{
 				Name: "_StakeIntent",
 				Type: "StakeIntent",
-				TypeTag: 14197438823968938622,
+				TypeTag: 10313783317547306328,
 			},
 			provider.Resource{
 				Name: "_UnstakeIntent",
 				Type: "UnstakeIntent",
-				TypeTag: 16353406510077713387,
+				TypeTag: 8641460296372788969,
 			},
 			provider.Resource{
 				Name: "_CandidateIntent",
 				Type: "CandidateIntent",
-				TypeTag: 14589332730925993977,
+				TypeTag: 4233802019945464043,
 			},
 			provider.Resource{
 				Name: "_StakeIntentValidatorsByEpoch",
 				Type: "AddressList",
-				TypeTag: 14016723206793154190,
+				TypeTag: 9080845241225858752,
 			},
 			provider.Resource{
 				Name: "_UnstakeIntentValidatorsByEpoch",
 				Type: "AddressList",
-				TypeTag: 14016723206793154190,
+				TypeTag: 9080845241225858752,
 			},
 			provider.Resource{
 				Name: "_CandidateIntentValidatorsByEpoch",
 				Type: "AddressList",
-				TypeTag: 14016723206793154190,
+				TypeTag: 9080845241225858752,
 			},
 			provider.Resource{
 				Name: "_AvailabilityDeclarationByEpochValidator",
 				Type: "ValidatorAvailabilityDeclaration",
-				TypeTag: 11947663504094390661,
+				TypeTag: 2554815861211612319,
 			},
 			provider.Resource{
 				Name: "_DeclaredValidatorsByEpoch",
 				Type: "AddressList",
-				TypeTag: 14016723206793154190,
+				TypeTag: 9080845241225858752,
 			},
 			provider.Resource{
 				Name: "_StakeIntentPositionsByValidator",
 				Type: "AddressList",
-				TypeTag: 14016723206793154190,
+				TypeTag: 9080845241225858752,
 			},
 			provider.Resource{
 				Name: "_UnstakeIntentPositionsByValidator",
 				Type: "AddressList",
-				TypeTag: 14016723206793154190,
+				TypeTag: 9080845241225858752,
 			},
 			provider.Resource{
 				Name: "_EpochTransitionByEpoch",
 				Type: "EpochTransition",
-				TypeTag: 4868229573134556260,
+				TypeTag: 10716014907264676618,
 			},
 			provider.Resource{
 				Name: "_EpochState",
 				Type: "EpochState",
-				TypeTag: 12288930857070923756,
+				TypeTag: 4913181019176484030,
 			},
 			provider.Resource{
 				Name: "_EpochConfig",
 				Type: "StoredEpochConfig",
-				TypeTag: 6676851746566294408,
+				TypeTag: 9512231142407357626,
 			},
 			provider.Resource{
 				Name: "_StakingToken",
 				Type: "Address",
-				TypeTag: 2932656090694604690,
+				TypeTag: 9806102218600167672,
 			},
 			provider.Resource{
 				Name: "_RewardAccounting",
 				Type: "RewardAccounting",
-				TypeTag: 17782288577908561212,
+				TypeTag: 1181440605041224790,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -3217,26 +3806,21 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 797,
-				Message: "Transparent ContextError",
-				Name: "ContextError",
-			},
-			provider.ErrorDef{
-				Code: 798,
 				Message: "Epoch transition not found for epoch: {0}",
 				Name: "EpochTransitionNotFound",
 			},
 			provider.ErrorDef{
-				Code: 799,
+				Code: 798,
 				Message: "Epoch transition inputs are frozen for epoch: {0}",
 				Name: "EpochTransitionInProgress",
 			},
 			provider.ErrorDef{
-				Code: 800,
+				Code: 799,
 				Message: "Staking invariant violation: {0}",
 				Name: "InvariantViolation",
 			},
 			provider.ErrorDef{
-				Code: 801,
+				Code: 800,
 				Message: "protocol epoch clock is not initialized",
 				Name: "EpochClockNotReady",
 			},
@@ -4166,7 +4750,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "VcStatus",
-				TypeTag: 18204943549511253276,
+				TypeTag: 9880462679300830655,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4185,7 +4769,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "VcAttestationCore",
-				TypeTag: 5275629503764841895,
+				TypeTag: 13284599887158957426,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4200,7 +4784,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "VcAttestationLifecycle",
-				TypeTag: 11310965231460569252,
+				TypeTag: 12816573726947866147,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4215,7 +4799,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "AcceptedVcIssuer",
-				TypeTag: 16581567360265979532,
+				TypeTag: 5463606248591120631,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4246,7 +4830,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DisclosedVcSummary",
-				TypeTag: 9995445207742309256,
+				TypeTag: 12260028373739227139,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -4263,7 +4847,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "DidSubjectType",
-				TypeTag: 2309684872828421392,
+				TypeTag: 9478614490553199961,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4278,7 +4862,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidSubject",
-				TypeTag: 14012622825467845240,
+				TypeTag: 416089716071506385,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4293,7 +4877,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidKeyInput",
-				TypeTag: 18437325469875962493,
+				TypeTag: 15014017011896880766,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4312,7 +4896,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidKey",
-				TypeTag: 6808078180298008975,
+				TypeTag: 8586647650877785738,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4327,7 +4911,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidServiceInput",
-				TypeTag: 7956246246609137121,
+				TypeTag: 2422875015207670442,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4346,7 +4930,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidService",
-				TypeTag: 9558035208667919587,
+				TypeTag: 15584128414415683126,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4385,7 +4969,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidDocumentState",
-				TypeTag: 11269429974754267674,
+				TypeTag: 8048280242232229915,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4408,7 +4992,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidDocumentInput",
-				TypeTag: 16587227066181147487,
+				TypeTag: 8309071724875749370,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4423,7 +5007,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidName",
-				TypeTag: 1816879182884645427,
+				TypeTag: 7698729844929259832,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4438,7 +5022,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidNameBinding",
-				TypeTag: 11976108436880291804,
+				TypeTag: 9074654765198733705,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4453,7 +5037,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidCoreState",
-				TypeTag: 9239335515597431984,
+				TypeTag: 4816427468430260189,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4468,7 +5052,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidKeyIndexState",
-				TypeTag: 2872292561178606790,
+				TypeTag: 7485109064351211459,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4483,7 +5067,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidServiceIndexState",
-				TypeTag: 15068076793216390618,
+				TypeTag: 10048772681438653071,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4498,7 +5082,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidAliasState",
-				TypeTag: 5069792348825440705,
+				TypeTag: 17095860255518781422,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4513,7 +5097,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidAvatarState",
-				TypeTag: 17427120674153500170,
+				TypeTag: 8035018328542407503,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -4530,7 +5114,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "EntityRole",
-				TypeTag: 10882321849738616826,
+				TypeTag: 2513156503778733663,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -4547,7 +5131,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "OrganizationStatus",
-				TypeTag: 6886365030236042100,
+				TypeTag: 597923890167821929,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4562,7 +5146,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "OrganizationCapabilities",
-				TypeTag: 16180937054376829620,
+				TypeTag: 4475269952521160741,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4577,7 +5161,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "CredentialDefinition",
-				TypeTag: 2804905021398639289,
+				TypeTag: 16303250594096098228,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -4639,12 +5223,12 @@ provider.IDL{
 			provider.Resource{
 				Name: "_VcAttestationCore",
 				Type: "VcAttestationCore",
-				TypeTag: 5275629503764841895,
+				TypeTag: 13284599887158957426,
 			},
 			provider.Resource{
 				Name: "_VcAttestationLifecycle",
 				Type: "VcAttestationLifecycle",
-				TypeTag: 11310965231460569252,
+				TypeTag: 12816573726947866147,
 			},
 			provider.Resource{
 				Name: "_AcceptedVcIssuerIndexMeta",
@@ -4654,7 +5238,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_AcceptedVcIssuers",
 				Type: "vec<AcceptedVcIssuer>",
-				TypeTag: 13839084772846465265,
+				TypeTag: 13749091394093327390,
 			},
 			provider.Resource{
 				Name: "_DisclosedVcSchemas",
@@ -4664,37 +5248,37 @@ provider.IDL{
 			provider.Resource{
 				Name: "_DidCore",
 				Type: "DidCoreState",
-				TypeTag: 9239335515597431984,
+				TypeTag: 4816427468430260189,
 			},
 			provider.Resource{
 				Name: "_DidKeyIndex",
 				Type: "DidKeyIndexState",
-				TypeTag: 2872292561178606790,
+				TypeTag: 7485109064351211459,
 			},
 			provider.Resource{
 				Name: "_DidKey",
 				Type: "DidKey",
-				TypeTag: 6808078180298008975,
+				TypeTag: 8586647650877785738,
 			},
 			provider.Resource{
 				Name: "_DidServiceIndex",
 				Type: "DidServiceIndexState",
-				TypeTag: 15068076793216390618,
+				TypeTag: 10048772681438653071,
 			},
 			provider.Resource{
 				Name: "_DidService",
 				Type: "DidService",
-				TypeTag: 9558035208667919587,
+				TypeTag: 15584128414415683126,
 			},
 			provider.Resource{
 				Name: "_DidAlias",
 				Type: "DidAliasState",
-				TypeTag: 5069792348825440705,
+				TypeTag: 17095860255518781422,
 			},
 			provider.Resource{
 				Name: "_DidAvatar",
 				Type: "DidAvatarState",
-				TypeTag: 17427120674153500170,
+				TypeTag: 8035018328542407503,
 			},
 			provider.Resource{
 				Name: "_DidUpdatedAt",
@@ -4709,22 +5293,22 @@ provider.IDL{
 			provider.Resource{
 				Name: "_NameBinding",
 				Type: "DidNameBinding",
-				TypeTag: 11976108436880291804,
+				TypeTag: 9074654765198733705,
 			},
 			provider.Resource{
 				Name: "_OrganizationCapabilities",
 				Type: "OrganizationCapabilities",
-				TypeTag: 16180937054376829620,
+				TypeTag: 4475269952521160741,
 			},
 			provider.Resource{
 				Name: "_CredentialDefinition",
 				Type: "CredentialDefinition",
-				TypeTag: 2804905021398639289,
+				TypeTag: 16303250594096098228,
 			},
 			provider.Resource{
 				Name: "_OrganizationStatus",
 				Type: "OrganizationStatus",
-				TypeTag: 6886365030236042100,
+				TypeTag: 597923890167821929,
 			},
 			provider.Resource{
 				Name: "_OrganizationUpdatedAt",
@@ -4765,231 +5349,226 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 1030,
-				Message: "Address not signed in current transaction: {0:?}",
-				Name: "AddressNotSignatured",
-			},
-			provider.ErrorDef{
-				Code: 1031,
 				Message: "Organization profile not found: {0:?}",
 				Name: "OrganizationNotFound",
 			},
 			provider.ErrorDef{
-				Code: 1032,
+				Code: 1031,
 				Message: "Organization already registered: {0:?}",
 				Name: "OrganizationAlreadyExists",
 			},
 			provider.ErrorDef{
-				Code: 1033,
+				Code: 1032,
 				Message: "VC attestation not found: subject={0:?}, issuer={1:?}",
 				Name: "VcAttestationNotFound",
 			},
 			provider.ErrorDef{
-				Code: 1034,
+				Code: 1033,
 				Message: "VC issuer DID does not exist or is deactivated: {0:?}",
 				Name: "IssuerDidNotActive",
 			},
 			provider.ErrorDef{
-				Code: 1035,
+				Code: 1034,
 				Message: "DID name length is invalid",
 				Name: "NameInvalidLength",
 			},
 			provider.ErrorDef{
-				Code: 1036,
+				Code: 1035,
 				Message: "DID name must use alias-digits format",
 				Name: "NameInvalidFormat",
 			},
 			provider.ErrorDef{
-				Code: 1037,
+				Code: 1036,
 				Message: "DID name alias length is invalid",
 				Name: "NameAliasInvalidLength",
 			},
 			provider.ErrorDef{
-				Code: 1038,
+				Code: 1037,
 				Message: "DID name suffix must contain the required number of digits",
 				Name: "NameSuffixInvalid",
 			},
 			provider.ErrorDef{
-				Code: 1039,
+				Code: 1038,
 				Message: "DID name hash collision",
 				Name: "NameHashCollision",
 			},
 			provider.ErrorDef{
-				Code: 1040,
+				Code: 1039,
 				Message: "DID document key count is invalid",
 				Name: "InvalidKeyCount",
 			},
 			provider.ErrorDef{
-				Code: 1041,
+				Code: 1040,
 				Message: "DID key was not found",
 				Name: "DidKeyNotFound",
 			},
 			provider.ErrorDef{
-				Code: 1042,
+				Code: 1041,
 				Message: "The last DID key cannot be removed",
 				Name: "CannotRemoveLastKey",
 			},
 			provider.ErrorDef{
-				Code: 1043,
+				Code: 1042,
 				Message: "DID key resource does not match its numeric ID",
 				Name: "DidKeyResourceMismatch",
 			},
 			provider.ErrorDef{
-				Code: 1044,
+				Code: 1043,
 				Message: "DID key label is empty or exceeds the length limit",
 				Name: "InvalidKeyLabel",
 			},
 			provider.ErrorDef{
-				Code: 1045,
+				Code: 1044,
 				Message: "DID avatar URI length must be between 1 and 512 bytes",
 				Name: "InvalidAvatarUri",
 			},
 			provider.ErrorDef{
-				Code: 1046,
+				Code: 1045,
 				Message: "DID service count exceeds the limit",
 				Name: "TooManyServices",
 			},
 			provider.ErrorDef{
-				Code: 1047,
+				Code: 1046,
 				Message: "DID service label is invalid",
 				Name: "InvalidServiceLabel",
 			},
 			provider.ErrorDef{
-				Code: 1048,
+				Code: 1047,
 				Message: "DID service endpoint length is invalid",
 				Name: "ServiceEndpointInvalidLength",
 			},
 			provider.ErrorDef{
-				Code: 1049,
+				Code: 1048,
 				Message: "DID service endpoint is not an absolute URI",
 				Name: "ServiceEndpointNotAbsolute",
 			},
 			provider.ErrorDef{
-				Code: 1050,
+				Code: 1049,
 				Message: "DID service endpoint scheme is invalid",
 				Name: "ServiceEndpointInvalidScheme",
 			},
 			provider.ErrorDef{
-				Code: 1051,
+				Code: 1050,
 				Message: "DID service was not found",
 				Name: "ServiceNotFound",
 			},
 			provider.ErrorDef{
-				Code: 1052,
+				Code: 1051,
 				Message: "DID service resource does not match its numeric ID",
 				Name: "DidServiceResourceMismatch",
 			},
 			provider.ErrorDef{
-				Code: 1053,
+				Code: 1052,
 				Message: "Organization registration requires an organization DID: {0:?}",
 				Name: "OrganizationDidRequired",
 			},
 			provider.ErrorDef{
-				Code: 1054,
+				Code: 1053,
 				Message: "Organization is permanently deactivated: {0:?}",
 				Name: "OrganizationDeactivated",
 			},
 			provider.ErrorDef{
-				Code: 1055,
+				Code: 1054,
 				Message: "Organization role count is invalid",
 				Name: "InvalidOrganizationRoleCount",
 			},
 			provider.ErrorDef{
-				Code: 1056,
+				Code: 1055,
 				Message: "Organization roles must be unique",
 				Name: "DuplicateOrganizationRole",
 			},
 			provider.ErrorDef{
-				Code: 1057,
+				Code: 1056,
 				Message: "Organization credential schema count exceeds the limit",
 				Name: "TooManyCredentialSchemas",
 			},
 			provider.ErrorDef{
-				Code: 1058,
+				Code: 1057,
 				Message: "Credential schema is invalid",
 				Name: "InvalidCredentialSchema",
 			},
 			provider.ErrorDef{
-				Code: 1059,
+				Code: 1058,
 				Message: "Organization credential schemas must be unique",
 				Name: "DuplicateCredentialSchema",
 			},
 			provider.ErrorDef{
-				Code: 1060,
+				Code: 1059,
 				Message: "VC issuer or KYC provider must declare a credential schema",
 				Name: "IssuerCredentialSchemaRequired",
 			},
 			provider.ErrorDef{
-				Code: 1061,
+				Code: 1060,
 				Message: "Credential ID hash collision",
 				Name: "CredentialIdCollision",
 			},
 			provider.ErrorDef{
-				Code: 1062,
+				Code: 1061,
 				Message: "Credential ID is invalid",
 				Name: "InvalidCredentialId",
 			},
 			provider.ErrorDef{
-				Code: 1063,
+				Code: 1062,
 				Message: "Credential definition not found: {0}",
 				Name: "CredentialDefinitionNotFound",
 			},
 			provider.ErrorDef{
-				Code: 1064,
+				Code: 1063,
 				Message: "Credential schema index does not match the requested schema",
 				Name: "CredentialSchemaMismatch",
 			},
 			provider.ErrorDef{
-				Code: 1065,
+				Code: 1064,
 				Message: "Accepted VC issuer count exceeds the limit",
 				Name: "TooManyAcceptedVcIssuers",
 			},
 			provider.ErrorDef{
-				Code: 1066,
+				Code: 1065,
 				Message: "Disclosed VC schema count exceeds the limit",
 				Name: "TooManyDisclosedVcSchemas",
 			},
 			provider.ErrorDef{
-				Code: 1067,
+				Code: 1066,
 				Message: "Only a currently valid VC attestation can be accepted",
 				Name: "VcAttestationNotCurrentlyValid",
 			},
 			provider.ErrorDef{
-				Code: 1068,
+				Code: 1067,
 				Message: "VC acceptance index does not exist for subject",
 				Name: "VcAcceptanceIndexNotFound",
 			},
 			provider.ErrorDef{
-				Code: 1069,
+				Code: 1068,
 				Message: "VC issuer is not in the subject acceptance index",
 				Name: "VcIssuerNotAccepted",
 			},
 			provider.ErrorDef{
-				Code: 1070,
+				Code: 1069,
 				Message: "VC attestation issuer signature is invalid",
 				Name: "InvalidVcIssuerSignature",
 			},
 			provider.ErrorDef{
-				Code: 1071,
+				Code: 1070,
 				Message: "VC issuer DID key was not found: issuer={0:?}, key_id={1}",
 				Name: "VcIssuerKeyNotFound",
 			},
 			provider.ErrorDef{
-				Code: 1072,
+				Code: 1071,
 				Message: "VC attestation already exists with different immutable content",
 				Name: "VcAttestationAlreadyExists",
 			},
 			provider.ErrorDef{
-				Code: 1073,
+				Code: 1072,
 				Message: "VC attestation has been permanently revoked",
 				Name: "VcAttestationRevoked",
 			},
 			provider.ErrorDef{
-				Code: 1074,
+				Code: 1073,
 				Message: "VC attestation is already frozen",
 				Name: "VcAttestationAlreadyFrozen",
 			},
 			provider.ErrorDef{
-				Code: 1075,
+				Code: 1074,
 				Message: "VC attestation is not frozen",
 				Name: "VcAttestationNotFrozen",
 			},
@@ -6050,7 +6629,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "Metadata",
-				TypeTag: 16597600053100423329,
+				TypeTag: 14606240850061279456,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -6077,7 +6656,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "MetadataOverride",
-				TypeTag: 1521786355183284625,
+				TypeTag: 18305222463683997936,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -6088,7 +6667,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "Token",
-				TypeTag: 14126857848543451857,
+				TypeTag: 15244655057074605074,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -6099,7 +6678,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "SlotData",
-				TypeTag: 16546317778011887664,
+				TypeTag: 16053204672031418177,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -6114,7 +6693,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "Royalty",
-				TypeTag: 8013111409802783456,
+				TypeTag: 15605079096527761999,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -6146,17 +6725,17 @@ provider.IDL{
 			provider.Resource{
 				Name: "_SftOwner",
 				Type: "Address",
-				TypeTag: 15146535206056819577,
+				TypeTag: 6985331877380045022,
 			},
 			provider.Resource{
 				Name: "_SftMetadata",
 				Type: "Metadata",
-				TypeTag: 3119835375849690086,
+				TypeTag: 7640396538560339667,
 			},
 			provider.Resource{
 				Name: "_SftRoyalty",
 				Type: "Royalty",
-				TypeTag: 16416299771797568401,
+				TypeTag: 16586850674820846406,
 			},
 			provider.Resource{
 				Name: "_SftNextSlotId",
@@ -6171,22 +6750,22 @@ provider.IDL{
 			provider.Resource{
 				Name: "_SftMintPermission",
 				Type: "Address",
-				TypeTag: 15146535206056819577,
+				TypeTag: 6985331877380045022,
 			},
 			provider.Resource{
 				Name: "_SftUpdatePermission",
 				Type: "Address",
-				TypeTag: 15146535206056819577,
+				TypeTag: 6985331877380045022,
 			},
 			provider.Resource{
 				Name: "_SftFreezePermission",
 				Type: "Address",
-				TypeTag: 15146535206056819577,
+				TypeTag: 6985331877380045022,
 			},
 			provider.Resource{
 				Name: "_Slot",
 				Type: "SlotData",
-				TypeTag: 6310559783402314447,
+				TypeTag: 383744842715771362,
 			},
 			provider.Resource{
 				Name: "_SlotExists",
@@ -6201,10 +6780,15 @@ provider.IDL{
 			provider.Resource{
 				Name: "_Token",
 				Type: "Token",
-				TypeTag: 7491257169663686040,
+				TypeTag: 15544724241338340387,
 			},
 			provider.Resource{
 				Name: "_TokenSlotId",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_TokenSupply",
 				Type: "u64",
 				TypeTag: 5563585020063213298,
 			},
@@ -6243,7 +6827,7 @@ provider.IDL{
 						Type: "Metadata",
 					},
 				},
-				TypeTag: 14598215378642513979,
+				TypeTag: 2981143492345285184,
 			},
 			provider.Event{
 				Name: "SlotCreatedEvent",
@@ -6263,7 +6847,7 @@ provider.IDL{
 						Type: "SlotData",
 					},
 				},
-				TypeTag: 1769434390890356512,
+				TypeTag: 4235690943934686077,
 			},
 			provider.Event{
 				Name: "TokenMintedEvent",
@@ -6293,7 +6877,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 6248943049156148556,
+				TypeTag: 1828566942864293301,
 			},
 			provider.Event{
 				Name: "TokenBurnedEvent",
@@ -6323,7 +6907,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 3949389203557328607,
+				TypeTag: 10040848747697517430,
 			},
 			provider.Event{
 				Name: "TokenTransferredEvent",
@@ -6358,7 +6942,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 4473315672219730635,
+				TypeTag: 9654273125643600240,
 			},
 			provider.Event{
 				Name: "AttributeSetEvent",
@@ -6378,7 +6962,7 @@ provider.IDL{
 						Type: "String",
 					},
 				},
-				TypeTag: 4045023747084950996,
+				TypeTag: 12159843087237117007,
 			},
 			provider.Event{
 				Name: "RoyaltyRecipientTransferredEvent",
@@ -6399,7 +6983,7 @@ provider.IDL{
 						Indexed: true,
 					},
 				},
-				TypeTag: 567351340953111585,
+				TypeTag: 6008898740863307008,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -6488,11 +7072,6 @@ provider.IDL{
 				Message: "insufficient approval (token: {0}, owner: {1:?}, spender: {2:?}, available: {3}, required: {4})",
 				Name: "InsufficientApproval",
 			},
-			provider.ErrorDef{
-				Code: 1297,
-				Message: "address not signed in current transaction: {0:?}",
-				Name: "AddressNotSignatured",
-			},
 		},
 	},
 provider.IDL{
@@ -6502,6 +7081,282 @@ provider.IDL{
 			Description: "Milon dex app IDL",
 		},
 		Instructions: []provider.Instruction{
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "authority",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "provider",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "market_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "base_amount",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "quote_amount",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 60506,
+				Handler: "create_amm_pool",
+				Kind: "entry",
+				Name: "CreateAmmPool",
+				Returns: provider.ReturnValue{
+					Type: "AmmPoolInfo",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "authority",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "provider",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "market_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "base_amount",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "quote_amount",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 37332,
+				Handler: "initialize_amm_pool",
+				Kind: "entry",
+				Name: "InitializeAmmPool",
+				Returns: provider.ReturnValue{
+					Type: "AmmPoolInfo",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "authority",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "market_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "status",
+						Role: "input",
+						Type: "AmmStatus",
+					},
+				},
+				Discriminator: 20736,
+				Handler: "set_amm_status",
+				Kind: "entry",
+				Name: "SetAmmStatus",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "market_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "base_max",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "quote_max",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "min_lp_shares",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 50155,
+				Handler: "add_liquidity",
+				Kind: "entry",
+				Name: "AddLiquidity",
+				Returns: provider.ReturnValue{
+					Type: "AddLiquidityResult",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "market_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "lp_shares",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "min_base_out",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "min_quote_out",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 15914,
+				Handler: "remove_liquidity",
+				Kind: "entry",
+				Name: "RemoveLiquidity",
+				Returns: provider.ReturnValue{
+					Type: "RemoveLiquidityResult",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "market_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 60394,
+				Handler: "amm_pool_info",
+				Kind: "view",
+				Name: "AmmPoolInfo",
+				Returns: provider.ReturnValue{
+					Type: "AmmPoolInfo",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "market_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 18436,
+				Handler: "amm_lp_balance",
+				Kind: "view",
+				Name: "AmmLpBalance",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "market_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "input_token",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "amount_in",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "min_amount_out",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "worst_tick",
+						Role: "input",
+						Type: "u32",
+					},
+					provider.Arg{
+						Name: "max_book_makers",
+						Role: "input",
+						Type: "u16",
+					},
+					provider.Arg{
+						Name: "max_amm_segments",
+						Role: "input",
+						Type: "u16",
+					},
+					provider.Arg{
+						Name: "channel",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 34800,
+				Handler: "swap_exact_in",
+				Kind: "entry",
+				Name: "SwapExactIn",
+				Returns: provider.ReturnValue{
+					Type: "HybridSwapResult",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "market_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 52994,
+				Handler: "amm_swap_enabled",
+				Kind: "view",
+				Name: "AmmSwapEnabled",
+				Returns: provider.ReturnValue{
+					Type: "bool",
+				},
+			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
@@ -6944,7 +7799,24 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "MarketStatus",
-				TypeTag: 16951893849801157528,
+				TypeTag: 8136658246324658662,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Active",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Stopped",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "AmmStatus",
+				TypeTag: 17255121327010776923,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -6961,7 +7833,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "OrderSide",
-				TypeTag: 13972451060350856701,
+				TypeTag: 4344453968824886479,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -6983,7 +7855,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "OrderTimeInForce",
-				TypeTag: 6464719643566272127,
+				TypeTag: 2553469515074015685,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -7005,7 +7877,34 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "OrderSelfTradePolicy",
-				TypeTag: 7007226021324580664,
+				TypeTag: 17023551718460680910,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "amount_in_used",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "amount_out",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "refund",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "clob_fills",
+						Type: "u16",
+					},
+					provider.StructField{
+						Name: "amm_segments",
+						Type: "u16",
+					},
+				},
+				Kind: "struct",
+				Name: "HybridSwapResult",
+				TypeTag: 6696471684896552292,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7019,7 +7918,7 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "vault_seed",
-						Type: "u16",
+						Type: "u64",
 					},
 					provider.StructField{
 						Name: "base_lot_atoms",
@@ -7064,7 +7963,80 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "Market",
-				TypeTag: 14379241867177925174,
+				TypeTag: 11417720480643744764,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "market_id",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "vault",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "vault_seed",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "status",
+						Type: "AmmStatus",
+					},
+					provider.StructField{
+						Name: "reserve_base",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "reserve_quote",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "total_lp_supply",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "AmmPoolInfo",
+				TypeTag: 8750917677195605499,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "base_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "quote_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "lp_shares",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "AddLiquidityResult",
+				TypeTag: 12058079632508823720,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "base_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "quote_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "lp_shares",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "RemoveLiquidityResult",
+				TypeTag: 10496775677469623417,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7095,7 +8067,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "PlaceOrderResult",
-				TypeTag: 2935855982233369986,
+				TypeTag: 18135230787032878776,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7138,7 +8110,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "OrderInfo",
-				TypeTag: 14941930351407067118,
+				TypeTag: 15140638547846931512,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7157,7 +8129,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "BookLevel",
-				TypeTag: 14458181887817329403,
+				TypeTag: 4379979403434364617,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7172,7 +8144,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "BestBidAsk",
-				TypeTag: 10798078011748760512,
+				TypeTag: 13185949738965680898,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7187,7 +8159,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "OrderbookDepth",
-				TypeTag: 3436467991477045676,
+				TypeTag: 16803552831728342894,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7202,7 +8174,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "LevelOrderPage",
-				TypeTag: 11648156999977740375,
+				TypeTag: 11296366812560025265,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7225,7 +8197,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "BookRootState",
-				TypeTag: 11909102844735751704,
+				TypeTag: 18219184753090619018,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7256,7 +8228,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "PriceLevelState",
-				TypeTag: 17278780363699941720,
+				TypeTag: 13364006570784410242,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7270,12 +8242,12 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "vault_seed",
-						Type: "u16",
+						Type: "u64",
 					},
 				},
 				Kind: "struct",
 				Name: "MarketTokensState",
-				TypeTag: 5654559684954199973,
+				TypeTag: 8338807595321766147,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7314,7 +8286,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "MarketRulesState",
-				TypeTag: 11123398268661740058,
+				TypeTag: 7299804946635011476,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7333,7 +8305,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "BookTotalsState",
-				TypeTag: 16631658590519238925,
+				TypeTag: 6922838953909205275,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7348,7 +8320,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "PriceLevelLinkState",
-				TypeTag: 15822207962510117388,
+				TypeTag: 1801410411082824438,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7371,7 +8343,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "PriceLevelQueueState",
-				TypeTag: 11467908556707130883,
+				TypeTag: 13284688305301641569,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7410,7 +8382,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "OrderStaticState",
-				TypeTag: 17960764635315497153,
+				TypeTag: 15886539911693317967,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7429,7 +8401,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "OrderMutableState",
-				TypeTag: 9595926857480671517,
+				TypeTag: 14240391053584906675,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7444,7 +8416,37 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "OrderLinkState",
-				TypeTag: 17455953695198391291,
+				TypeTag: 17905626364172625097,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "vault_seed",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "status",
+						Type: "u8",
+					},
+				},
+				Kind: "struct",
+				Name: "AmmConfigState",
+				TypeTag: 16434333257679736300,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "reserve_base",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "reserve_quote",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "AmmReservesState",
+				TypeTag: 37886788338217041,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7467,7 +8469,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidDocumentInput",
-				TypeTag: 16587227066181147487,
+				TypeTag: 8309071724875749370,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7482,7 +8484,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidKeyInput",
-				TypeTag: 18437325469875962493,
+				TypeTag: 15014017011896880766,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -7497,7 +8499,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "DidServiceInput",
-				TypeTag: 7956246246609137121,
+				TypeTag: 2422875015207670442,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -7514,7 +8516,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "DidSubjectType",
-				TypeTag: 2309684872828421392,
+				TypeTag: 9478614490553199961,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -7571,17 +8573,17 @@ provider.IDL{
 			provider.Resource{
 				Name: "_MarketTokens",
 				Type: "MarketTokensState",
-				TypeTag: 5654559684954199973,
+				TypeTag: 8338807595321766147,
 			},
 			provider.Resource{
 				Name: "_MarketRules",
 				Type: "MarketRulesState",
-				TypeTag: 11123398268661740058,
+				TypeTag: 7299804946635011476,
 			},
 			provider.Resource{
 				Name: "_MarketAuthority",
 				Type: "Address",
-				TypeTag: 7718767688299500702,
+				TypeTag: 3104220516395023708,
 			},
 			provider.Resource{
 				Name: "_MarketStatus",
@@ -7596,7 +8598,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_BookTotals",
 				Type: "BookTotalsState",
-				TypeTag: 16631658590519238925,
+				TypeTag: 6922838953909205275,
 			},
 			provider.Resource{
 				Name: "_PriceBitmap",
@@ -7606,27 +8608,27 @@ provider.IDL{
 			provider.Resource{
 				Name: "_PriceLevelLinks",
 				Type: "PriceLevelLinkState",
-				TypeTag: 15822207962510117388,
+				TypeTag: 1801410411082824438,
 			},
 			provider.Resource{
 				Name: "_PriceLevelQueue",
 				Type: "PriceLevelQueueState",
-				TypeTag: 11467908556707130883,
+				TypeTag: 13284688305301641569,
 			},
 			provider.Resource{
 				Name: "_OrderStatic",
 				Type: "OrderStaticState",
-				TypeTag: 17960764635315497153,
+				TypeTag: 15886539911693317967,
 			},
 			provider.Resource{
 				Name: "_OrderMutable",
 				Type: "OrderMutableState",
-				TypeTag: 9595926857480671517,
+				TypeTag: 14240391053584906675,
 			},
 			provider.Resource{
 				Name: "_OrderLinks",
 				Type: "OrderLinkState",
-				TypeTag: 17455953695198391291,
+				TypeTag: 17905626364172625097,
 			},
 			provider.Resource{
 				Name: "_ClientOrder",
@@ -7651,7 +8653,27 @@ provider.IDL{
 			provider.Resource{
 				Name: "_MarketSeedOwner",
 				Type: "Address",
-				TypeTag: 7718767688299500702,
+				TypeTag: 3104220516395023708,
+			},
+			provider.Resource{
+				Name: "_AmmConfig",
+				Type: "AmmConfigState",
+				TypeTag: 16434333257679736300,
+			},
+			provider.Resource{
+				Name: "_AmmReserves",
+				Type: "AmmReservesState",
+				TypeTag: 37886788338217041,
+			},
+			provider.Resource{
+				Name: "_AmmLpSupply",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_AmmLpBalance",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 		},
 		Events: []provider.Event{
@@ -7679,7 +8701,7 @@ provider.IDL{
 					},
 					provider.EventField{
 						Name: "vault_seed",
-						Type: "u16",
+						Type: "u64",
 					},
 					provider.EventField{
 						Name: "maker_fee_ppm",
@@ -7706,7 +8728,7 @@ provider.IDL{
 						Type: "u32",
 					},
 				},
-				TypeTag: 5964668819498663630,
+				TypeTag: 13227381435063572748,
 			},
 			provider.Event{
 				Name: "EventMarketStatusChanged",
@@ -7730,7 +8752,7 @@ provider.IDL{
 						Type: "u8",
 					},
 				},
-				TypeTag: 11067723932439739904,
+				TypeTag: 11184352840010842698,
 			},
 			provider.Event{
 				Name: "EventMarketDidInitialized",
@@ -7746,7 +8768,7 @@ provider.IDL{
 						Indexed: true,
 					},
 				},
-				TypeTag: 7059747331868676939,
+				TypeTag: 3002442202873949541,
 			},
 			provider.Event{
 				Name: "EventMarketVcAttestationDisclosed",
@@ -7783,7 +8805,7 @@ provider.IDL{
 						Type: "option<u64>",
 					},
 				},
-				TypeTag: 949979366553590319,
+				TypeTag: 7835306905623771085,
 			},
 			provider.Event{
 				Name: "EventOrderPlaced",
@@ -7835,7 +8857,7 @@ provider.IDL{
 						Type: "bool",
 					},
 				},
-				TypeTag: 13071246516272651571,
+				TypeTag: 608602095549601449,
 			},
 			provider.Event{
 				Name: "EventOrderRested",
@@ -7867,7 +8889,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 14283557354538227929,
+				TypeTag: 10581901349291685003,
 			},
 			provider.Event{
 				Name: "EventOrderFilled",
@@ -7924,7 +8946,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 6139633433842553158,
+				TypeTag: 960997472381498316,
 			},
 			provider.Event{
 				Name: "EventOrderCancelled",
@@ -7956,7 +8978,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 16269317253269013757,
+				TypeTag: 6530968372354649335,
 			},
 			provider.Event{
 				Name: "EventPriceLevelOpened",
@@ -7975,7 +8997,7 @@ provider.IDL{
 						Type: "u32",
 					},
 				},
-				TypeTag: 10557899254584470782,
+				TypeTag: 901970323028649804,
 			},
 			provider.Event{
 				Name: "EventPriceLevelClosed",
@@ -7994,7 +9016,211 @@ provider.IDL{
 						Type: "u32",
 					},
 				},
-				TypeTag: 2783597273965581783,
+				TypeTag: 9710101719406525001,
+			},
+			provider.Event{
+				Name: "EventAmmPoolCreated",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "market_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "provider",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "vault",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "vault_seed",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "base_amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "quote_amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "lp_shares",
+						Type: "u64",
+					},
+				},
+				TypeTag: 7420929212751057073,
+			},
+			provider.Event{
+				Name: "EventAmmStatusChanged",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "market_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "authority",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "old_status",
+						Type: "u8",
+					},
+					provider.EventField{
+						Name: "new_status",
+						Type: "u8",
+					},
+				},
+				TypeTag: 17999427990604139897,
+			},
+			provider.Event{
+				Name: "EventLiquidityAdded",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "market_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "provider",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "base_amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "quote_amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "lp_shares",
+						Type: "u64",
+					},
+				},
+				TypeTag: 14988758762828335514,
+			},
+			provider.Event{
+				Name: "EventLiquidityRemoved",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "market_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "provider",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "base_amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "quote_amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "lp_shares",
+						Type: "u64",
+					},
+				},
+				TypeTag: 15805841629718478652,
+			},
+			provider.Event{
+				Name: "EventAmmSwapSegment",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "market_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "taker",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "side",
+						Type: "u8",
+					},
+					provider.EventField{
+						Name: "input",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "output",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "base_before",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "quote_before",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "base_after",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "quote_after",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "boundary_tick",
+						Type: "u32",
+					},
+				},
+				TypeTag: 11173999819263416163,
+			},
+			provider.Event{
+				Name: "EventHybridSwapCompleted",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "market_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "taker",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "input_token",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "input",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "output",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "refund",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "clob_fills",
+						Type: "u16",
+					},
+					provider.EventField{
+						Name: "amm_segments",
+						Type: "u16",
+					},
+				},
+				TypeTag: 9012270725748501978,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -8105,33 +9331,88 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 1557,
-				Message: "address did not sign the current instruction: {0:?}",
-				Name: "AddressNotSignatured",
-			},
-			provider.ErrorDef{
-				Code: 1558,
-				Message: "execution context is not bound",
-				Name: "ContextNotBound",
-			},
-			provider.ErrorDef{
-				Code: 1559,
-				Message: "direct public-key signer context is not bound: {0:?}",
-				Name: "DirectPubkeySignerContextNotBound",
-			},
-			provider.ErrorDef{
-				Code: 1560,
-				Message: "direct public-key signer does not match: {0:?}",
-				Name: "DirectPubkeySignerMismatch",
-			},
-			provider.ErrorDef{
-				Code: 1561,
 				Message: "identity operation failed with identity error code {0}",
 				Name: "IdentityFailure",
 			},
 			provider.ErrorDef{
-				Code: 1562,
+				Code: 1558,
 				Message: "market DID must use the organization subject type",
 				Name: "MarketDidMustBeOrganization",
+			},
+			provider.ErrorDef{
+				Code: 1559,
+				Message: "AMM pool already exists: {0:?}",
+				Name: "AmmPoolAlreadyExists",
+			},
+			provider.ErrorDef{
+				Code: 1560,
+				Message: "AMM pool not found: {0:?}",
+				Name: "AmmPoolNotFound",
+			},
+			provider.ErrorDef{
+				Code: 1561,
+				Message: "AMM pool is not active: {0:?}",
+				Name: "AmmPoolNotActive",
+			},
+			provider.ErrorDef{
+				Code: 1562,
+				Message: "AMM pool is not stopped: {0:?}",
+				Name: "AmmPoolNotStopped",
+			},
+			provider.ErrorDef{
+				Code: 1563,
+				Message: "AMM pool state is corrupted: {0:?}",
+				Name: "AmmPoolStateCorrupted",
+			},
+			provider.ErrorDef{
+				Code: 1564,
+				Message: "AMM liquidity amounts and minimum shares must be non-zero",
+				Name: "ZeroLiquidityParameter",
+			},
+			provider.ErrorDef{
+				Code: 1565,
+				Message: "AMM liquidity calculation overflow",
+				Name: "AmmLiquidityOverflow",
+			},
+			provider.ErrorDef{
+				Code: 1566,
+				Message: "AMM liquidity would mint zero shares",
+				Name: "ZeroLpShares",
+			},
+			provider.ErrorDef{
+				Code: 1567,
+				Message: "AMM minted shares {0} are below minimum {1}",
+				Name: "MinLpSharesNotMet",
+			},
+			provider.ErrorDef{
+				Code: 1568,
+				Message: "AMM LP balance {0} is below requested burn {1}",
+				Name: "InsufficientLpShares",
+			},
+			provider.ErrorDef{
+				Code: 1569,
+				Message: "AMM liquidity output is below minimum",
+				Name: "MinLiquidityOutputNotMet",
+			},
+			provider.ErrorDef{
+				Code: 1570,
+				Message: "invalid hybrid swap protection or work limits",
+				Name: "InvalidSwapParameter",
+			},
+			provider.ErrorDef{
+				Code: 1571,
+				Message: "swap input token is not part of the market",
+				Name: "InvalidSwapInputToken",
+			},
+			provider.ErrorDef{
+				Code: 1572,
+				Message: "hybrid swap arithmetic overflow",
+				Name: "SwapOverflow",
+			},
+			provider.ErrorDef{
+				Code: 1573,
+				Message: "swap output {0} is below minimum {1}",
+				Name: "MinSwapOutputNotMet",
 			},
 		},
 		Constants: []provider.Constant{
@@ -8506,7 +9787,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "StringOrArray",
-				TypeTag: 563464638590666036,
+				TypeTag: 4792935557077212767,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8541,7 +9822,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "SessionEntry",
-				TypeTag: 9259651745530529271,
+				TypeTag: 10717416294893905038,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8556,7 +9837,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "RevokedSession",
-				TypeTag: 7675263165855945229,
+				TypeTag: 10735777272269064136,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8571,7 +9852,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "SessionsState",
-				TypeTag: 3961147753519811779,
+				TypeTag: 12588480061968345616,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8586,7 +9867,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "KeylessParams",
-				TypeTag: 725874807982920445,
+				TypeTag: 7742804165053814138,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -8603,7 +9884,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "KeylessProviderKind",
-				TypeTag: 1785598101002909808,
+				TypeTag: 2153794636168183303,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -8638,7 +9919,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "KeylessKeyMaterial",
-				TypeTag: 8421431896729949483,
+				TypeTag: 15054311933159222178,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8657,7 +9938,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "KeylessVerificationKey",
-				TypeTag: 2442538615044900503,
+				TypeTag: 17417108057505386078,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8704,7 +9985,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "KeylessProvider",
-				TypeTag: 10056985480167392574,
+				TypeTag: 6039969699975818265,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8719,7 +10000,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "KeylessProviderStatus",
-				TypeTag: 17012131112946806176,
+				TypeTag: 6015458750524898907,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8738,7 +10019,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "KeylessAudience",
-				TypeTag: 15864154800524683589,
+				TypeTag: 16732686633507861426,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8761,7 +10042,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "KeylessBinding",
-				TypeTag: 14670956490051724736,
+				TypeTag: 7983738404475004213,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8780,7 +10061,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "KeylessMarker",
-				TypeTag: 17054723070852806189,
+				TypeTag: 13733160811629473206,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -8791,7 +10072,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "ProviderIndex",
-				TypeTag: 2484498175435113698,
+				TypeTag: 15624622551745873749,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -8838,42 +10119,42 @@ provider.IDL{
 			provider.Resource{
 				Name: "_KeylessSessions",
 				Type: "SessionsState",
-				TypeTag: 3961147753519811779,
+				TypeTag: 12588480061968345616,
 			},
 			provider.Resource{
 				Name: "_KeylessParams",
 				Type: "KeylessParams",
-				TypeTag: 725874807982920445,
+				TypeTag: 7742804165053814138,
 			},
 			provider.Resource{
 				Name: "_KeylessProvider",
 				Type: "KeylessProvider",
-				TypeTag: 10056985480167392574,
+				TypeTag: 6039969699975818265,
 			},
 			provider.Resource{
 				Name: "_KeylessProviderStatus",
 				Type: "KeylessProviderStatus",
-				TypeTag: 17012131112946806176,
+				TypeTag: 6015458750524898907,
 			},
 			provider.Resource{
 				Name: "_KeylessAudience",
 				Type: "KeylessAudience",
-				TypeTag: 15864154800524683589,
+				TypeTag: 16732686633507861426,
 			},
 			provider.Resource{
 				Name: "_KeylessBinding",
 				Type: "KeylessBinding",
-				TypeTag: 14670956490051724736,
+				TypeTag: 7983738404475004213,
 			},
 			provider.Resource{
 				Name: "_KeylessMarker",
 				Type: "KeylessMarker",
-				TypeTag: 17054723070852806189,
+				TypeTag: 13733160811629473206,
 			},
 			provider.Resource{
 				Name: "_ProviderIndex",
 				Type: "ProviderIndex",
-				TypeTag: 2484498175435113698,
+				TypeTag: 15624622551745873749,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -9154,116 +10435,111 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 2103,
-				Message: "address not signed in current transaction: {0:?}",
-				Name: "AddressNotSignatured",
-			},
-			provider.ErrorDef{
-				Code: 2104,
 				Message: "JWT base64url encoding is not canonical",
 				Name: "JwtBase64NonCanonical",
 			},
 			provider.ErrorDef{
-				Code: 2105,
+				Code: 2104,
 				Message: "JWK snapshot unavailable for provider: {0:?}",
 				Name: "JwkSnapshotUnavailable",
 			},
 			provider.ErrorDef{
-				Code: 2106,
+				Code: 2105,
 				Message: "Transparent AccountError",
 				Name: "AccountError",
 			},
 			provider.ErrorDef{
-				Code: 2107,
+				Code: 2106,
 				Message: "Transparent TokenError",
 				Name: "TokenError",
 			},
 			provider.ErrorDef{
-				Code: 2108,
+				Code: 2107,
 				Message: "JWT algorithm is supported but not allowed by provider: {0}",
 				Name: "JwtAlgorithmNotAllowed",
 			},
 			provider.ErrorDef{
-				Code: 2109,
+				Code: 2108,
 				Message: "JWK algorithm mismatch: expected={0}, got={1}",
 				Name: "JwkAlgorithmMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2110,
+				Code: 2109,
 				Message: "JWK use must be 'sig', got={0}",
 				Name: "JwkUseInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2111,
+				Code: 2110,
 				Message: "JWK key_ops must contain 'verify'",
 				Name: "JwkKeyOpsInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2112,
+				Code: 2111,
 				Message: "provider allowed algorithms contain duplicates",
 				Name: "DuplicateAlgorithm",
 			},
 			provider.ErrorDef{
-				Code: 2113,
+				Code: 2112,
 				Message: "keyless bootstrap is only valid in genesis block 0",
 				Name: "GenesisOnly",
 			},
 			provider.ErrorDef{
-				Code: 2114,
+				Code: 2113,
 				Message: "keyless registry is already bootstrapped",
 				Name: "AlreadyBootstrapped",
 			},
 			provider.ErrorDef{
-				Code: 2115,
+				Code: 2114,
 				Message: "keyless provider kind or ID namespace is invalid",
 				Name: "ProviderKindInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2116,
+				Code: 2115,
 				Message: "provider session version overflow",
 				Name: "SessionVersionOverflow",
 			},
 			provider.ErrorDef{
-				Code: 2117,
+				Code: 2116,
 				Message: "provider key revision overflow",
 				Name: "KeyRevisionOverflow",
 			},
 			provider.ErrorDef{
-				Code: 2118,
+				Code: 2117,
 				Message: "audience must contain 1..=256 UTF-8 bytes",
 				Name: "AudienceInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2119,
+				Code: 2118,
 				Message: "audience hash collision",
 				Name: "AudienceHashCollision",
 			},
 			provider.ErrorDef{
-				Code: 2120,
+				Code: 2119,
 				Message: "JWT audience array is empty or contains duplicates",
 				Name: "JwtAudienceInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2121,
+				Code: 2120,
 				Message: "provider owner does not match transaction signer",
 				Name: "ProviderOwnerMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2122,
+				Code: 2121,
 				Message: "built-in OIDC provider metadata is immutable",
 				Name: "BuiltinProviderImmutable",
 			},
 			provider.ErrorDef{
-				Code: 2123,
+				Code: 2122,
 				Message: "custom provider ID is in a reserved namespace",
 				Name: "ReservedProviderId",
 			},
 			provider.ErrorDef{
-				Code: 2124,
+				Code: 2123,
 				Message: "static provider must contain 1..=8 keys",
 				Name: "StaticKeyCountInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2125,
+				Code: 2124,
 				Message: "static provider kid must be unique and contain 1..=128 bytes",
 				Name: "StaticKeyIdInvalid",
 			},
@@ -9271,7 +10547,7 @@ provider.IDL{
 		Constants: []provider.Constant{
 			provider.Constant{
 				Name: "KEYLESS_SPONSOR_SEED",
-				Type: "u16",
+				Type: "u64",
 				Value: 0,
 			},
 			provider.Constant{
@@ -9338,452 +10614,6 @@ provider.IDL{
 				Name: "BIND_DELAY_FLOOR_MS",
 				Type: "u64",
 				Value: 3.6e+06,
-			},
-		},
-	},
-provider.IDL{
-		Metadata: provider.Metadata{
-			AppID: 9,
-			Name: "lucky_box",
-			Description: "Milon lucky_box app IDL",
-		},
-		Instructions: []provider.Instruction{
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "creator",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "box_id",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "token",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "total_amount",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "claim_count",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "rules",
-						Role: "input",
-						Type: "option<BoxRules>",
-					},
-				},
-				Discriminator: 51385,
-				Handler: "create_equal",
-				Kind: "entry",
-				Name: "CreateEqual",
-				Returns: provider.ReturnValue{
-					Type: "u64",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "creator",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "box_id",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "token",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "total_amount",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "claim_count",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "rules",
-						Role: "input",
-						Type: "option<BoxRules>",
-					},
-				},
-				Discriminator: 12885,
-				Handler: "create_lucky",
-				Kind: "entry",
-				Name: "CreateLucky",
-				Returns: provider.ReturnValue{
-					Type: "u64",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "claimant",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "box_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 62102,
-				Handler: "claim",
-				Kind: "entry",
-				Name: "Claim",
-				Sponsor: true,
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "box_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 9120,
-				Handler: "refund",
-				Kind: "entry",
-				Name: "Refund",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "box_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 58937,
-				Handler: "box_view",
-				Kind: "view",
-				Name: "BoxView",
-				Returns: provider.ReturnValue{
-					Type: "BoxState",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "box_id",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 45729,
-				Handler: "asset_pool",
-				Kind: "view",
-				Name: "AssetPool",
-				Returns: provider.ReturnValue{
-					Type: "AssetPoolState",
-				},
-			},
-		},
-		Types: []provider.IDLType{
-			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
-						Name: "Equal",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Lucky",
-						Kind: "unit",
-						Fields: nil,
-					},
-				},
-				Kind: "enum",
-				Name: "AllocationMode",
-				TypeTag: 18037983695646367593,
-			},
-			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
-						Name: "Token",
-						Kind: "struct",
-						Fields: []provider.StructField{
-							provider.StructField{
-								Name: "token",
-								Type: "Address",
-							},
-						},
-					},
-				},
-				Kind: "enum",
-				Name: "AssetId",
-				TypeTag: 6638531511556987569,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "bits",
-						Type: "bytes",
-					},
-					provider.StructField{
-						Name: "item_count",
-						Type: "u32",
-					},
-				},
-				Kind: "struct",
-				Name: "EligibilityBloom",
-				TypeTag: 12069729471053596772,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "bits",
-						Type: "bytes",
-					},
-				},
-				Kind: "struct",
-				Name: "ClaimedBloom",
-				TypeTag: 96439039821236184,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "eligibility_bloom",
-						Type: "EligibilityBloom",
-					},
-					provider.StructField{
-						Name: "expires_at_ms",
-						Type: "option<u64>",
-					},
-				},
-				Kind: "struct",
-				Name: "BoxRules",
-				TypeTag: 15948098985062132184,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "creator",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "box_id",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "status",
-						Type: "u8",
-					},
-					provider.StructField{
-						Name: "claim_count",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "claimed_count",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "expires_at_ms",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "randomness_version",
-						Type: "u8",
-					},
-				},
-				Kind: "struct",
-				Name: "BoxState",
-				TypeTag: 5257330722607027646,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "asset",
-						Type: "AssetId",
-					},
-					provider.StructField{
-						Name: "total_amount",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "remaining_amount",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "allocation",
-						Type: "AllocationMode",
-					},
-				},
-				Kind: "struct",
-				Name: "AssetPoolState",
-				TypeTag: 3332345046324256743,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "Address",
-				TypeTag: 17438174819379414968,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "bytes",
-				TypeTag: 10405529814227927951,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "u32",
-				TypeTag: 5560783464435099345,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "u64",
-				TypeTag: 5563585020063213298,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "u8",
-				TypeTag: 631772817358541784,
-			},
-		},
-		Resources: []provider.Resource{
-			provider.Resource{
-				Name: "_Box",
-				Type: "BoxState",
-				TypeTag: 5257330722607027646,
-			},
-			provider.Resource{
-				Name: "_AssetPool",
-				Type: "AssetPoolState",
-				TypeTag: 3332345046324256743,
-			},
-			provider.Resource{
-				Name: "_EligibilityBloom",
-				Type: "EligibilityBloom",
-				TypeTag: 12069729471053596772,
-			},
-			provider.Resource{
-				Name: "_ClaimedBloom",
-				Type: "ClaimedBloom",
-				TypeTag: 96439039821236184,
-			},
-		},
-		Errors: []provider.ErrorDef{
-			provider.ErrorDef{
-				Code: 2304,
-				Message: "lucky box not found: {0:?}",
-				Name: "BoxNotFound",
-			},
-			provider.ErrorDef{
-				Code: 2305,
-				Message: "lucky box already exists: {0:?}",
-				Name: "BoxAlreadyExists",
-			},
-			provider.ErrorDef{
-				Code: 2306,
-				Message: "lucky box is not active: {0:?}",
-				Name: "BoxNotActive",
-			},
-			provider.ErrorDef{
-				Code: 2307,
-				Message: "lucky box expired: {0:?}",
-				Name: "BoxExpired",
-			},
-			provider.ErrorDef{
-				Code: 2308,
-				Message: "lucky box is not expired: {0:?}",
-				Name: "BoxNotExpired",
-			},
-			provider.ErrorDef{
-				Code: 2309,
-				Message: "lucky box has no remaining claims: {0:?}",
-				Name: "BoxExhausted",
-			},
-			provider.ErrorDef{
-				Code: 2310,
-				Message: "invalid lucky box definition: {0}",
-				Name: "InvalidDefinition",
-			},
-			provider.ErrorDef{
-				Code: 2311,
-				Message: "lucky box collection exceeds protocol limit: {0}",
-				Name: "TooManyItems",
-			},
-			provider.ErrorDef{
-				Code: 2312,
-				Message: "claimant is not eligible: {0:?}",
-				Name: "NotEligible",
-			},
-			provider.ErrorDef{
-				Code: 2313,
-				Message: "claim quota exceeded: {0:?}",
-				Name: "QuotaExceeded",
-			},
-			provider.ErrorDef{
-				Code: 2314,
-				Message: "secure randomness unavailable: {0}",
-				Name: "SecureRandomnessUnavailable",
-			},
-			provider.ErrorDef{
-				Code: 2315,
-				Message: "arithmetic overflow",
-				Name: "Overflow",
-			},
-			provider.ErrorDef{
-				Code: 2316,
-				Message: "creator nonce exhausted: {0:?}",
-				Name: "CreatorNonceExhausted",
-			},
-			provider.ErrorDef{
-				Code: 2317,
-				Message: "escrow invariant violated: {0:?}",
-				Name: "EscrowInvariantViolation",
-			},
-			provider.ErrorDef{
-				Code: 2318,
-				Message: "Transparent TokenError",
-				Name: "TokenError",
-			},
-			provider.ErrorDef{
-				Code: 2319,
-				Message: "Transparent ContextError",
-				Name: "ContextError",
-			},
-		},
-		Constants: []provider.Constant{
-			provider.Constant{
-				Name: "MAX_CLAIMS_PER_BOX",
-				Type: "u64",
-				Value: 10000,
-			},
-			provider.Constant{
-				Name: "MIN_BLOOM_BYTES",
-				Type: "usize",
-				Value: 32,
-			},
-			provider.Constant{
-				Name: "MAX_BLOOM_BYTES",
-				Type: "usize",
-				Value: "32 * 1_024",
-			},
-			provider.Constant{
-				Name: "BLOOM_HASH_COUNT",
-				Type: "usize",
-				Value: 18,
-			},
-			provider.Constant{
-				Name: "DEFAULT_EXPIRATION_MS",
-				Type: "u64",
-				Value: "24 * 60 * 60 * 1_000",
 			},
 		},
 	},
@@ -10307,6 +11137,68 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "creator",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "community_id",
+						Role: "input",
+						Type: "u32",
+					},
+					provider.Arg{
+						Name: "token",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "total_amount",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "claim_count",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "allocation",
+						Role: "input",
+						Type: "GiftAllocation",
+					},
+					provider.Arg{
+						Name: "expires_at_ms",
+						Role: "input",
+						Type: "option<u64>",
+					},
+				},
+				Discriminator: 36253,
+				Handler: "create_gift",
+				Kind: "entry",
+				Name: "CreateGift",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "claimant",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "gift_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 30437,
+				Handler: "claim_gift",
+				Kind: "entry",
+				Name: "ClaimGift",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "subject",
 						Role: "input",
 						Type: "Address",
@@ -10462,6 +11354,43 @@ provider.IDL{
 					Type: "bool",
 				},
 			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "gift_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "claimant",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 62612,
+				Handler: "can_claim_community_gift",
+				Kind: "view",
+				Name: "CanClaimCommunityGift",
+				Returns: provider.ReturnValue{
+					Type: "bool",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "gift_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 46934,
+				Handler: "gift_community",
+				Kind: "view",
+				Name: "GiftCommunity",
+				Returns: provider.ReturnValue{
+					Type: "u32",
+				},
+			},
 		},
 		Types: []provider.IDLType{
 			provider.IDLType{
@@ -10494,7 +11423,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "ObjectType",
-				TypeTag: 6776125531577280399,
+				TypeTag: 4204633598885965265,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -10511,7 +11440,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "JoinMode",
-				TypeTag: 2350450800222339267,
+				TypeTag: 15421268599611707797,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -10526,7 +11455,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "SourceApp",
-				TypeTag: 8914166003957741580,
+				TypeTag: 1060436512969659370,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -10543,7 +11472,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "ReferenceStatus",
-				TypeTag: 7940954906745129895,
+				TypeTag: 1498762012094692129,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -10570,7 +11499,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "Reference",
-				TypeTag: 5198236407389515229,
+				TypeTag: 5381990978971768279,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -10597,7 +11526,24 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "CommunityControl",
-				TypeTag: 16708904908548046110,
+				TypeTag: 9957587179171262664,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Equal",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Lucky",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "GiftAllocation",
+				TypeTag: 12211908797870093821,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -10639,12 +11585,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_SourceApp",
 				Type: "SourceApp",
-				TypeTag: 8914166003957741580,
-			},
-			provider.Resource{
-				Name: "_SourceAppSequence",
-				Type: "u32",
-				TypeTag: 5560783464435099345,
+				TypeTag: 1060436512969659370,
 			},
 			provider.Resource{
 				Name: "_SourcePublisher",
@@ -10654,22 +11595,12 @@ provider.IDL{
 			provider.Resource{
 				Name: "_Reference",
 				Type: "Reference",
-				TypeTag: 5198236407389515229,
+				TypeTag: 5381990978971768279,
 			},
 			provider.Resource{
 				Name: "_CommunityControl",
 				Type: "CommunityControl",
-				TypeTag: 16708904908548046110,
-			},
-			provider.Resource{
-				Name: "_CommunitySequence",
-				Type: "u32",
-				TypeTag: 5560783464435099345,
-			},
-			provider.Resource{
-				Name: "_CommunityCreatorCount",
-				Type: "u32",
-				TypeTag: 5560783464435099345,
+				TypeTag: 9957587179171262664,
 			},
 			provider.Resource{
 				Name: "_CommunityAdmin",
@@ -10685,6 +11616,26 @@ provider.IDL{
 				Name: "_Membership",
 				Type: "bool",
 				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_SourceAppSequence",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_CommunitySequence",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_CommunityCreatorCount",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_CommunityGift",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -10850,26 +11801,31 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 2592,
-				Message: "Transparent ContextError",
-				Name: "ContextError",
-			},
-			provider.ErrorDef{
-				Code: 2593,
 				Message: "community creation limit reached for DID: {0:?}",
 				Name: "CommunityCreationLimitReached",
 			},
 			provider.ErrorDef{
-				Code: 2594,
+				Code: 2593,
 				Message: "community member limit reached: {0}",
 				Name: "CommunityMemberLimitReached",
 			},
 			provider.ErrorDef{
-				Code: 2595,
+				Code: 2594,
 				Message: "community member count invariant failed: {0}",
 				Name: "CommunityMemberCountInvariant",
 			},
 			provider.ErrorDef{
+				Code: 2595,
+				Message: "Transparent TokenError",
+				Name: "TokenError",
+			},
+			provider.ErrorDef{
 				Code: 2596,
+				Message: "community gift not found: {0:?}",
+				Name: "CommunityGiftNotFound",
+			},
+			provider.ErrorDef{
+				Code: 2597,
 				Message: "the community owner cannot leave",
 				Name: "CannotLeaveCommunityOwner",
 			},
@@ -10889,7 +11845,7 @@ provider.IDL{
 	},
 provider.IDL{
 		Metadata: provider.Metadata{
-			AppID: 255,
+			AppID: 254,
 			Name: "demo",
 			Description: "Milon demo app IDL",
 		},
@@ -10907,10 +11863,84 @@ provider.IDL{
 						Type: "String",
 					},
 				},
-				Discriminator: 57564,
+				Discriminator: 47185,
 				Handler: "open_order",
 				Kind: "entry",
 				Name: "OpenOrder",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "operator",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 33284,
+				Handler: "reject_order_inbound",
+				Kind: "entry",
+				Name: "RejectOrderInbound",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "operator",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "String",
+					},
+					provider.Arg{
+						Name: "forward_seed",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 12070,
+				Handler: "forward_order_inbound",
+				Kind: "entry",
+				Name: "ForwardOrderInbound",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "operator",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "String",
+					},
+					provider.Arg{
+						Name: "first",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "second",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "first_bps",
+						Role: "input",
+						Type: "u16",
+					},
+				},
+				Discriminator: 2755,
+				Handler: "split_order_inbound",
+				Kind: "entry",
+				Name: "SplitOrderInbound",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -10935,7 +11965,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				Discriminator: 58464,
+				Discriminator: 49571,
 				Handler: "pay_order",
 				Kind: "entry",
 				Name: "PayOrder",
@@ -10968,101 +11998,10 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				Discriminator: 1751,
+				Discriminator: 62622,
 				Handler: "settle_order",
 				Kind: "entry",
 				Name: "SettleOrder",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "order_id",
-						Role: "input",
-						Type: "String",
-					},
-					provider.Arg{
-						Name: "token",
-						Role: "input",
-						Type: "Address",
-					},
-				},
-				Discriminator: 24910,
-				Handler: "order_balance",
-				Kind: "view",
-				Name: "OrderBalance",
-				Returns: provider.ReturnValue{
-					Type: "u64",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "pool",
-						Role: "input",
-						Type: "Address",
-					},
-				},
-				Discriminator: 6639,
-				Handler: "open_gas_sponsor_pool",
-				Kind: "entry",
-				Name: "OpenGasSponsorPool",
-				Returns: provider.ReturnValue{
-					Type: "u16",
-				},
-				SignerLookups: provider.SignerLookups{
-					"admin": provider.SignerLookup{
-						Path: provider.LookupPath{
-							Arg: "pool",
-							Type: "Address",
-						},
-						Res: 237,
-					},
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "claimer",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "pool",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "sponsor_seed",
-						Role: "input",
-						Type: "u16",
-					},
-					provider.Arg{
-						Name: "amount",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 11876,
-				Handler: "claim_sponsored_score",
-				Kind: "entry",
-				Name: "ClaimSponsoredScore",
-				Sponsor: true,
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "sponsor_seed",
-						Role: "input",
-						Type: "u16",
-					},
-				},
-				Discriminator: 35462,
-				Handler: "sponsor_pool_of",
-				Kind: "view",
-				Name: "SponsorPoolOf",
-				Returns: provider.ReturnValue{
-					Type: "Address",
-				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -11077,7 +12016,7 @@ provider.IDL{
 						Type: "String",
 					},
 				},
-				Discriminator: 27056,
+				Discriminator: 51459,
 				Handler: "init_pool",
 				Kind: "entry",
 				Name: "InitPool",
@@ -11095,7 +12034,7 @@ provider.IDL{
 						Type: "String",
 					},
 				},
-				Discriminator: 44919,
+				Discriminator: 50094,
 				Handler: "init_dex",
 				Kind: "entry",
 				Name: "InitDex",
@@ -11113,7 +12052,7 @@ provider.IDL{
 						Type: "String",
 					},
 				},
-				Discriminator: 58132,
+				Discriminator: 47391,
 				Handler: "set_label",
 				Kind: "entry",
 				Name: "SetLabel",
@@ -11145,7 +12084,7 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				Discriminator: 8311,
+				Discriminator: 60858,
 				Handler: "batch_credit",
 				Kind: "entry",
 				Name: "BatchCredit",
@@ -11166,8 +12105,245 @@ provider.IDL{
 						Role: "input",
 						Type: "Address",
 					},
+					provider.Arg{
+						Name: "tier",
+						Role: "input",
+						Type: "u32",
+					},
+					provider.Arg{
+						Name: "cap",
+						Role: "input",
+						Type: "u64",
+					},
 				},
-				Discriminator: 10409,
+				Discriminator: 55600,
+				Handler: "set_tier_cap",
+				Kind: "entry",
+				Name: "SetTierCap",
+				SignerLookups: provider.SignerLookups{
+					"admin": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "pool",
+							Type: "Address",
+						},
+						Res: 237,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "caller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "tag",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 1414,
+				Handler: "draw_u64",
+				Kind: "entry",
+				Name: "DrawU64",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "caller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "tag",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 52945,
+				Handler: "draw_bytes32",
+				Kind: "entry",
+				Name: "DrawBytes32",
+				Returns: provider.ReturnValue{
+					Type: "B256",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "caller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "tag",
+						Role: "input",
+						Type: "String",
+					},
+					provider.Arg{
+						Name: "lo",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "hi",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 31302,
+				Handler: "draw_range",
+				Kind: "entry",
+				Name: "DrawRange",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "pool",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 49440,
+				Handler: "open_gas_sponsor_pool",
+				Kind: "entry",
+				Name: "OpenGasSponsorPool",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+				SignerLookups: provider.SignerLookups{
+					"admin": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "pool",
+							Type: "Address",
+						},
+						Res: 237,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "claimer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "sponsor_seed",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "amount",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 1595,
+				Handler: "claim_sponsored_score",
+				Kind: "entry",
+				Name: "ClaimSponsoredScore",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "caller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "due_ms",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 8376,
+				Handler: "schedule_wake",
+				Kind: "entry",
+				Name: "ScheduleWake",
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 9624,
+				Handler: "run_scheduled_wake",
+				Kind: "entry",
+				Name: "RunScheduledWake",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 9625,
+				Handler: "order_vault",
+				Kind: "view",
+				Name: "OrderVault",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 56285,
+				Handler: "order_last_inbound",
+				Kind: "view",
+				Name: "OrderLastInbound",
+				Returns: provider.ReturnValue{
+					Type: "LastInbound",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "String",
+					},
+					provider.Arg{
+						Name: "token",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 23229,
+				Handler: "order_balance",
+				Kind: "view",
+				Name: "OrderBalance",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "pool",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 36952,
 				Handler: "label_of",
 				Kind: "view",
 				Name: "LabelOf",
@@ -11188,7 +12364,7 @@ provider.IDL{
 						Type: "Address",
 					},
 				},
-				Discriminator: 54597,
+				Discriminator: 24200,
 				Handler: "score_of",
 				Kind: "view",
 				Name: "ScoreOf",
@@ -11208,40 +12384,8 @@ provider.IDL{
 						Role: "input",
 						Type: "u32",
 					},
-					provider.Arg{
-						Name: "cap",
-						Role: "input",
-						Type: "u64",
-					},
 				},
-				Discriminator: 58369,
-				Handler: "set_tier_cap",
-				Kind: "entry",
-				Name: "SetTierCap",
-				SignerLookups: provider.SignerLookups{
-					"admin": provider.SignerLookup{
-						Path: provider.LookupPath{
-							Arg: "pool",
-							Type: "Address",
-						},
-						Res: 237,
-					},
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "pool",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "tier",
-						Role: "input",
-						Type: "u32",
-					},
-				},
-				Discriminator: 48456,
+				Discriminator: 63079,
 				Handler: "tier_cap_of",
 				Kind: "view",
 				Name: "TierCapOf",
@@ -11257,7 +12401,7 @@ provider.IDL{
 						Type: "DemoMode",
 					},
 				},
-				Discriminator: 47924,
+				Discriminator: 48471,
 				Handler: "echo_mode",
 				Kind: "view",
 				Name: "EchoMode",
@@ -11273,7 +12417,7 @@ provider.IDL{
 						Type: "map<String,u32>",
 					},
 				},
-				Discriminator: 4770,
+				Discriminator: 9869,
 				Handler: "label_total",
 				Kind: "view",
 				Name: "LabelTotal",
@@ -11309,7 +12453,7 @@ provider.IDL{
 						Type: "tuple<u8,i16>",
 					},
 				},
-				Discriminator: 43240,
+				Discriminator: 37219,
 				Handler: "special_types",
 				Kind: "view",
 				Name: "SpecialTypes",
@@ -11317,8 +12461,88 @@ provider.IDL{
 					Type: "u32",
 				},
 			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sponsor_seed",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 38217,
+				Handler: "sponsor_pool_of",
+				Kind: "view",
+				Name: "SponsorPoolOf",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 45310,
+				Handler: "scheduled_wake_count",
+				Kind: "view",
+				Name: "ScheduledWakeCount",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
 		},
 		Types: []provider.IDLType{
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "seed",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "operator",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "reject_inbound",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "forward_seed",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "split_bps",
+						Type: "u16",
+					},
+					provider.StructField{
+						Name: "split_first",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "split_second",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "OrderState",
+				TypeTag: 6116235401568728262,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "token",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "from",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "LastInbound",
+				TypeTag: 15707610513562194952,
+			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
@@ -11328,7 +12552,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "Label",
-				TypeTag: 4454442085531989710,
+				TypeTag: 17171651226162355183,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -11364,22 +12588,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "DemoMode",
-				TypeTag: 17947950995871299984,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "seed",
-						Type: "u16",
-					},
-					provider.StructField{
-						Name: "operator",
-						Type: "Address",
-					},
-				},
-				Kind: "struct",
-				Name: "OrderState",
-				TypeTag: 12174282691231125773,
+				TypeTag: 5404942628480427284,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -11388,8 +12597,18 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "String",
 				TypeTag: 8566531010829758022,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "bool",
+				TypeTag: 14785269867199075517,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -11419,14 +12638,34 @@ provider.IDL{
 		},
 		Resources: []provider.Resource{
 			provider.Resource{
+				Name: "_Order",
+				Type: "OrderState",
+				TypeTag: 6116235401568728262,
+			},
+			provider.Resource{
+				Name: "_OrderSeed",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_LastInbound",
+				Type: "LastInbound",
+				TypeTag: 15707610513562194952,
+			},
+			provider.Resource{
+				Name: "_NextOrderSeed",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
 				Name: "_Admin",
 				Type: "Address",
-				TypeTag: 8066144737129915696,
+				TypeTag: 3694179416476927173,
 			},
 			provider.Resource{
 				Name: "_Label",
 				Type: "Label",
-				TypeTag: 4454442085531989710,
+				TypeTag: 17171651226162355183,
 			},
 			provider.Resource{
 				Name: "_Score",
@@ -11439,29 +12678,29 @@ provider.IDL{
 				TypeTag: 5563585020063213298,
 			},
 			provider.Resource{
-				Name: "_Order",
-				Type: "OrderState",
-				TypeTag: 12174282691231125773,
-			},
-			provider.Resource{
-				Name: "_NextOrderSeed",
-				Type: "u16",
-				TypeTag: 5558799945458185151,
-			},
-			provider.Resource{
 				Name: "_NextSponsorSeed",
-				Type: "u16",
-				TypeTag: 5558799945458185151,
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 			provider.Resource{
 				Name: "_SponsorPool",
 				Type: "Address",
-				TypeTag: 8066144737129915696,
+				TypeTag: 10947913201253101891,
 			},
 			provider.Resource{
 				Name: "_PoolSponsor",
-				Type: "u16",
-				TypeTag: 5558799945458185151,
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_WakeWork",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_WakeFired",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 		},
 		Events: []provider.Event{
@@ -11483,54 +12722,71 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 7407037194950745602,
+				TypeTag: 14232600292727055113,
 			},
 		},
 		Errors: []provider.ErrorDef{
 			provider.ErrorDef{
-				Code: 65280,
+				Code: 65024,
 				Message: "Demo pool {0:?} not found",
 				Name: "PoolNotFound",
 			},
 			provider.ErrorDef{
-				Code: 65281,
+				Code: 65025,
 				Message: "Demo pool {0:?} already exists",
 				Name: "PoolAlreadyExists",
 			},
 			provider.ErrorDef{
-				Code: 65282,
+				Code: 65026,
 				Message: "Demo pool {0:?} recipient {1:?} not found",
 				Name: "RecipientNotFound",
 			},
 			provider.ErrorDef{
-				Code: 65283,
+				Code: 65027,
 				Message: "Invalid parameters: {0}",
 				Name: "InvalidParameters",
 			},
 			provider.ErrorDef{
-				Code: 65284,
+				Code: 65028,
 				Message: "Demo order not found: {0}",
 				Name: "OrderNotFound",
 			},
 			provider.ErrorDef{
-				Code: 65285,
+				Code: 65029,
 				Message: "Demo order already exists: {0}",
 				Name: "OrderAlreadyExists",
 			},
 			provider.ErrorDef{
-				Code: 65286,
+				Code: 65030,
 				Message: "Demo order operator mismatch: {0}",
 				Name: "OrderOperatorMismatch",
 			},
 			provider.ErrorDef{
-				Code: 65287,
+				Code: 65031,
 				Message: "Demo gas sponsor pool not found: seed {0}",
 				Name: "SponsorPoolNotFound",
 			},
 			provider.ErrorDef{
-				Code: 65288,
-				Message: "地址未参与当前交易签名: {0:?}",
-				Name: "AddressNotSignatured",
+				Code: 65032,
+				Message: "Demo order {0} rejected the inbound transfer",
+				Name: "InboundRejected",
+			},
+			provider.ErrorDef{
+				Code: 65033,
+				Message: "Demo scheduled wake rejected",
+				Name: "WakeRejected",
+			},
+			provider.ErrorDef{
+				Code: 65034,
+				Message: "Demo randomness unavailable: {0}",
+				Name: "RandomnessUnavailable",
+			},
+		},
+		Constants: []provider.Constant{
+			provider.Constant{
+				Name: "WAKE_SPONSOR_SEED",
+				Type: "u64",
+				Value: 65000,
 			},
 		},
 	},
@@ -11558,6 +12814,28 @@ func (v SystemConsensusValidatorIdentity) ToValue() (map[string]any, error) {
 	out["bls_pubkey"] = v.BlsPubkey
 	// ed25519_pubkey: bytes
 	out["ed25519_pubkey"] = v.Ed25519Pubkey
+	return out, nil
+}
+
+// SystemWakeRecord matches the IDL struct WakeRecord.
+type SystemWakeRecord struct {
+	Registered bool
+	DueTimestampMs uint64
+	Method []byte
+	Sponsor *crypto.Address
+}
+
+// ToValue converts SystemWakeRecord into the provider wire value (map[string]any).
+func (v SystemWakeRecord) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// registered: bool
+	out["registered"] = v.Registered
+	// due_timestamp_ms: u64
+	out["due_timestamp_ms"] = v.DueTimestampMs
+	// method: bytes
+	out["method"] = v.Method
+	// sponsor: Address
+	out["sponsor"] = v.Sponsor
 	return out, nil
 }
 
@@ -11655,6 +12933,38 @@ func (v AccountVoteMeta) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
+// AccountVoteOccupancy matches the IDL struct VoteOccupancy.
+type AccountVoteOccupancy struct {
+	Bitmap uint64
+	SweepExpiresAtMs uint64
+}
+
+// ToValue converts AccountVoteOccupancy into the provider wire value (map[string]any).
+func (v AccountVoteOccupancy) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// bitmap: Bitmap64
+	out["bitmap"] = v.Bitmap
+	// sweep_expires_at_ms: u64
+	out["sweep_expires_at_ms"] = v.SweepExpiresAtMs
+	return out, nil
+}
+
+// AccountVoteSweepOwner matches the IDL struct VoteSweepOwner.
+type AccountVoteSweepOwner struct {
+	ExpiresAtMs uint64
+	Owner *crypto.Address
+}
+
+// ToValue converts AccountVoteSweepOwner into the provider wire value (map[string]any).
+func (v AccountVoteSweepOwner) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// expires_at_ms: u64
+	out["expires_at_ms"] = v.ExpiresAtMs
+	// owner: Address
+	out["owner"] = v.Owner
+	return out, nil
+}
+
 // TokenMetadata matches the IDL struct Metadata.
 type TokenMetadata struct {
 	Name string
@@ -11722,6 +13032,188 @@ func (v TokenCompliance) ToValue() (map[string]any, error) {
 		v1[v2] = v3
 	}
 	out["requirements"] = v1
+	return out, nil
+}
+
+// TokenGiftAllocation matches the IDL enum GiftAllocation.
+type TokenGiftAllocation struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts TokenGiftAllocation into the provider wire value (map[string]any).
+func (v TokenGiftAllocation) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum GiftAllocation: empty variant")
+	}
+	switch v.Variant {
+	case "Equal":
+		return map[string]any{"variant": "Equal"}, nil
+	case "Lucky":
+		return map[string]any{"variant": "Lucky"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// TokenGiftEligibility matches the IDL enum GiftEligibility.
+type TokenGiftEligibility struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts TokenGiftEligibility into the provider wire value (map[string]any).
+func (v TokenGiftEligibility) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum GiftEligibility: empty variant")
+	}
+	switch v.Variant {
+	case "Credential":
+		if len(v.Fields) != 1 {
+			return nil, fmt.Errorf("enum GiftEligibility: variant Credential expects %d fields", len(v.Fields))
+		}
+		record := make(map[string]any, 1)
+		// credential_id: String
+		record["credential_id"] = v.Fields[0]
+		return map[string]any{"variant": "Credential", "fields": record}, nil
+	case "Recipients":
+		if len(v.Fields) != 1 {
+			return nil, fmt.Errorf("enum GiftEligibility: variant Recipients expects %d fields", len(v.Fields))
+		}
+		record := make(map[string]any, 1)
+		// addresses: vec<Address>
+		v0, ok := v.Fields[0].([]any)
+		if !ok {
+			return nil, fmt.Errorf("expected []any, got %T", v.Fields[0])
+		}
+		v1 := make([]any, len(v0))
+		for v2, v3 := range v0 {
+			v1[v2] = v3
+		}
+		record["addresses"] = v1
+		return map[string]any{"variant": "Recipients", "fields": record}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// TokenGiftRules matches the IDL struct GiftRules.
+type TokenGiftRules struct {
+	CredentialId *string
+	Recipients []*crypto.Address
+	ExpiresAtMs *uint64
+}
+
+// ToValue converts TokenGiftRules into the provider wire value (map[string]any).
+func (v TokenGiftRules) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// credential_id: option<String>
+	if v.CredentialId == nil {
+		out["credential_id"] = nil
+	} else {
+		out["credential_id"] = *v.CredentialId
+	}
+	// recipients: vec<Address>
+	v0 := make([]any, len(v.Recipients))
+	for v1, v2 := range v.Recipients {
+		v0[v1] = v2
+	}
+	out["recipients"] = v0
+	// expires_at_ms: option<u64>
+	if v.ExpiresAtMs == nil {
+		out["expires_at_ms"] = nil
+	} else {
+		out["expires_at_ms"] = *v.ExpiresAtMs
+	}
+	return out, nil
+}
+
+// TokenGiftState matches the IDL struct GiftState.
+type TokenGiftState struct {
+	Creator *crypto.Address
+	GiftId *crypto.Address
+	Token *crypto.Address
+	TotalAmount uint64
+	RemainingAmount uint64
+	ClaimCount uint64
+	ClaimedCount uint64
+	ExpiresAtMs uint64
+	Allocation TokenGiftAllocation
+	Eligibility TokenGiftEligibility
+	ClaimedRecipients uint32
+}
+
+// ToValue converts TokenGiftState into the provider wire value (map[string]any).
+func (v TokenGiftState) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 11)
+	// creator: Address
+	out["creator"] = v.Creator
+	// gift_id: Address
+	out["gift_id"] = v.GiftId
+	// token: Address
+	out["token"] = v.Token
+	// total_amount: u64
+	out["total_amount"] = v.TotalAmount
+	// remaining_amount: u64
+	out["remaining_amount"] = v.RemainingAmount
+	// claim_count: u64
+	out["claim_count"] = v.ClaimCount
+	// claimed_count: u64
+	out["claimed_count"] = v.ClaimedCount
+	// expires_at_ms: u64
+	out["expires_at_ms"] = v.ExpiresAtMs
+	// allocation: GiftAllocation
+	v0, err := toTokenGiftAllocationValue(v.Allocation)
+	if err != nil {
+		return nil, err
+	}
+	out["allocation"] = v0
+	// eligibility: GiftEligibility
+	v1, err := toTokenGiftEligibilityValue(v.Eligibility)
+	if err != nil {
+		return nil, err
+	}
+	out["eligibility"] = v1
+	// claimed_recipients: u32
+	out["claimed_recipients"] = v.ClaimedRecipients
+	return out, nil
+}
+
+// TokenGiftSettlement matches the IDL struct GiftSettlement.
+type TokenGiftSettlement struct {
+	Creator *crypto.Address
+	Status uint8
+	ClaimRecords uint64
+	CleanupCursor uint64
+}
+
+// ToValue converts TokenGiftSettlement into the provider wire value (map[string]any).
+func (v TokenGiftSettlement) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// creator: Address
+	out["creator"] = v.Creator
+	// status: u8
+	out["status"] = v.Status
+	// claim_records: u64
+	out["claim_records"] = v.ClaimRecords
+	// cleanup_cursor: u64
+	out["cleanup_cursor"] = v.CleanupCursor
+	return out, nil
+}
+
+// TokenGiftCleanupQueueState matches the IDL struct GiftCleanupQueueState.
+type TokenGiftCleanupQueueState struct {
+	Head *crypto.Address
+	Tail *crypto.Address
+}
+
+// ToValue converts TokenGiftCleanupQueueState into the provider wire value (map[string]any).
+func (v TokenGiftCleanupQueueState) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// head: Address
+	out["head"] = v.Head
+	// tail: Address
+	out["tail"] = v.Tail
 	return out, nil
 }
 
@@ -12991,6 +14483,27 @@ func (v DexMarketStatus) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
+// DexAmmStatus matches the IDL enum AmmStatus.
+type DexAmmStatus struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts DexAmmStatus into the provider wire value (map[string]any).
+func (v DexAmmStatus) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum AmmStatus: empty variant")
+	}
+	switch v.Variant {
+	case "Active":
+		return map[string]any{"variant": "Active"}, nil
+	case "Stopped":
+		return map[string]any{"variant": "Stopped"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
 // DexOrderSide matches the IDL enum OrderSide.
 type DexOrderSide struct {
 	Variant string // Active variant name
@@ -13058,11 +14571,36 @@ func (v DexOrderSelfTradePolicy) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
+// DexHybridSwapResult matches the IDL struct HybridSwapResult.
+type DexHybridSwapResult struct {
+	AmountInUsed uint64
+	AmountOut uint64
+	Refund uint64
+	ClobFills uint16
+	AmmSegments uint16
+}
+
+// ToValue converts DexHybridSwapResult into the provider wire value (map[string]any).
+func (v DexHybridSwapResult) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 5)
+	// amount_in_used: u64
+	out["amount_in_used"] = v.AmountInUsed
+	// amount_out: u64
+	out["amount_out"] = v.AmountOut
+	// refund: u64
+	out["refund"] = v.Refund
+	// clob_fills: u16
+	out["clob_fills"] = v.ClobFills
+	// amm_segments: u16
+	out["amm_segments"] = v.AmmSegments
+	return out, nil
+}
+
 // DexMarket matches the IDL struct Market.
 type DexMarket struct {
 	BaseToken *crypto.Address
 	QuoteToken *crypto.Address
-	VaultSeed uint16
+	VaultSeed uint64
 	BaseLotAtoms uint64
 	QuoteAtomsPerLotTick uint64
 	MinTick uint32
@@ -13082,7 +14620,7 @@ func (v DexMarket) ToValue() (map[string]any, error) {
 	out["base_token"] = v.BaseToken
 	// quote_token: Address
 	out["quote_token"] = v.QuoteToken
-	// vault_seed: u16
+	// vault_seed: u64
 	out["vault_seed"] = v.VaultSeed
 	// base_lot_atoms: u64
 	out["base_lot_atoms"] = v.BaseLotAtoms
@@ -13108,6 +14646,79 @@ func (v DexMarket) ToValue() (map[string]any, error) {
 		return nil, err
 	}
 	out["status"] = v0
+	return out, nil
+}
+
+// DexAmmPoolInfo matches the IDL struct AmmPoolInfo.
+type DexAmmPoolInfo struct {
+	MarketId *crypto.Address
+	Vault *crypto.Address
+	VaultSeed uint64
+	Status DexAmmStatus
+	ReserveBase uint64
+	ReserveQuote uint64
+	TotalLpSupply uint64
+}
+
+// ToValue converts DexAmmPoolInfo into the provider wire value (map[string]any).
+func (v DexAmmPoolInfo) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 7)
+	// market_id: Address
+	out["market_id"] = v.MarketId
+	// vault: Address
+	out["vault"] = v.Vault
+	// vault_seed: u64
+	out["vault_seed"] = v.VaultSeed
+	// status: AmmStatus
+	v0, err := toDexAmmStatusValue(v.Status)
+	if err != nil {
+		return nil, err
+	}
+	out["status"] = v0
+	// reserve_base: u64
+	out["reserve_base"] = v.ReserveBase
+	// reserve_quote: u64
+	out["reserve_quote"] = v.ReserveQuote
+	// total_lp_supply: u64
+	out["total_lp_supply"] = v.TotalLpSupply
+	return out, nil
+}
+
+// DexAddLiquidityResult matches the IDL struct AddLiquidityResult.
+type DexAddLiquidityResult struct {
+	BaseAmount uint64
+	QuoteAmount uint64
+	LpShares uint64
+}
+
+// ToValue converts DexAddLiquidityResult into the provider wire value (map[string]any).
+func (v DexAddLiquidityResult) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// base_amount: u64
+	out["base_amount"] = v.BaseAmount
+	// quote_amount: u64
+	out["quote_amount"] = v.QuoteAmount
+	// lp_shares: u64
+	out["lp_shares"] = v.LpShares
+	return out, nil
+}
+
+// DexRemoveLiquidityResult matches the IDL struct RemoveLiquidityResult.
+type DexRemoveLiquidityResult struct {
+	BaseAmount uint64
+	QuoteAmount uint64
+	LpShares uint64
+}
+
+// ToValue converts DexRemoveLiquidityResult into the provider wire value (map[string]any).
+func (v DexRemoveLiquidityResult) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// base_amount: u64
+	out["base_amount"] = v.BaseAmount
+	// quote_amount: u64
+	out["quote_amount"] = v.QuoteAmount
+	// lp_shares: u64
+	out["lp_shares"] = v.LpShares
 	return out, nil
 }
 
@@ -13337,7 +14948,7 @@ func (v DexPriceLevelState) ToValue() (map[string]any, error) {
 type DexMarketTokensState struct {
 	BaseToken *crypto.Address
 	QuoteToken *crypto.Address
-	VaultSeed uint16
+	VaultSeed uint64
 }
 
 // ToValue converts DexMarketTokensState into the provider wire value (map[string]any).
@@ -13347,7 +14958,7 @@ func (v DexMarketTokensState) ToValue() (map[string]any, error) {
 	out["base_token"] = v.BaseToken
 	// quote_token: Address
 	out["quote_token"] = v.QuoteToken
-	// vault_seed: u16
+	// vault_seed: u64
 	out["vault_seed"] = v.VaultSeed
 	return out, nil
 }
@@ -13509,6 +15120,38 @@ func (v DexOrderLinkState) ToValue() (map[string]any, error) {
 	out["prev_order_id"] = v.PrevOrderId
 	// next_order_id: u64
 	out["next_order_id"] = v.NextOrderId
+	return out, nil
+}
+
+// DexAmmConfigState matches the IDL struct AmmConfigState.
+type DexAmmConfigState struct {
+	VaultSeed uint64
+	Status uint8
+}
+
+// ToValue converts DexAmmConfigState into the provider wire value (map[string]any).
+func (v DexAmmConfigState) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// vault_seed: u64
+	out["vault_seed"] = v.VaultSeed
+	// status: u8
+	out["status"] = v.Status
+	return out, nil
+}
+
+// DexAmmReservesState matches the IDL struct AmmReservesState.
+type DexAmmReservesState struct {
+	ReserveBase uint64
+	ReserveQuote uint64
+}
+
+// ToValue converts DexAmmReservesState into the provider wire value (map[string]any).
+func (v DexAmmReservesState) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// reserve_base: u64
+	out["reserve_base"] = v.ReserveBase
+	// reserve_quote: u64
+	out["reserve_quote"] = v.ReserveQuote
 	return out, nil
 }
 
@@ -13979,166 +15622,6 @@ func (v KeylessProviderIndex) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// LuckyBoxAllocationMode matches the IDL enum AllocationMode.
-type LuckyBoxAllocationMode struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
-}
-
-// ToValue converts LuckyBoxAllocationMode into the provider wire value (map[string]any).
-func (v LuckyBoxAllocationMode) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum AllocationMode: empty variant")
-	}
-	switch v.Variant {
-	case "Equal":
-		return map[string]any{"variant": "Equal"}, nil
-	case "Lucky":
-		return map[string]any{"variant": "Lucky"}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
-}
-
-// LuckyBoxAssetId matches the IDL enum AssetId.
-type LuckyBoxAssetId struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
-}
-
-// ToValue converts LuckyBoxAssetId into the provider wire value (map[string]any).
-func (v LuckyBoxAssetId) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum AssetId: empty variant")
-	}
-	switch v.Variant {
-	case "Token":
-		if len(v.Fields) != 1 {
-			return nil, fmt.Errorf("enum AssetId: variant Token expects %d fields", len(v.Fields))
-		}
-		record := make(map[string]any, 1)
-		// token: Address
-		record["token"] = v.Fields[0]
-		return map[string]any{"variant": "Token", "fields": record}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
-}
-
-// LuckyBoxEligibilityBloom matches the IDL struct EligibilityBloom.
-type LuckyBoxEligibilityBloom struct {
-	Bits []byte
-	ItemCount uint32
-}
-
-// ToValue converts LuckyBoxEligibilityBloom into the provider wire value (map[string]any).
-func (v LuckyBoxEligibilityBloom) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 2)
-	// bits: bytes
-	out["bits"] = v.Bits
-	// item_count: u32
-	out["item_count"] = v.ItemCount
-	return out, nil
-}
-
-// LuckyBoxClaimedBloom matches the IDL struct ClaimedBloom.
-type LuckyBoxClaimedBloom struct {
-	Bits []byte
-}
-
-// ToValue converts LuckyBoxClaimedBloom into the provider wire value (map[string]any).
-func (v LuckyBoxClaimedBloom) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 1)
-	// bits: bytes
-	out["bits"] = v.Bits
-	return out, nil
-}
-
-// LuckyBoxBoxRules matches the IDL struct BoxRules.
-type LuckyBoxBoxRules struct {
-	EligibilityBloom LuckyBoxEligibilityBloom
-	ExpiresAtMs *uint64
-}
-
-// ToValue converts LuckyBoxBoxRules into the provider wire value (map[string]any).
-func (v LuckyBoxBoxRules) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 2)
-	// eligibility_bloom: EligibilityBloom
-	v0, err := toLuckyBoxEligibilityBloomValue(v.EligibilityBloom)
-	if err != nil {
-		return nil, err
-	}
-	out["eligibility_bloom"] = v0
-	// expires_at_ms: option<u64>
-	if v.ExpiresAtMs == nil {
-		out["expires_at_ms"] = nil
-	} else {
-		out["expires_at_ms"] = *v.ExpiresAtMs
-	}
-	return out, nil
-}
-
-// LuckyBoxBoxState matches the IDL struct BoxState.
-type LuckyBoxBoxState struct {
-	Creator *crypto.Address
-	BoxId uint64
-	Status uint8
-	ClaimCount uint64
-	ClaimedCount uint64
-	ExpiresAtMs uint64
-	RandomnessVersion uint8
-}
-
-// ToValue converts LuckyBoxBoxState into the provider wire value (map[string]any).
-func (v LuckyBoxBoxState) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 7)
-	// creator: Address
-	out["creator"] = v.Creator
-	// box_id: u64
-	out["box_id"] = v.BoxId
-	// status: u8
-	out["status"] = v.Status
-	// claim_count: u64
-	out["claim_count"] = v.ClaimCount
-	// claimed_count: u64
-	out["claimed_count"] = v.ClaimedCount
-	// expires_at_ms: u64
-	out["expires_at_ms"] = v.ExpiresAtMs
-	// randomness_version: u8
-	out["randomness_version"] = v.RandomnessVersion
-	return out, nil
-}
-
-// LuckyBoxAssetPoolState matches the IDL struct AssetPoolState.
-type LuckyBoxAssetPoolState struct {
-	Asset LuckyBoxAssetId
-	TotalAmount uint64
-	RemainingAmount uint64
-	Allocation LuckyBoxAllocationMode
-}
-
-// ToValue converts LuckyBoxAssetPoolState into the provider wire value (map[string]any).
-func (v LuckyBoxAssetPoolState) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// asset: AssetId
-	v0, err := toLuckyBoxAssetIdValue(v.Asset)
-	if err != nil {
-		return nil, err
-	}
-	out["asset"] = v0
-	// total_amount: u64
-	out["total_amount"] = v.TotalAmount
-	// remaining_amount: u64
-	out["remaining_amount"] = v.RemainingAmount
-	// allocation: AllocationMode
-	v1, err := toLuckyBoxAllocationModeValue(v.Allocation)
-	if err != nil {
-		return nil, err
-	}
-	out["allocation"] = v1
-	return out, nil
-}
-
 // SocialObjectType matches the IDL enum ObjectType.
 type SocialObjectType struct {
 	Variant string // Active variant name
@@ -14282,6 +15765,77 @@ func (v SocialCommunityControl) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
+// SocialGiftAllocation matches the IDL enum GiftAllocation.
+type SocialGiftAllocation struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts SocialGiftAllocation into the provider wire value (map[string]any).
+func (v SocialGiftAllocation) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum GiftAllocation: empty variant")
+	}
+	switch v.Variant {
+	case "Equal":
+		return map[string]any{"variant": "Equal"}, nil
+	case "Lucky":
+		return map[string]any{"variant": "Lucky"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// DemoOrderState matches the IDL struct OrderState.
+type DemoOrderState struct {
+	Seed uint64
+	Operator *crypto.Address
+	RejectInbound bool
+	ForwardSeed uint64
+	SplitBps uint16
+	SplitFirst *crypto.Address
+	SplitSecond *crypto.Address
+}
+
+// ToValue converts DemoOrderState into the provider wire value (map[string]any).
+func (v DemoOrderState) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 7)
+	// seed: u64
+	out["seed"] = v.Seed
+	// operator: Address
+	out["operator"] = v.Operator
+	// reject_inbound: bool
+	out["reject_inbound"] = v.RejectInbound
+	// forward_seed: u64
+	out["forward_seed"] = v.ForwardSeed
+	// split_bps: u16
+	out["split_bps"] = v.SplitBps
+	// split_first: Address
+	out["split_first"] = v.SplitFirst
+	// split_second: Address
+	out["split_second"] = v.SplitSecond
+	return out, nil
+}
+
+// DemoLastInbound matches the IDL struct LastInbound.
+type DemoLastInbound struct {
+	Token *crypto.Address
+	From *crypto.Address
+	Amount uint64
+}
+
+// ToValue converts DemoLastInbound into the provider wire value (map[string]any).
+func (v DemoLastInbound) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// token: Address
+	out["token"] = v.Token
+	// from: Address
+	out["from"] = v.From
+	// amount: u64
+	out["amount"] = v.Amount
+	return out, nil
+}
+
 // DemoLabel matches the IDL struct Label.
 type DemoLabel struct {
 	Text string
@@ -14331,22 +15885,6 @@ func (v DemoDemoMode) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// DemoOrderState matches the IDL struct OrderState.
-type DemoOrderState struct {
-	Seed uint16
-	Operator *crypto.Address
-}
-
-// ToValue converts DemoOrderState into the provider wire value (map[string]any).
-func (v DemoOrderState) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 2)
-	// seed: u16
-	out["seed"] = v.Seed
-	// operator: Address
-	out["operator"] = v.Operator
-	return out, nil
-}
-
 // fromSystemConsensusValidatorIdentity converts a decoded IDL value into SystemConsensusValidatorIdentity.
 func fromSystemConsensusValidatorIdentity(v any) (out SystemConsensusValidatorIdentity, err error) {
 	m, err := toRecord(v)
@@ -14392,6 +15930,47 @@ func fromSystemConsensusValidatorIdentity(v any) (out SystemConsensusValidatorId
 			return out, err
 		}
 		out.Ed25519Pubkey = v4
+	}
+	return out, nil
+}
+
+// fromSystemWakeRecord converts a decoded IDL value into SystemWakeRecord.
+func fromSystemWakeRecord(v any) (out SystemWakeRecord, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// registered: bool
+	{
+		v0, err := toBool(m["registered"])
+		if err != nil {
+			return out, err
+		}
+		out.Registered = v0
+	}
+	// due_timestamp_ms: u64
+	{
+		v1, err := toUint64(m["due_timestamp_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.DueTimestampMs = v1
+	}
+	// method: bytes
+	{
+		v2, err := toBytes(m["method"])
+		if err != nil {
+			return out, err
+		}
+		out.Method = v2
+	}
+	// sponsor: Address
+	{
+		v3, err := toAddress(m["sponsor"])
+		if err != nil {
+			return out, err
+		}
+		out.Sponsor = v3
 	}
 	return out, nil
 }
@@ -14550,6 +16129,56 @@ func fromAccountVoteMeta(v any) (out AccountVoteMeta, err error) {
 	return out, nil
 }
 
+// fromAccountVoteOccupancy converts a decoded IDL value into AccountVoteOccupancy.
+func fromAccountVoteOccupancy(v any) (out AccountVoteOccupancy, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// bitmap: Bitmap64
+	{
+		v0, err := toUint64(m["bitmap"])
+		if err != nil {
+			return out, err
+		}
+		out.Bitmap = v0
+	}
+	// sweep_expires_at_ms: u64
+	{
+		v1, err := toUint64(m["sweep_expires_at_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.SweepExpiresAtMs = v1
+	}
+	return out, nil
+}
+
+// fromAccountVoteSweepOwner converts a decoded IDL value into AccountVoteSweepOwner.
+func fromAccountVoteSweepOwner(v any) (out AccountVoteSweepOwner, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// expires_at_ms: u64
+	{
+		v0, err := toUint64(m["expires_at_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.ExpiresAtMs = v0
+	}
+	// owner: Address
+	{
+		v1, err := toAddress(m["owner"])
+		if err != nil {
+			return out, err
+		}
+		out.Owner = v1
+	}
+	return out, nil
+}
+
 // fromTokenMetadata converts a decoded IDL value into TokenMetadata.
 func fromTokenMetadata(v any) (out TokenMetadata, err error) {
 	m, err := toRecord(v)
@@ -14646,6 +16275,269 @@ func fromTokenCompliance(v any) (out TokenCompliance, err error) {
 			}
 			out.Requirements[v2] = v4
 		}
+	}
+	return out, nil
+}
+
+// fromTokenGiftAllocation converts a decoded IDL value into TokenGiftAllocation.
+func fromTokenGiftAllocation(v any) (out TokenGiftAllocation, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum GiftAllocation: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromTokenGiftEligibility converts a decoded IDL value into TokenGiftEligibility.
+func fromTokenGiftEligibility(v any) (out TokenGiftEligibility, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum GiftEligibility: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	switch out.Variant {
+	case "Credential":
+		out.Fields = []any{
+			m["credential_id"],
+		}
+	case "Recipients":
+		out.Fields = []any{
+			m["addresses"],
+		}
+	}
+	return out, nil
+}
+
+// fromTokenGiftRules converts a decoded IDL value into TokenGiftRules.
+func fromTokenGiftRules(v any) (out TokenGiftRules, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// credential_id: option<String>
+	{
+		if m["credential_id"] == nil {
+			out.CredentialId = nil
+		} else {
+			var v0 string
+			v1, err := toString(m["credential_id"])
+			if err != nil {
+				return out, err
+			}
+			v0 = v1
+			out.CredentialId = &v0
+		}
+	}
+	// recipients: vec<Address>
+	{
+		v2, err := toSlice(m["recipients"])
+		if err != nil {
+			return out, err
+		}
+		out.Recipients = make([]*crypto.Address, len(v2))
+		for v3, v4 := range v2 {
+			v5, err := toAddress(v4)
+			if err != nil {
+				return out, err
+			}
+			out.Recipients[v3] = v5
+		}
+	}
+	// expires_at_ms: option<u64>
+	{
+		if m["expires_at_ms"] == nil {
+			out.ExpiresAtMs = nil
+		} else {
+			var v6 uint64
+			v7, err := toUint64(m["expires_at_ms"])
+			if err != nil {
+				return out, err
+			}
+			v6 = v7
+			out.ExpiresAtMs = &v6
+		}
+	}
+	return out, nil
+}
+
+// fromTokenGiftState converts a decoded IDL value into TokenGiftState.
+func fromTokenGiftState(v any) (out TokenGiftState, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// creator: Address
+	{
+		v0, err := toAddress(m["creator"])
+		if err != nil {
+			return out, err
+		}
+		out.Creator = v0
+	}
+	// gift_id: Address
+	{
+		v1, err := toAddress(m["gift_id"])
+		if err != nil {
+			return out, err
+		}
+		out.GiftId = v1
+	}
+	// token: Address
+	{
+		v2, err := toAddress(m["token"])
+		if err != nil {
+			return out, err
+		}
+		out.Token = v2
+	}
+	// total_amount: u64
+	{
+		v3, err := toUint64(m["total_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.TotalAmount = v3
+	}
+	// remaining_amount: u64
+	{
+		v4, err := toUint64(m["remaining_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.RemainingAmount = v4
+	}
+	// claim_count: u64
+	{
+		v5, err := toUint64(m["claim_count"])
+		if err != nil {
+			return out, err
+		}
+		out.ClaimCount = v5
+	}
+	// claimed_count: u64
+	{
+		v6, err := toUint64(m["claimed_count"])
+		if err != nil {
+			return out, err
+		}
+		out.ClaimedCount = v6
+	}
+	// expires_at_ms: u64
+	{
+		v7, err := toUint64(m["expires_at_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.ExpiresAtMs = v7
+	}
+	// allocation: GiftAllocation
+	{
+		v8, err := fromTokenGiftAllocation(m["allocation"])
+		if err != nil {
+			return out, err
+		}
+		out.Allocation = v8
+	}
+	// eligibility: GiftEligibility
+	{
+		v9, err := fromTokenGiftEligibility(m["eligibility"])
+		if err != nil {
+			return out, err
+		}
+		out.Eligibility = v9
+	}
+	// claimed_recipients: u32
+	{
+		v10, err := toUint32(m["claimed_recipients"])
+		if err != nil {
+			return out, err
+		}
+		out.ClaimedRecipients = v10
+	}
+	return out, nil
+}
+
+// fromTokenGiftSettlement converts a decoded IDL value into TokenGiftSettlement.
+func fromTokenGiftSettlement(v any) (out TokenGiftSettlement, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// creator: Address
+	{
+		v0, err := toAddress(m["creator"])
+		if err != nil {
+			return out, err
+		}
+		out.Creator = v0
+	}
+	// status: u8
+	{
+		v1, err := toUint8(m["status"])
+		if err != nil {
+			return out, err
+		}
+		out.Status = v1
+	}
+	// claim_records: u64
+	{
+		v2, err := toUint64(m["claim_records"])
+		if err != nil {
+			return out, err
+		}
+		out.ClaimRecords = v2
+	}
+	// cleanup_cursor: u64
+	{
+		v3, err := toUint64(m["cleanup_cursor"])
+		if err != nil {
+			return out, err
+		}
+		out.CleanupCursor = v3
+	}
+	return out, nil
+}
+
+// fromTokenGiftCleanupQueueState converts a decoded IDL value into TokenGiftCleanupQueueState.
+func fromTokenGiftCleanupQueueState(v any) (out TokenGiftCleanupQueueState, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// head: Address
+	{
+		v0, err := toAddress(m["head"])
+		if err != nil {
+			return out, err
+		}
+		out.Head = v0
+	}
+	// tail: Address
+	{
+		v1, err := toAddress(m["tail"])
+		if err != nil {
+			return out, err
+		}
+		out.Tail = v1
 	}
 	return out, nil
 }
@@ -16553,6 +18445,25 @@ func fromDexMarketStatus(v any) (out DexMarketStatus, err error) {
 	return out, nil
 }
 
+// fromDexAmmStatus converts a decoded IDL value into DexAmmStatus.
+func fromDexAmmStatus(v any) (out DexAmmStatus, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum AmmStatus: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
 // fromDexOrderSide converts a decoded IDL value into DexOrderSide.
 func fromDexOrderSide(v any) (out DexOrderSide, err error) {
 	m, err := toRecord(v)
@@ -16610,6 +18521,55 @@ func fromDexOrderSelfTradePolicy(v any) (out DexOrderSelfTradePolicy, err error)
 	return out, nil
 }
 
+// fromDexHybridSwapResult converts a decoded IDL value into DexHybridSwapResult.
+func fromDexHybridSwapResult(v any) (out DexHybridSwapResult, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// amount_in_used: u64
+	{
+		v0, err := toUint64(m["amount_in_used"])
+		if err != nil {
+			return out, err
+		}
+		out.AmountInUsed = v0
+	}
+	// amount_out: u64
+	{
+		v1, err := toUint64(m["amount_out"])
+		if err != nil {
+			return out, err
+		}
+		out.AmountOut = v1
+	}
+	// refund: u64
+	{
+		v2, err := toUint64(m["refund"])
+		if err != nil {
+			return out, err
+		}
+		out.Refund = v2
+	}
+	// clob_fills: u16
+	{
+		v3, err := toUint16(m["clob_fills"])
+		if err != nil {
+			return out, err
+		}
+		out.ClobFills = v3
+	}
+	// amm_segments: u16
+	{
+		v4, err := toUint16(m["amm_segments"])
+		if err != nil {
+			return out, err
+		}
+		out.AmmSegments = v4
+	}
+	return out, nil
+}
+
 // fromDexMarket converts a decoded IDL value into DexMarket.
 func fromDexMarket(v any) (out DexMarket, err error) {
 	m, err := toRecord(v)
@@ -16632,9 +18592,9 @@ func fromDexMarket(v any) (out DexMarket, err error) {
 		}
 		out.QuoteToken = v1
 	}
-	// vault_seed: u16
+	// vault_seed: u64
 	{
-		v2, err := toUint16(m["vault_seed"])
+		v2, err := toUint64(m["vault_seed"])
 		if err != nil {
 			return out, err
 		}
@@ -16719,6 +18679,137 @@ func fromDexMarket(v any) (out DexMarket, err error) {
 			return out, err
 		}
 		out.Status = v12
+	}
+	return out, nil
+}
+
+// fromDexAmmPoolInfo converts a decoded IDL value into DexAmmPoolInfo.
+func fromDexAmmPoolInfo(v any) (out DexAmmPoolInfo, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// market_id: Address
+	{
+		v0, err := toAddress(m["market_id"])
+		if err != nil {
+			return out, err
+		}
+		out.MarketId = v0
+	}
+	// vault: Address
+	{
+		v1, err := toAddress(m["vault"])
+		if err != nil {
+			return out, err
+		}
+		out.Vault = v1
+	}
+	// vault_seed: u64
+	{
+		v2, err := toUint64(m["vault_seed"])
+		if err != nil {
+			return out, err
+		}
+		out.VaultSeed = v2
+	}
+	// status: AmmStatus
+	{
+		v3, err := fromDexAmmStatus(m["status"])
+		if err != nil {
+			return out, err
+		}
+		out.Status = v3
+	}
+	// reserve_base: u64
+	{
+		v4, err := toUint64(m["reserve_base"])
+		if err != nil {
+			return out, err
+		}
+		out.ReserveBase = v4
+	}
+	// reserve_quote: u64
+	{
+		v5, err := toUint64(m["reserve_quote"])
+		if err != nil {
+			return out, err
+		}
+		out.ReserveQuote = v5
+	}
+	// total_lp_supply: u64
+	{
+		v6, err := toUint64(m["total_lp_supply"])
+		if err != nil {
+			return out, err
+		}
+		out.TotalLpSupply = v6
+	}
+	return out, nil
+}
+
+// fromDexAddLiquidityResult converts a decoded IDL value into DexAddLiquidityResult.
+func fromDexAddLiquidityResult(v any) (out DexAddLiquidityResult, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// base_amount: u64
+	{
+		v0, err := toUint64(m["base_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.BaseAmount = v0
+	}
+	// quote_amount: u64
+	{
+		v1, err := toUint64(m["quote_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.QuoteAmount = v1
+	}
+	// lp_shares: u64
+	{
+		v2, err := toUint64(m["lp_shares"])
+		if err != nil {
+			return out, err
+		}
+		out.LpShares = v2
+	}
+	return out, nil
+}
+
+// fromDexRemoveLiquidityResult converts a decoded IDL value into DexRemoveLiquidityResult.
+func fromDexRemoveLiquidityResult(v any) (out DexRemoveLiquidityResult, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// base_amount: u64
+	{
+		v0, err := toUint64(m["base_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.BaseAmount = v0
+	}
+	// quote_amount: u64
+	{
+		v1, err := toUint64(m["quote_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.QuoteAmount = v1
+	}
+	// lp_shares: u64
+	{
+		v2, err := toUint64(m["lp_shares"])
+		if err != nil {
+			return out, err
+		}
+		out.LpShares = v2
 	}
 	return out, nil
 }
@@ -17122,9 +19213,9 @@ func fromDexMarketTokensState(v any) (out DexMarketTokensState, err error) {
 		}
 		out.QuoteToken = v1
 	}
-	// vault_seed: u16
+	// vault_seed: u64
 	{
-		v2, err := toUint16(m["vault_seed"])
+		v2, err := toUint64(m["vault_seed"])
 		if err != nil {
 			return out, err
 		}
@@ -17432,6 +19523,56 @@ func fromDexOrderLinkState(v any) (out DexOrderLinkState, err error) {
 			return out, err
 		}
 		out.NextOrderId = v1
+	}
+	return out, nil
+}
+
+// fromDexAmmConfigState converts a decoded IDL value into DexAmmConfigState.
+func fromDexAmmConfigState(v any) (out DexAmmConfigState, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// vault_seed: u64
+	{
+		v0, err := toUint64(m["vault_seed"])
+		if err != nil {
+			return out, err
+		}
+		out.VaultSeed = v0
+	}
+	// status: u8
+	{
+		v1, err := toUint8(m["status"])
+		if err != nil {
+			return out, err
+		}
+		out.Status = v1
+	}
+	return out, nil
+}
+
+// fromDexAmmReservesState converts a decoded IDL value into DexAmmReservesState.
+func fromDexAmmReservesState(v any) (out DexAmmReservesState, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// reserve_base: u64
+	{
+		v0, err := toUint64(m["reserve_base"])
+		if err != nil {
+			return out, err
+		}
+		out.ReserveBase = v0
+	}
+	// reserve_quote: u64
+	{
+		v1, err := toUint64(m["reserve_quote"])
+		if err != nil {
+			return out, err
+		}
+		out.ReserveQuote = v1
 	}
 	return out, nil
 }
@@ -18097,229 +20238,6 @@ func fromKeylessProviderIndex(v any) (out KeylessProviderIndex, err error) {
 	return out, nil
 }
 
-// fromLuckyBoxAllocationMode converts a decoded IDL value into LuckyBoxAllocationMode.
-func fromLuckyBoxAllocationMode(v any) (out LuckyBoxAllocationMode, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum AllocationMode: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	return out, nil
-}
-
-// fromLuckyBoxAssetId converts a decoded IDL value into LuckyBoxAssetId.
-func fromLuckyBoxAssetId(v any) (out LuckyBoxAssetId, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum AssetId: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	switch out.Variant {
-	case "Token":
-		out.Fields = []any{
-			m["token"],
-		}
-	}
-	return out, nil
-}
-
-// fromLuckyBoxEligibilityBloom converts a decoded IDL value into LuckyBoxEligibilityBloom.
-func fromLuckyBoxEligibilityBloom(v any) (out LuckyBoxEligibilityBloom, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// bits: bytes
-	{
-		v0, err := toBytes(m["bits"])
-		if err != nil {
-			return out, err
-		}
-		out.Bits = v0
-	}
-	// item_count: u32
-	{
-		v1, err := toUint32(m["item_count"])
-		if err != nil {
-			return out, err
-		}
-		out.ItemCount = v1
-	}
-	return out, nil
-}
-
-// fromLuckyBoxClaimedBloom converts a decoded IDL value into LuckyBoxClaimedBloom.
-func fromLuckyBoxClaimedBloom(v any) (out LuckyBoxClaimedBloom, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// bits: bytes
-	{
-		v0, err := toBytes(m["bits"])
-		if err != nil {
-			return out, err
-		}
-		out.Bits = v0
-	}
-	return out, nil
-}
-
-// fromLuckyBoxBoxRules converts a decoded IDL value into LuckyBoxBoxRules.
-func fromLuckyBoxBoxRules(v any) (out LuckyBoxBoxRules, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// eligibility_bloom: EligibilityBloom
-	{
-		v0, err := fromLuckyBoxEligibilityBloom(m["eligibility_bloom"])
-		if err != nil {
-			return out, err
-		}
-		out.EligibilityBloom = v0
-	}
-	// expires_at_ms: option<u64>
-	{
-		if m["expires_at_ms"] == nil {
-			out.ExpiresAtMs = nil
-		} else {
-			var v1 uint64
-			v2, err := toUint64(m["expires_at_ms"])
-			if err != nil {
-				return out, err
-			}
-			v1 = v2
-			out.ExpiresAtMs = &v1
-		}
-	}
-	return out, nil
-}
-
-// fromLuckyBoxBoxState converts a decoded IDL value into LuckyBoxBoxState.
-func fromLuckyBoxBoxState(v any) (out LuckyBoxBoxState, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// creator: Address
-	{
-		v0, err := toAddress(m["creator"])
-		if err != nil {
-			return out, err
-		}
-		out.Creator = v0
-	}
-	// box_id: u64
-	{
-		v1, err := toUint64(m["box_id"])
-		if err != nil {
-			return out, err
-		}
-		out.BoxId = v1
-	}
-	// status: u8
-	{
-		v2, err := toUint8(m["status"])
-		if err != nil {
-			return out, err
-		}
-		out.Status = v2
-	}
-	// claim_count: u64
-	{
-		v3, err := toUint64(m["claim_count"])
-		if err != nil {
-			return out, err
-		}
-		out.ClaimCount = v3
-	}
-	// claimed_count: u64
-	{
-		v4, err := toUint64(m["claimed_count"])
-		if err != nil {
-			return out, err
-		}
-		out.ClaimedCount = v4
-	}
-	// expires_at_ms: u64
-	{
-		v5, err := toUint64(m["expires_at_ms"])
-		if err != nil {
-			return out, err
-		}
-		out.ExpiresAtMs = v5
-	}
-	// randomness_version: u8
-	{
-		v6, err := toUint8(m["randomness_version"])
-		if err != nil {
-			return out, err
-		}
-		out.RandomnessVersion = v6
-	}
-	return out, nil
-}
-
-// fromLuckyBoxAssetPoolState converts a decoded IDL value into LuckyBoxAssetPoolState.
-func fromLuckyBoxAssetPoolState(v any) (out LuckyBoxAssetPoolState, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// asset: AssetId
-	{
-		v0, err := fromLuckyBoxAssetId(m["asset"])
-		if err != nil {
-			return out, err
-		}
-		out.Asset = v0
-	}
-	// total_amount: u64
-	{
-		v1, err := toUint64(m["total_amount"])
-		if err != nil {
-			return out, err
-		}
-		out.TotalAmount = v1
-	}
-	// remaining_amount: u64
-	{
-		v2, err := toUint64(m["remaining_amount"])
-		if err != nil {
-			return out, err
-		}
-		out.RemainingAmount = v2
-	}
-	// allocation: AllocationMode
-	{
-		v3, err := fromLuckyBoxAllocationMode(m["allocation"])
-		if err != nil {
-			return out, err
-		}
-		out.Allocation = v3
-	}
-	return out, nil
-}
-
 // fromSocialObjectType converts a decoded IDL value into SocialObjectType.
 func fromSocialObjectType(v any) (out SocialObjectType, err error) {
 	m, err := toRecord(v)
@@ -18500,6 +20418,123 @@ func fromSocialCommunityControl(v any) (out SocialCommunityControl, err error) {
 	return out, nil
 }
 
+// fromSocialGiftAllocation converts a decoded IDL value into SocialGiftAllocation.
+func fromSocialGiftAllocation(v any) (out SocialGiftAllocation, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum GiftAllocation: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromDemoOrderState converts a decoded IDL value into DemoOrderState.
+func fromDemoOrderState(v any) (out DemoOrderState, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// seed: u64
+	{
+		v0, err := toUint64(m["seed"])
+		if err != nil {
+			return out, err
+		}
+		out.Seed = v0
+	}
+	// operator: Address
+	{
+		v1, err := toAddress(m["operator"])
+		if err != nil {
+			return out, err
+		}
+		out.Operator = v1
+	}
+	// reject_inbound: bool
+	{
+		v2, err := toBool(m["reject_inbound"])
+		if err != nil {
+			return out, err
+		}
+		out.RejectInbound = v2
+	}
+	// forward_seed: u64
+	{
+		v3, err := toUint64(m["forward_seed"])
+		if err != nil {
+			return out, err
+		}
+		out.ForwardSeed = v3
+	}
+	// split_bps: u16
+	{
+		v4, err := toUint16(m["split_bps"])
+		if err != nil {
+			return out, err
+		}
+		out.SplitBps = v4
+	}
+	// split_first: Address
+	{
+		v5, err := toAddress(m["split_first"])
+		if err != nil {
+			return out, err
+		}
+		out.SplitFirst = v5
+	}
+	// split_second: Address
+	{
+		v6, err := toAddress(m["split_second"])
+		if err != nil {
+			return out, err
+		}
+		out.SplitSecond = v6
+	}
+	return out, nil
+}
+
+// fromDemoLastInbound converts a decoded IDL value into DemoLastInbound.
+func fromDemoLastInbound(v any) (out DemoLastInbound, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// token: Address
+	{
+		v0, err := toAddress(m["token"])
+		if err != nil {
+			return out, err
+		}
+		out.Token = v0
+	}
+	// from: Address
+	{
+		v1, err := toAddress(m["from"])
+		if err != nil {
+			return out, err
+		}
+		out.From = v1
+	}
+	// amount: u64
+	{
+		v2, err := toUint64(m["amount"])
+		if err != nil {
+			return out, err
+		}
+		out.Amount = v2
+	}
+	return out, nil
+}
+
 // fromDemoLabel converts a decoded IDL value into DemoLabel.
 func fromDemoLabel(v any) (out DemoLabel, err error) {
 	m, err := toRecord(v)
@@ -18546,31 +20581,6 @@ func fromDemoDemoMode(v any) (out DemoDemoMode, err error) {
 	return out, nil
 }
 
-// fromDemoOrderState converts a decoded IDL value into DemoOrderState.
-func fromDemoOrderState(v any) (out DemoOrderState, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// seed: u16
-	{
-		v0, err := toUint16(m["seed"])
-		if err != nil {
-			return out, err
-		}
-		out.Seed = v0
-	}
-	// operator: Address
-	{
-		v1, err := toAddress(m["operator"])
-		if err != nil {
-			return out, err
-		}
-		out.Operator = v1
-	}
-	return out, nil
-}
-
 // toSystemConsensusValidatorIdentityValue converts any into SystemConsensusValidatorIdentity for provider serialization.
 func toSystemConsensusValidatorIdentityValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -18583,6 +20593,21 @@ func toSystemConsensusValidatorIdentityValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected SystemConsensusValidatorIdentity, got %T", v)
+	}
+}
+
+// toSystemWakeRecordValue converts any into SystemWakeRecord for provider serialization.
+func toSystemWakeRecordValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemWakeRecord:
+		return x.ToValue()
+	case *SystemWakeRecord:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemWakeRecord")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemWakeRecord, got %T", v)
 	}
 }
 
@@ -18661,6 +20686,36 @@ func toAccountVoteMetaValue(v any) (map[string]any, error) {
 	}
 }
 
+// toAccountVoteOccupancyValue converts any into AccountVoteOccupancy for provider serialization.
+func toAccountVoteOccupancyValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case AccountVoteOccupancy:
+		return x.ToValue()
+	case *AccountVoteOccupancy:
+		if x == nil {
+			return nil, fmt.Errorf("nil AccountVoteOccupancy")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected AccountVoteOccupancy, got %T", v)
+	}
+}
+
+// toAccountVoteSweepOwnerValue converts any into AccountVoteSweepOwner for provider serialization.
+func toAccountVoteSweepOwnerValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case AccountVoteSweepOwner:
+		return x.ToValue()
+	case *AccountVoteSweepOwner:
+		if x == nil {
+			return nil, fmt.Errorf("nil AccountVoteSweepOwner")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected AccountVoteSweepOwner, got %T", v)
+	}
+}
+
 // toTokenMetadataValue converts any into TokenMetadata for provider serialization.
 func toTokenMetadataValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -18703,6 +20758,96 @@ func toTokenComplianceValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected TokenCompliance, got %T", v)
+	}
+}
+
+// toTokenGiftAllocationValue converts any into TokenGiftAllocation for provider serialization.
+func toTokenGiftAllocationValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case TokenGiftAllocation:
+		return x.ToValue()
+	case *TokenGiftAllocation:
+		if x == nil {
+			return nil, fmt.Errorf("nil TokenGiftAllocation")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected TokenGiftAllocation, got %T", v)
+	}
+}
+
+// toTokenGiftEligibilityValue converts any into TokenGiftEligibility for provider serialization.
+func toTokenGiftEligibilityValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case TokenGiftEligibility:
+		return x.ToValue()
+	case *TokenGiftEligibility:
+		if x == nil {
+			return nil, fmt.Errorf("nil TokenGiftEligibility")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected TokenGiftEligibility, got %T", v)
+	}
+}
+
+// toTokenGiftRulesValue converts any into TokenGiftRules for provider serialization.
+func toTokenGiftRulesValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case TokenGiftRules:
+		return x.ToValue()
+	case *TokenGiftRules:
+		if x == nil {
+			return nil, fmt.Errorf("nil TokenGiftRules")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected TokenGiftRules, got %T", v)
+	}
+}
+
+// toTokenGiftStateValue converts any into TokenGiftState for provider serialization.
+func toTokenGiftStateValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case TokenGiftState:
+		return x.ToValue()
+	case *TokenGiftState:
+		if x == nil {
+			return nil, fmt.Errorf("nil TokenGiftState")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected TokenGiftState, got %T", v)
+	}
+}
+
+// toTokenGiftSettlementValue converts any into TokenGiftSettlement for provider serialization.
+func toTokenGiftSettlementValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case TokenGiftSettlement:
+		return x.ToValue()
+	case *TokenGiftSettlement:
+		if x == nil {
+			return nil, fmt.Errorf("nil TokenGiftSettlement")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected TokenGiftSettlement, got %T", v)
+	}
+}
+
+// toTokenGiftCleanupQueueStateValue converts any into TokenGiftCleanupQueueState for provider serialization.
+func toTokenGiftCleanupQueueStateValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case TokenGiftCleanupQueueState:
+		return x.ToValue()
+	case *TokenGiftCleanupQueueState:
+		if x == nil {
+			return nil, fmt.Errorf("nil TokenGiftCleanupQueueState")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected TokenGiftCleanupQueueState, got %T", v)
 	}
 }
 
@@ -19516,6 +21661,21 @@ func toDexMarketStatusValue(v any) (map[string]any, error) {
 	}
 }
 
+// toDexAmmStatusValue converts any into DexAmmStatus for provider serialization.
+func toDexAmmStatusValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DexAmmStatus:
+		return x.ToValue()
+	case *DexAmmStatus:
+		if x == nil {
+			return nil, fmt.Errorf("nil DexAmmStatus")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DexAmmStatus, got %T", v)
+	}
+}
+
 // toDexOrderSideValue converts any into DexOrderSide for provider serialization.
 func toDexOrderSideValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -19561,6 +21721,21 @@ func toDexOrderSelfTradePolicyValue(v any) (map[string]any, error) {
 	}
 }
 
+// toDexHybridSwapResultValue converts any into DexHybridSwapResult for provider serialization.
+func toDexHybridSwapResultValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DexHybridSwapResult:
+		return x.ToValue()
+	case *DexHybridSwapResult:
+		if x == nil {
+			return nil, fmt.Errorf("nil DexHybridSwapResult")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DexHybridSwapResult, got %T", v)
+	}
+}
+
 // toDexMarketValue converts any into DexMarket for provider serialization.
 func toDexMarketValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -19573,6 +21748,51 @@ func toDexMarketValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected DexMarket, got %T", v)
+	}
+}
+
+// toDexAmmPoolInfoValue converts any into DexAmmPoolInfo for provider serialization.
+func toDexAmmPoolInfoValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DexAmmPoolInfo:
+		return x.ToValue()
+	case *DexAmmPoolInfo:
+		if x == nil {
+			return nil, fmt.Errorf("nil DexAmmPoolInfo")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DexAmmPoolInfo, got %T", v)
+	}
+}
+
+// toDexAddLiquidityResultValue converts any into DexAddLiquidityResult for provider serialization.
+func toDexAddLiquidityResultValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DexAddLiquidityResult:
+		return x.ToValue()
+	case *DexAddLiquidityResult:
+		if x == nil {
+			return nil, fmt.Errorf("nil DexAddLiquidityResult")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DexAddLiquidityResult, got %T", v)
+	}
+}
+
+// toDexRemoveLiquidityResultValue converts any into DexRemoveLiquidityResult for provider serialization.
+func toDexRemoveLiquidityResultValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DexRemoveLiquidityResult:
+		return x.ToValue()
+	case *DexRemoveLiquidityResult:
+		if x == nil {
+			return nil, fmt.Errorf("nil DexRemoveLiquidityResult")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DexRemoveLiquidityResult, got %T", v)
 	}
 }
 
@@ -19813,6 +22033,36 @@ func toDexOrderLinkStateValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected DexOrderLinkState, got %T", v)
+	}
+}
+
+// toDexAmmConfigStateValue converts any into DexAmmConfigState for provider serialization.
+func toDexAmmConfigStateValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DexAmmConfigState:
+		return x.ToValue()
+	case *DexAmmConfigState:
+		if x == nil {
+			return nil, fmt.Errorf("nil DexAmmConfigState")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DexAmmConfigState, got %T", v)
+	}
+}
+
+// toDexAmmReservesStateValue converts any into DexAmmReservesState for provider serialization.
+func toDexAmmReservesStateValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DexAmmReservesState:
+		return x.ToValue()
+	case *DexAmmReservesState:
+		if x == nil {
+			return nil, fmt.Errorf("nil DexAmmReservesState")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DexAmmReservesState, got %T", v)
 	}
 }
 
@@ -20086,111 +22336,6 @@ func toKeylessProviderIndexValue(v any) (map[string]any, error) {
 	}
 }
 
-// toLuckyBoxAllocationModeValue converts any into LuckyBoxAllocationMode for provider serialization.
-func toLuckyBoxAllocationModeValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case LuckyBoxAllocationMode:
-		return x.ToValue()
-	case *LuckyBoxAllocationMode:
-		if x == nil {
-			return nil, fmt.Errorf("nil LuckyBoxAllocationMode")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected LuckyBoxAllocationMode, got %T", v)
-	}
-}
-
-// toLuckyBoxAssetIdValue converts any into LuckyBoxAssetId for provider serialization.
-func toLuckyBoxAssetIdValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case LuckyBoxAssetId:
-		return x.ToValue()
-	case *LuckyBoxAssetId:
-		if x == nil {
-			return nil, fmt.Errorf("nil LuckyBoxAssetId")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected LuckyBoxAssetId, got %T", v)
-	}
-}
-
-// toLuckyBoxEligibilityBloomValue converts any into LuckyBoxEligibilityBloom for provider serialization.
-func toLuckyBoxEligibilityBloomValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case LuckyBoxEligibilityBloom:
-		return x.ToValue()
-	case *LuckyBoxEligibilityBloom:
-		if x == nil {
-			return nil, fmt.Errorf("nil LuckyBoxEligibilityBloom")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected LuckyBoxEligibilityBloom, got %T", v)
-	}
-}
-
-// toLuckyBoxClaimedBloomValue converts any into LuckyBoxClaimedBloom for provider serialization.
-func toLuckyBoxClaimedBloomValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case LuckyBoxClaimedBloom:
-		return x.ToValue()
-	case *LuckyBoxClaimedBloom:
-		if x == nil {
-			return nil, fmt.Errorf("nil LuckyBoxClaimedBloom")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected LuckyBoxClaimedBloom, got %T", v)
-	}
-}
-
-// toLuckyBoxBoxRulesValue converts any into LuckyBoxBoxRules for provider serialization.
-func toLuckyBoxBoxRulesValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case LuckyBoxBoxRules:
-		return x.ToValue()
-	case *LuckyBoxBoxRules:
-		if x == nil {
-			return nil, fmt.Errorf("nil LuckyBoxBoxRules")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected LuckyBoxBoxRules, got %T", v)
-	}
-}
-
-// toLuckyBoxBoxStateValue converts any into LuckyBoxBoxState for provider serialization.
-func toLuckyBoxBoxStateValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case LuckyBoxBoxState:
-		return x.ToValue()
-	case *LuckyBoxBoxState:
-		if x == nil {
-			return nil, fmt.Errorf("nil LuckyBoxBoxState")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected LuckyBoxBoxState, got %T", v)
-	}
-}
-
-// toLuckyBoxAssetPoolStateValue converts any into LuckyBoxAssetPoolState for provider serialization.
-func toLuckyBoxAssetPoolStateValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case LuckyBoxAssetPoolState:
-		return x.ToValue()
-	case *LuckyBoxAssetPoolState:
-		if x == nil {
-			return nil, fmt.Errorf("nil LuckyBoxAssetPoolState")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected LuckyBoxAssetPoolState, got %T", v)
-	}
-}
-
 // toSocialObjectTypeValue converts any into SocialObjectType for provider serialization.
 func toSocialObjectTypeValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -20281,6 +22426,51 @@ func toSocialCommunityControlValue(v any) (map[string]any, error) {
 	}
 }
 
+// toSocialGiftAllocationValue converts any into SocialGiftAllocation for provider serialization.
+func toSocialGiftAllocationValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SocialGiftAllocation:
+		return x.ToValue()
+	case *SocialGiftAllocation:
+		if x == nil {
+			return nil, fmt.Errorf("nil SocialGiftAllocation")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SocialGiftAllocation, got %T", v)
+	}
+}
+
+// toDemoOrderStateValue converts any into DemoOrderState for provider serialization.
+func toDemoOrderStateValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DemoOrderState:
+		return x.ToValue()
+	case *DemoOrderState:
+		if x == nil {
+			return nil, fmt.Errorf("nil DemoOrderState")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DemoOrderState, got %T", v)
+	}
+}
+
+// toDemoLastInboundValue converts any into DemoLastInbound for provider serialization.
+func toDemoLastInboundValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DemoLastInbound:
+		return x.ToValue()
+	case *DemoLastInbound:
+		if x == nil {
+			return nil, fmt.Errorf("nil DemoLastInbound")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DemoLastInbound, got %T", v)
+	}
+}
+
 // toDemoLabelValue converts any into DemoLabel for provider serialization.
 func toDemoLabelValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -20308,21 +22498,6 @@ func toDemoDemoModeValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected DemoDemoMode, got %T", v)
-	}
-}
-
-// toDemoOrderStateValue converts any into DemoOrderState for provider serialization.
-func toDemoOrderStateValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case DemoOrderState:
-		return x.ToValue()
-	case *DemoOrderState:
-		if x == nil {
-			return nil, fmt.Errorf("nil DemoOrderState")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected DemoOrderState, got %T", v)
 	}
 }
 
@@ -20662,6 +22837,7 @@ type AccountApp struct {
 	SetThreshold *AccountSetThresholdIx
 	SetSignerWeight *AccountSetSignerWeightIx
 	VoteInit *AccountVoteInitIx
+	SweepExpiredVotes *AccountSweepExpiredVotesIx
 	Vote *AccountVoteIx
 	GetAccount *AccountGetAccountIx
 	ListSigners *AccountListSignersIx
@@ -20680,6 +22856,7 @@ var Account = &AccountApp{
 	SetThreshold: &AccountSetThresholdIx{},
 	SetSignerWeight: &AccountSetSignerWeightIx{},
 	VoteInit: &AccountVoteInitIx{},
+	SweepExpiredVotes: &AccountSweepExpiredVotesIx{},
 	Vote: &AccountVoteIx{},
 	GetAccount: &AccountGetAccountIx{},
 	ListSigners: &AccountListSignersIx{},
@@ -20699,6 +22876,7 @@ func (a *AccountApp) bind(pd *provider.Provider) {
 	a.SetThreshold.pd = pd
 	a.SetSignerWeight.pd = pd
 	a.VoteInit.pd = pd
+	a.SweepExpiredVotes.pd = pd
 	a.Vote.pd = pd
 	a.GetAccount.pd = pd
 	a.ListSigners.pd = pd
@@ -21067,6 +23245,34 @@ func (a *AccountVoteInitArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type AccountSweepExpiredVotesIx struct {
+	pd *provider.Provider
+}
+
+type AccountSweepExpiredVotesArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SweepExpiredVotes.
+func (ix *AccountSweepExpiredVotesIx) Args() *AccountSweepExpiredVotesArgs {
+	return &AccountSweepExpiredVotesArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *AccountSweepExpiredVotesArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app account is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("SweepExpiredVotes", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type AccountVoteIx struct {
 	pd *provider.Provider
 }
@@ -21144,8 +23350,8 @@ func (ix *AccountGetAccountIx) DecodeView(body []byte) (out AccountAccount, err 
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view GetAccount failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetAccount failed: %s", failure)
 	}
 	v0, err := fromAccountAccount(v)
 	if err != nil {
@@ -21196,8 +23402,8 @@ func (ix *AccountListSignersIx) DecodeView(body []byte) (out []any, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ListSigners failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ListSigners failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -21260,8 +23466,8 @@ func (ix *AccountResolveSignersIx) DecodeView(body []byte) (out []*crypto.Public
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ResolveSigners failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ResolveSigners failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -21323,8 +23529,8 @@ func (ix *AccountGetVoteIx) DecodeView(body []byte) (out []any, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view GetVote failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetVote failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -21375,8 +23581,8 @@ func (ix *AccountListActiveVotesIx) DecodeView(body []byte) (out [][]any, err er
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ListActiveVotes failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ListActiveVotes failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -21424,8 +23630,16 @@ type TokenApp struct {
 	RemoveComplianceRequirement *TokenRemoveComplianceRequirementIx
 	ClearComplianceRequirements *TokenClearComplianceRequirementsIx
 	ClaimFaucet *TokenClaimFaucetIx
+	CreateEqualGift *TokenCreateEqualGiftIx
+	CreateLuckyGift *TokenCreateLuckyGiftIx
+	ClaimGift *TokenClaimGiftIx
+	RefundGift *TokenRefundGiftIx
+	RunGiftCleanup *TokenRunGiftCleanupIx
 	Compliance *TokenComplianceIx
 	FaucetCooldownRemaining *TokenFaucetCooldownRemainingIx
+	GiftInfo *TokenGiftInfoIx
+	GiftSettlement *TokenGiftSettlementIx
+	CanClaimGift *TokenCanClaimGiftIx
 }
 
 var Token = &TokenApp{
@@ -21457,8 +23671,16 @@ var Token = &TokenApp{
 	RemoveComplianceRequirement: &TokenRemoveComplianceRequirementIx{},
 	ClearComplianceRequirements: &TokenClearComplianceRequirementsIx{},
 	ClaimFaucet: &TokenClaimFaucetIx{},
+	CreateEqualGift: &TokenCreateEqualGiftIx{},
+	CreateLuckyGift: &TokenCreateLuckyGiftIx{},
+	ClaimGift: &TokenClaimGiftIx{},
+	RefundGift: &TokenRefundGiftIx{},
+	RunGiftCleanup: &TokenRunGiftCleanupIx{},
 	Compliance: &TokenComplianceIx{},
 	FaucetCooldownRemaining: &TokenFaucetCooldownRemainingIx{},
+	GiftInfo: &TokenGiftInfoIx{},
+	GiftSettlement: &TokenGiftSettlementIx{},
+	CanClaimGift: &TokenCanClaimGiftIx{},
 }
 
 func (a *TokenApp) bind(pd *provider.Provider) {
@@ -21491,8 +23713,16 @@ func (a *TokenApp) bind(pd *provider.Provider) {
 	a.RemoveComplianceRequirement.pd = pd
 	a.ClearComplianceRequirements.pd = pd
 	a.ClaimFaucet.pd = pd
+	a.CreateEqualGift.pd = pd
+	a.CreateLuckyGift.pd = pd
+	a.ClaimGift.pd = pd
+	a.RefundGift.pd = pd
+	a.RunGiftCleanup.pd = pd
 	a.Compliance.pd = pd
 	a.FaucetCooldownRemaining.pd = pd
+	a.GiftInfo.pd = pd
+	a.GiftSettlement.pd = pd
+	a.CanClaimGift.pd = pd
 }
 
 type TokenCreateIx struct {
@@ -22224,8 +24454,8 @@ func (ix *TokenBalanceOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view BalanceOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view BalanceOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -22280,8 +24510,8 @@ func (ix *TokenFrozenOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view FrozenOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view FrozenOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -22340,8 +24570,8 @@ func (ix *TokenApprovalOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ApprovalOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ApprovalOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -22392,8 +24622,8 @@ func (ix *TokenTotalSupplyIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view TotalSupply failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view TotalSupply failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -22444,8 +24674,8 @@ func (ix *TokenMetadataIx) DecodeView(body []byte) (out TokenMetadata, err error
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Metadata failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Metadata failed: %s", failure)
 	}
 	v0, err := fromTokenMetadata(v)
 	if err != nil {
@@ -22687,6 +24917,210 @@ func (a *TokenClaimFaucetArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type TokenCreateEqualGiftIx struct {
+	pd *provider.Provider
+}
+
+type TokenCreateEqualGiftArgs struct {
+	creator *crypto.Address
+	token *crypto.Address
+	total_amount uint64
+	claim_count uint64
+	rules TokenGiftRules
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateEqualGift.
+func (ix *TokenCreateEqualGiftIx) Args(creator *crypto.Address, token *crypto.Address, total_amount uint64, claim_count uint64, rules TokenGiftRules) *TokenCreateEqualGiftArgs {
+	return &TokenCreateEqualGiftArgs{
+		creator: creator,
+		token: token,
+		total_amount: total_amount,
+		claim_count: claim_count,
+		rules: rules,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenCreateEqualGiftArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// creator: Signer
+	args["creator"] = a.creator
+	// token: Address
+	args["token"] = a.token
+	// total_amount: u64
+	args["total_amount"] = a.total_amount
+	// claim_count: u64
+	args["claim_count"] = a.claim_count
+	// rules: GiftRules
+	v0, err := toTokenGiftRulesValue(a.rules)
+	if err != nil {
+		return nil, err
+	}
+	args["rules"] = v0
+	wire, err := a.pd.Encode("CreateEqualGift", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type TokenCreateLuckyGiftIx struct {
+	pd *provider.Provider
+}
+
+type TokenCreateLuckyGiftArgs struct {
+	creator *crypto.Address
+	token *crypto.Address
+	total_amount uint64
+	claim_count uint64
+	rules TokenGiftRules
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateLuckyGift.
+func (ix *TokenCreateLuckyGiftIx) Args(creator *crypto.Address, token *crypto.Address, total_amount uint64, claim_count uint64, rules TokenGiftRules) *TokenCreateLuckyGiftArgs {
+	return &TokenCreateLuckyGiftArgs{
+		creator: creator,
+		token: token,
+		total_amount: total_amount,
+		claim_count: claim_count,
+		rules: rules,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenCreateLuckyGiftArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// creator: Signer
+	args["creator"] = a.creator
+	// token: Address
+	args["token"] = a.token
+	// total_amount: u64
+	args["total_amount"] = a.total_amount
+	// claim_count: u64
+	args["claim_count"] = a.claim_count
+	// rules: GiftRules
+	v0, err := toTokenGiftRulesValue(a.rules)
+	if err != nil {
+		return nil, err
+	}
+	args["rules"] = v0
+	wire, err := a.pd.Encode("CreateLuckyGift", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type TokenClaimGiftIx struct {
+	pd *provider.Provider
+}
+
+type TokenClaimGiftArgs struct {
+	claimant *crypto.Address
+	gift_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimGift.
+func (ix *TokenClaimGiftIx) Args(claimant *crypto.Address, gift_id *crypto.Address) *TokenClaimGiftArgs {
+	return &TokenClaimGiftArgs{
+		claimant: claimant,
+		gift_id: gift_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenClaimGiftArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// claimant: Signer
+	args["claimant"] = a.claimant
+	// gift_id: Address
+	args["gift_id"] = a.gift_id
+	wire, err := a.pd.Encode("ClaimGift", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type TokenRefundGiftIx struct {
+	pd *provider.Provider
+}
+
+type TokenRefundGiftArgs struct {
+	gift_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RefundGift.
+func (ix *TokenRefundGiftIx) Args(gift_id *crypto.Address) *TokenRefundGiftArgs {
+	return &TokenRefundGiftArgs{
+		gift_id: gift_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenRefundGiftArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// gift_id: Address
+	args["gift_id"] = a.gift_id
+	wire, err := a.pd.Encode("RefundGift", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type TokenRunGiftCleanupIx struct {
+	pd *provider.Provider
+}
+
+type TokenRunGiftCleanupArgs struct {
+	gift_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RunGiftCleanup.
+func (ix *TokenRunGiftCleanupIx) Args(gift_id *crypto.Address) *TokenRunGiftCleanupArgs {
+	return &TokenRunGiftCleanupArgs{
+		gift_id: gift_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenRunGiftCleanupArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// gift_id: Address
+	args["gift_id"] = a.gift_id
+	wire, err := a.pd.Encode("RunGiftCleanup", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type TokenComplianceIx struct {
 	pd *provider.Provider
 }
@@ -22728,8 +25162,8 @@ func (ix *TokenComplianceIx) DecodeView(body []byte) (out TokenCompliance, err e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Compliance failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Compliance failed: %s", failure)
 	}
 	v0, err := fromTokenCompliance(v)
 	if err != nil {
@@ -22780,10 +25214,170 @@ func (ix *TokenFaucetCooldownRemainingIx) DecodeView(body []byte) (out uint64, e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view FaucetCooldownRemaining failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view FaucetCooldownRemaining failed: %s", failure)
 	}
 	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type TokenGiftInfoIx struct {
+	pd *provider.Provider
+}
+
+type TokenGiftInfoArgs struct {
+	gift_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of GiftInfo.
+func (ix *TokenGiftInfoIx) Args(gift_id *crypto.Address) *TokenGiftInfoArgs {
+	return &TokenGiftInfoArgs{
+		gift_id: gift_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenGiftInfoArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// gift_id: Address
+	args["gift_id"] = a.gift_id
+	wire, err := a.pd.Encode("GiftInfo", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of GiftInfo into TokenGiftState.
+func (ix *TokenGiftInfoIx) DecodeView(body []byte) (out TokenGiftState, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("GiftInfo", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GiftInfo failed: %s", failure)
+	}
+	v0, err := fromTokenGiftState(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type TokenGiftSettlementIx struct {
+	pd *provider.Provider
+}
+
+type TokenGiftSettlementArgs struct {
+	gift_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of GiftSettlement.
+func (ix *TokenGiftSettlementIx) Args(gift_id *crypto.Address) *TokenGiftSettlementArgs {
+	return &TokenGiftSettlementArgs{
+		gift_id: gift_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenGiftSettlementArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// gift_id: Address
+	args["gift_id"] = a.gift_id
+	wire, err := a.pd.Encode("GiftSettlement", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of GiftSettlement into TokenGiftSettlement.
+func (ix *TokenGiftSettlementIx) DecodeView(body []byte) (out TokenGiftSettlement, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("GiftSettlement", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GiftSettlement failed: %s", failure)
+	}
+	v0, err := fromTokenGiftSettlement(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type TokenCanClaimGiftIx struct {
+	pd *provider.Provider
+}
+
+type TokenCanClaimGiftArgs struct {
+	gift_id *crypto.Address
+	claimant *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CanClaimGift.
+func (ix *TokenCanClaimGiftIx) Args(gift_id *crypto.Address, claimant *crypto.Address) *TokenCanClaimGiftArgs {
+	return &TokenCanClaimGiftArgs{
+		gift_id: gift_id,
+		claimant: claimant,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenCanClaimGiftArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// gift_id: Address
+	args["gift_id"] = a.gift_id
+	// claimant: Address
+	args["claimant"] = a.claimant
+	wire, err := a.pd.Encode("CanClaimGift", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CanClaimGift into bool.
+func (ix *TokenCanClaimGiftIx) DecodeView(body []byte) (out bool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CanClaimGift", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CanClaimGift failed: %s", failure)
+	}
+	v0, err := toBool(v)
 	if err != nil {
 		return out, err
 	}
@@ -23365,8 +25959,8 @@ func (ix *StakingValidatorProfileIx) DecodeView(body []byte) (out StakingValidat
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ValidatorProfile failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ValidatorProfile failed: %s", failure)
 	}
 	v0, err := fromStakingValidatorProfile(v)
 	if err != nil {
@@ -23417,8 +26011,8 @@ func (ix *StakingValidatorPoolIx) DecodeView(body []byte) (out StakingValidatorP
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ValidatorPool failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ValidatorPool failed: %s", failure)
 	}
 	v0, err := fromStakingValidatorPoolView(v)
 	if err != nil {
@@ -23473,8 +26067,8 @@ func (ix *StakingStakePositionIx) DecodeView(body []byte) (out StakingStakePosit
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view StakePosition failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view StakePosition failed: %s", failure)
 	}
 	v0, err := fromStakingStakePosition(v)
 	if err != nil {
@@ -23529,8 +26123,8 @@ func (ix *StakingPositionSummaryIx) DecodeView(body []byte) (out StakingPosition
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view PositionSummary failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view PositionSummary failed: %s", failure)
 	}
 	v0, err := fromStakingPositionSummary(v)
 	if err != nil {
@@ -23577,8 +26171,8 @@ func (ix *StakingCandidatePoolIx) DecodeView(body []byte) (out StakingCandidateP
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view CandidatePool failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CandidatePool failed: %s", failure)
 	}
 	v0, err := fromStakingCandidatePool(v)
 	if err != nil {
@@ -23629,8 +26223,8 @@ func (ix *StakingEpochTransitionIx) DecodeView(body []byte) (out StakingEpochTra
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view EpochTransition failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view EpochTransition failed: %s", failure)
 	}
 	v0, err := fromStakingEpochTransition(v)
 	if err != nil {
@@ -23677,8 +26271,8 @@ func (ix *StakingEpochConfigIx) DecodeView(body []byte) (out StakingEpochConfig,
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view EpochConfig failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view EpochConfig failed: %s", failure)
 	}
 	v0, err := fromStakingEpochConfig(v)
 	if err != nil {
@@ -23725,8 +26319,8 @@ func (ix *StakingEpochStateIx) DecodeView(body []byte) (out StakingEpochState, e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view EpochState failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view EpochState failed: %s", failure)
 	}
 	v0, err := fromStakingEpochState(v)
 	if err != nil {
@@ -23773,8 +26367,8 @@ func (ix *StakingRewardTreasuryIx) DecodeView(body []byte) (out StakingRewardTre
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view RewardTreasury failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view RewardTreasury failed: %s", failure)
 	}
 	v0, err := fromStakingRewardTreasury(v)
 	if err != nil {
@@ -23825,8 +26419,8 @@ func (ix *StakingHeldPrincipalIx) DecodeView(body []byte) (out uint64, err error
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view HeldPrincipal failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view HeldPrincipal failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -23877,8 +26471,8 @@ func (ix *StakingListDeclaredValidatorsForEpochIx) DecodeView(body []byte) (out 
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ListDeclaredValidatorsForEpoch failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ListDeclaredValidatorsForEpoch failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -24880,8 +27474,8 @@ func (ix *IdentityVcAttestationCoreIx) DecodeView(body []byte) (out IdentityVcAt
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view VcAttestationCore failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view VcAttestationCore failed: %s", failure)
 	}
 	v0, err := fromIdentityVcAttestationCore(v)
 	if err != nil {
@@ -24940,8 +27534,8 @@ func (ix *IdentityVcAttestationLifecycleIx) DecodeView(body []byte) (out Identit
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view VcAttestationLifecycle failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view VcAttestationLifecycle failed: %s", failure)
 	}
 	v0, err := fromIdentityVcAttestationLifecycle(v)
 	if err != nil {
@@ -24996,8 +27590,8 @@ func (ix *IdentityAcceptedVcIssuerIndexMetaIx) DecodeView(body []byte) (out stri
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view AcceptedVcIssuerIndexMeta failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view AcceptedVcIssuerIndexMeta failed: %s", failure)
 	}
 	v0, err := toString(v)
 	if err != nil {
@@ -25052,8 +27646,8 @@ func (ix *IdentityAcceptedVcIssuersIx) DecodeView(body []byte) (out []IdentityAc
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view AcceptedVcIssuers failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view AcceptedVcIssuers failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -25111,8 +27705,8 @@ func (ix *IdentityDisclosedVcSchemasIx) DecodeView(body []byte) (out []string, e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view DisclosedVcSchemas failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view DisclosedVcSchemas failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -25178,8 +27772,8 @@ func (ix *IdentityDisclosedVcsIx) DecodeView(body []byte) (out []IdentityDisclos
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view DisclosedVcs failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view DisclosedVcs failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -25245,8 +27839,8 @@ func (ix *IdentityHasValidVcFromIssuerIx) DecodeView(body []byte) (out bool, err
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view HasValidVcFromIssuer failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view HasValidVcFromIssuer failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -25297,8 +27891,8 @@ func (ix *IdentityCoreIx) DecodeView(body []byte) (out IdentityDidCoreState, err
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Core failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Core failed: %s", failure)
 	}
 	v0, err := fromIdentityDidCoreState(v)
 	if err != nil {
@@ -25349,8 +27943,8 @@ func (ix *IdentityDocumentIx) DecodeView(body []byte) (out IdentityDidDocumentSt
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Document failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Document failed: %s", failure)
 	}
 	v0, err := fromIdentityDidDocumentState(v)
 	if err != nil {
@@ -25401,8 +27995,8 @@ func (ix *IdentityKeyIndexIx) DecodeView(body []byte) (out IdentityDidKeyIndexSt
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view KeyIndex failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view KeyIndex failed: %s", failure)
 	}
 	v0, err := fromIdentityDidKeyIndexState(v)
 	if err != nil {
@@ -25453,8 +28047,8 @@ func (ix *IdentityKeysIx) DecodeView(body []byte) (out []IdentityDidKey, err err
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Keys failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Keys failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -25516,8 +28110,8 @@ func (ix *IdentityKeyIx) DecodeView(body []byte) (out IdentityDidKey, err error)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Key failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Key failed: %s", failure)
 	}
 	v0, err := fromIdentityDidKey(v)
 	if err != nil {
@@ -25568,8 +28162,8 @@ func (ix *IdentityServiceIndexIx) DecodeView(body []byte) (out IdentityDidServic
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ServiceIndex failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ServiceIndex failed: %s", failure)
 	}
 	v0, err := fromIdentityDidServiceIndexState(v)
 	if err != nil {
@@ -25620,8 +28214,8 @@ func (ix *IdentityServicesIx) DecodeView(body []byte) (out []IdentityDidService,
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Services failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Services failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -25683,8 +28277,8 @@ func (ix *IdentityServiceIx) DecodeView(body []byte) (out IdentityDidService, er
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Service failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Service failed: %s", failure)
 	}
 	v0, err := fromIdentityDidService(v)
 	if err != nil {
@@ -25735,8 +28329,8 @@ func (ix *IdentityAliasIx) DecodeView(body []byte) (out IdentityDidAliasState, e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Alias failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Alias failed: %s", failure)
 	}
 	v0, err := fromIdentityDidAliasState(v)
 	if err != nil {
@@ -25787,8 +28381,8 @@ func (ix *IdentityAvatarIx) DecodeView(body []byte) (out IdentityDidAvatarState,
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Avatar failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Avatar failed: %s", failure)
 	}
 	v0, err := fromIdentityDidAvatarState(v)
 	if err != nil {
@@ -25839,8 +28433,8 @@ func (ix *IdentityUpdatedAtIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view UpdatedAt failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view UpdatedAt failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -25891,8 +28485,8 @@ func (ix *IdentityDeactivatedIx) DecodeView(body []byte) (out bool, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Deactivated failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Deactivated failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -25947,8 +28541,8 @@ func (ix *IdentityNameBindingIx) DecodeView(body []byte) (out IdentityDidNameBin
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view NameBinding failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view NameBinding failed: %s", failure)
 	}
 	v0, err := fromIdentityDidNameBinding(v)
 	if err != nil {
@@ -25999,8 +28593,8 @@ func (ix *IdentityCredentialDefinitionIx) DecodeView(body []byte) (out IdentityC
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view CredentialDefinition failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CredentialDefinition failed: %s", failure)
 	}
 	v0, err := fromIdentityCredentialDefinition(v)
 	if err != nil {
@@ -26051,8 +28645,8 @@ func (ix *IdentityOrganizationCapabilitiesIx) DecodeView(body []byte) (out Ident
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view OrganizationCapabilities failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view OrganizationCapabilities failed: %s", failure)
 	}
 	v0, err := fromIdentityOrganizationCapabilities(v)
 	if err != nil {
@@ -26103,8 +28697,8 @@ func (ix *IdentityOrganizationStatusIx) DecodeView(body []byte) (out IdentityOrg
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view OrganizationStatus failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view OrganizationStatus failed: %s", failure)
 	}
 	v0, err := fromIdentityOrganizationStatus(v)
 	if err != nil {
@@ -26155,8 +28749,8 @@ func (ix *IdentityOrganizationUpdatedAtIx) DecodeView(body []byte) (out uint64, 
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view OrganizationUpdatedAt failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view OrganizationUpdatedAt failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -26211,8 +28805,8 @@ func (ix *IdentityCredentialIdIx) DecodeView(body []byte) (out string, err error
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view CredentialId failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CredentialId failed: %s", failure)
 	}
 	v0, err := toString(v)
 	if err != nil {
@@ -27555,8 +30149,8 @@ func (ix *SftokenSftOwnerOfIx) DecodeView(body []byte) (out *crypto.Address, err
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SftOwnerOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view SftOwnerOf failed: %s", failure)
 	}
 	v0, err := toAddress(v)
 	if err != nil {
@@ -27607,8 +30201,8 @@ func (ix *SftokenSftMetadataIx) DecodeView(body []byte) (out SftokenMetadata, er
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SftMetadata failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view SftMetadata failed: %s", failure)
 	}
 	v0, err := fromSftokenMetadata(v)
 	if err != nil {
@@ -27663,8 +30257,8 @@ func (ix *SftokenSlotInfoIx) DecodeView(body []byte) (out SftokenSlotData, err e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SlotInfo failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view SlotInfo failed: %s", failure)
 	}
 	v0, err := fromSftokenSlotData(v)
 	if err != nil {
@@ -27719,8 +30313,8 @@ func (ix *SftokenSlotMetadataIx) DecodeView(body []byte) (out SftokenMetadata, e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SlotMetadata failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view SlotMetadata failed: %s", failure)
 	}
 	v0, err := fromSftokenMetadata(v)
 	if err != nil {
@@ -27775,8 +30369,8 @@ func (ix *SftokenIsSlotTransferableIx) DecodeView(body []byte) (out bool, err er
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view IsSlotTransferable failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view IsSlotTransferable failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -27831,8 +30425,8 @@ func (ix *SftokenTokenIx) DecodeView(body []byte) (out SftokenMetadata, err erro
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Token failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Token failed: %s", failure)
 	}
 	v0, err := fromSftokenMetadata(v)
 	if err != nil {
@@ -27887,8 +30481,8 @@ func (ix *SftokenSlotOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SlotOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view SlotOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -27947,8 +30541,8 @@ func (ix *SftokenBalanceOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view BalanceOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view BalanceOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -28007,8 +30601,8 @@ func (ix *SftokenFrozenOfIx) DecodeView(body []byte) (out bool, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view FrozenOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view FrozenOf failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -28071,8 +30665,8 @@ func (ix *SftokenApprovalOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ApprovalOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ApprovalOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -28123,8 +30717,8 @@ func (ix *SftokenRoyaltyInfoIx) DecodeView(body []byte) (out SftokenRoyalty, err
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view RoyaltyInfo failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view RoyaltyInfo failed: %s", failure)
 	}
 	v0, err := fromSftokenRoyalty(v)
 	if err != nil {
@@ -28175,8 +30769,8 @@ func (ix *SftokenMintAuthorityIx) DecodeView(body []byte) (out *crypto.Address, 
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view MintAuthority failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view MintAuthority failed: %s", failure)
 	}
 	v0, err := toAddress(v)
 	if err != nil {
@@ -28227,8 +30821,8 @@ func (ix *SftokenUpdateAuthorIx) DecodeView(body []byte) (out *crypto.Address, e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view UpdateAuthor failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view UpdateAuthor failed: %s", failure)
 	}
 	v0, err := toAddress(v)
 	if err != nil {
@@ -28279,8 +30873,8 @@ func (ix *SftokenFreezeAuthorityIx) DecodeView(body []byte) (out *crypto.Address
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view FreezeAuthority failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view FreezeAuthority failed: %s", failure)
 	}
 	v0, err := toAddress(v)
 	if err != nil {
@@ -28293,6 +30887,15 @@ func (ix *SftokenFreezeAuthorityIx) DecodeView(body []byte) (out *crypto.Address
 // DexApp exposes type-safe instruction builders for IDL app "dex".
 type DexApp struct {
 	Pd *provider.Provider
+	CreateAmmPool *DexCreateAmmPoolIx
+	InitializeAmmPool *DexInitializeAmmPoolIx
+	SetAmmStatus *DexSetAmmStatusIx
+	AddLiquidity *DexAddLiquidityIx
+	RemoveLiquidity *DexRemoveLiquidityIx
+	AmmPoolInfo *DexAmmPoolInfoIx
+	AmmLpBalance *DexAmmLpBalanceIx
+	SwapExactIn *DexSwapExactInIx
+	AmmSwapEnabled *DexAmmSwapEnabledIx
 	CreateMarket *DexCreateMarketIx
 	InitializeMarketDid *DexInitializeMarketDidIx
 	DiscloseMarketVcAttestation *DexDiscloseMarketVcAttestationIx
@@ -28310,6 +30913,15 @@ type DexApp struct {
 }
 
 var Dex = &DexApp{
+	CreateAmmPool: &DexCreateAmmPoolIx{},
+	InitializeAmmPool: &DexInitializeAmmPoolIx{},
+	SetAmmStatus: &DexSetAmmStatusIx{},
+	AddLiquidity: &DexAddLiquidityIx{},
+	RemoveLiquidity: &DexRemoveLiquidityIx{},
+	AmmPoolInfo: &DexAmmPoolInfoIx{},
+	AmmLpBalance: &DexAmmLpBalanceIx{},
+	SwapExactIn: &DexSwapExactInIx{},
+	AmmSwapEnabled: &DexAmmSwapEnabledIx{},
 	CreateMarket: &DexCreateMarketIx{},
 	InitializeMarketDid: &DexInitializeMarketDidIx{},
 	DiscloseMarketVcAttestation: &DexDiscloseMarketVcAttestationIx{},
@@ -28328,6 +30940,15 @@ var Dex = &DexApp{
 
 func (a *DexApp) bind(pd *provider.Provider) {
 	a.Pd = pd
+	a.CreateAmmPool.pd = pd
+	a.InitializeAmmPool.pd = pd
+	a.SetAmmStatus.pd = pd
+	a.AddLiquidity.pd = pd
+	a.RemoveLiquidity.pd = pd
+	a.AmmPoolInfo.pd = pd
+	a.AmmLpBalance.pd = pd
+	a.SwapExactIn.pd = pd
+	a.AmmSwapEnabled.pd = pd
 	a.CreateMarket.pd = pd
 	a.InitializeMarketDid.pd = pd
 	a.DiscloseMarketVcAttestation.pd = pd
@@ -28342,6 +30963,466 @@ func (a *DexApp) bind(pd *provider.Provider) {
 	a.OrderbookDepth.pd = pd
 	a.OrdersAtLevel.pd = pd
 	a.VaultLiability.pd = pd
+}
+
+type DexCreateAmmPoolIx struct {
+	pd *provider.Provider
+}
+
+type DexCreateAmmPoolArgs struct {
+	authority *crypto.Address
+	provider *crypto.Address
+	market_id *crypto.Address
+	base_amount uint64
+	quote_amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateAmmPool.
+func (ix *DexCreateAmmPoolIx) Args(authority *crypto.Address, provider *crypto.Address, market_id *crypto.Address, base_amount uint64, quote_amount uint64) *DexCreateAmmPoolArgs {
+	return &DexCreateAmmPoolArgs{
+		authority: authority,
+		provider: provider,
+		market_id: market_id,
+		base_amount: base_amount,
+		quote_amount: quote_amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DexCreateAmmPoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// authority: Signer
+	args["authority"] = a.authority
+	// provider: Signer
+	args["provider"] = a.provider
+	// market_id: Address
+	args["market_id"] = a.market_id
+	// base_amount: u64
+	args["base_amount"] = a.base_amount
+	// quote_amount: u64
+	args["quote_amount"] = a.quote_amount
+	wire, err := a.pd.Encode("CreateAmmPool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DexInitializeAmmPoolIx struct {
+	pd *provider.Provider
+}
+
+type DexInitializeAmmPoolArgs struct {
+	authority *crypto.Address
+	provider *crypto.Address
+	market_id *crypto.Address
+	base_amount uint64
+	quote_amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of InitializeAmmPool.
+func (ix *DexInitializeAmmPoolIx) Args(authority *crypto.Address, provider *crypto.Address, market_id *crypto.Address, base_amount uint64, quote_amount uint64) *DexInitializeAmmPoolArgs {
+	return &DexInitializeAmmPoolArgs{
+		authority: authority,
+		provider: provider,
+		market_id: market_id,
+		base_amount: base_amount,
+		quote_amount: quote_amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DexInitializeAmmPoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// authority: Signer
+	args["authority"] = a.authority
+	// provider: Signer
+	args["provider"] = a.provider
+	// market_id: Address
+	args["market_id"] = a.market_id
+	// base_amount: u64
+	args["base_amount"] = a.base_amount
+	// quote_amount: u64
+	args["quote_amount"] = a.quote_amount
+	wire, err := a.pd.Encode("InitializeAmmPool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DexSetAmmStatusIx struct {
+	pd *provider.Provider
+}
+
+type DexSetAmmStatusArgs struct {
+	authority *crypto.Address
+	market_id *crypto.Address
+	status DexAmmStatus
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetAmmStatus.
+func (ix *DexSetAmmStatusIx) Args(authority *crypto.Address, market_id *crypto.Address, status DexAmmStatus) *DexSetAmmStatusArgs {
+	return &DexSetAmmStatusArgs{
+		authority: authority,
+		market_id: market_id,
+		status: status,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DexSetAmmStatusArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// authority: Signer
+	args["authority"] = a.authority
+	// market_id: Address
+	args["market_id"] = a.market_id
+	// status: AmmStatus
+	v0, err := toDexAmmStatusValue(a.status)
+	if err != nil {
+		return nil, err
+	}
+	args["status"] = v0
+	wire, err := a.pd.Encode("SetAmmStatus", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DexAddLiquidityIx struct {
+	pd *provider.Provider
+}
+
+type DexAddLiquidityArgs struct {
+	owner *crypto.Address
+	market_id *crypto.Address
+	base_max uint64
+	quote_max uint64
+	min_lp_shares uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AddLiquidity.
+func (ix *DexAddLiquidityIx) Args(owner *crypto.Address, market_id *crypto.Address, base_max uint64, quote_max uint64, min_lp_shares uint64) *DexAddLiquidityArgs {
+	return &DexAddLiquidityArgs{
+		owner: owner,
+		market_id: market_id,
+		base_max: base_max,
+		quote_max: quote_max,
+		min_lp_shares: min_lp_shares,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DexAddLiquidityArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// market_id: Address
+	args["market_id"] = a.market_id
+	// base_max: u64
+	args["base_max"] = a.base_max
+	// quote_max: u64
+	args["quote_max"] = a.quote_max
+	// min_lp_shares: u64
+	args["min_lp_shares"] = a.min_lp_shares
+	wire, err := a.pd.Encode("AddLiquidity", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DexRemoveLiquidityIx struct {
+	pd *provider.Provider
+}
+
+type DexRemoveLiquidityArgs struct {
+	owner *crypto.Address
+	market_id *crypto.Address
+	lp_shares uint64
+	min_base_out uint64
+	min_quote_out uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RemoveLiquidity.
+func (ix *DexRemoveLiquidityIx) Args(owner *crypto.Address, market_id *crypto.Address, lp_shares uint64, min_base_out uint64, min_quote_out uint64) *DexRemoveLiquidityArgs {
+	return &DexRemoveLiquidityArgs{
+		owner: owner,
+		market_id: market_id,
+		lp_shares: lp_shares,
+		min_base_out: min_base_out,
+		min_quote_out: min_quote_out,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DexRemoveLiquidityArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// market_id: Address
+	args["market_id"] = a.market_id
+	// lp_shares: u64
+	args["lp_shares"] = a.lp_shares
+	// min_base_out: u64
+	args["min_base_out"] = a.min_base_out
+	// min_quote_out: u64
+	args["min_quote_out"] = a.min_quote_out
+	wire, err := a.pd.Encode("RemoveLiquidity", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DexAmmPoolInfoIx struct {
+	pd *provider.Provider
+}
+
+type DexAmmPoolInfoArgs struct {
+	market_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AmmPoolInfo.
+func (ix *DexAmmPoolInfoIx) Args(market_id *crypto.Address) *DexAmmPoolInfoArgs {
+	return &DexAmmPoolInfoArgs{
+		market_id: market_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DexAmmPoolInfoArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// market_id: Address
+	args["market_id"] = a.market_id
+	wire, err := a.pd.Encode("AmmPoolInfo", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of AmmPoolInfo into DexAmmPoolInfo.
+func (ix *DexAmmPoolInfoIx) DecodeView(body []byte) (out DexAmmPoolInfo, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("AmmPoolInfo", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view AmmPoolInfo failed: %s", failure)
+	}
+	v0, err := fromDexAmmPoolInfo(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type DexAmmLpBalanceIx struct {
+	pd *provider.Provider
+}
+
+type DexAmmLpBalanceArgs struct {
+	market_id *crypto.Address
+	owner *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AmmLpBalance.
+func (ix *DexAmmLpBalanceIx) Args(market_id *crypto.Address, owner *crypto.Address) *DexAmmLpBalanceArgs {
+	return &DexAmmLpBalanceArgs{
+		market_id: market_id,
+		owner: owner,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DexAmmLpBalanceArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// market_id: Address
+	args["market_id"] = a.market_id
+	// owner: Address
+	args["owner"] = a.owner
+	wire, err := a.pd.Encode("AmmLpBalance", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of AmmLpBalance into uint64.
+func (ix *DexAmmLpBalanceIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("AmmLpBalance", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view AmmLpBalance failed: %s", failure)
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type DexSwapExactInIx struct {
+	pd *provider.Provider
+}
+
+type DexSwapExactInArgs struct {
+	owner *crypto.Address
+	market_id *crypto.Address
+	input_token *crypto.Address
+	amount_in uint64
+	min_amount_out uint64
+	worst_tick uint32
+	max_book_makers uint16
+	max_amm_segments uint16
+	channel *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SwapExactIn.
+func (ix *DexSwapExactInIx) Args(owner *crypto.Address, market_id *crypto.Address, input_token *crypto.Address, amount_in uint64, min_amount_out uint64, worst_tick uint32, max_book_makers uint16, max_amm_segments uint16, channel *crypto.Address) *DexSwapExactInArgs {
+	return &DexSwapExactInArgs{
+		owner: owner,
+		market_id: market_id,
+		input_token: input_token,
+		amount_in: amount_in,
+		min_amount_out: min_amount_out,
+		worst_tick: worst_tick,
+		max_book_makers: max_book_makers,
+		max_amm_segments: max_amm_segments,
+		channel: channel,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DexSwapExactInArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// market_id: Address
+	args["market_id"] = a.market_id
+	// input_token: Address
+	args["input_token"] = a.input_token
+	// amount_in: u64
+	args["amount_in"] = a.amount_in
+	// min_amount_out: u64
+	args["min_amount_out"] = a.min_amount_out
+	// worst_tick: u32
+	args["worst_tick"] = a.worst_tick
+	// max_book_makers: u16
+	args["max_book_makers"] = a.max_book_makers
+	// max_amm_segments: u16
+	args["max_amm_segments"] = a.max_amm_segments
+	// channel: Address
+	args["channel"] = a.channel
+	wire, err := a.pd.Encode("SwapExactIn", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DexAmmSwapEnabledIx struct {
+	pd *provider.Provider
+}
+
+type DexAmmSwapEnabledArgs struct {
+	market_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AmmSwapEnabled.
+func (ix *DexAmmSwapEnabledIx) Args(market_id *crypto.Address) *DexAmmSwapEnabledArgs {
+	return &DexAmmSwapEnabledArgs{
+		market_id: market_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DexAmmSwapEnabledArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// market_id: Address
+	args["market_id"] = a.market_id
+	wire, err := a.pd.Encode("AmmSwapEnabled", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of AmmSwapEnabled into bool.
+func (ix *DexAmmSwapEnabledIx) DecodeView(body []byte) (out bool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("AmmSwapEnabled", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view AmmSwapEnabled failed: %s", failure)
+	}
+	v0, err := toBool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
 }
 
 type DexCreateMarketIx struct {
@@ -28805,8 +31886,8 @@ func (ix *DexMarketInfoIx) DecodeView(body []byte) (out DexMarket, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view MarketInfo failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view MarketInfo failed: %s", failure)
 	}
 	v0, err := fromDexMarket(v)
 	if err != nil {
@@ -28861,8 +31942,8 @@ func (ix *DexOrderInfoViewIx) DecodeView(body []byte) (out DexOrderInfo, err err
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view OrderInfoView failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view OrderInfoView failed: %s", failure)
 	}
 	v0, err := fromDexOrderInfo(v)
 	if err != nil {
@@ -28913,8 +31994,8 @@ func (ix *DexBestBidAskIx) DecodeView(body []byte) (out DexBestBidAsk, err error
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view BestBidAsk failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view BestBidAsk failed: %s", failure)
 	}
 	v0, err := fromDexBestBidAsk(v)
 	if err != nil {
@@ -28969,8 +32050,8 @@ func (ix *DexOrderbookDepthIx) DecodeView(body []byte) (out DexOrderbookDepth, e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view OrderbookDepth failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view OrderbookDepth failed: %s", failure)
 	}
 	v0, err := fromDexOrderbookDepth(v)
 	if err != nil {
@@ -29041,8 +32122,8 @@ func (ix *DexOrdersAtLevelIx) DecodeView(body []byte) (out DexLevelOrderPage, er
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view OrdersAtLevel failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view OrdersAtLevel failed: %s", failure)
 	}
 	v0, err := fromDexLevelOrderPage(v)
 	if err != nil {
@@ -29097,8 +32178,8 @@ func (ix *DexVaultLiabilityIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view VaultLiability failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view VaultLiability failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -29541,8 +32622,8 @@ func (ix *KeylessGetSessionsIx) DecodeView(body []byte) (out []KeylessSessionEnt
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view GetSessions failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetSessions failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -29600,8 +32681,8 @@ func (ix *KeylessGetBindingIx) DecodeView(body []byte) (out *KeylessKeylessBindi
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view GetBinding failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetBinding failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -29654,8 +32735,8 @@ func (ix *KeylessListProvidersIx) DecodeView(body []byte) (out []KeylessKeylessP
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ListProviders failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ListProviders failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -29713,8 +32794,8 @@ func (ix *KeylessGetProviderIx) DecodeView(body []byte) (out *KeylessKeylessProv
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view GetProvider failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetProvider failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -29771,8 +32852,8 @@ func (ix *KeylessGetProviderStatusIx) DecodeView(body []byte) (out *KeylessKeyle
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view GetProviderStatus failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetProviderStatus failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -29833,8 +32914,8 @@ func (ix *KeylessGetAudienceIx) DecodeView(body []byte) (out *KeylessKeylessAudi
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view GetAudience failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetAudience failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -29887,8 +32968,8 @@ func (ix *KeylessGetParamsIx) DecodeView(body []byte) (out KeylessKeylessParams,
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view GetParams failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetParams failed: %s", failure)
 	}
 	v0, err := fromKeylessKeylessParams(v)
 	if err != nil {
@@ -29939,332 +33020,10 @@ func (ix *KeylessIsKeylessAccountIx) DecodeView(body []byte) (out bool, err erro
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view IsKeylessAccount failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view IsKeylessAccount failed: %s", failure)
 	}
 	v0, err := toBool(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-// LuckyBoxApp exposes type-safe instruction builders for IDL app "lucky_box".
-type LuckyBoxApp struct {
-	Pd *provider.Provider
-	CreateEqual *LuckyBoxCreateEqualIx
-	CreateLucky *LuckyBoxCreateLuckyIx
-	Claim *LuckyBoxClaimIx
-	Refund *LuckyBoxRefundIx
-	BoxView *LuckyBoxBoxViewIx
-	AssetPool *LuckyBoxAssetPoolIx
-}
-
-var LuckyBox = &LuckyBoxApp{
-	CreateEqual: &LuckyBoxCreateEqualIx{},
-	CreateLucky: &LuckyBoxCreateLuckyIx{},
-	Claim: &LuckyBoxClaimIx{},
-	Refund: &LuckyBoxRefundIx{},
-	BoxView: &LuckyBoxBoxViewIx{},
-	AssetPool: &LuckyBoxAssetPoolIx{},
-}
-
-func (a *LuckyBoxApp) bind(pd *provider.Provider) {
-	a.Pd = pd
-	a.CreateEqual.pd = pd
-	a.CreateLucky.pd = pd
-	a.Claim.pd = pd
-	a.Refund.pd = pd
-	a.BoxView.pd = pd
-	a.AssetPool.pd = pd
-}
-
-type LuckyBoxCreateEqualIx struct {
-	pd *provider.Provider
-}
-
-type LuckyBoxCreateEqualArgs struct {
-	creator *crypto.Address
-	box_id uint64
-	token *crypto.Address
-	total_amount uint64
-	claim_count uint64
-	rules *LuckyBoxBoxRules
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of CreateEqual.
-func (ix *LuckyBoxCreateEqualIx) Args(creator *crypto.Address, box_id uint64, token *crypto.Address, total_amount uint64, claim_count uint64, rules *LuckyBoxBoxRules) *LuckyBoxCreateEqualArgs {
-	return &LuckyBoxCreateEqualArgs{
-		creator: creator,
-		box_id: box_id,
-		token: token,
-		total_amount: total_amount,
-		claim_count: claim_count,
-		rules: rules,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *LuckyBoxCreateEqualArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app lucky_box is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// creator: Signer
-	args["creator"] = a.creator
-	// box_id: u64
-	args["box_id"] = a.box_id
-	// token: Address
-	args["token"] = a.token
-	// total_amount: u64
-	args["total_amount"] = a.total_amount
-	// claim_count: u64
-	args["claim_count"] = a.claim_count
-	// rules: option<BoxRules>
-	if a.rules == nil {
-		args["rules"] = nil
-	} else {
-		v0, err := toLuckyBoxBoxRulesValue(*a.rules)
-		if err != nil {
-			return nil, err
-		}
-		args["rules"] = v0
-	}
-	wire, err := a.pd.Encode("CreateEqual", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type LuckyBoxCreateLuckyIx struct {
-	pd *provider.Provider
-}
-
-type LuckyBoxCreateLuckyArgs struct {
-	creator *crypto.Address
-	box_id uint64
-	token *crypto.Address
-	total_amount uint64
-	claim_count uint64
-	rules *LuckyBoxBoxRules
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of CreateLucky.
-func (ix *LuckyBoxCreateLuckyIx) Args(creator *crypto.Address, box_id uint64, token *crypto.Address, total_amount uint64, claim_count uint64, rules *LuckyBoxBoxRules) *LuckyBoxCreateLuckyArgs {
-	return &LuckyBoxCreateLuckyArgs{
-		creator: creator,
-		box_id: box_id,
-		token: token,
-		total_amount: total_amount,
-		claim_count: claim_count,
-		rules: rules,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *LuckyBoxCreateLuckyArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app lucky_box is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// creator: Signer
-	args["creator"] = a.creator
-	// box_id: u64
-	args["box_id"] = a.box_id
-	// token: Address
-	args["token"] = a.token
-	// total_amount: u64
-	args["total_amount"] = a.total_amount
-	// claim_count: u64
-	args["claim_count"] = a.claim_count
-	// rules: option<BoxRules>
-	if a.rules == nil {
-		args["rules"] = nil
-	} else {
-		v0, err := toLuckyBoxBoxRulesValue(*a.rules)
-		if err != nil {
-			return nil, err
-		}
-		args["rules"] = v0
-	}
-	wire, err := a.pd.Encode("CreateLucky", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type LuckyBoxClaimIx struct {
-	pd *provider.Provider
-}
-
-type LuckyBoxClaimArgs struct {
-	claimant *crypto.Address
-	box_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of Claim.
-func (ix *LuckyBoxClaimIx) Args(claimant *crypto.Address, box_id uint64) *LuckyBoxClaimArgs {
-	return &LuckyBoxClaimArgs{
-		claimant: claimant,
-		box_id: box_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *LuckyBoxClaimArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app lucky_box is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// claimant: Signer
-	args["claimant"] = a.claimant
-	// box_id: u64
-	args["box_id"] = a.box_id
-	wire, err := a.pd.Encode("Claim", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type LuckyBoxRefundIx struct {
-	pd *provider.Provider
-}
-
-type LuckyBoxRefundArgs struct {
-	box_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of Refund.
-func (ix *LuckyBoxRefundIx) Args(box_id uint64) *LuckyBoxRefundArgs {
-	return &LuckyBoxRefundArgs{
-		box_id: box_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *LuckyBoxRefundArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app lucky_box is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// box_id: u64
-	args["box_id"] = a.box_id
-	wire, err := a.pd.Encode("Refund", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type LuckyBoxBoxViewIx struct {
-	pd *provider.Provider
-}
-
-type LuckyBoxBoxViewArgs struct {
-	box_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of BoxView.
-func (ix *LuckyBoxBoxViewIx) Args(box_id uint64) *LuckyBoxBoxViewArgs {
-	return &LuckyBoxBoxViewArgs{
-		box_id: box_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *LuckyBoxBoxViewArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app lucky_box is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// box_id: u64
-	args["box_id"] = a.box_id
-	wire, err := a.pd.Encode("BoxView", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of BoxView into LuckyBoxBoxState.
-func (ix *LuckyBoxBoxViewIx) DecodeView(body []byte) (out LuckyBoxBoxState, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app lucky_box is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("BoxView", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view BoxView failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := fromLuckyBoxBoxState(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type LuckyBoxAssetPoolIx struct {
-	pd *provider.Provider
-}
-
-type LuckyBoxAssetPoolArgs struct {
-	box_id uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of AssetPool.
-func (ix *LuckyBoxAssetPoolIx) Args(box_id uint64) *LuckyBoxAssetPoolArgs {
-	return &LuckyBoxAssetPoolArgs{
-		box_id: box_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *LuckyBoxAssetPoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app lucky_box is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// box_id: u64
-	args["box_id"] = a.box_id
-	wire, err := a.pd.Encode("AssetPool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of AssetPool into LuckyBoxAssetPoolState.
-func (ix *LuckyBoxAssetPoolIx) DecodeView(body []byte) (out LuckyBoxAssetPoolState, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app lucky_box is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("AssetPool", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view AssetPool failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := fromLuckyBoxAssetPoolState(v)
 	if err != nil {
 		return out, err
 	}
@@ -30298,6 +33057,8 @@ type SocialApp struct {
 	RejectJoinRequest *SocialRejectJoinRequestIx
 	LeaveCommunity *SocialLeaveCommunityIx
 	RemoveCommunityMember *SocialRemoveCommunityMemberIx
+	CreateGift *SocialCreateGiftIx
+	ClaimGift *SocialClaimGiftIx
 	SocialProfile *SocialSocialProfileIx
 	SourceApp *SocialSourceAppIx
 	IsSourceAppPublisher *SocialIsSourceAppPublisherIx
@@ -30306,6 +33067,8 @@ type SocialApp struct {
 	IsCommunityAdmin *SocialIsCommunityAdminIx
 	JoinRequest *SocialJoinRequestIx
 	CommunityMembership *SocialCommunityMembershipIx
+	CanClaimCommunityGift *SocialCanClaimCommunityGiftIx
+	GiftCommunity *SocialGiftCommunityIx
 }
 
 var Social = &SocialApp{
@@ -30332,6 +33095,8 @@ var Social = &SocialApp{
 	RejectJoinRequest: &SocialRejectJoinRequestIx{},
 	LeaveCommunity: &SocialLeaveCommunityIx{},
 	RemoveCommunityMember: &SocialRemoveCommunityMemberIx{},
+	CreateGift: &SocialCreateGiftIx{},
+	ClaimGift: &SocialClaimGiftIx{},
 	SocialProfile: &SocialSocialProfileIx{},
 	SourceApp: &SocialSourceAppIx{},
 	IsSourceAppPublisher: &SocialIsSourceAppPublisherIx{},
@@ -30340,6 +33105,8 @@ var Social = &SocialApp{
 	IsCommunityAdmin: &SocialIsCommunityAdminIx{},
 	JoinRequest: &SocialJoinRequestIx{},
 	CommunityMembership: &SocialCommunityMembershipIx{},
+	CanClaimCommunityGift: &SocialCanClaimCommunityGiftIx{},
+	GiftCommunity: &SocialGiftCommunityIx{},
 }
 
 func (a *SocialApp) bind(pd *provider.Provider) {
@@ -30367,6 +33134,8 @@ func (a *SocialApp) bind(pd *provider.Provider) {
 	a.RejectJoinRequest.pd = pd
 	a.LeaveCommunity.pd = pd
 	a.RemoveCommunityMember.pd = pd
+	a.CreateGift.pd = pd
+	a.ClaimGift.pd = pd
 	a.SocialProfile.pd = pd
 	a.SourceApp.pd = pd
 	a.IsSourceAppPublisher.pd = pd
@@ -30375,6 +33144,8 @@ func (a *SocialApp) bind(pd *provider.Provider) {
 	a.IsCommunityAdmin.pd = pd
 	a.JoinRequest.pd = pd
 	a.CommunityMembership.pd = pd
+	a.CanClaimCommunityGift.pd = pd
+	a.GiftCommunity.pd = pd
 }
 
 type SocialUpsertSocialProfileIx struct {
@@ -31293,6 +34064,106 @@ func (a *SocialRemoveCommunityMemberArgs) Encode() (api.PackedInstruction, error
 	return api.PackedInstruction(wire), nil
 }
 
+type SocialCreateGiftIx struct {
+	pd *provider.Provider
+}
+
+type SocialCreateGiftArgs struct {
+	creator *crypto.Address
+	community_id uint32
+	token *crypto.Address
+	total_amount uint64
+	claim_count uint64
+	allocation SocialGiftAllocation
+	expires_at_ms *uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateGift.
+func (ix *SocialCreateGiftIx) Args(creator *crypto.Address, community_id uint32, token *crypto.Address, total_amount uint64, claim_count uint64, allocation SocialGiftAllocation, expires_at_ms *uint64) *SocialCreateGiftArgs {
+	return &SocialCreateGiftArgs{
+		creator: creator,
+		community_id: community_id,
+		token: token,
+		total_amount: total_amount,
+		claim_count: claim_count,
+		allocation: allocation,
+		expires_at_ms: expires_at_ms,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialCreateGiftArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// creator: Signer
+	args["creator"] = a.creator
+	// community_id: u32
+	args["community_id"] = a.community_id
+	// token: Address
+	args["token"] = a.token
+	// total_amount: u64
+	args["total_amount"] = a.total_amount
+	// claim_count: u64
+	args["claim_count"] = a.claim_count
+	// allocation: GiftAllocation
+	v0, err := toSocialGiftAllocationValue(a.allocation)
+	if err != nil {
+		return nil, err
+	}
+	args["allocation"] = v0
+	// expires_at_ms: option<u64>
+	if a.expires_at_ms == nil {
+		args["expires_at_ms"] = nil
+	} else {
+		args["expires_at_ms"] = *a.expires_at_ms
+	}
+	wire, err := a.pd.Encode("CreateGift", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SocialClaimGiftIx struct {
+	pd *provider.Provider
+}
+
+type SocialClaimGiftArgs struct {
+	claimant *crypto.Address
+	gift_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimGift.
+func (ix *SocialClaimGiftIx) Args(claimant *crypto.Address, gift_id *crypto.Address) *SocialClaimGiftArgs {
+	return &SocialClaimGiftArgs{
+		claimant: claimant,
+		gift_id: gift_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialClaimGiftArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// claimant: Signer
+	args["claimant"] = a.claimant
+	// gift_id: Address
+	args["gift_id"] = a.gift_id
+	wire, err := a.pd.Encode("ClaimGift", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type SocialSocialProfileIx struct {
 	pd *provider.Provider
 }
@@ -31334,8 +34205,8 @@ func (ix *SocialSocialProfileIx) DecodeView(body []byte) (out string, err error)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SocialProfile failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view SocialProfile failed: %s", failure)
 	}
 	v0, err := toString(v)
 	if err != nil {
@@ -31386,8 +34257,8 @@ func (ix *SocialSourceAppIx) DecodeView(body []byte) (out SocialSourceApp, err e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SourceApp failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view SourceApp failed: %s", failure)
 	}
 	v0, err := fromSocialSourceApp(v)
 	if err != nil {
@@ -31442,8 +34313,8 @@ func (ix *SocialIsSourceAppPublisherIx) DecodeView(body []byte) (out bool, err e
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view IsSourceAppPublisher failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view IsSourceAppPublisher failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -31506,8 +34377,8 @@ func (ix *SocialGetReferenceIx) DecodeView(body []byte) (out SocialReference, er
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view GetReference failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetReference failed: %s", failure)
 	}
 	v0, err := fromSocialReference(v)
 	if err != nil {
@@ -31558,8 +34429,8 @@ func (ix *SocialCommunityIx) DecodeView(body []byte) (out SocialCommunityControl
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view Community failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view Community failed: %s", failure)
 	}
 	v0, err := fromSocialCommunityControl(v)
 	if err != nil {
@@ -31614,8 +34485,8 @@ func (ix *SocialIsCommunityAdminIx) DecodeView(body []byte) (out bool, err error
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view IsCommunityAdmin failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view IsCommunityAdmin failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -31670,8 +34541,8 @@ func (ix *SocialJoinRequestIx) DecodeView(body []byte) (out bool, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view JoinRequest failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view JoinRequest failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -31726,10 +34597,118 @@ func (ix *SocialCommunityMembershipIx) DecodeView(body []byte) (out bool, err er
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view CommunityMembership failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CommunityMembership failed: %s", failure)
 	}
 	v0, err := toBool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SocialCanClaimCommunityGiftIx struct {
+	pd *provider.Provider
+}
+
+type SocialCanClaimCommunityGiftArgs struct {
+	gift_id *crypto.Address
+	claimant *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CanClaimCommunityGift.
+func (ix *SocialCanClaimCommunityGiftIx) Args(gift_id *crypto.Address, claimant *crypto.Address) *SocialCanClaimCommunityGiftArgs {
+	return &SocialCanClaimCommunityGiftArgs{
+		gift_id: gift_id,
+		claimant: claimant,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialCanClaimCommunityGiftArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// gift_id: Address
+	args["gift_id"] = a.gift_id
+	// claimant: Address
+	args["claimant"] = a.claimant
+	wire, err := a.pd.Encode("CanClaimCommunityGift", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CanClaimCommunityGift into bool.
+func (ix *SocialCanClaimCommunityGiftIx) DecodeView(body []byte) (out bool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CanClaimCommunityGift", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CanClaimCommunityGift failed: %s", failure)
+	}
+	v0, err := toBool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SocialGiftCommunityIx struct {
+	pd *provider.Provider
+}
+
+type SocialGiftCommunityArgs struct {
+	gift_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of GiftCommunity.
+func (ix *SocialGiftCommunityIx) Args(gift_id *crypto.Address) *SocialGiftCommunityArgs {
+	return &SocialGiftCommunityArgs{
+		gift_id: gift_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialGiftCommunityArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// gift_id: Address
+	args["gift_id"] = a.gift_id
+	wire, err := a.pd.Encode("GiftCommunity", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of GiftCommunity into uint32.
+func (ix *SocialGiftCommunityIx) DecodeView(body []byte) (out uint32, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("GiftCommunity", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GiftCommunity failed: %s", failure)
+	}
+	v0, err := toUint32(v)
 	if err != nil {
 		return out, err
 	}
@@ -31741,66 +34720,99 @@ func (ix *SocialCommunityMembershipIx) DecodeView(body []byte) (out bool, err er
 type DemoApp struct {
 	Pd *provider.Provider
 	OpenOrder *DemoOpenOrderIx
+	RejectOrderInbound *DemoRejectOrderInboundIx
+	ForwardOrderInbound *DemoForwardOrderInboundIx
+	SplitOrderInbound *DemoSplitOrderInboundIx
 	PayOrder *DemoPayOrderIx
 	SettleOrder *DemoSettleOrderIx
-	OrderBalance *DemoOrderBalanceIx
-	OpenGasSponsorPool *DemoOpenGasSponsorPoolIx
-	ClaimSponsoredScore *DemoClaimSponsoredScoreIx
-	SponsorPoolOf *DemoSponsorPoolOfIx
 	InitPool *DemoInitPoolIx
 	InitDex *DemoInitDexIx
 	SetLabel *DemoSetLabelIx
 	BatchCredit *DemoBatchCreditIx
+	SetTierCap *DemoSetTierCapIx
+	DrawU64 *DemoDrawU64Ix
+	DrawBytes32 *DemoDrawBytes32Ix
+	DrawRange *DemoDrawRangeIx
+	OpenGasSponsorPool *DemoOpenGasSponsorPoolIx
+	ClaimSponsoredScore *DemoClaimSponsoredScoreIx
+	ScheduleWake *DemoScheduleWakeIx
+	RunScheduledWake *DemoRunScheduledWakeIx
+	OrderVault *DemoOrderVaultIx
+	OrderLastInbound *DemoOrderLastInboundIx
+	OrderBalance *DemoOrderBalanceIx
 	LabelOf *DemoLabelOfIx
 	ScoreOf *DemoScoreOfIx
-	SetTierCap *DemoSetTierCapIx
 	TierCapOf *DemoTierCapOfIx
 	EchoMode *DemoEchoModeIx
 	LabelTotal *DemoLabelTotalIx
 	SpecialTypes *DemoSpecialTypesIx
+	SponsorPoolOf *DemoSponsorPoolOfIx
+	ScheduledWakeCount *DemoScheduledWakeCountIx
 }
 
 var Demo = &DemoApp{
 	OpenOrder: &DemoOpenOrderIx{},
+	RejectOrderInbound: &DemoRejectOrderInboundIx{},
+	ForwardOrderInbound: &DemoForwardOrderInboundIx{},
+	SplitOrderInbound: &DemoSplitOrderInboundIx{},
 	PayOrder: &DemoPayOrderIx{},
 	SettleOrder: &DemoSettleOrderIx{},
-	OrderBalance: &DemoOrderBalanceIx{},
-	OpenGasSponsorPool: &DemoOpenGasSponsorPoolIx{},
-	ClaimSponsoredScore: &DemoClaimSponsoredScoreIx{},
-	SponsorPoolOf: &DemoSponsorPoolOfIx{},
 	InitPool: &DemoInitPoolIx{},
 	InitDex: &DemoInitDexIx{},
 	SetLabel: &DemoSetLabelIx{},
 	BatchCredit: &DemoBatchCreditIx{},
+	SetTierCap: &DemoSetTierCapIx{},
+	DrawU64: &DemoDrawU64Ix{},
+	DrawBytes32: &DemoDrawBytes32Ix{},
+	DrawRange: &DemoDrawRangeIx{},
+	OpenGasSponsorPool: &DemoOpenGasSponsorPoolIx{},
+	ClaimSponsoredScore: &DemoClaimSponsoredScoreIx{},
+	ScheduleWake: &DemoScheduleWakeIx{},
+	RunScheduledWake: &DemoRunScheduledWakeIx{},
+	OrderVault: &DemoOrderVaultIx{},
+	OrderLastInbound: &DemoOrderLastInboundIx{},
+	OrderBalance: &DemoOrderBalanceIx{},
 	LabelOf: &DemoLabelOfIx{},
 	ScoreOf: &DemoScoreOfIx{},
-	SetTierCap: &DemoSetTierCapIx{},
 	TierCapOf: &DemoTierCapOfIx{},
 	EchoMode: &DemoEchoModeIx{},
 	LabelTotal: &DemoLabelTotalIx{},
 	SpecialTypes: &DemoSpecialTypesIx{},
+	SponsorPoolOf: &DemoSponsorPoolOfIx{},
+	ScheduledWakeCount: &DemoScheduledWakeCountIx{},
 }
 
 func (a *DemoApp) bind(pd *provider.Provider) {
 	a.Pd = pd
 	a.OpenOrder.pd = pd
+	a.RejectOrderInbound.pd = pd
+	a.ForwardOrderInbound.pd = pd
+	a.SplitOrderInbound.pd = pd
 	a.PayOrder.pd = pd
 	a.SettleOrder.pd = pd
-	a.OrderBalance.pd = pd
-	a.OpenGasSponsorPool.pd = pd
-	a.ClaimSponsoredScore.pd = pd
-	a.SponsorPoolOf.pd = pd
 	a.InitPool.pd = pd
 	a.InitDex.pd = pd
 	a.SetLabel.pd = pd
 	a.BatchCredit.pd = pd
+	a.SetTierCap.pd = pd
+	a.DrawU64.pd = pd
+	a.DrawBytes32.pd = pd
+	a.DrawRange.pd = pd
+	a.OpenGasSponsorPool.pd = pd
+	a.ClaimSponsoredScore.pd = pd
+	a.ScheduleWake.pd = pd
+	a.RunScheduledWake.pd = pd
+	a.OrderVault.pd = pd
+	a.OrderLastInbound.pd = pd
+	a.OrderBalance.pd = pd
 	a.LabelOf.pd = pd
 	a.ScoreOf.pd = pd
-	a.SetTierCap.pd = pd
 	a.TierCapOf.pd = pd
 	a.EchoMode.pd = pd
 	a.LabelTotal.pd = pd
 	a.SpecialTypes.pd = pd
+	a.SponsorPoolOf.pd = pd
+	a.ScheduledWakeCount.pd = pd
 }
 
 type DemoOpenOrderIx struct {
@@ -31833,6 +34845,130 @@ func (a *DemoOpenOrderArgs) Encode() (api.PackedInstruction, error) {
 	// order_id: String
 	args["order_id"] = a.order_id
 	wire, err := a.pd.Encode("OpenOrder", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoRejectOrderInboundIx struct {
+	pd *provider.Provider
+}
+
+type DemoRejectOrderInboundArgs struct {
+	operator *crypto.Address
+	order_id string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RejectOrderInbound.
+func (ix *DemoRejectOrderInboundIx) Args(operator *crypto.Address, order_id string) *DemoRejectOrderInboundArgs {
+	return &DemoRejectOrderInboundArgs{
+		operator: operator,
+		order_id: order_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoRejectOrderInboundArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// operator: Signer
+	args["operator"] = a.operator
+	// order_id: String
+	args["order_id"] = a.order_id
+	wire, err := a.pd.Encode("RejectOrderInbound", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoForwardOrderInboundIx struct {
+	pd *provider.Provider
+}
+
+type DemoForwardOrderInboundArgs struct {
+	operator *crypto.Address
+	order_id string
+	forward_seed uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ForwardOrderInbound.
+func (ix *DemoForwardOrderInboundIx) Args(operator *crypto.Address, order_id string, forward_seed uint64) *DemoForwardOrderInboundArgs {
+	return &DemoForwardOrderInboundArgs{
+		operator: operator,
+		order_id: order_id,
+		forward_seed: forward_seed,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoForwardOrderInboundArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// operator: Signer
+	args["operator"] = a.operator
+	// order_id: String
+	args["order_id"] = a.order_id
+	// forward_seed: u64
+	args["forward_seed"] = a.forward_seed
+	wire, err := a.pd.Encode("ForwardOrderInbound", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoSplitOrderInboundIx struct {
+	pd *provider.Provider
+}
+
+type DemoSplitOrderInboundArgs struct {
+	operator *crypto.Address
+	order_id string
+	first *crypto.Address
+	second *crypto.Address
+	first_bps uint16
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SplitOrderInbound.
+func (ix *DemoSplitOrderInboundIx) Args(operator *crypto.Address, order_id string, first *crypto.Address, second *crypto.Address, first_bps uint16) *DemoSplitOrderInboundArgs {
+	return &DemoSplitOrderInboundArgs{
+		operator: operator,
+		order_id: order_id,
+		first: first,
+		second: second,
+		first_bps: first_bps,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoSplitOrderInboundArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// operator: Signer
+	args["operator"] = a.operator
+	// order_id: String
+	args["order_id"] = a.order_id
+	// first: Address
+	args["first"] = a.first
+	// second: Address
+	args["second"] = a.second
+	// first_bps: u16
+	args["first_bps"] = a.first_bps
+	wire, err := a.pd.Encode("SplitOrderInbound", args)
 	if err != nil {
 		return nil, err
 	}
@@ -31929,190 +35065,6 @@ func (a *DemoSettleOrderArgs) Encode() (api.PackedInstruction, error) {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
-}
-
-type DemoOrderBalanceIx struct {
-	pd *provider.Provider
-}
-
-type DemoOrderBalanceArgs struct {
-	order_id string
-	token *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of OrderBalance.
-func (ix *DemoOrderBalanceIx) Args(order_id string, token *crypto.Address) *DemoOrderBalanceArgs {
-	return &DemoOrderBalanceArgs{
-		order_id: order_id,
-		token: token,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *DemoOrderBalanceArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// order_id: String
-	args["order_id"] = a.order_id
-	// token: Address
-	args["token"] = a.token
-	wire, err := a.pd.Encode("OrderBalance", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of OrderBalance into uint64.
-func (ix *DemoOrderBalanceIx) DecodeView(body []byte) (out uint64, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("OrderBalance", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view OrderBalance failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toUint64(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type DemoOpenGasSponsorPoolIx struct {
-	pd *provider.Provider
-}
-
-type DemoOpenGasSponsorPoolArgs struct {
-	pool *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of OpenGasSponsorPool.
-func (ix *DemoOpenGasSponsorPoolIx) Args(pool *crypto.Address) *DemoOpenGasSponsorPoolArgs {
-	return &DemoOpenGasSponsorPoolArgs{
-		pool: pool,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *DemoOpenGasSponsorPoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// pool: Address
-	args["pool"] = a.pool
-	wire, err := a.pd.Encode("OpenGasSponsorPool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type DemoClaimSponsoredScoreIx struct {
-	pd *provider.Provider
-}
-
-type DemoClaimSponsoredScoreArgs struct {
-	claimer *crypto.Address
-	pool *crypto.Address
-	sponsor_seed uint16
-	amount uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ClaimSponsoredScore.
-func (ix *DemoClaimSponsoredScoreIx) Args(claimer *crypto.Address, pool *crypto.Address, sponsor_seed uint16, amount uint64) *DemoClaimSponsoredScoreArgs {
-	return &DemoClaimSponsoredScoreArgs{
-		claimer: claimer,
-		pool: pool,
-		sponsor_seed: sponsor_seed,
-		amount: amount,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *DemoClaimSponsoredScoreArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// claimer: Signer
-	args["claimer"] = a.claimer
-	// pool: Address
-	args["pool"] = a.pool
-	// sponsor_seed: u16
-	args["sponsor_seed"] = a.sponsor_seed
-	// amount: u64
-	args["amount"] = a.amount
-	wire, err := a.pd.Encode("ClaimSponsoredScore", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type DemoSponsorPoolOfIx struct {
-	pd *provider.Provider
-}
-
-type DemoSponsorPoolOfArgs struct {
-	sponsor_seed uint16
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SponsorPoolOf.
-func (ix *DemoSponsorPoolOfIx) Args(sponsor_seed uint16) *DemoSponsorPoolOfArgs {
-	return &DemoSponsorPoolOfArgs{
-		sponsor_seed: sponsor_seed,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *DemoSponsorPoolOfArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// sponsor_seed: u16
-	args["sponsor_seed"] = a.sponsor_seed
-	wire, err := a.pd.Encode("SponsorPoolOf", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of SponsorPoolOf into *crypto.Address.
-func (ix *DemoSponsorPoolOfIx) DecodeView(body []byte) (out *crypto.Address, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("SponsorPoolOf", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SponsorPoolOf failed: code=%d msg=%q", failure.Code, failure.Message)
-	}
-	v0, err := toAddress(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
 }
 
 type DemoInitPoolIx struct {
@@ -32267,6 +35219,462 @@ func (a *DemoBatchCreditArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type DemoSetTierCapIx struct {
+	pd *provider.Provider
+}
+
+type DemoSetTierCapArgs struct {
+	pool *crypto.Address
+	tier uint32
+	cap uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetTierCap.
+func (ix *DemoSetTierCapIx) Args(pool *crypto.Address, tier uint32, cap uint64) *DemoSetTierCapArgs {
+	return &DemoSetTierCapArgs{
+		pool: pool,
+		tier: tier,
+		cap: cap,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoSetTierCapArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool: Address
+	args["pool"] = a.pool
+	// tier: u32
+	args["tier"] = a.tier
+	// cap: u64
+	args["cap"] = a.cap
+	wire, err := a.pd.Encode("SetTierCap", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoDrawU64Ix struct {
+	pd *provider.Provider
+}
+
+type DemoDrawU64Args struct {
+	caller *crypto.Address
+	tag string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of DrawU64.
+func (ix *DemoDrawU64Ix) Args(caller *crypto.Address, tag string) *DemoDrawU64Args {
+	return &DemoDrawU64Args{
+		caller: caller,
+		tag: tag,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoDrawU64Args) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// caller: Signer
+	args["caller"] = a.caller
+	// tag: String
+	args["tag"] = a.tag
+	wire, err := a.pd.Encode("DrawU64", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoDrawBytes32Ix struct {
+	pd *provider.Provider
+}
+
+type DemoDrawBytes32Args struct {
+	caller *crypto.Address
+	tag string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of DrawBytes32.
+func (ix *DemoDrawBytes32Ix) Args(caller *crypto.Address, tag string) *DemoDrawBytes32Args {
+	return &DemoDrawBytes32Args{
+		caller: caller,
+		tag: tag,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoDrawBytes32Args) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// caller: Signer
+	args["caller"] = a.caller
+	// tag: String
+	args["tag"] = a.tag
+	wire, err := a.pd.Encode("DrawBytes32", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoDrawRangeIx struct {
+	pd *provider.Provider
+}
+
+type DemoDrawRangeArgs struct {
+	caller *crypto.Address
+	tag string
+	lo uint64
+	hi uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of DrawRange.
+func (ix *DemoDrawRangeIx) Args(caller *crypto.Address, tag string, lo uint64, hi uint64) *DemoDrawRangeArgs {
+	return &DemoDrawRangeArgs{
+		caller: caller,
+		tag: tag,
+		lo: lo,
+		hi: hi,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoDrawRangeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// caller: Signer
+	args["caller"] = a.caller
+	// tag: String
+	args["tag"] = a.tag
+	// lo: u64
+	args["lo"] = a.lo
+	// hi: u64
+	args["hi"] = a.hi
+	wire, err := a.pd.Encode("DrawRange", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoOpenGasSponsorPoolIx struct {
+	pd *provider.Provider
+}
+
+type DemoOpenGasSponsorPoolArgs struct {
+	pool *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of OpenGasSponsorPool.
+func (ix *DemoOpenGasSponsorPoolIx) Args(pool *crypto.Address) *DemoOpenGasSponsorPoolArgs {
+	return &DemoOpenGasSponsorPoolArgs{
+		pool: pool,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoOpenGasSponsorPoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool: Address
+	args["pool"] = a.pool
+	wire, err := a.pd.Encode("OpenGasSponsorPool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoClaimSponsoredScoreIx struct {
+	pd *provider.Provider
+}
+
+type DemoClaimSponsoredScoreArgs struct {
+	claimer *crypto.Address
+	pool *crypto.Address
+	sponsor_seed uint64
+	amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimSponsoredScore.
+func (ix *DemoClaimSponsoredScoreIx) Args(claimer *crypto.Address, pool *crypto.Address, sponsor_seed uint64, amount uint64) *DemoClaimSponsoredScoreArgs {
+	return &DemoClaimSponsoredScoreArgs{
+		claimer: claimer,
+		pool: pool,
+		sponsor_seed: sponsor_seed,
+		amount: amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoClaimSponsoredScoreArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// claimer: Signer
+	args["claimer"] = a.claimer
+	// pool: Address
+	args["pool"] = a.pool
+	// sponsor_seed: u64
+	args["sponsor_seed"] = a.sponsor_seed
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("ClaimSponsoredScore", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoScheduleWakeIx struct {
+	pd *provider.Provider
+}
+
+type DemoScheduleWakeArgs struct {
+	caller *crypto.Address
+	due_ms uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ScheduleWake.
+func (ix *DemoScheduleWakeIx) Args(caller *crypto.Address, due_ms uint64) *DemoScheduleWakeArgs {
+	return &DemoScheduleWakeArgs{
+		caller: caller,
+		due_ms: due_ms,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoScheduleWakeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// caller: Signer
+	args["caller"] = a.caller
+	// due_ms: u64
+	args["due_ms"] = a.due_ms
+	wire, err := a.pd.Encode("ScheduleWake", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoRunScheduledWakeIx struct {
+	pd *provider.Provider
+}
+
+type DemoRunScheduledWakeArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RunScheduledWake.
+func (ix *DemoRunScheduledWakeIx) Args() *DemoRunScheduledWakeArgs {
+	return &DemoRunScheduledWakeArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoRunScheduledWakeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("RunScheduledWake", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type DemoOrderVaultIx struct {
+	pd *provider.Provider
+}
+
+type DemoOrderVaultArgs struct {
+	order_id string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of OrderVault.
+func (ix *DemoOrderVaultIx) Args(order_id string) *DemoOrderVaultArgs {
+	return &DemoOrderVaultArgs{
+		order_id: order_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoOrderVaultArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: String
+	args["order_id"] = a.order_id
+	wire, err := a.pd.Encode("OrderVault", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of OrderVault into *crypto.Address.
+func (ix *DemoOrderVaultIx) DecodeView(body []byte) (out *crypto.Address, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("OrderVault", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view OrderVault failed: %s", failure)
+	}
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type DemoOrderLastInboundIx struct {
+	pd *provider.Provider
+}
+
+type DemoOrderLastInboundArgs struct {
+	order_id string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of OrderLastInbound.
+func (ix *DemoOrderLastInboundIx) Args(order_id string) *DemoOrderLastInboundArgs {
+	return &DemoOrderLastInboundArgs{
+		order_id: order_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoOrderLastInboundArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: String
+	args["order_id"] = a.order_id
+	wire, err := a.pd.Encode("OrderLastInbound", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of OrderLastInbound into DemoLastInbound.
+func (ix *DemoOrderLastInboundIx) DecodeView(body []byte) (out DemoLastInbound, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("OrderLastInbound", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view OrderLastInbound failed: %s", failure)
+	}
+	v0, err := fromDemoLastInbound(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type DemoOrderBalanceIx struct {
+	pd *provider.Provider
+}
+
+type DemoOrderBalanceArgs struct {
+	order_id string
+	token *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of OrderBalance.
+func (ix *DemoOrderBalanceIx) Args(order_id string, token *crypto.Address) *DemoOrderBalanceArgs {
+	return &DemoOrderBalanceArgs{
+		order_id: order_id,
+		token: token,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoOrderBalanceArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: String
+	args["order_id"] = a.order_id
+	// token: Address
+	args["token"] = a.token
+	wire, err := a.pd.Encode("OrderBalance", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of OrderBalance into uint64.
+func (ix *DemoOrderBalanceIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("OrderBalance", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view OrderBalance failed: %s", failure)
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
 type DemoLabelOfIx struct {
 	pd *provider.Provider
 }
@@ -32308,8 +35716,8 @@ func (ix *DemoLabelOfIx) DecodeView(body []byte) (out DemoLabel, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view LabelOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view LabelOf failed: %s", failure)
 	}
 	v0, err := fromDemoLabel(v)
 	if err != nil {
@@ -32364,8 +35772,8 @@ func (ix *DemoScoreOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view ScoreOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ScoreOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -32373,46 +35781,6 @@ func (ix *DemoScoreOfIx) DecodeView(body []byte) (out uint64, err error) {
 	}
 	out = v0
 	return out, nil
-}
-
-type DemoSetTierCapIx struct {
-	pd *provider.Provider
-}
-
-type DemoSetTierCapArgs struct {
-	pool *crypto.Address
-	tier uint32
-	cap uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SetTierCap.
-func (ix *DemoSetTierCapIx) Args(pool *crypto.Address, tier uint32, cap uint64) *DemoSetTierCapArgs {
-	return &DemoSetTierCapArgs{
-		pool: pool,
-		tier: tier,
-		cap: cap,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *DemoSetTierCapArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// pool: Address
-	args["pool"] = a.pool
-	// tier: u32
-	args["tier"] = a.tier
-	// cap: u64
-	args["cap"] = a.cap
-	wire, err := a.pd.Encode("SetTierCap", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
 }
 
 type DemoTierCapOfIx struct {
@@ -32460,8 +35828,8 @@ func (ix *DemoTierCapOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view TierCapOf failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view TierCapOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -32516,8 +35884,8 @@ func (ix *DemoEchoModeIx) DecodeView(body []byte) (out DemoDemoMode, err error) 
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view EchoMode failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view EchoMode failed: %s", failure)
 	}
 	v0, err := fromDemoDemoMode(v)
 	if err != nil {
@@ -32576,8 +35944,8 @@ func (ix *DemoLabelTotalIx) DecodeView(body []byte) (out uint32, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view LabelTotal failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view LabelTotal failed: %s", failure)
 	}
 	v0, err := toUint32(v)
 	if err != nil {
@@ -32666,10 +36034,110 @@ func (ix *DemoSpecialTypesIx) DecodeView(body []byte) (out uint32, err error) {
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.TxFailurePayload); ok {
-		return out, fmt.Errorf("view SpecialTypes failed: code=%d msg=%q", failure.Code, failure.Message)
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view SpecialTypes failed: %s", failure)
 	}
 	v0, err := toUint32(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type DemoSponsorPoolOfIx struct {
+	pd *provider.Provider
+}
+
+type DemoSponsorPoolOfArgs struct {
+	sponsor_seed uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SponsorPoolOf.
+func (ix *DemoSponsorPoolOfIx) Args(sponsor_seed uint64) *DemoSponsorPoolOfArgs {
+	return &DemoSponsorPoolOfArgs{
+		sponsor_seed: sponsor_seed,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoSponsorPoolOfArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sponsor_seed: u64
+	args["sponsor_seed"] = a.sponsor_seed
+	wire, err := a.pd.Encode("SponsorPoolOf", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of SponsorPoolOf into *crypto.Address.
+func (ix *DemoSponsorPoolOfIx) DecodeView(body []byte) (out *crypto.Address, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("SponsorPoolOf", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view SponsorPoolOf failed: %s", failure)
+	}
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type DemoScheduledWakeCountIx struct {
+	pd *provider.Provider
+}
+
+type DemoScheduledWakeCountArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ScheduledWakeCount.
+func (ix *DemoScheduledWakeCountIx) Args() *DemoScheduledWakeCountArgs {
+	return &DemoScheduledWakeCountArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoScheduledWakeCountArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("ScheduledWakeCount", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ScheduledWakeCount into uint64.
+func (ix *DemoScheduledWakeCountIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("ScheduledWakeCount", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ScheduledWakeCount failed: %s", failure)
+	}
+	v0, err := toUint64(v)
 	if err != nil {
 		return out, err
 	}
@@ -32928,7 +36396,6 @@ func init() {
 	RegisterApp("sftoken", func(pd *provider.Provider) error { Sftoken.bind(pd); return nil })
 	RegisterApp("dex", func(pd *provider.Provider) error { Dex.bind(pd); return nil })
 	RegisterApp("keyless", func(pd *provider.Provider) error { Keyless.bind(pd); return nil })
-	RegisterApp("lucky_box", func(pd *provider.Provider) error { LuckyBox.bind(pd); return nil })
 	RegisterApp("social", func(pd *provider.Provider) error { Social.bind(pd); return nil })
 	RegisterApp("demo", func(pd *provider.Provider) error { Demo.bind(pd); return nil })
 }

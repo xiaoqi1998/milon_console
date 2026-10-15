@@ -518,6 +518,68 @@
     {
       "args": [
         {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "total_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "claim_count",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "allocation",
+          "role": "input",
+          "type": "GiftAllocation"
+        },
+        {
+          "name": "expires_at_ms",
+          "role": "input",
+          "type": "option<u64>"
+        }
+      ],
+      "discriminator": 36253,
+      "handler": "create_gift",
+      "kind": "entry",
+      "name": "CreateGift"
+    },
+    {
+      "args": [
+        {
+          "name": "claimant",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "gift_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 30437,
+      "handler": "claim_gift",
+      "kind": "entry",
+      "name": "ClaimGift",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
           "name": "subject",
           "role": "input",
           "type": "Address"
@@ -672,13 +734,50 @@
       "returns": {
         "type": "bool"
       }
+    },
+    {
+      "args": [
+        {
+          "name": "gift_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "claimant",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 62612,
+      "handler": "can_claim_community_gift",
+      "kind": "view",
+      "name": "CanClaimCommunityGift",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "gift_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 46934,
+      "handler": "gift_community",
+      "kind": "view",
+      "name": "GiftCommunity",
+      "returns": {
+        "type": "u32"
+      }
     }
   ],
   "types": [
     {
       "kind": "enum",
       "name": "ObjectType",
-      "typeTag": 6776125531577280399,
+      "typeTag": 4204633598885965265,
       "variants": [
         {
           "fields": [],
@@ -710,7 +809,7 @@
     {
       "kind": "enum",
       "name": "JoinMode",
-      "typeTag": 2350450800222339267,
+      "typeTag": 15421268599611707797,
       "variants": [
         {
           "fields": [],
@@ -737,12 +836,12 @@
       ],
       "kind": "struct",
       "name": "SourceApp",
-      "typeTag": 8914166003957741580
+      "typeTag": 1060436512969659370
     },
     {
       "kind": "enum",
       "name": "ReferenceStatus",
-      "typeTag": 7940954906745129895,
+      "typeTag": 1498762012094692129,
       "variants": [
         {
           "fields": [],
@@ -781,7 +880,7 @@
       ],
       "kind": "struct",
       "name": "Reference",
-      "typeTag": 5198236407389515229
+      "typeTag": 5381990978971768279
     },
     {
       "fields": [
@@ -808,7 +907,24 @@
       ],
       "kind": "struct",
       "name": "CommunityControl",
-      "typeTag": 16708904908548046110
+      "typeTag": 9957587179171262664
+    },
+    {
+      "kind": "enum",
+      "name": "GiftAllocation",
+      "typeTag": 12211908797870093821,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Equal"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Lucky"
+        }
+      ]
     },
     {
       "kind": "builtin",
@@ -850,12 +966,7 @@
     {
       "name": "_SourceApp",
       "type": "SourceApp",
-      "typeTag": 8914166003957741580
-    },
-    {
-      "name": "_SourceAppSequence",
-      "type": "u32",
-      "typeTag": 5560783464435099345
+      "typeTag": 1060436512969659370
     },
     {
       "name": "_SourcePublisher",
@@ -865,22 +976,12 @@
     {
       "name": "_Reference",
       "type": "Reference",
-      "typeTag": 5198236407389515229
+      "typeTag": 5381990978971768279
     },
     {
       "name": "_CommunityControl",
       "type": "CommunityControl",
-      "typeTag": 16708904908548046110
-    },
-    {
-      "name": "_CommunitySequence",
-      "type": "u32",
-      "typeTag": 5560783464435099345
-    },
-    {
-      "name": "_CommunityCreatorCount",
-      "type": "u32",
-      "typeTag": 5560783464435099345
+      "typeTag": 9957587179171262664
     },
     {
       "name": "_CommunityAdmin",
@@ -896,6 +997,26 @@
       "name": "_Membership",
       "type": "bool",
       "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_SourceAppSequence",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_CommunitySequence",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_CommunityCreatorCount",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_CommunityGift",
+      "type": "u32",
+      "typeTag": 5560783464435099345
     }
   ],
   "constants": [
@@ -1074,27 +1195,32 @@
     },
     {
       "code": 2592,
-      "message": "Transparent ContextError",
-      "name": "ContextError",
-      "transparent": true
-    },
-    {
-      "code": 2593,
       "message": "community creation limit reached for DID: {0:?}",
       "name": "CommunityCreationLimitReached"
     },
     {
-      "code": 2594,
+      "code": 2593,
       "message": "community member limit reached: {0}",
       "name": "CommunityMemberLimitReached"
     },
     {
-      "code": 2595,
+      "code": 2594,
       "message": "community member count invariant failed: {0}",
       "name": "CommunityMemberCountInvariant"
     },
     {
+      "code": 2595,
+      "message": "Transparent TokenError",
+      "name": "TokenError",
+      "transparent": true
+    },
+    {
       "code": 2596,
+      "message": "community gift not found: {0:?}",
+      "name": "CommunityGiftNotFound"
+    },
+    {
+      "code": 2597,
       "message": "the community owner cannot leave",
       "name": "CannotLeaveCommunityOwner"
     }

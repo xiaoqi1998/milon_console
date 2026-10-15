@@ -16,7 +16,7 @@ func TestIDLTypeResolver_DecodeResource(t *testing.T) {
 	// token::_Metadata resource: type Metadata (name(String) + symbol(String)
 	// + decimals(u8) + icon(String) + uri(String)); the resource typeTag is
 	// independent from the Metadata struct typeTag.
-	resource, ok := pd.GetResourceByTypeTag(13005725662941815531)
+	resource, ok := pd.GetResourceByTypeTag(12540935430733747277)
 	assert.True(t, ok)
 	assert.Equal(t, "_Metadata", resource.Name)
 	assert.Equal(t, "Metadata", resource.Type)
@@ -107,14 +107,14 @@ func TestIDLTypeResolver_MultipleProviders(t *testing.T) {
 	assert.NoError(t, serializer.SerializeStr("D"))
 	resourceBytes := serializer.Bytes()
 
-	valueBytes, remaining, err := resolver.DecodeResource(13005725662941815531, resourceBytes)
+	valueBytes, remaining, err := resolver.DecodeResource(12540935430733747277, resourceBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, resourceBytes, valueBytes)
 	assert.Len(t, remaining, 0)
 
 	// event from demo: pool(20) + recipient(20) + amount varint(42 -> 1 byte)
 	eventData := append(append([]byte{}, make([]byte, 40)...), 42)
-	eventBytes, remaining, err := resolver.DecodeEvent(7407037194950745602, eventData)
+	eventBytes, remaining, err := resolver.DecodeEvent(14232600292727055113, eventData)
 	assert.NoError(t, err)
 	assert.Len(t, eventBytes, 41)
 	assert.Len(t, remaining, 0)
@@ -154,7 +154,7 @@ func TestIDLTypeResolver_DecodeEvent(t *testing.T) {
 	assert.NoError(t, serializer.SerializeU64(7))
 	payload := serializer.Bytes()
 
-	eventBytes, remaining, err := resolver.DecodeEvent(7407037194950745602, append(append([]byte{}, payload...), 0xEE))
+	eventBytes, remaining, err := resolver.DecodeEvent(14232600292727055113, append(append([]byte{}, payload...), 0xEE))
 	assert.NoError(t, err)
 	assert.Equal(t, payload, eventBytes)
 	assert.Equal(t, []byte{0xEE}, remaining)

@@ -181,7 +181,7 @@ func TestIDLRegistry_DecodeEventDataByTag(t *testing.T) {
 	assert.NoError(t, err)
 
 	// demo EventCreditApplied: pool(Address) + recipient(Address) + amount(u64)
-	const typeTag = 7407037194950745602
+	const typeTag = 14232600292727055113
 
 	var pool [20]byte
 	var recipient [20]byte
@@ -195,7 +195,7 @@ func TestIDLRegistry_DecodeEventDataByTag(t *testing.T) {
 	decoded, err := reg.DecodeEventDataByTag(typeTag, data)
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint8(255), decoded["app_id"])
+	assert.Equal(t, uint8(254), decoded["app_id"])
 	assert.Equal(t, "demo", decoded["app_name"])
 	assert.Equal(t, "EventCreditApplied", decoded["event_name"])
 
@@ -218,7 +218,7 @@ func TestIDLRegistry_DecodeEventDataByTag(t *testing.T) {
 
 	decodedPrefixed, err := reg.DecodeEventDataByTag(typeTag, prefixed)
 	assert.NoError(t, err)
-	assert.Equal(t, uint8(255), decodedPrefixed["app_id"])
+	assert.Equal(t, uint8(254), decodedPrefixed["app_id"])
 	assert.Equal(t, "demo", decodedPrefixed["app_name"])
 	assert.Equal(t, "EventCreditApplied", decodedPrefixed["event_name"])
 
@@ -248,15 +248,17 @@ func TestIDLRegistry_DecodeResourceDataByTag(t *testing.T) {
 	reg, err := NewIDLRegistry(loadProviders(t, "demo"))
 	assert.NoError(t, err)
 
-	// demo _NextOrderSeed: u16, resource typeTag 5558799945458185151
-	decoded, err := reg.DecodeResourceDataByTag(5558799945458185151, []byte{7})
+	// 标量资源与内建类型共用 typeTag(demo._OrderSeed 是首个 u64 资源,
+	// tag 5563585020063213298 即内建 u64;SDK 升级后 _NextOrderSeed 也由
+	// u16 改为 u64)。按先声明者赢的规则,该 tag 解析到 _OrderSeed。
+	decoded, err := reg.DecodeResourceDataByTag(5563585020063213298, []byte{7})
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint8(255), decoded["app_id"])
+	assert.Equal(t, uint8(254), decoded["app_id"])
 	assert.Equal(t, "demo", decoded["app_name"])
-	assert.Equal(t, "_NextOrderSeed", decoded["resource_name"])
-	assert.Equal(t, "u16", decoded["resource_type"])
-	assert.Equal(t, uint16(7), decoded["data"])
+	assert.Equal(t, "_OrderSeed", decoded["resource_name"])
+	assert.Equal(t, "u64", decoded["resource_type"])
+	assert.Equal(t, uint64(7), decoded["data"])
 
 	// The genesis transaction persists a bare Address value under the Address
 	// builtin tag (types section), which is not declared as a resource; the
@@ -285,7 +287,7 @@ func TestIDLRegistry_DecodeResourceDataByTag_Errors(t *testing.T) {
 	assert.Contains(t, err.Error(), "unknown resource type tag")
 
 	// token _Owner decodes a 20-byte Address; the extra byte must be rejected
-	_, err = reg.DecodeResourceDataByTag(10794467625820907094, make([]byte, 21))
+	_, err = reg.DecodeResourceDataByTag(8792131286149488520, make([]byte, 21))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "trailing bytes")
 }

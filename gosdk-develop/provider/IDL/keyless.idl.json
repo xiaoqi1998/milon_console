@@ -310,7 +310,7 @@
     {
       "kind": "enum",
       "name": "StringOrArray",
-      "typeTag": 563464638590666036,
+      "typeTag": 4792935557077212767,
       "variants": [
         {
           "fields": [
@@ -367,7 +367,7 @@
       ],
       "kind": "struct",
       "name": "SessionEntry",
-      "typeTag": 9259651745530529271
+      "typeTag": 10717416294893905038
     },
     {
       "fields": [
@@ -382,7 +382,7 @@
       ],
       "kind": "struct",
       "name": "RevokedSession",
-      "typeTag": 7675263165855945229
+      "typeTag": 10735777272269064136
     },
     {
       "fields": [
@@ -397,7 +397,7 @@
       ],
       "kind": "struct",
       "name": "SessionsState",
-      "typeTag": 3961147753519811779
+      "typeTag": 12588480061968345616
     },
     {
       "fields": [
@@ -412,12 +412,12 @@
       ],
       "kind": "struct",
       "name": "KeylessParams",
-      "typeTag": 725874807982920445
+      "typeTag": 7742804165053814138
     },
     {
       "kind": "enum",
       "name": "KeylessProviderKind",
-      "typeTag": 1785598101002909808,
+      "typeTag": 2153794636168183303,
       "variants": [
         {
           "fields": [],
@@ -434,7 +434,7 @@
     {
       "kind": "enum",
       "name": "KeylessKeyMaterial",
-      "typeTag": 8421431896729949483,
+      "typeTag": 15054311933159222178,
       "variants": [
         {
           "fields": [
@@ -483,7 +483,7 @@
       ],
       "kind": "struct",
       "name": "KeylessVerificationKey",
-      "typeTag": 2442538615044900503
+      "typeTag": 17417108057505386078
     },
     {
       "fields": [
@@ -530,7 +530,7 @@
       ],
       "kind": "struct",
       "name": "KeylessProvider",
-      "typeTag": 10056985480167392574
+      "typeTag": 6039969699975818265
     },
     {
       "fields": [
@@ -545,7 +545,7 @@
       ],
       "kind": "struct",
       "name": "KeylessProviderStatus",
-      "typeTag": 17012131112946806176
+      "typeTag": 6015458750524898907
     },
     {
       "fields": [
@@ -564,7 +564,7 @@
       ],
       "kind": "struct",
       "name": "KeylessAudience",
-      "typeTag": 15864154800524683589
+      "typeTag": 16732686633507861426
     },
     {
       "fields": [
@@ -587,7 +587,7 @@
       ],
       "kind": "struct",
       "name": "KeylessBinding",
-      "typeTag": 14670956490051724736
+      "typeTag": 7983738404475004213
     },
     {
       "fields": [
@@ -606,7 +606,7 @@
       ],
       "kind": "struct",
       "name": "KeylessMarker",
-      "typeTag": 17054723070852806189
+      "typeTag": 13733160811629473206
     },
     {
       "fields": [
@@ -617,7 +617,7 @@
       ],
       "kind": "struct",
       "name": "ProviderIndex",
-      "typeTag": 2484498175435113698
+      "typeTag": 15624622551745873749
     },
     {
       "kind": "builtin",
@@ -664,48 +664,48 @@
     {
       "name": "_KeylessSessions",
       "type": "SessionsState",
-      "typeTag": 3961147753519811779
+      "typeTag": 12588480061968345616
     },
     {
       "name": "_KeylessParams",
       "type": "KeylessParams",
-      "typeTag": 725874807982920445
+      "typeTag": 7742804165053814138
     },
     {
       "name": "_KeylessProvider",
       "type": "KeylessProvider",
-      "typeTag": 10056985480167392574
+      "typeTag": 6039969699975818265
     },
     {
       "name": "_KeylessProviderStatus",
       "type": "KeylessProviderStatus",
-      "typeTag": 17012131112946806176
+      "typeTag": 6015458750524898907
     },
     {
       "name": "_KeylessAudience",
       "type": "KeylessAudience",
-      "typeTag": 15864154800524683589
+      "typeTag": 16732686633507861426
     },
     {
       "name": "_KeylessBinding",
       "type": "KeylessBinding",
-      "typeTag": 14670956490051724736
+      "typeTag": 7983738404475004213
     },
     {
       "name": "_KeylessMarker",
       "type": "KeylessMarker",
-      "typeTag": 17054723070852806189
+      "typeTag": 13733160811629473206
     },
     {
       "name": "_ProviderIndex",
       "type": "ProviderIndex",
-      "typeTag": 2484498175435113698
+      "typeTag": 15624622551745873749
     }
   ],
   "constants": [
     {
       "name": "KEYLESS_SPONSOR_SEED",
-      "type": "u16",
+      "type": "u64",
       "value": 0
     },
     {
@@ -1052,118 +1052,113 @@
     },
     {
       "code": 2103,
-      "message": "address not signed in current transaction: {0:?}",
-      "name": "AddressNotSignatured"
-    },
-    {
-      "code": 2104,
       "message": "JWT base64url encoding is not canonical",
       "name": "JwtBase64NonCanonical"
     },
     {
-      "code": 2105,
+      "code": 2104,
       "message": "JWK snapshot unavailable for provider: {0:?}",
       "name": "JwkSnapshotUnavailable"
     },
     {
-      "code": 2106,
+      "code": 2105,
       "message": "Transparent AccountError",
       "name": "AccountError",
       "transparent": true
     },
     {
-      "code": 2107,
+      "code": 2106,
       "message": "Transparent TokenError",
       "name": "TokenError",
       "transparent": true
     },
     {
-      "code": 2108,
+      "code": 2107,
       "message": "JWT algorithm is supported but not allowed by provider: {0}",
       "name": "JwtAlgorithmNotAllowed"
     },
     {
-      "code": 2109,
+      "code": 2108,
       "message": "JWK algorithm mismatch: expected={0}, got={1}",
       "name": "JwkAlgorithmMismatch"
     },
     {
-      "code": 2110,
+      "code": 2109,
       "message": "JWK use must be 'sig', got={0}",
       "name": "JwkUseInvalid"
     },
     {
-      "code": 2111,
+      "code": 2110,
       "message": "JWK key_ops must contain 'verify'",
       "name": "JwkKeyOpsInvalid"
     },
     {
-      "code": 2112,
+      "code": 2111,
       "message": "provider allowed algorithms contain duplicates",
       "name": "DuplicateAlgorithm"
     },
     {
-      "code": 2113,
+      "code": 2112,
       "message": "keyless bootstrap is only valid in genesis block 0",
       "name": "GenesisOnly"
     },
     {
-      "code": 2114,
+      "code": 2113,
       "message": "keyless registry is already bootstrapped",
       "name": "AlreadyBootstrapped"
     },
     {
-      "code": 2115,
+      "code": 2114,
       "message": "keyless provider kind or ID namespace is invalid",
       "name": "ProviderKindInvalid"
     },
     {
-      "code": 2116,
+      "code": 2115,
       "message": "provider session version overflow",
       "name": "SessionVersionOverflow"
     },
     {
-      "code": 2117,
+      "code": 2116,
       "message": "provider key revision overflow",
       "name": "KeyRevisionOverflow"
     },
     {
-      "code": 2118,
+      "code": 2117,
       "message": "audience must contain 1..=256 UTF-8 bytes",
       "name": "AudienceInvalid"
     },
     {
-      "code": 2119,
+      "code": 2118,
       "message": "audience hash collision",
       "name": "AudienceHashCollision"
     },
     {
-      "code": 2120,
+      "code": 2119,
       "message": "JWT audience array is empty or contains duplicates",
       "name": "JwtAudienceInvalid"
     },
     {
-      "code": 2121,
+      "code": 2120,
       "message": "provider owner does not match transaction signer",
       "name": "ProviderOwnerMismatch"
     },
     {
-      "code": 2122,
+      "code": 2121,
       "message": "built-in OIDC provider metadata is immutable",
       "name": "BuiltinProviderImmutable"
     },
     {
-      "code": 2123,
+      "code": 2122,
       "message": "custom provider ID is in a reserved namespace",
       "name": "ReservedProviderId"
     },
     {
-      "code": 2124,
+      "code": 2123,
       "message": "static provider must contain 1..=8 keys",
       "name": "StaticKeyCountInvalid"
     },
     {
-      "code": 2125,
+      "code": 2124,
       "message": "static provider kid must be unique and contain 1..=128 bytes",
       "name": "StaticKeyIdInvalid"
     }

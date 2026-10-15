@@ -18,7 +18,7 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 	accountPD, err := provider.LoadProviderFromFile("../../provider/IDL/account.idl.json")
 	assert.NoError(t, err)
 
-	// 2. Build event data for EventCreditApplied (typeTag: 7407037194950745602)
+	// 2. Build event data for EventCreditApplied (typeTag: 14232600292727055113)
 	// Fields: pool(Address, 20B), recipient(Address, 20B), amount(u64)
 	pool := make([]byte, 20)
 	for i := 0; i < 20; i++ {
@@ -76,14 +76,14 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 					ResourceID: api.RsHash{3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
 					LastWritten: api.PersistedValue{
 						Variant: 0,                     // Inline(AnySerializeOwned), no length prefix
-						TypeTag: 5121685491907179737, // account _Account resource
+						TypeTag: 8001620250894669925, // account _Account resource
 						// bitmap=7 (u64 varint), weight=6 (u8), threshold=4 (u8), last_modified_block=183 (u64 varint)
 						InlineData: []byte{7, 6, 4, 0xB7, 0x01},
 					},
 				},
 			},
 			Events: []api.TypeTagWithData{
-				{TypeTag: 7407037194950745602, Value: eventValue},
+				{TypeTag: 14232600292727055113, Value: eventValue},
 			},
 			Error:      nil,
 			GasCharged: 888,

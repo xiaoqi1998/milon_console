@@ -227,21 +227,45 @@ func TestDecodeViewDatas_ResultBranches(t *testing.T) {
 	})
 
 	t.Run("Err branch", func(t *testing.T) {
+		code := uint16(5)
+		data := []byte{0xAA, 0xBB}
 		body := []byte{
 			1,           // vec len=1
 			1,           // variant=1 (Err)
-			5,           // code=5(u16)
-			2, 'o', 'k', // msg="ok"(len=2)
-			2, 0xAA, 0xBB, // data=[0xAA,0xBB](len=2)
+			2, 'o', 'k', // message="ok" (String len=2)
+			1, 5, // code=Some(5)
+			1, 2, 0xAA, 0xBB, // data=Some([0xAA,0xBB])
 		}
 
 		results, err := pd.DecodeViewDatas("BalanceOf", body)
 		assert.NoError(t, err)
-		failure, ok := results[0].Value.(*api.TxFailurePayload)
+		failure, ok := results[0].Value.(*api.ApiFailure)
 		assert.True(t, ok)
-		assert.Equal(t, uint16(5), failure.Code)
 		assert.Equal(t, "ok", failure.Message)
-		assert.Equal(t, []byte{0xAA, 0xBB}, failure.Data)
+		if assert.NotNil(t, failure.Code) {
+			assert.Equal(t, code, *failure.Code)
+		}
+		if assert.NotNil(t, failure.Data) {
+			assert.Equal(t, data, *failure.Data)
+		}
+	})
+
+	t.Run("Err branch without code and data", func(t *testing.T) {
+		body := []byte{
+			1,           // vec len=1
+			1,           // variant=1 (Err)
+			2, 'o', 'k', // message="ok" (String len=2)
+			0, // code=None
+			0, // data=None
+		}
+
+		results, err := pd.DecodeViewDatas("BalanceOf", body)
+		assert.NoError(t, err)
+		failure, ok := results[0].Value.(*api.ApiFailure)
+		assert.True(t, ok)
+		assert.Equal(t, "ok", failure.Message)
+		assert.Nil(t, failure.Code)
+		assert.Nil(t, failure.Data)
 	})
 
 	t.Run("invalid variant", func(t *testing.T) {

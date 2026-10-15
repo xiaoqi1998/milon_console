@@ -714,6 +714,118 @@
     {
       "args": [
         {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "total_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "claim_count",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "rules",
+          "role": "input",
+          "type": "GiftRules"
+        }
+      ],
+      "discriminator": 15225,
+      "handler": "create_equal_gift",
+      "kind": "entry",
+      "name": "CreateEqualGift"
+    },
+    {
+      "args": [
+        {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "total_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "claim_count",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "rules",
+          "role": "input",
+          "type": "GiftRules"
+        }
+      ],
+      "discriminator": 4265,
+      "handler": "create_lucky_gift",
+      "kind": "entry",
+      "name": "CreateLuckyGift"
+    },
+    {
+      "args": [
+        {
+          "name": "claimant",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "gift_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 5582,
+      "handler": "claim_gift",
+      "kind": "entry",
+      "name": "ClaimGift",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "gift_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 44430,
+      "handler": "refund_gift",
+      "kind": "entry",
+      "name": "RefundGift"
+    },
+    {
+      "args": [
+        {
+          "name": "gift_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 27946,
+      "handler": "run_gift_cleanup",
+      "kind": "entry",
+      "name": "RunGiftCleanup",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
           "name": "token",
           "role": "input",
           "type": "Address"
@@ -741,6 +853,59 @@
       "name": "FaucetCooldownRemaining",
       "returns": {
         "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "gift_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 11780,
+      "handler": "gift_info",
+      "kind": "view",
+      "name": "GiftInfo",
+      "returns": {
+        "type": "GiftState"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "gift_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 57835,
+      "handler": "gift_settlement",
+      "kind": "view",
+      "name": "GiftSettlement",
+      "returns": {
+        "type": "GiftSettlement"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "gift_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "claimant",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 8017,
+      "handler": "can_claim_gift",
+      "kind": "view",
+      "name": "CanClaimGift",
+      "returns": {
+        "type": "bool"
       }
     }
   ],
@@ -770,12 +935,12 @@
       ],
       "kind": "struct",
       "name": "Metadata",
-      "typeTag": 13005725662941815531
+      "typeTag": 12540935430733747277
     },
     {
       "kind": "enum",
       "name": "ComplianceMode",
-      "typeTag": 3455626085043900630,
+      "typeTag": 11826989465527443636,
       "variants": [
         {
           "fields": [],
@@ -802,7 +967,159 @@
       ],
       "kind": "struct",
       "name": "Compliance",
-      "typeTag": 1113559040641697305
+      "typeTag": 11316838900449406443
+    },
+    {
+      "kind": "enum",
+      "name": "GiftAllocation",
+      "typeTag": 12211908797870093821,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Equal"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Lucky"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "GiftEligibility",
+      "typeTag": 8046041254037002544,
+      "variants": [
+        {
+          "fields": [
+            {
+              "name": "credential_id",
+              "type": "String"
+            }
+          ],
+          "kind": "struct",
+          "name": "Credential"
+        },
+        {
+          "fields": [
+            {
+              "name": "addresses",
+              "type": "vec<Address>"
+            }
+          ],
+          "kind": "struct",
+          "name": "Recipients"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "credential_id",
+          "type": "option<String>"
+        },
+        {
+          "name": "recipients",
+          "type": "vec<Address>"
+        },
+        {
+          "name": "expires_at_ms",
+          "type": "option<u64>"
+        }
+      ],
+      "kind": "struct",
+      "name": "GiftRules",
+      "typeTag": 15766145922554532178
+    },
+    {
+      "fields": [
+        {
+          "name": "creator",
+          "type": "Address"
+        },
+        {
+          "name": "gift_id",
+          "type": "Address"
+        },
+        {
+          "name": "token",
+          "type": "Address"
+        },
+        {
+          "name": "total_amount",
+          "type": "u64"
+        },
+        {
+          "name": "remaining_amount",
+          "type": "u64"
+        },
+        {
+          "name": "claim_count",
+          "type": "u64"
+        },
+        {
+          "name": "claimed_count",
+          "type": "u64"
+        },
+        {
+          "name": "expires_at_ms",
+          "type": "u64"
+        },
+        {
+          "name": "allocation",
+          "type": "GiftAllocation"
+        },
+        {
+          "name": "eligibility",
+          "type": "GiftEligibility"
+        },
+        {
+          "name": "claimed_recipients",
+          "type": "u32"
+        }
+      ],
+      "kind": "struct",
+      "name": "GiftState",
+      "typeTag": 8047344484983905260
+    },
+    {
+      "fields": [
+        {
+          "name": "creator",
+          "type": "Address"
+        },
+        {
+          "name": "status",
+          "type": "u8"
+        },
+        {
+          "name": "claim_records",
+          "type": "u64"
+        },
+        {
+          "name": "cleanup_cursor",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "GiftSettlement",
+      "typeTag": 373282345846871664
+    },
+    {
+      "fields": [
+        {
+          "name": "head",
+          "type": "Address"
+        },
+        {
+          "name": "tail",
+          "type": "Address"
+        }
+      ],
+      "kind": "struct",
+      "name": "GiftCleanupQueueState",
+      "typeTag": 5496675755488506181
     },
     {
       "kind": "builtin",
@@ -816,6 +1133,16 @@
     },
     {
       "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
       "name": "u64",
       "typeTag": 5563585020063213298
     },
@@ -823,23 +1150,28 @@
       "kind": "builtin",
       "name": "u8",
       "typeTag": 631772817358541784
+    },
+    {
+      "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
     }
   ],
   "resources": [
     {
       "name": "_Owner",
       "type": "Address",
-      "typeTag": 10794467625820907094
+      "typeTag": 8792131286149488520
     },
     {
       "name": "_Freezer",
       "type": "Address",
-      "typeTag": 10794467625820907094
+      "typeTag": 8792131286149488520
     },
     {
       "name": "_Metadata",
       "type": "Metadata",
-      "typeTag": 13005725662941815531
+      "typeTag": 12540935430733747277
     },
     {
       "name": "_TotalSupply",
@@ -869,12 +1201,52 @@
     {
       "name": "_Compliance",
       "type": "Compliance",
-      "typeTag": 2365014396550645377
+      "typeTag": 10948379151966397787
     },
     {
       "name": "_FaucetLastClaim",
       "type": "u64",
       "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_Gift",
+      "type": "GiftState",
+      "typeTag": 8047344484983905260
+    },
+    {
+      "name": "_GiftUsed",
+      "type": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "name": "_GiftClaimed",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_GiftClaimIndex",
+      "type": "Address",
+      "typeTag": 12935543434248877639
+    },
+    {
+      "name": "_GiftSettlement",
+      "type": "GiftSettlement",
+      "typeTag": 373282345846871664
+    },
+    {
+      "name": "_GiftCleanupQueue",
+      "type": "GiftCleanupQueueState",
+      "typeTag": 5496675755488506181
+    },
+    {
+      "name": "_GiftCleanupNext",
+      "type": "Address",
+      "typeTag": 12935543434248877639
+    },
+    {
+      "name": "_GiftClaimApp",
+      "type": "u8",
+      "typeTag": 631772817358541784
     }
   ],
   "constants": [
@@ -890,7 +1262,7 @@
     },
     {
       "name": "GAS_SPONSOR_SEED",
-      "type": "u16",
+      "type": "u64",
       "value": 1
     },
     {
@@ -912,9 +1284,60 @@
       "name": "FAUCET_CHAIN_ID_MIN",
       "type": "u64",
       "value": 900000001
+    },
+    {
+      "name": "MAX_GIFT_CLAIMS",
+      "type": "u64",
+      "value": 1024
+    },
+    {
+      "name": "GIFT_FEE_PER_CLAIM",
+      "type": "u64",
+      "value": 100000
+    },
+    {
+      "name": "MAX_GIFT_RECIPIENTS",
+      "type": "usize",
+      "value": 32
+    },
+    {
+      "name": "DEFAULT_GIFT_EXPIRATION_MS",
+      "type": "u64",
+      "value": 86400000
+    },
+    {
+      "name": "GIFT_CLEANUP_BATCH",
+      "type": "u64",
+      "value": 64
+    },
+    {
+      "name": "GIFT_CLEANUP_INTERVAL_MS",
+      "type": "u64",
+      "value": 1000
     }
   ],
   "events": [
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "gift_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "creator",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "token",
+          "type": "Address"
+        }
+      ],
+      "name": "GiftCreated",
+      "typeTag": 5552105765182429402
+    },
     {
       "fields": [
         {
@@ -934,7 +1357,7 @@
         }
       ],
       "name": "Mint",
-      "typeTag": 2296236597943485210
+      "typeTag": 2074136101726433888
     },
     {
       "fields": [
@@ -955,7 +1378,7 @@
         }
       ],
       "name": "Burn",
-      "typeTag": 1494582981033727655
+      "typeTag": 17989347192277165893
     },
     {
       "fields": [
@@ -981,7 +1404,7 @@
         }
       ],
       "name": "Transfer",
-      "typeTag": 10783566858265554069
+      "typeTag": 8500236251342700043
     }
   ],
   "errors": [
@@ -1022,33 +1445,94 @@
     },
     {
       "code": 519,
-      "message": "地址未参与当前交易签名: {0:?}",
-      "name": "AddressNotSignatured"
-    },
-    {
-      "code": 520,
       "message": "Invalid parameters: {0}",
       "name": "InvalidParameters"
     },
     {
-      "code": 521,
+      "code": 520,
       "message": "VC `{3}` from issuer {2:?} required for token recipient (token: {0:?}, recipient: {1:?})",
       "name": "VcRequired"
     },
     {
-      "code": 522,
+      "code": 521,
       "message": "VC policy required for token recipient (token: {0:?}, recipient: {1:?})",
       "name": "VcPolicyRequired"
     },
     {
-      "code": 523,
+      "code": 522,
       "message": "faucet is disabled on this chain",
       "name": "FaucetDisabled"
     },
     {
-      "code": 524,
+      "code": 523,
       "message": "faucet cooldown active ({0} ms remaining)",
       "name": "FaucetCooldownActive"
+    },
+    {
+      "code": 524,
+      "message": "gift not found: {0:?}",
+      "name": "GiftNotFound"
+    },
+    {
+      "code": 525,
+      "message": "gift id already used: {0:?}",
+      "name": "GiftAlreadyExists"
+    },
+    {
+      "code": 526,
+      "message": "gift expired: {0:?}",
+      "name": "GiftExpired"
+    },
+    {
+      "code": 527,
+      "message": "gift is not expired: {0:?}",
+      "name": "GiftNotExpired"
+    },
+    {
+      "code": 528,
+      "message": "gift is still active: {0:?}",
+      "name": "GiftStillActive"
+    },
+    {
+      "code": 529,
+      "message": "invalid gift definition: {0}",
+      "name": "InvalidGiftDefinition"
+    },
+    {
+      "code": 530,
+      "message": "gift claimant is not eligible: {0:?}",
+      "name": "GiftNotEligible"
+    },
+    {
+      "code": 531,
+      "message": "gift already claimed by: {0:?}",
+      "name": "GiftAlreadyClaimed"
+    },
+    {
+      "code": 532,
+      "message": "gift escrow invariant violated: {0:?}",
+      "name": "GiftEscrowInvariantViolation"
+    },
+    {
+      "code": 533,
+      "message": "secure randomness unavailable: {0}",
+      "name": "GiftRandomnessUnavailable"
+    },
+    {
+      "code": 534,
+      "message": "gift cleanup wake rejected",
+      "name": "GiftCleanupWakeRejected"
+    },
+    {
+      "code": 535,
+      "message": "Transparent IdentityError",
+      "name": "IdentityError",
+      "transparent": true
+    },
+    {
+      "code": 536,
+      "message": "delivery rejected for {0:?}: {1}",
+      "name": "DeliveryRejected"
     }
   ]
 }

@@ -12,9 +12,19 @@ import (
 	"github.com/milon-labs/milon-go-sdk/provider"
 )
 
-// PrintFramedHistory 打印一笔交易的完整明细:
-// 基本信息 + 签名者 + 指令 IDL 解码 + 资源访问 before/after + 事件解码
-func PrintFramedHistory(client *Client, idx int, fh *FramedHistory, pathMap map[api.RsHash]string) {
+// FramedHistoryLogger is the optional output target for PrintFramedHistory.
+// It uses a minimal interface, so common loggers like *log.Logger and zap.SugaredLogger satisfy it directly;
+// to write to a custom sink, just implement Println(v ...any).
+type FramedHistoryLogger interface {
+	Println(v ...any)
+}
+
+// PrintFramedHistory prints the full details of a transaction:
+// basic info + signers + instruction IDL decoding + resource access before/after + event decoding.
+//
+// logger is an optional variadic argument: when provided and non-nil, output goes through logger.Println (e.g. *log.Logger);
+// when omitted or nil, the original behavior is kept, using fmt.Println to stdout.
+func PrintFramedHistory(client *Client, idx int, fh *FramedHistory, pathMap map[api.RsHash]string, logger ...FramedHistoryLogger) {
 	if client == nil {
 		return
 	}
@@ -42,7 +52,7 @@ func PrintFramedHistory(client *Client, idx int, fh *FramedHistory, pathMap map[
 	if fh.Payer != nil {
 		fmt.Fprintf(&sb, "  payer=signer[%d]\n", *fh.Payer)
 	} else {
-		fmt.Fprintf(&sb, "  payer=<none 分账>\n")
+		fmt.Fprintf(&sb, "  payer=<none>\n")
 	}
 	for i, sig := range fh.Signatures {
 		addrStr := hex.EncodeToString(sig.Signer)
@@ -77,7 +87,7 @@ func PrintFramedHistory(client *Client, idx int, fh *FramedHistory, pathMap map[
 		if ac.FirstSnapshot != nil {
 			writeDynamicValue(client, &sb, "before", ac.FirstSnapshot)
 		} else {
-			sb.WriteString("    | before: <created 新资源>\n")
+			sb.WriteString("    | before: <created new resource>\n")
 		}
 		writeDynamicValue(client, &sb, "after", &ac.LastWritten)
 	}
@@ -92,17 +102,22 @@ func PrintFramedHistory(client *Client, idx int, fh *FramedHistory, pathMap map[
 		appendIndented(&sb, pm.FormatDecodedEvent(decoded))
 	}
 
-	fmt.Println(strings.TrimRight(sb.String(), "\n"))
+	output := strings.TrimRight(sb.String(), "\n")
+	if len(logger) > 0 && logger[0] != nil {
+		logger[0].Println(output)
+		return
+	}
+	fmt.Println(output)
 }
 
-// appendIndented 把多行解码结果逐行加前缀写入,使其与上面的 ix[n]/event[n] 标题行视觉归组
+// appendIndented writes multi-line decoded results line by line with a prefix, visually grouping them under the ix[n]/event[n] header line above
 func appendIndented(sb *strings.Builder, s string) {
 	for _, line := range strings.Split(strings.TrimRight(s, "\n"), "\n") {
 		sb.WriteString("    | " + line + "\n")
 	}
 }
 
-// writeDynamicValue 按 type_tag 找到 IDL 类型并解码 Inline body(postcard 资源值字节)
+// writeDynamicValue finds the IDL type by type_tag and decodes the Inline body (postcard resource-value bytes)
 func writeDynamicValue(client *Client, sb *strings.Builder, label string, v *FramedDynamicValue) {
 	pd, idlType := findIDLTypeByTag(client, v.TypeTag)
 	if pd == nil || idlType == nil {
@@ -117,7 +132,7 @@ func writeDynamicValue(client *Client, sb *strings.Builder, label string, v *Fra
 	fmt.Fprintf(sb, "    | %s: %s = %+v\n", label, idlType.Name, decoded)
 }
 
-// findIDLTypeByTag 遍历全部已加载的 IDL,按 type_tag 找到对应类型
+// findIDLTypeByTag iterates over all loaded IDLs and finds the matching type by type_tag
 func findIDLTypeByTag(client *Client, typeTag uint64) (*provider.Provider, *provider.IDLType) {
 	for _, pd := range client.GetAllPd() {
 		if idlType, ok := pd.GetIDLTypeByTypeTag(typeTag); ok {

@@ -240,7 +240,13 @@ func example(networkConfig milon.Network) {
 
 	fmt.Printf("\n================ Now do it again, but with a different method ================\n")
 
-	viewTxResult, err = client.View([]api.PackedInstruction{balanceAccount1Wire, balanceAccount2Wire, balanceAccount3Wire, metadataWire, totalSupplyWire})
+	viewTxResult, err = client.View([]api.PackedInstruction{
+		balanceAccount1Wire,
+		balanceAccount2Wire,
+		balanceAccount3Wire,
+		metadataWire,
+		totalSupplyWire,
+	})
 	if err != nil {
 		panic("failed to view: " + err.Error())
 	}
@@ -261,8 +267,8 @@ func example(networkConfig milon.Network) {
 
 	for i, decodedTaggedValue := range decodedTaggedValueList {
 		fmt.Printf("view[%d] : %+v \n", i, decodedTaggedValue)
-		if failure, ok := decodedTaggedValue.Value.(*api.TxFailurePayload); ok {
-			fmt.Printf("❌ err = %+v \n", failure)
+		if failure, ok := decodedTaggedValue.Value.(*api.ApiFailure); ok {
+			fmt.Printf("❌ err = %v \n", failure)
 		}
 	}
 }

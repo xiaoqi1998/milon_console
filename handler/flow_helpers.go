@@ -50,7 +50,8 @@ func flowChainID(mc *milon.Client) (int, error) {
 }
 
 // flowCallView 执行一次 view 调用并解码。返回值可能是链端 Err 载荷
-// (*api.TxFailurePayload),用 flowViewOK 区分。
+// (*api.ApiFailure,SDK 升级后取代原 TxFailurePayload 的 view Err 布局),
+// 用 flowViewOK 区分。
 func flowCallView(mc *milon.Client, appName, method string, args provider.Args) (any, error) {
 	pd, ok := mc.GetAllPd()[appName]
 	if !ok {
@@ -73,7 +74,7 @@ func flowCallView(mc *milon.Client, appName, method string, args provider.Args) 
 
 // flowViewOK 判断 view 解码值是否为 Ok 载荷(而非链端 Err 载荷)。
 func flowViewOK(value any) bool {
-	_, isFailure := value.(*api.TxFailurePayload)
+	_, isFailure := value.(*api.ApiFailure)
 	return !isFailure
 }
 

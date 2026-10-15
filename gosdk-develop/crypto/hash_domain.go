@@ -10,6 +10,10 @@ const MilonBlockHeaderDomainContext = "milon.block.header.v1"
 const MilonTxHistoryDomainContext = "milon.tx-history.v1"
 const MilonTxBatchHashDomainContext = "milon.tx-batch.v1"
 const MilonPkAddressDomainContext = "milon.address.pk.v1"
+const MilonPkAddressRetryDomainContext = "milon.address.pk.retry.v1"
+const MilonKeylessAddressDomainContext = "milon.address.keyless.v1"
+const MilonSeedAddressDomainContext = "milon.seed-address.v3"
+const MilonSeedAddress32DomainContext = "milon.seed-address.v2"
 
 // MilonVoteBatchHashDomainContext is the domain of the MIP-25 vote intent hash (vote_batch_hash: all ix hashes + the owner's gated ix subset).
 const MilonVoteBatchHashDomainContext = "milon.ix-auth.batch.v1"
@@ -17,12 +21,16 @@ const MilonVoteBatchHashDomainContext = "milon.ix-auth.batch.v1"
 // Pre-allocated domain bytes to avoid per-call string->[]byte allocations in
 // hot hash paths. Do not modify.
 var (
-	rootDomainBytes          = []byte(MilonRootDomainContext)
-	IxHashDomainBytes        = []byte(MilonIxHashDomainContext)
-	TxHashDomainBytes        = []byte(MilonTxHashDomainContext)
-	TxAuthDomainBytes        = []byte(MilonTxAuthDomainContext)
-	PkAddressDomainBytes     = []byte(MilonPkAddressDomainContext)
-	VoteBatchHashDomainBytes = []byte(MilonVoteBatchHashDomainContext)
+	rootDomainBytes           = []byte(MilonRootDomainContext)
+	IxHashDomainBytes         = []byte(MilonIxHashDomainContext)
+	TxHashDomainBytes         = []byte(MilonTxHashDomainContext)
+	TxAuthDomainBytes         = []byte(MilonTxAuthDomainContext)
+	PkAddressDomainBytes      = []byte(MilonPkAddressDomainContext)
+	PkAddressRetryDomainBytes = []byte(MilonPkAddressRetryDomainContext)
+	KeylessAddressDomainBytes = []byte(MilonKeylessAddressDomainContext)
+	SeedAddressDomainBytes    = []byte(MilonSeedAddressDomainContext)
+	SeedAddress32DomainBytes  = []byte(MilonSeedAddress32DomainContext)
+	VoteBatchHashDomainBytes  = []byte(MilonVoteBatchHashDomainContext)
 )
 
 // Hasher creates a Blake3 hasher pre-seeded with MILON_ROOT_DOMAIN and the domain, for incremental update use.

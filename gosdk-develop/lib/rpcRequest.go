@@ -25,12 +25,15 @@ func (mt *MethodType) UnmarshalPostcard(deserializer *postcard.Deserializer) err
 
 const (
 	// --- Core chain / execute (1-49, step 5)
-	MethodTypeChainHead      MethodType = 1
-	MethodTypeSubmitTx       MethodType = 5
-	MethodTypeSimulateTx     MethodType = 10
-	MethodTypeView           MethodType = 15
-	MethodTypeGetAccount     MethodType = 20
-	MethodTypeEventsByTxHash MethodType = 25
+	MethodTypeChainHead       MethodType = 1
+	MethodTypeSubmitTx        MethodType = 5
+	MethodTypeBatchSubmitTx   MethodType = 6
+	MethodTypeSimulateTx      MethodType = 10
+	MethodTypeBatchSimulateTx MethodType = 11
+	MethodTypeView            MethodType = 15
+	MethodTypeBatchView       MethodType = 16
+	MethodTypeGetAccount      MethodType = 20
+	MethodTypeEventsByTxHash  MethodType = 25
 
 	// --- Query block / tx (50-149, step 5)
 	MethodTypeGetBlockByHeight  MethodType = 50

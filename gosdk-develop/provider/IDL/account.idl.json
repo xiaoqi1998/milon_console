@@ -198,6 +198,13 @@
       "name": "VoteInit"
     },
     {
+      "args": [],
+      "discriminator": 37954,
+      "handler": "sweep_expired_votes",
+      "kind": "entry",
+      "name": "SweepExpiredVotes"
+    },
+    {
       "args": [
         {
           "name": "owner",
@@ -333,7 +340,7 @@
       ],
       "kind": "struct",
       "name": "Account",
-      "typeTag": 17390915333023917609
+      "typeTag": 4728916202331225981
     },
     {
       "fields": [
@@ -348,7 +355,7 @@
       ],
       "kind": "struct",
       "name": "AccountSigner",
-      "typeTag": 3011419475387808271
+      "typeTag": 18411492065370272939
     },
     {
       "fields": [
@@ -359,7 +366,7 @@
       ],
       "kind": "struct",
       "name": "ResolvePolicy",
-      "typeTag": 11593087574756389960
+      "typeTag": 15157821980119277780
     },
     {
       "fields": [
@@ -374,7 +381,7 @@
       ],
       "kind": "struct",
       "name": "VoteProposal",
-      "typeTag": 18092943681097927401
+      "typeTag": 13591436575871712325
     },
     {
       "fields": [
@@ -393,7 +400,37 @@
       ],
       "kind": "struct",
       "name": "VoteMeta",
-      "typeTag": 2370275984328722986
+      "typeTag": 17310772253093986646
+    },
+    {
+      "fields": [
+        {
+          "name": "bitmap",
+          "type": "Bitmap64"
+        },
+        {
+          "name": "sweep_expires_at_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "VoteOccupancy",
+      "typeTag": 3131795771474447668
+    },
+    {
+      "fields": [
+        {
+          "name": "expires_at_ms",
+          "type": "u64"
+        },
+        {
+          "name": "owner",
+          "type": "Address"
+        }
+      ],
+      "kind": "struct",
+      "name": "VoteSweepOwner",
+      "typeTag": 16828239814514078564
     },
     {
       "kind": "builtin",
@@ -445,27 +482,37 @@
     {
       "name": "_Account",
       "type": "Account",
-      "typeTag": 5121685491907179737
+      "typeTag": 8001620250894669925
     },
     {
       "name": "_AccountSigner",
       "type": "AccountSigner",
-      "typeTag": 862513842932132671
+      "typeTag": 7240099799980548627
     },
     {
       "name": "_VoteProgress",
       "type": "Bitmap64",
-      "typeTag": 14664585694504875734
+      "typeTag": 8890526009784221754
     },
     {
       "name": "_VoteOccupancy",
-      "type": "Bitmap64",
-      "typeTag": 14664585694504875734
+      "type": "VoteOccupancy",
+      "typeTag": 3131795771474447668
     },
     {
       "name": "_VoteSlot",
       "type": "VoteMeta",
-      "typeTag": 2370275984328722986
+      "typeTag": 17310772253093986646
+    },
+    {
+      "name": "_VoteSweepShard",
+      "type": "vec<VoteSweepOwner>",
+      "typeTag": 5617274569088890347
+    },
+    {
+      "name": "_VoteSweepShards",
+      "type": "bytes",
+      "typeTag": 10405529814227927951
     }
   ],
   "constants": [
@@ -488,6 +535,16 @@
       "name": "MAX_VOTE_TTL_MS",
       "type": "u64",
       "value": "24 * 3_600_000"
+    },
+    {
+      "name": "VOTE_SWEEP_FEE",
+      "type": "u64",
+      "value": 100000
+    },
+    {
+      "name": "VOTE_SWEEP_SPONSOR_SEED",
+      "type": "u64",
+      "value": 1
     },
     {
       "name": "MAX_VOTE_PROPOSAL_BYTES",
@@ -588,63 +645,73 @@
     },
     {
       "code": 274,
-      "message": "Address not signed in current transaction: {0:?}",
-      "name": "AddressNotSignatured"
-    },
-    {
-      "code": 275,
       "message": "Account is not a multisig account",
       "name": "AccountNotMultisig"
     },
     {
-      "code": 276,
+      "code": 275,
       "message": "expires_at_ms must be greater than tx stamp",
       "name": "ExpiresAtInvalid"
     },
     {
-      "code": 277,
+      "code": 276,
       "message": "Vote intent expired",
       "name": "VoteExpired"
     },
     {
-      "code": 278,
+      "code": 277,
       "message": "Vote not ready for replay",
       "name": "VoteNotReady"
     },
     {
-      "code": 279,
+      "code": 278,
       "message": "Vote expires_at_ms does not match registered intent",
       "name": "VoteExpiresMismatch"
     },
     {
-      "code": 280,
+      "code": 279,
       "message": "Vote active intent index full (max 8)",
       "name": "VoteIndexFull"
     },
     {
-      "code": 281,
+      "code": 280,
       "message": "Vote TTL exceeds 24 hours",
       "name": "VoteTtlExceeded"
     },
     {
-      "code": 282,
+      "code": 281,
       "message": "Vote proposal does not match intent_hash",
       "name": "VoteProposalMismatch"
     },
     {
-      "code": 283,
+      "code": 282,
       "message": "Vote proposal wire exceeds size limit",
       "name": "VoteProposalTooLarge"
     },
     {
-      "code": 284,
+      "code": 283,
       "message": "Vote proposal wire is invalid",
       "name": "VoteProposalInvalid"
     },
     {
-      "code": 285,
+      "code": 284,
       "message": "Account {0:?} exists; pubkey mode not allowed",
       "name": "PubkeyModeForbidden"
+    },
+    {
+      "code": 285,
+      "message": "Vote sweep fee balance insufficient",
+      "name": "VoteSweepFeeInsufficient"
+    },
+    {
+      "code": 286,
+      "message": "Vote wake registration rejected",
+      "name": "VoteWakeRejected"
+    },
+    {
+      "code": 287,
+      "message": "App-reserved address {0:?} cannot register or authenticate an account",
+      "name": "ReservedAppAddress"
     }
   ]
 }

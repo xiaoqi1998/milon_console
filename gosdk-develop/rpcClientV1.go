@@ -474,7 +474,7 @@ func (c *rpcClientV1) View(wires []api.PackedInstruction, opts ...RequestOption)
 
 	o := applyRequestOptions(opts)
 
-	apiResponse, err := c.callJsonRPC(o.ctx, lib.MethodTypeView, serializer.Bytes(), o.requestID)
+	apiResponse, err := c.callJsonRPC(o.ctx, lib.MethodTypeBatchView, serializer.Bytes(), o.requestID)
 	if err != nil {
 		return nil, err
 	}

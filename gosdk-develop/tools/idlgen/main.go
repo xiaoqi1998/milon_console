@@ -814,8 +814,8 @@ func generateIx(b *strings.Builder, app appInfo, ix provider.Instruction, imp *i
 		fmt.Fprintf(b, "\t}\n")
 		fmt.Fprintf(b, "\tv, err := ix.pd.DecodeViewData(%q, body)\n", ix.Name)
 		fmt.Fprintf(b, "\tif err != nil {\n\t\treturn out, err\n\t}\n")
-		fmt.Fprintf(b, "\tif failure, ok := v.(*api.TxFailurePayload); ok {\n")
-		fmt.Fprintf(b, "\t\treturn out, fmt.Errorf(\"view %s failed: code=%%d msg=%%q\", failure.Code, failure.Message)\n", ix.Name)
+		fmt.Fprintf(b, "\tif failure, ok := v.(*api.ApiFailure); ok {\n")
+		fmt.Fprintf(b, "\t\treturn out, fmt.Errorf(\"view %s failed: %%s\", failure)\n", ix.Name)
 		fmt.Fprintf(b, "\t}\n")
 		var convCounter int
 		writeConvStmt(b, "out", "v", ix.Returns.Type, "\t", app.name, typeByName, &convCounter)

@@ -2,6 +2,7 @@ package milon
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// 透传 codec: 绕过 protobuf，直接收发 Postcard 原始字节
+// Passthrough codec: bypasses protobuf and sends/receives raw Postcard bytes directly
 type rawFrame struct{ payload []byte }
 type rawCodec struct{}
 
@@ -19,12 +20,18 @@ func (rawCodec) Marshal(v any) ([]byte, error)   { return v.(*rawFrame).payload,
 func (rawCodec) Unmarshal(d []byte, v any) error { v.(*rawFrame).payload = d; return nil }
 func (rawCodec) Name() string                    { return "postcard" }
 
-// 收到的流帧类型(v2 协议: ServerCommand 只有 Block/CaughtUp/Pong 三个变体)
+// Stream frame kinds received (v2 protocol: ServerCommand has only three variants: Block/CaughtUp/Pong)
 const (
 	FrameKindBlock    uint64 = 0 // Block
 	FrameKindCaughtUp uint64 = 1 // CaughtUp
 	FrameKindPong     uint64 = 2 // Pong
 )
+
+// ErrTxDecode marks "a transaction within a block frame failed postcard decoding", distinguishing it from network/transport errors.
+// A decode failure almost always means the client decoder is out of sync with the on-chain protocol (e.g. a field missed during a protocol upgrade); it is a systemic anomaly rather than a transient fault.
+// Consumers can check errors.Is(err, ErrTxDecode) and then decide for themselves whether to halt and alert or reconnect and retry,
+// instead of blindly reconnecting as if it were an ordinary network error. The error returned by Next/StreamBlocks wraps this sentinel.
+var ErrTxDecode = errors.New("milon: tx history decode failed")
 
 func putVarint(b []byte, v uint64) []byte {
 	for v >= 0x80 {
@@ -34,9 +41,9 @@ func putVarint(b []byte, v uint64) []byte {
 	return append(b, byte(v))
 }
 
-// encodeSubscribe Subscribe(v2): variant 0,字段顺序 consumer_id / start_height / max_in_flight
+// encodeSubscribe Subscribe(v2): variant 0, field order consumer_id / start_height / max_in_flight
 func encodeSubscribe(consumerID string, startHeight uint64, maxInFlight uint32) []byte {
-	b := putVarint(nil, 0)                    // variant 索引,只写一次
+	b := putVarint(nil, 0)                    // variant index, written only once
 	b = putVarint(b, uint64(len(consumerID))) // ① consumerID
 	b = append(b, consumerID...)
 	b = putVarint(b, startHeight)            // ② startHeight
@@ -48,26 +55,26 @@ func encodeAck(height uint64) []byte {
 	return putVarint([]byte{1}, height)
 }
 
-// StreamFrame 从流中收到的一帧
+// StreamFrame is a frame received from the stream
 type StreamFrame struct {
 	Kind           uint64
-	BlockHeight    uint64 // Kind=FrameKindBlock 时有效
+	BlockHeight    uint64 // valid when Kind=FrameKindBlock
 	Histories      []*FramedHistory
 	BlockRawLen    int
-	CaughtUpHeight uint64 // Kind=FrameKindCaughtUp 时有效
+	CaughtUpHeight uint64 // valid when Kind=FrameKindCaughtUp
 }
 
-// BlockStream 指向链节点 gRPC 双向流的连接(底层控制接口,可自行搭配 ctx 使用)
+// BlockStream is a connection to the chain node's gRPC bidirectional stream (low-level control interface; can be used with your own ctx)
 type BlockStream struct {
 	conn   *grpc.ClientConn
 	stream grpc.ClientStream
 }
 
-// streamMaxRecvMsgSize 单帧接收上限: gRPC 默认 4MB,超出会报 ResourceExhausted,
-// 断流重连后服务端重发同一块又失败,永远卡在该块;放大到 32MB 兜住超大块。
+// streamMaxRecvMsgSize is the per-frame receive limit: gRPC defaults to 4MB and exceeding it reports ResourceExhausted;
+// after the stream breaks and reconnects the server resends the same block and fails again, getting stuck on that block forever; raise it to 32MB to accommodate oversized blocks.
 const streamMaxRecvMsgSize = 32 << 20
 
-// NewBlockStream 连接节点的 gRPC 双向流
+// NewBlockStream connects to the node's gRPC bidirectional stream
 func NewBlockStream(ctx context.Context, addr string) (*BlockStream, error) {
 	conn, err := grpc.NewClient(addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -99,17 +106,17 @@ func NewBlockStream(ctx context.Context, addr string) (*BlockStream, error) {
 	return &BlockStream{conn: conn, stream: stream}, nil
 }
 
-// Subscribe 发送订阅区块请求(v2 已无 includeTx 参数)
+// Subscribe sends a block subscription request (v2 no longer has the includeTx parameter)
 func (s *BlockStream) Subscribe(consumerID string, startHeight uint64, maxInFlight uint32) error {
 	return s.stream.SendMsg(&rawFrame{payload: encodeSubscribe(consumerID, startHeight, maxInFlight)})
 }
 
-// Ack 区块消费确认
+// Ack acknowledges block consumption
 func (s *BlockStream) Ack(height uint64) error {
 	return s.stream.SendMsg(&rawFrame{payload: encodeAck(height)})
 }
 
-// Next 接收并解析下一帧
+// Next receives and parses the next frame
 func (s *BlockStream) Next() (*StreamFrame, error) {
 	var frame rawFrame
 	if err := s.stream.RecvMsg(&frame); err != nil {
@@ -118,7 +125,7 @@ func (s *BlockStream) Next() (*StreamFrame, error) {
 	return decodeStreamFrame(frame.payload)
 }
 
-// Close 关闭底层连接
+// Close closes the underlying connection
 func (s *BlockStream) Close() error {
 	return s.conn.Close()
 }
@@ -134,8 +141,8 @@ func decodeStreamFrame(payload []byte) (*StreamFrame, error) {
 	frame := &StreamFrame{Kind: kind}
 	switch kind {
 	case FrameKindBlock:
-		//V2 BlockEnvelopeHeader(block_envelope.rs): u16/u64/u32 都是 varint,hash 定长;
-		//字段顺序: envelopeVersion/chainID/height/epoch/slot/blockHash/parentHash/stateHash/txRoot/txCount/timestampMsecs/schemaSetID/payloadChecksum
+		//V2 BlockEnvelopeHeader(block_envelope.rs): u16/u64/u32 are all varint, hash is fixed-length;
+		//field order: envelopeVersion/chainID/height/epoch/slot/blockHash/parentHash/stateHash/txRoot/txCount/timestampMsecs/schemaSetID/payloadChecksum
 		if _, err = r.varint(); err != nil { //envelopeVersion u16(=1)
 			return nil, err
 		}
@@ -148,7 +155,7 @@ func decodeStreamFrame(payload []byte) (*StreamFrame, error) {
 		if _, err = r.varint(); err != nil { //epoch
 			return nil, err
 		}
-		if _, err = r.varint(); err != nil { //slot(新增字段,envelope_version 未变;漏读会导致后续字段全部错位)
+		if _, err = r.varint(); err != nil { //slot (newly added field, envelope_version unchanged; failing to read it would misalign all subsequent fields)
 			return nil, err
 		}
 		if _, err = r.fixed(32); err != nil { //blockHash
@@ -188,16 +195,16 @@ func decodeStreamFrame(payload []byte) (*StreamFrame, error) {
 		}
 		frame.Histories = make([]*FramedHistory, 0, txCount)
 		for i := 0; i < int(txCount); i++ {
-			txHistory, err := r.bytesVar() //FramedHistory 的 postcard 字节
+			txHistory, err := r.bytesVar() //postcard bytes of FramedHistory
 			if err != nil {
 				return nil, err
 			}
 			fh, err := decodeFramedHistory(txHistory)
 			if err != nil {
-				// 单笔解码失败 = 解码器与链上协议错位(如协议升级导致 postcard 字段变化),属于系统性异常:
-				// 不允许静默跳过——本块会照常推进,该交易的全部资源变更(余额/holders/账户/SFT)将无迹可寻。
-				// 返回 error 让调用方中断本块(未 Ack 的块重连后可重扫)。
-				return nil, fmt.Errorf("decode tx[%d] failed at block %d: %w", i, frame.BlockHeight, err)
+				// A single decode failure = the decoder is out of sync with the on-chain protocol (e.g. a protocol upgrade changed the postcard fields); it is a systemic anomaly:
+				// silently skipping is not allowed—the block would still advance and all resource changes of that transaction (balances/holders/accounts/SFT) would be lost without a trace.
+				// Wrap it with the ErrTxDecode sentinel so consumers can check errors.Is and halt with an alert; un-Acked blocks can be rescanned after reconnection.
+				return nil, fmt.Errorf("%w: tx[%d] at block %d: %v", ErrTxDecode, i, frame.BlockHeight, err)
 			}
 			frame.Histories = append(frame.Histories, fh)
 		}
@@ -213,18 +220,18 @@ func decodeStreamFrame(payload []byte) (*StreamFrame, error) {
 }
 
 // ========================================
-// Client.StreamBlocks — 区块流高层入口
+// Client.StreamBlocks — high-level block stream entry point
 // ========================================
 
-// streamMaxInFlight StreamBlocks 默认订阅参数 max_in_flight: 未 Ack 块的在途上限
+// streamMaxInFlight is the default subscription parameter max_in_flight for StreamBlocks: the in-flight limit of un-Acked blocks
 const streamMaxInFlight = 64
 
-// StreamBlocks 从 startBlock 开始订阅链节点的区块流,逐块回调 onBlockDone。
+// StreamBlocks subscribes to the chain node's block stream starting from startBlock, invoking onBlockDone for each block.
 //
-// 两个入参:
-//  1. startBlock  —— 订阅起始区块高度(如 0 表示从创世块开始);
-//  2. onBlockDone —— 当前区块的交易全部获取完毕时被调用,入参为本块高度与已解码的交易列表;
-//     返回 true 继续获取下一块(SDK 自动 Ack 当前块),返回 false 停止获取并正常返回 nil。
+// Two parameters:
+//  1. startBlock  —— the starting block height of the subscription (e.g. 0 means starting from the genesis block);
+//  2. onBlockDone —— called when all transactions of the current block have been fetched, receiving the block height and the decoded transaction list;
+//     return true to continue fetching the next block (the SDK automatically Acks the current block), or false to stop fetching and return nil normally.
 func (client *Client) StreamBlocks(startBlock uint64, onBlockDone func(blockHeight uint64, histories []*FramedHistory) bool) error {
 	if client.network.GrpcAddr == "" {
 		return fmt.Errorf("network %q has no grpc address configured", client.network.Name)
@@ -236,8 +243,8 @@ func (client *Client) StreamBlocks(startBlock uint64, onBlockDone func(blockHeig
 	}
 	defer stream.Close()
 
-	// consumer_id 需唯一(服务端开启唯一性校验时重复 ID 会被拒绝),用进程内纳秒时间戳保证唯一;
-	// 字符集限 [a-zA-Z0-9._-:],长度 1..=128
+	// consumer_id must be unique (a duplicate ID is rejected when the server enables uniqueness validation); use an in-process nanosecond timestamp to ensure uniqueness;
+	// the character set is limited to [a-zA-Z0-9._-:] and the length to 1..=128
 	consumerID := fmt.Sprintf("milon-go-sdk-%d", time.Now().UnixNano())
 	if err = stream.Subscribe(consumerID, startBlock, streamMaxInFlight); err != nil {
 		return err
@@ -251,15 +258,15 @@ func (client *Client) StreamBlocks(startBlock uint64, onBlockDone func(blockHeig
 		switch frame.Kind {
 		case FrameKindBlock:
 			if !onBlockDone(frame.BlockHeight, frame.Histories) {
-				return nil // 回调要求停止获取
+				return nil // callback requested to stop fetching
 			}
 			if err = stream.Ack(frame.BlockHeight); err != nil {
 				return err
 			}
 		case FrameKindCaughtUp, FrameKindPong:
-			// 链尖通知与心跳帧不触发回调,继续等待
+			// chain-tip notifications and heartbeat frames do not trigger the callback; keep waiting
 		default:
-			// 未知帧类型(协议演进新增变体):忽略
+			// unknown frame kind (new variant added by protocol evolution): ignore
 		}
 	}
 }

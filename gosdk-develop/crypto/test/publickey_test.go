@@ -1,6 +1,7 @@
 package test
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/postcard"
@@ -17,6 +18,7 @@ func TestPublicKeyVariant(t *testing.T) {
 	assert.False(t, pk1.IsEd25519())
 	assert.False(t, pk1.IsBLS12381())
 	assert.False(t, pk1.IsFnDsa512())
+	assert.False(t, pk1.IsKeylessDerived())
 
 	pk2 := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey()).Ed25519Public()
 	assert.Equal(t, crypto.PublicKeyTypeEd25519, pk2.Variant)
@@ -24,6 +26,7 @@ func TestPublicKeyVariant(t *testing.T) {
 	assert.False(t, pk2.IsSecp256k1())
 	assert.False(t, pk2.IsBLS12381())
 	assert.False(t, pk2.IsFnDsa512())
+	assert.False(t, pk2.IsKeylessDerived())
 
 	pk3 := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey()).BLS12381Public()
 	assert.Equal(t, crypto.PublicKeyTypeBLS12381, pk3.Variant)
@@ -31,6 +34,7 @@ func TestPublicKeyVariant(t *testing.T) {
 	assert.False(t, pk3.IsSecp256k1())
 	assert.False(t, pk3.IsEd25519())
 	assert.False(t, pk3.IsFnDsa512())
+	assert.False(t, pk3.IsKeylessDerived())
 
 	_, pk4, err := crypto.NewFnDsa512SecretKey()
 	assert.NoError(t, err)
@@ -39,6 +43,19 @@ func TestPublicKeyVariant(t *testing.T) {
 	assert.False(t, pk4.IsSecp256k1())
 	assert.False(t, pk4.IsEd25519())
 	assert.True(t, pk4.IsFnDsa512())
+	assert.False(t, pk4.IsKeylessDerived())
+
+	var keylessSeed [32]byte
+	for i := range keylessSeed {
+		keylessSeed[i] = 7
+	}
+	pk5 := crypto.NewKeylessDerivedPublicKey(keylessSeed)
+	assert.Equal(t, crypto.PublicKeyTypeKeylessDerived, pk5.Variant)
+	assert.True(t, pk5.IsKeylessDerived())
+	assert.False(t, pk5.IsSecp256k1())
+	assert.False(t, pk5.IsEd25519())
+	assert.False(t, pk5.IsBLS12381())
+	assert.False(t, pk5.IsFnDsa512())
 }
 
 func TestPublicKeyRoundTrip(t *testing.T) {
@@ -308,4 +325,82 @@ func TestPublicKeyDeserializePostcardInvalidData(t *testing.T) {
 	err = pk.UnmarshalPostcard(deserializer)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to deserialize public key Bytes")
+}
+
+func TestPublicKeyFromBytesNeverYieldsKeylessDerived(t *testing.T) {
+	// 32 bytes always parse as Ed25519; the keyless variant is only built explicitly.
+	for _, raw := range [][]byte{
+		make([]byte, crypto.PublicKeyEd25519Size),
+		bytes.Repeat([]byte{0x01}, crypto.PublicKeyEd25519Size),
+		bytes.Repeat([]byte{0xFF}, crypto.PublicKeyEd25519Size),
+	} {
+		pk, err := crypto.NewPublicKeyFromBytes(raw)
+		assert.NoError(t, err)
+		assert.Equal(t, crypto.PublicKeyTypeEd25519, pk.Variant)
+		assert.False(t, pk.IsKeylessDerived())
+	}
+
+	valid := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey()).Ed25519Public()
+	pk, err := crypto.NewPublicKeyFromBytes(valid.Bytes)
+	assert.NoError(t, err)
+	assert.Equal(t, crypto.PublicKeyTypeEd25519, pk.Variant)
+	assert.False(t, pk.IsKeylessDerived())
+}
+
+func TestKeylessDerivedPublicKeySerdeRoundTrip(t *testing.T) {
+	var seed [32]byte
+	for i := range seed {
+		seed[i] = 0xFF
+	}
+	pk := crypto.NewKeylessDerivedPublicKey(seed)
+	assert.True(t, pk.IsKeylessDerived())
+	assert.Equal(t, crypto.PublicKeyKeylessDerivedSize, len(pk.Bytes))
+
+	// Postcard wire format: variant 4 followed by 32 raw bytes.
+	serializer := postcard.NewSerializer()
+	assert.NoError(t, pk.MarshalPostcard(serializer))
+
+	data := serializer.Bytes()
+	assert.Equal(t, 1+crypto.PublicKeyKeylessDerivedSize, len(data))
+	assert.Equal(t, byte(crypto.PublicKeyTypeKeylessDerived), data[0])
+
+	decoded := &crypto.PublicKey{}
+	deserializer := postcard.NewDeserializer(data)
+	assert.NoError(t, decoded.UnmarshalPostcard(deserializer))
+	assert.True(t, decoded.IsKeylessDerived())
+	assert.Equal(t, *pk, *decoded)
+	assert.NoError(t, deserializer.AssertEnd())
+
+	// Human-readable encodings can be produced, but textual parsing never
+	// yields the keyless variant: 32 bytes parse as Ed25519.
+	jsonData, err := json.Marshal(pk)
+	assert.NoError(t, err)
+
+	parsed := &crypto.PublicKey{}
+	assert.NoError(t, json.Unmarshal(jsonData, parsed))
+	assert.Equal(t, crypto.PublicKeyTypeEd25519, parsed.Variant)
+	assert.False(t, parsed.IsKeylessDerived())
+	assert.Equal(t, pk.Bytes, parsed.Bytes)
+}
+
+func TestKeylessDerivedPublicKeyFailsTraditionalSignAndVerify(t *testing.T) {
+	sk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
+	msg := []byte("milon-keyless-test")
+	sig := sk.SignEd25519(msg)
+
+	var keylessSeed [32]byte
+	for i := range keylessSeed {
+		keylessSeed[i] = 0xAB
+	}
+	keylessPk := crypto.NewKeylessDerivedPublicKey(keylessSeed)
+
+	// A keyless pseudo key does not participate in traditional verification.
+	assert.Error(t, sig.Verify(msg, keylessPk))
+
+	// The same bytes in an Ed25519 key verify normally (no cross-talk).
+	assert.NoError(t, sig.Verify(msg, sk.Ed25519Public()))
+
+	// Signing for a keyless pseudo key is rejected as well.
+	_, err := sk.SignFor(*keylessPk, msg)
+	assert.Error(t, err)
 }

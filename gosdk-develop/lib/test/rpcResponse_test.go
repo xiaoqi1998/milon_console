@@ -1,6 +1,7 @@
 package test
 
 import (
+	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/lib"
 	"testing"
 
@@ -41,7 +42,7 @@ func TestRpcResponse_MarshalPostcard(t *testing.T) {
 			RequestId: 9876543210,
 			Status:    lib.RpcResponseStatusNotFound,
 			Body:      []byte("not found"),
-			Error: &lib.RpcResponseError{
+			Error: &api.ApiFailure{
 				Message: "resource not available",
 				Code:    &code,
 				Data:    &data,
@@ -70,7 +71,7 @@ func TestRpcResponse_MarshalPostcard(t *testing.T) {
 			RequestId: 555,
 			Status:    lib.RpcResponseStatusInternal,
 			Body:      []byte{},
-			Error: &lib.RpcResponseError{
+			Error: &api.ApiFailure{
 				Message: "internal error",
 				Code:    nil,
 				Data:    nil,
@@ -150,7 +151,7 @@ func TestRpcResponse_MarshalPostcard(t *testing.T) {
 			RequestId: 100,
 			Status:    lib.RpcResponseStatusOk,
 			Body:      []byte("test"),
-			Error: &lib.RpcResponseError{
+			Error: &api.ApiFailure{
 				Message: "ok",
 				Code:    &code,
 				Data:    nil,
@@ -160,7 +161,7 @@ func TestRpcResponse_MarshalPostcard(t *testing.T) {
 			RequestId: 100,
 			Status:    lib.RpcResponseStatusOk,
 			Body:      []byte("test"),
-			Error: &lib.RpcResponseError{
+			Error: &api.ApiFailure{
 				Message: "ok",
 				Code:    &code,
 				Data:    nil,

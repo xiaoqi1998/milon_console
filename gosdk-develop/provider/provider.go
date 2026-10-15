@@ -857,7 +857,7 @@ func (p *Provider) DecodeViewDatas(instructionName string, body []byte) ([]Decod
 }
 
 // decodeViewResultItem decodes one Result<T> entry: variant 0 = Ok(value bytes),
-// 1 = Err(TxFailurePayload).
+// 1 = Err(ApiFailure).
 func decodeViewResultItem(pd *Provider, returnType string, body []byte, offset *int) (DecodedTaggedValue, error) {
 	variantIndex, err := decodeViewVarUint(body, offset)
 	if err != nil {
@@ -891,7 +891,7 @@ func decodeViewResultItem(pd *Provider, returnType string, body []byte, offset *
 	}
 
 	if variantIndex == 1 {
-		failure, err := pd.decodeTxFailurePayload(body, offset)
+		failure, err := decodeApiFailure(body, offset)
 		if err != nil {
 			return DecodedTaggedValue{}, fmt.Errorf("failed to decode Err payload: %w", err)
 		}
@@ -902,39 +902,81 @@ func decodeViewResultItem(pd *Provider, returnType string, body []byte, offset *
 	return DecodedTaggedValue{}, fmt.Errorf("invalid result variant index: %d", variantIndex)
 }
 
-func (p *Provider) decodeTxFailurePayload(body []byte, offset *int) (*api.TxFailurePayload, error) {
-	codeRaw, err := decodeViewVarUint(body, offset)
+// decodeApiFailure decodes the ApiFailure layout carried by Err items:
+// message(String) + code(Option<u16>) + data(Option<Vec<u8>>).
+func decodeApiFailure(body []byte, offset *int) (*api.ApiFailure, error) {
+	message, err := decodeViewString(body, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode failure code: %w", err)
+		return nil, fmt.Errorf("failed to decode failure message: %w", err)
 	}
-	code := uint16(codeRaw)
 
-	messageLen, err := decodeViewVarUint(body, offset)
+	failure := &api.ApiFailure{Message: message}
+
+	hasCode, err := decodeViewOptionFlag(body, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode message length: %w", err)
+		return nil, fmt.Errorf("failed to decode failure code flag: %w", err)
 	}
-	if *offset+int(messageLen) > len(body) {
-		return nil, fmt.Errorf("insufficient data for failure message")
+	if hasCode {
+		codeRaw, err := decodeViewVarUint(body, offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode failure code: %w", err)
+		}
+		if codeRaw > math.MaxUint16 {
+			return nil, fmt.Errorf("failure code %d overflows u16", codeRaw)
+		}
+		code := uint16(codeRaw)
+		failure.Code = &code
 	}
-	message := string(body[*offset : *offset+int(messageLen)])
-	*offset += int(messageLen)
 
-	dataLen, err := decodeViewVarUint(body, offset)
+	hasData, err := decodeViewOptionFlag(body, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode data length: %w", err)
+		return nil, fmt.Errorf("failed to decode failure data flag: %w", err)
 	}
-	if *offset+int(dataLen) > len(body) {
-		return nil, fmt.Errorf("insufficient data for failure data")
+	if hasData {
+		dataLen, err := decodeViewVarUint(body, offset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode failure data length: %w", err)
+		}
+		if *offset+int(dataLen) > len(body) {
+			return nil, fmt.Errorf("insufficient data for failure data")
+		}
+		data := make([]byte, dataLen)
+		copy(data, body[*offset:*offset+int(dataLen)])
+		*offset += int(dataLen)
+		failure.Data = &data
 	}
-	data := make([]byte, dataLen)
-	copy(data, body[*offset:*offset+int(dataLen)])
-	*offset += int(dataLen)
 
-	return &api.TxFailurePayload{
-		Code:    code,
-		Message: message,
-		Data:    data,
-	}, nil
+	return failure, nil
+}
+
+// decodeViewString decodes a length-prefixed UTF-8 string.
+func decodeViewString(input []byte, offset *int) (string, error) {
+	length, err := decodeViewVarUint(input, offset)
+	if err != nil {
+		return "", err
+	}
+	if *offset+int(length) > len(input) {
+		return "", fmt.Errorf("insufficient data for string")
+	}
+	s := string(input[*offset : *offset+int(length)])
+	*offset += int(length)
+	return s, nil
+}
+
+// decodeViewOptionFlag decodes a postcard Option flag (0 = None, 1 = Some).
+func decodeViewOptionFlag(input []byte, offset *int) (bool, error) {
+	flag, err := decodeViewVarUint(input, offset)
+	if err != nil {
+		return false, err
+	}
+	switch flag {
+	case 0:
+		return false, nil
+	case 1:
+		return true, nil
+	default:
+		return false, fmt.Errorf("invalid option flag: %d", flag)
+	}
 }
 
 func (p *Provider) DecodeViewData(instructionName string, body []byte) (any, error) {

@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	PublicKeySecp256k1Size = 33
-	PublicKeyEd25519Size   = 32
-	PublicKeyBLS12381Size  = 48
-	PublicKeyFnDsa512Size  = 897
+	PublicKeySecp256k1Size      = 33
+	PublicKeyEd25519Size        = 32
+	PublicKeyBLS12381Size       = 48
+	PublicKeyFnDsa512Size       = 897
+	PublicKeyKeylessDerivedSize = 32
 )
 
 type PublicKeyType uint8
@@ -28,6 +29,7 @@ const (
 	PublicKeyTypeEd25519
 	PublicKeyTypeBLS12381
 	PublicKeyTypeFnDsa512
+	PublicKeyTypeKeylessDerived
 )
 
 // NewPublicKeyFromBytes parses raw bytes into a PublicKey based on length and curve rules
@@ -106,6 +108,18 @@ type PublicKey struct {
 	Bytes   []byte
 }
 
+// NewKeylessDerivedPublicKey builds a keyless derived pseudo public key whose
+// bytes are an address seed rather than a real curve point. NewPublicKeyFromBytes
+// and textual parsing never produce this variant (32 bytes always parse as
+// Ed25519); it does not participate in traditional signature verification and
+// its address derivation uses the dedicated keyless domain.
+func NewKeylessDerivedPublicKey(seed [32]byte) *PublicKey {
+	return &PublicKey{
+		Variant: PublicKeyTypeKeylessDerived,
+		Bytes:   append([]byte(nil), seed[:]...),
+	}
+}
+
 func (pk *PublicKey) AsBytes() []byte {
 	return pk.Bytes
 }
@@ -173,6 +187,10 @@ func (pk *PublicKey) IsBLS12381() bool {
 
 func (pk *PublicKey) IsFnDsa512() bool {
 	return pk.Variant == PublicKeyTypeFnDsa512
+}
+
+func (pk *PublicKey) IsKeylessDerived() bool {
+	return pk.Variant == PublicKeyTypeKeylessDerived
 }
 
 // FromSecp256k1Native converts from a secp256k1 public key back to PublicKey
@@ -267,6 +285,8 @@ func (pk *PublicKey) UnmarshalPostcard(deserializer *postcard.Deserializer) erro
 		expectedLen = PublicKeyBLS12381Size
 	case PublicKeyTypeFnDsa512:
 		expectedLen = PublicKeyFnDsa512Size
+	case PublicKeyTypeKeylessDerived:
+		expectedLen = PublicKeyKeylessDerivedSize
 	default:
 		return fmt.Errorf("unknown public key variant: %d", variant)
 	}

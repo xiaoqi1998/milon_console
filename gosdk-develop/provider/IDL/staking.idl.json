@@ -419,7 +419,7 @@
     {
       "kind": "enum",
       "name": "ValidatorStatus",
-      "typeTag": 13509400494765011086,
+      "typeTag": 6879883576545234008,
       "variants": [
         {
           "fields": [],
@@ -464,7 +464,7 @@
       ],
       "kind": "struct",
       "name": "ValidatorProfile",
-      "typeTag": 16695034029787395057
+      "typeTag": 13062373705154008667
     },
     {
       "fields": [
@@ -511,7 +511,7 @@
       ],
       "kind": "struct",
       "name": "ValidatorPoolView",
-      "typeTag": 7437681117283915955
+      "typeTag": 11854155496224838661
     },
     {
       "fields": [
@@ -530,7 +530,7 @@
       ],
       "kind": "struct",
       "name": "OperatorRewardReceipt",
-      "typeTag": 1325950726438733487
+      "typeTag": 18322346193701716769
     },
     {
       "fields": [
@@ -541,12 +541,12 @@
       ],
       "kind": "struct",
       "name": "CandidatePool",
-      "typeTag": 1908106665584351733
+      "typeTag": 18013819884557156931
     },
     {
       "kind": "enum",
       "name": "CandidateAction",
-      "typeTag": 4277444653471940101,
+      "typeTag": 7266417073453319327,
       "variants": [
         {
           "fields": [],
@@ -581,7 +581,7 @@
       ],
       "kind": "struct",
       "name": "StakeIntent",
-      "typeTag": 10739020572355126226
+      "typeTag": 463322865422871864
     },
     {
       "fields": [
@@ -604,7 +604,7 @@
       ],
       "kind": "struct",
       "name": "UnstakeIntent",
-      "typeTag": 3909489337029280671
+      "typeTag": 4619880209720658249
     },
     {
       "fields": [
@@ -627,7 +627,7 @@
       ],
       "kind": "struct",
       "name": "CandidateIntent",
-      "typeTag": 442123803344805093
+      "typeTag": 2513136358547319627
     },
     {
       "fields": [
@@ -646,7 +646,7 @@
       ],
       "kind": "struct",
       "name": "ValidatorAvailabilityDeclaration",
-      "typeTag": 14461394089017771297
+      "typeTag": 4179626686199785279
     },
     {
       "fields": [
@@ -673,7 +673,7 @@
       ],
       "kind": "struct",
       "name": "StakePosition",
-      "typeTag": 17519088700529435799
+      "typeTag": 14190113807758788125
     },
     {
       "fields": [
@@ -712,12 +712,12 @@
       ],
       "kind": "struct",
       "name": "PositionSummary",
-      "typeTag": 10483531860509511527
+      "typeTag": 3726447748782674837
     },
     {
       "kind": "enum",
       "name": "CandidateRejectionReason",
-      "typeTag": 13094854944792351326,
+      "typeTag": 17201629756416083620,
       "variants": [
         {
           "fields": [],
@@ -743,7 +743,7 @@
       ],
       "kind": "struct",
       "name": "CandidateRejection",
-      "typeTag": 16749092228488017642
+      "typeTag": 15654288327322174056
     },
     {
       "fields": [
@@ -754,7 +754,7 @@
       ],
       "kind": "struct",
       "name": "EligibleValidator",
-      "typeTag": 18331887239788035103
+      "typeTag": 12967353812923512353
     },
     {
       "fields": [
@@ -797,7 +797,7 @@
       ],
       "kind": "struct",
       "name": "EpochTransition",
-      "typeTag": 15918548627764098664
+      "typeTag": 9344730928551392874
     },
     {
       "fields": [
@@ -808,7 +808,7 @@
       ],
       "kind": "struct",
       "name": "EpochConfig",
-      "typeTag": 16686700291657106181
+      "typeTag": 790403047666676143
     },
     {
       "fields": [
@@ -819,7 +819,7 @@
       ],
       "kind": "struct",
       "name": "EpochState",
-      "typeTag": 10464001984863153512
+      "typeTag": 15778165943840037534
     },
     {
       "fields": [
@@ -842,7 +842,7 @@
       ],
       "kind": "struct",
       "name": "RewardTreasury",
-      "typeTag": 303897710074356804
+      "typeTag": 1442178874165866558
     },
     {
       "fields": [
@@ -861,7 +861,7 @@
       ],
       "kind": "struct",
       "name": "ValidatorMetadata",
-      "typeTag": 5113745851405436789
+      "typeTag": 17511599964102826003
     },
     {
       "fields": [
@@ -892,7 +892,7 @@
       ],
       "kind": "struct",
       "name": "PoolAccounting",
-      "typeTag": 8885911992509280689
+      "typeTag": 16988373117473174839
     },
     {
       "fields": [
@@ -907,7 +907,7 @@
       ],
       "kind": "struct",
       "name": "RewardAccounting",
-      "typeTag": 17782288577908561212
+      "typeTag": 1181440605041224790
     },
     {
       "fields": [
@@ -918,7 +918,7 @@
       ],
       "kind": "struct",
       "name": "AddressList",
-      "typeTag": 14016723206793154190
+      "typeTag": 9080845241225858752
     },
     {
       "fields": [
@@ -933,7 +933,7 @@
       ],
       "kind": "struct",
       "name": "StoredEpochConfig",
-      "typeTag": 6676851746566294408
+      "typeTag": 9512231142407357626
     },
     {
       "kind": "builtin",
@@ -965,107 +965,107 @@
     {
       "name": "_ValidatorMetadata",
       "type": "ValidatorMetadata",
-      "typeTag": 5113745851405436789
+      "typeTag": 17511599964102826003
     },
     {
       "name": "_ValidatorByOperator",
       "type": "Address",
-      "typeTag": 2932656090694604690
+      "typeTag": 9806102218600167672
     },
     {
       "name": "_ValidatorStatus",
       "type": "ValidatorStatus",
-      "typeTag": 13064668281266539954
+      "typeTag": 5132077725531038584
     },
     {
       "name": "_PoolAccounting",
       "type": "PoolAccounting",
-      "typeTag": 8885911992509280689
+      "typeTag": 16988373117473174839
     },
     {
       "name": "_StakePosition",
       "type": "StakePosition",
-      "typeTag": 4315718473348021435
+      "typeTag": 14859013463693066045
     },
     {
       "name": "_CandidatePool",
       "type": "CandidatePool",
-      "typeTag": 13697025346691171769
+      "typeTag": 15437757413694511843
     },
     {
       "name": "_StakeIntent",
       "type": "StakeIntent",
-      "typeTag": 14197438823968938622
+      "typeTag": 10313783317547306328
     },
     {
       "name": "_UnstakeIntent",
       "type": "UnstakeIntent",
-      "typeTag": 16353406510077713387
+      "typeTag": 8641460296372788969
     },
     {
       "name": "_CandidateIntent",
       "type": "CandidateIntent",
-      "typeTag": 14589332730925993977
+      "typeTag": 4233802019945464043
     },
     {
       "name": "_StakeIntentValidatorsByEpoch",
       "type": "AddressList",
-      "typeTag": 14016723206793154190
+      "typeTag": 9080845241225858752
     },
     {
       "name": "_UnstakeIntentValidatorsByEpoch",
       "type": "AddressList",
-      "typeTag": 14016723206793154190
+      "typeTag": 9080845241225858752
     },
     {
       "name": "_CandidateIntentValidatorsByEpoch",
       "type": "AddressList",
-      "typeTag": 14016723206793154190
+      "typeTag": 9080845241225858752
     },
     {
       "name": "_AvailabilityDeclarationByEpochValidator",
       "type": "ValidatorAvailabilityDeclaration",
-      "typeTag": 11947663504094390661
+      "typeTag": 2554815861211612319
     },
     {
       "name": "_DeclaredValidatorsByEpoch",
       "type": "AddressList",
-      "typeTag": 14016723206793154190
+      "typeTag": 9080845241225858752
     },
     {
       "name": "_StakeIntentPositionsByValidator",
       "type": "AddressList",
-      "typeTag": 14016723206793154190
+      "typeTag": 9080845241225858752
     },
     {
       "name": "_UnstakeIntentPositionsByValidator",
       "type": "AddressList",
-      "typeTag": 14016723206793154190
+      "typeTag": 9080845241225858752
     },
     {
       "name": "_EpochTransitionByEpoch",
       "type": "EpochTransition",
-      "typeTag": 4868229573134556260
+      "typeTag": 10716014907264676618
     },
     {
       "name": "_EpochState",
       "type": "EpochState",
-      "typeTag": 12288930857070923756
+      "typeTag": 4913181019176484030
     },
     {
       "name": "_EpochConfig",
       "type": "StoredEpochConfig",
-      "typeTag": 6676851746566294408
+      "typeTag": 9512231142407357626
     },
     {
       "name": "_StakingToken",
       "type": "Address",
-      "typeTag": 2932656090694604690
+      "typeTag": 9806102218600167672
     },
     {
       "name": "_RewardAccounting",
       "type": "RewardAccounting",
-      "typeTag": 17782288577908561212
+      "typeTag": 1181440605041224790
     }
   ],
   "constants": [
@@ -1239,27 +1239,21 @@
     },
     {
       "code": 797,
-      "message": "Transparent ContextError",
-      "name": "ContextError",
-      "transparent": true
-    },
-    {
-      "code": 798,
       "message": "Epoch transition not found for epoch: {0}",
       "name": "EpochTransitionNotFound"
     },
     {
-      "code": 799,
+      "code": 798,
       "message": "Epoch transition inputs are frozen for epoch: {0}",
       "name": "EpochTransitionInProgress"
     },
     {
-      "code": 800,
+      "code": 799,
       "message": "Staking invariant violation: {0}",
       "name": "InvariantViolation"
     },
     {
-      "code": 801,
+      "code": 800,
       "message": "protocol epoch clock is not initialized",
       "name": "EpochClockNotReady"
     }

@@ -220,14 +220,14 @@ func TestDeserializeEventEntry(t *testing.T) {
 		body := append(append(pool, recipient...), 42) // EventCreditApplied payload: pool + recipient + amount
 
 		ser := postcard.NewSerializer()
-		ser.SerializeU64(7407037194950745602) // type_tag: EventCreditApplied (demo event)
+		ser.SerializeU64(14232600292727055113) // type_tag: EventCreditApplied (demo event)
 		ser.SerializeBytes(body)              // body: Vec<u8>, WITH length prefix
 
 		entry, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.TypeTagWithData, error) {
 			return api.DeserializeEventEntry(d)
 		}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"demo": pd}})
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(7407037194950745602), entry.TypeTag)
+		assert.Equal(t, uint64(14232600292727055113), entry.TypeTag)
 		assert.Equal(t, body, entry.Value)
 	})
 }
@@ -258,7 +258,7 @@ func TestDeserializeEventEntryNoLen(t *testing.T) {
 		}
 
 		ser := postcard.NewSerializer()
-		ser.SerializeU64(7407037194950745602) // type_tag: EventCreditApplied (demo event)
+		ser.SerializeU64(14232600292727055113) // type_tag: EventCreditApplied (demo event)
 		ser.SerializeFixedBytes(pool)         // pool (Address, 20B)
 		ser.SerializeFixedBytes(recipient)    // recipient (Address, 20B)
 		ser.SerializeFixedBytes([]byte{42})   // amount (u64 = 42, varint), NO length prefix
@@ -267,7 +267,7 @@ func TestDeserializeEventEntryNoLen(t *testing.T) {
 			return api.DeserializeEventEntryNoLen(d)
 		}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"demo": pd}})
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(7407037194950745602), entry.TypeTag)
+		assert.Equal(t, uint64(14232600292727055113), entry.TypeTag)
 
 		want := append(append(pool, recipient...), 42)
 		assert.Equal(t, want, entry.Value)
