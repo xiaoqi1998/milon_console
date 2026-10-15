@@ -58,6 +58,8 @@ func newAccountsContractRouter(t *testing.T) *gin.Engine {
 	}
 	api.POST("/tool/sft-flow", NewSftFlowHandler(nm).SftFlow)
 	api.POST("/tool/vc-flow", NewVcFlowHandler(nm).VcFlow)
+	// Task 8：accounts-config 脱敏回显路由（路径与 main.go 一致）
+	api.GET("/accounts-config", NewAccountsConfigHandler().List)
 	return r
 }
 

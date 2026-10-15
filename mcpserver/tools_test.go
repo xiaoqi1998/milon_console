@@ -2,8 +2,10 @@ package mcpserver
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -59,8 +61,9 @@ func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers ma
 
 // wantToolCount 锁定工具总数。每新增一个 MCP 工具：+1 并在 TestToolsListBasics
 // 的 want 列表补名。2026-10 变动：+guide=65；contract_write_multi_agent 与
-// contract_write_multisig 两个壳并入 contract_write 显式 paymentMode（-2）=63。
-const wantToolCount = 63
+// contract_write_multisig 两个壳并入 contract_write 显式 paymentMode（-2）=63；
+// +account_config_list（配置账户脱敏回显）=64。
+const wantToolCount = 64
 
 func TestToolsListBasics(t *testing.T) {
 	srv := mcpHTTPServer(t, "")
@@ -98,7 +101,9 @@ func TestToolsListBasics(t *testing.T) {
 		"saved_instruction_get", "saved_instruction_update", "saved_instruction_delete",
 		"saved_instruction_execute",
 		// Task 6：高层 flow 工具（4 个）
-		"vc_flow", "sft_flow", "bulk_transfer", "bulk_transfer_status", "transfer_mil", "error_lookup"}
+		"vc_flow", "sft_flow", "bulk_transfer", "bulk_transfer_status", "transfer_mil", "error_lookup",
+		// Task 8：配置账户脱敏回显（1 个）
+		"account_config_list"}
 	for _, w := range want {
 		found := false
 		for _, n := range names {
@@ -707,6 +712,9 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"error_lookup":         {"query"},
 		// guide 为本地工具（guide.go）：topic 必填六选一，q 可选
 		"guide": {"topic"},
+		// Task 8：accounts_config_handler.go List 无任何必填参数
+		// （middleware 解析账户头/env，空集走提示文案分支），emptyArgs 镜像。
+		"account_config_list": {},
 	}
 	if len(want) != wantToolCount {
 		t.Fatalf("用例表=%d, want %d（新工具须回 handler 事实源核对后补行）", len(want), wantToolCount)
@@ -1083,5 +1091,55 @@ func TestSchemasHaveDescriptions(t *testing.T) {
 		if !strings.Contains(pmDesc, kw) {
 			t.Errorf("contract_write.paymentMode 描述缺模式/字段说明 %q，got %q", kw, pmDesc)
 		}
+	}
+}
+
+// 多用户零互串不变量：MCP 侧只透传不落状态——A 请求的账户头只在 A 的回环
+// 出现，B 请求绝不受 A 残留影响（ctxKeyAccounts 逐请求注入的最直接证明）。
+func TestMCPAccountsHeaderPassthroughIsolation(t *testing.T) {
+	var mu sync.Mutex
+	var seenHeaders []string
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		seenHeaders = append(seenHeaders, r.Header.Get("X-Milon-Accounts"))
+		mu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"code":0,"data":[],"message":"ok"}`))
+	}))
+	t.Cleanup(backend.Close)
+	t.Setenv("MILON_REST_BASE_URL", backend.URL)
+	front := httptest.NewServer(NewMCPHandler(""))
+	t.Cleanup(front.Close)
+
+	hdrA := base64.StdEncoding.EncodeToString([]byte(`[{"address":"AddrA","privateKey":"aa"}]`))
+	hdrB := base64.StdEncoding.EncodeToString([]byte(`[{"address":"AddrB","privateKey":"bb"}]`))
+
+	callWith := func(hdr string) {
+		req, _ := http.NewRequest(http.MethodPost, front.URL, strings.NewReader(
+			`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"account_config_list","arguments":{}}}`))
+		req.Header.Set("Content-Type", "application/json")
+		// Streamable HTTP 协议要求 Accept 同时含 JSON 与 SSE（同 rpcCall 脚手架），
+		// 缺失会被 406 拒绝、回环零请求。
+		req.Header.Set("Accept", "application/json, text/event-stream")
+		req.Header.Set("X-Milon-Accounts", hdr)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("front 不可达: %v", err)
+		}
+		defer resp.Body.Close()
+		_, _ = io.ReadAll(resp.Body)
+	}
+
+	callWith(hdrA)
+	callWith(hdrB)
+	callWith(hdrA)
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(seenHeaders) != 3 {
+		t.Fatalf("回环请求数=%d want 3: %v", len(seenHeaders), seenHeaders)
+	}
+	if seenHeaders[0] != hdrA || seenHeaders[1] != hdrB || seenHeaders[2] != hdrA {
+		t.Fatalf("账户头透传错序/残留: %v", seenHeaders)
 	}
 }

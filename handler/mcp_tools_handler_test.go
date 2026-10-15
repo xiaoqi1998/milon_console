@@ -12,7 +12,7 @@ import (
 )
 
 // TestMcpToolsEndpoint 锁定 GET /api/mcp/tools：标准成功响应包裹全部
-// MCP 工具清单（与 mcpserver 注册表同源），五字段齐备且总数 = 63。
+// MCP 工具清单（与 mcpserver 注册表同源），五字段齐备且总数 = 64。
 // handler 包测试不经过 main 的 /mcp 挂载，同时验证 ToolInventory 的
 // 惰性初始化在 REST-only 场景下可用。
 func TestMcpToolsEndpoint(t *testing.T) {
@@ -48,9 +48,9 @@ func TestMcpToolsEndpoint(t *testing.T) {
 		t.Fatalf("端点返回 %d 个 != inventory %d 个", len(resp.Data), len(mcpserver.ToolInventory()))
 	}
 	// 下限防工具意外丢失。2026-10 瘦身：multi_agent/multisig 两壳并入
-	// contract_write 后 65→63（与 mcpserver.wantToolCount 同源）。
-	if len(resp.Data) < 63 {
-		t.Fatalf("工具数=%d, want ≥63", len(resp.Data))
+	// contract_write 后 65→63；+account_config_list=64（与 mcpserver.wantToolCount 同源）。
+	if len(resp.Data) < 64 {
+		t.Fatalf("工具数=%d, want ≥64", len(resp.Data))
 	}
 	seen := map[string]bool{}
 	for _, ti := range resp.Data {

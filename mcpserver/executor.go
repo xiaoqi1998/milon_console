@@ -26,6 +26,15 @@ func networkFromCtx(ctx context.Context) string {
 	return s
 }
 
+// ctxKeyAccounts 是 /mcp 请求的 X-Milon-Accounts 头原文载体（executor 回环
+// 透传，REST 侧 ResolveAccounts 中间件解析——与网络头同构）。
+type ctxKeyAccounts struct{}
+
+func accountsFromCtx(ctx context.Context) string {
+	s, _ := ctx.Value(ctxKeyAccounts{}).(string)
+	return s
+}
+
 // RESTMapping 声明一个 MCP 工具对应的 REST 调用。
 type RESTMapping struct {
 	Method       string // "GET" / "POST" / "PUT" / "DELETE"
@@ -102,6 +111,10 @@ func (e *Executor) Call(ctx context.Context, m RESTMapping, argsJSON json.RawMes
 	// 由 REST 侧 ResolveNetwork 中间件解析——executor 自身不校验网络名合法性。
 	if net := networkFromCtx(ctx); net != "" {
 		req.Header.Set("X-Milon-Network", net)
+	}
+	// 配置账户头透传：MCP 侧不校验（校验单一发生在 REST 中间件，规则不漂移）。
+	if acc := accountsFromCtx(ctx); acc != "" {
+		req.Header.Set("X-Milon-Accounts", acc)
 	}
 	resp, err := e.http.Do(req)
 	if err != nil {

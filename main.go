@@ -56,6 +56,7 @@ func main() {
 	}
 	mcpToolsHandler := handler.NewMcpToolsHandler()
 	errorLookupHandler := handler.NewErrorLookupHandler()
+	accountsConfigHandler := handler.NewAccountsConfigHandler()
 
 	api := r.Group("/api")
 	// 请求级网络选择：X-Milon-Network 头 → 对应网络 client；缺省走服务端默认网络
@@ -183,6 +184,9 @@ func main() {
 
 		// MCP tool inventory (programmatic discovery of all /mcp tools)
 		api.GET("/mcp/tools", mcpToolsHandler.ListTools)
+
+		// Configured accounts (masked echo of the request's X-Milon-Accounts / MILON_ACCOUNTS)
+		api.GET("/accounts-config", accountsConfigHandler.List)
 	}
 
 	// MCP 端点：把全部 REST 能力暴露为 MCP 工具（Streamable HTTP, stateless）

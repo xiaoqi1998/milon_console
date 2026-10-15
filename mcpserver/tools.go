@@ -766,9 +766,14 @@ func NewMCPHandler(token string) http.Handler {
 	// 请求级网络（Task 4）：X-Milon-Network 头注入 request context，工具回调
 	// 的 ctx（go-sdk 从 r.Context() 传播）→ Executor.Call 回环透传同名头。
 	// 注入层放最外（先注入再鉴权）：401 路径响应不受影响，行为不变。
+	// 配置账户头（Task 8）同款注入：X-Milon-Accounts 原文进 ctx，回环由 REST
+	// 侧 ResolveAccounts 中间件解析；MCP 层不落任何账户状态（逐请求无残留）。
 	withNetwork := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if net := r.Header.Get("X-Milon-Network"); net != "" {
 			r = r.WithContext(context.WithValue(r.Context(), ctxKeyNetwork{}, net))
+		}
+		if acc := r.Header.Get("X-Milon-Accounts"); acc != "" {
+			r = r.WithContext(context.WithValue(r.Context(), ctxKeyAccounts{}, acc))
 		}
 		inner.ServeHTTP(w, r)
 	})
@@ -796,7 +801,7 @@ func bearerAuth(token string, next http.Handler) http.Handler {
 
 // RegisterTools 注册全部工具；基础 21 个 + 合约家族 7 个 + 原始交易 3 个 +
 // 视图 2 个 + 密钥/签名/VC 5 个 + DID 12 个 + 保存指令 6 个 + 高层 flow 6 个 +
-// guide 快速手册 1 个（共 63 个）。
+// 配置账户回显 1 个 + guide 快速手册 1 个（共 64 个，+account_config_list）。
 // 2026-10 瘦身：contract_write_multi_agent / contract_write_multisig 两个
 // MCP 壳并入 contract_write 的 paymentMode 显式传参（REST 端点保留）。
 func RegisterTools(srv *mcp.Server, exec *Executor) {
@@ -811,6 +816,10 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		})
 
 	registerTool[emptyArgs](srv, exec, "network_list", "列出内置网络（devNet/localNet）及当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/list"})
+	// Task 8：配置账户脱敏回显（与 REST GET /api/accounts-config 同源）。
+	registerTool[emptyArgs](srv, exec, "account_config_list",
+		"列出当前客户端配置的操作账户（mcp.json headers X-Milon-Accounts 携带；脱敏回显地址/曲线/公钥指纹，永不回私钥）；写工具私钥缺省时按地址自动引用这些账户",
+		RESTMapping{Method: "GET", PathTemplate: "/api/accounts-config"})
 	registerTool[emptyArgs](srv, exec, "network_current", "查询当前网络", RESTMapping{Method: "GET", PathTemplate: "/api/network/current"})
 	registerTool[networkSwitchArgs](srv, exec, "network_switch", "设置服务端默认网络（仅影响未携带 X-Milon-Network 头的请求；devNet/localNet）", RESTMapping{Method: "POST", PathTemplate: "/api/network/switch"})
 	registerTool[accountGenerateArgs](srv, exec, "account_generate", "生成新账户（返回私钥/公钥/地址）", RESTMapping{Method: "POST", PathTemplate: "/api/accounts/generate"})
