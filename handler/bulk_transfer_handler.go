@@ -78,11 +78,39 @@ type bulkTransferJob struct {
 	mu sync.Mutex
 }
 
-func (j *bulkTransferJob) snapshot() bulkTransferJob {
+// bulkTransferJobSnapshot 是 bulkTransferJob 的无锁快照 DTO。此前 snapshot
+// 直接 `cp := *j` 整值拷贝——把 sync.Mutex 一并复制（go vet: assignment copies
+// lock value），复制出的锁零值无保护语义；逐字段拷贝导出字段，wire 输出不变。
+type bulkTransferJobSnapshot struct {
+	ID               string               `json:"id"`
+	Status           string               `json:"status"` // running | completed
+	Count            int                  `json:"count"`
+	ToAddress        string               `json:"toAddress"`
+	Done             int                  `json:"done"`
+	Success          int                  `json:"success"`
+	Failed           int                  `json:"failed"`
+	TotalTransferred uint64               `json:"totalTransferred"`
+	StartedAt        int64                `json:"startedAt"`
+	FinishedAt       int64                `json:"finishedAt"`
+	Results          []bulkTransferResult `json:"results,omitempty"`
+}
+
+func (j *bulkTransferJob) snapshot() bulkTransferJobSnapshot {
 	j.mu.Lock()
 	defer j.mu.Unlock()
-	cp := *j
-	return cp
+	return bulkTransferJobSnapshot{
+		ID:               j.ID,
+		Status:           j.Status,
+		Count:            j.Count,
+		ToAddress:        j.ToAddress,
+		Done:             j.Done,
+		Success:          j.Success,
+		Failed:           j.Failed,
+		TotalTransferred: j.TotalTransferred,
+		StartedAt:        j.StartedAt,
+		FinishedAt:       j.FinishedAt,
+		Results:          j.Results,
+	}
 }
 
 // BulkTransfer 处理 POST /api/tool/bulk-transfer。
