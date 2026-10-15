@@ -62,3 +62,10 @@ data/
 h1.json
 acc*.json
 derive*.json
+
+# Seeder runtime artifacts (state 含确定性测试私钥,可由 seed 短语再生成,不入库)
+tools/seeder/seed_state.json
+tools/seeder/seed_state.json.tmp
+tools/seeder/__pycache__/
+__pycache__/
+*.pyc
