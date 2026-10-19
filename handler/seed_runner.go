@@ -397,7 +397,10 @@ func (r *seedRunner) runTokens() error {
 // ---------- compliance ----------
 
 func (r *seedRunner) runCompliance() error {
-	c := r.plan.Compliance
+	if len(r.plan.Compliance) == 0 {
+		return nil
+	}
+	c := r.plan.Compliance[0]
 	token := r.acct(c.Symbol)
 	admin := r.acct("admin")
 	issuer := r.acct(c.IssuerName)

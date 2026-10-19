@@ -119,9 +119,9 @@ func SeedBuildAccounts(plan SeedPlan) (map[string]*SeedPlanAccount, error) {
 			return nil, err
 		}
 	}
-	{
-		spec := SeedAccountSpec{Name: plan.Compliance.Symbol, Role: "token", Curve: "secp256k1"}
-		if err := reg(spec, plan.Compliance.Symbol); err != nil {
+	for _, cm := range plan.Compliance {
+		spec := SeedAccountSpec{Name: cm.Symbol, Role: "token", Curve: "secp256k1"}
+		if err := reg(spec, cm.Symbol); err != nil {
 			return nil, err
 		}
 	}

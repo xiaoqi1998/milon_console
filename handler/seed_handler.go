@@ -167,9 +167,24 @@ func (h *SeedJobHandler) Seed(c *gin.Context) {
 				h.jobsMu.Unlock()
 			}
 		}()
+		plan, perr := BuildSeedPlan(req.Scale, req.SeedPhrase)
+		if perr != nil {
+			job.addLog("✗ 计划构建失败: %v", perr)
+			job.mu.Lock()
+			job.Status = "failed"
+			job.Error = perr.Error()
+			job.FinishedAt = time.Now().UnixMilli()
+			job.mu.Unlock()
+			h.jobsMu.Lock()
+			if h.runningID == jobID {
+				h.runningID = ""
+			}
+			h.jobsMu.Unlock()
+			return
+		}
 		r := &seedRunner{
 			mc:   mc,
-			plan: BuildSeedPlan(req.Scale, req.SeedPhrase),
+			plan: plan,
 			state: func() *SeedState {
 				st := LoadSeedState(statePath)
 				if req.Reset {
@@ -234,20 +249,22 @@ func (h *SeedJobHandler) SeedStatus(c *gin.Context) {
 		snap.Stages[module] = names
 	}
 	if snap.Status == "completed" {
-		plan := BuildSeedPlan(job.Scale, job.SeedPhrase)
-		// 地址表仅展示,私钥永不返回
-		accts, err := SeedBuildAccounts(plan)
-		if err == nil {
-			snap.Accounts = map[string]string{}
-			snap.Accounts["admin"] = accts["admin"].Address
-			for _, u := range plan.Users {
-				snap.Accounts[u.Name] = accts[u.Name].Address
-			}
-			for _, tk := range plan.Tokens {
-				snap.Accounts[tk.Symbol] = accts[tk.Symbol].Address
-			}
-			for _, s := range plan.Sfts {
-				snap.Accounts["SFT:"+s.Symbol] = accts[s.Key].Address
+		plan, perr := BuildSeedPlan(job.Scale, job.SeedPhrase)
+		if perr == nil {
+			// 地址表仅展示,私钥永不返回
+			accts, err := SeedBuildAccounts(plan)
+			if err == nil {
+				snap.Accounts = map[string]string{}
+				snap.Accounts["admin"] = accts["admin"].Address
+				for _, u := range plan.Users {
+					snap.Accounts[u.Name] = accts[u.Name].Address
+				}
+				for _, tk := range plan.Tokens {
+					snap.Accounts[tk.Symbol] = accts[tk.Symbol].Address
+				}
+				for _, s := range plan.Sfts {
+					snap.Accounts["SFT:"+s.Symbol] = accts[s.Key].Address
+				}
 			}
 		}
 	}
@@ -261,7 +278,12 @@ func (h *SeedJobHandler) SeedPlanPreview(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "scale must be full or small", nil))
 		return
 	}
-	c.JSON(http.StatusOK, types.SuccessResponse(BuildSeedPlan(scale, c.DefaultQuery("seedPhrase", SeedDefaultPhrase)), "ok"))
+	plan, err := BuildSeedPlan(scale, c.DefaultQuery("seedPhrase", SeedDefaultPhrase))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+	c.JSON(http.StatusOK, types.SuccessResponse(plan, "ok"))
 }
 
 // seedNormalizeModules 校验并补齐模块依赖(compliance → vc)。

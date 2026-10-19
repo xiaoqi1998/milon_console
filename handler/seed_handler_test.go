@@ -57,7 +57,8 @@ func TestSeedPlanPreviewEndpoint(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if !body.Success || body.Data.Scale != "small" || len(body.Data.Users) != 4 || len(body.Data.Tokens) != 3 {
+	// v2 兼容映射:small → minimal 模板(3 账号/1 代币,规格 §3)
+	if !body.Success || body.Data.Scale != "small" || len(body.Data.Users) != 3 || len(body.Data.Tokens) != 1 {
 		t.Fatalf("plan 响应异常: success=%v scale=%s users=%d tokens=%d",
 			body.Success, body.Data.Scale, len(body.Data.Users), len(body.Data.Tokens))
 	}

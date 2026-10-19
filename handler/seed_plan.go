@@ -163,18 +163,32 @@ type SeedTxsSpec struct {
 	Failures     []SeedFailureSpec `json:"failures"`
 }
 
+type SeedMultisigSpec struct {
+	Name        string   `json:"name"`
+	Curve       string   `json:"curve"`
+	Alias       string   `json:"alias"`
+	AliasSuffix uint32   `json:"aliasSuffix"`
+	SignerNames []string `json:"signerNames"`
+	Threshold   uint8    `json:"threshold"`
+	Faucet      bool     `json:"faucet"`
+	DID         bool     `json:"did"`
+}
+
 type SeedPlan struct {
-	Scale       string              `json:"scale"`
-	SeedPhrase  string              `json:"seedPhrase"`
-	Admin       SeedAccountSpec     `json:"admin"`
-	Users       []SeedAccountSpec   `json:"users"`
-	Issuers     []SeedAccountSpec   `json:"issuers"`
-	Tokens      []SeedTokenSpec     `json:"tokens"`
-	Sfts        []SeedSftSpec       `json:"sfts"`
-	VcIssuers   []SeedVcIssuerSpec  `json:"vcIssuers"`
-	VcLifecycle []SeedLifecycleOp   `json:"vcLifecycle"`
-	Compliance  SeedComplianceSpec  `json:"compliance"`
-	Txs         SeedTxsSpec         `json:"txs"`
+	Scale       string               `json:"scale"`      // 模板键 minimal|standard|full 或 custom
+	ConfigHash  string               `json:"configHash"` // 配置命名空间哈希
+	SeedPhrase  string               `json:"seedPhrase"`
+	Config      *SeedConfig          `json:"config,omitempty"` // 计划来源配置(执行期开关读这里)
+	Admin       SeedAccountSpec      `json:"admin"`
+	Users       []SeedAccountSpec    `json:"users"`
+	Issuers     []SeedAccountSpec    `json:"issuers"`
+	Multisig    []SeedMultisigSpec   `json:"multisig,omitempty"`
+	Tokens      []SeedTokenSpec      `json:"tokens"`
+	Sfts        []SeedSftSpec        `json:"sfts"`
+	VcIssuers   []SeedVcIssuerSpec   `json:"vcIssuers"`
+	VcLifecycle []SeedLifecycleOp    `json:"vcLifecycle"`
+	Compliance  []SeedComplianceSpec `json:"compliance"`
+	Txs         SeedTxsSpec          `json:"txs"`
 }
 
 // ---------- 计划构建 ----------
@@ -187,109 +201,6 @@ var seedHumanBase = map[uint8]uint64{
 	0: 1000, 1: 500, 2: 100, 3: 50, 4: 25, 5: 20, 6: 50, 7: 20, 8: 20, 9: 10,
 }
 
-func seedScenarioPack(sftKey string, names []string) []SeedScenario {
-	u := func(i int) string { return names[i%len(names)] }
-	meta := func(key, name, attr string) map[string]any {
-		return map[string]any{
-			"name":      name,
-			"coverUrl":  seedSlotCoverURL(sftKey, key),
-			"attribute": attr,
-		}
-	}
-	return []SeedScenario{
-		{
-			Key: "no_transfer", Name: "Slot-NoTransfer", Transferable: false,
-			SlotMeta: meta("no_transfer", "Slot-NoTransfer", "scenario=no_transfer;transferable=false"),
-			Dists: []SeedDist{
-				{To: u(0), Amount: 1}, {To: u(1), Amount: 1}, {To: u(2), Amount: 1},
-			},
-			PostOps: []SeedPostOp{{Op: "reject_transfer", By: u(0), To: u(3)}},
-		},
-		{
-			Key: "metadata_full", Name: "Slot-MetaFull", Transferable: true,
-			SlotMeta: map[string]any{
-				"name": "Slot-MetaFull", "symbol": "SMF",
-				"coverUrl": seedSlotCoverURL(sftKey, "metadata_full"),
-				"metadata": "scenario=metadata_full;all-fields-overridden",
-				"attribute": "scenario=metadata_full",
-			},
-			Dists: []SeedDist{{To: u(4), Amount: 1}, {To: u(4), Amount: 1}},
-		},
-		{
-			Key: "token_override", Name: "Slot-TokenOverride", Transferable: true,
-			SlotMeta: meta("token_override", "Slot-TokenOverride", "scenario=token_override"),
-			Dists: []SeedDist{
-				{To: u(0), Amount: 1, Override: map[string]any{
-					"name": "OV-01", "symbol": "OV",
-					"coverUrl": seedCardCoverURL(sftKey, "token_override", 1),
-					"metadata": "scenario=token_override;full-override",
-					"attribute": "grade=S",
-				}},
-				{To: u(0), Amount: 1, Override: map[string]any{"name": "OV-02", "attribute": "grade=A"}},
-			},
-		},
-		{
-			Key: "burn_shell", Name: "Slot-BurnShell", Transferable: true,
-			SlotMeta: meta("burn_shell", "Slot-BurnShell", "scenario=burn_shell;3-minted-1-burned"),
-			Dists: []SeedDist{
-				{To: u(4), Amount: 1, Override: map[string]any{"name": "BS-01"}},
-				{To: u(4), Amount: 1, Override: map[string]any{"name": "BS-02"}},
-				{To: u(4), Amount: 1, Override: map[string]any{"name": "BS-03"}},
-			},
-			PostOps: []SeedPostOp{{Op: "burn", By: u(4), Index: -1}},
-		},
-		{
-			Key: "multi_holder", Name: "Slot-MultiHolder", Transferable: true,
-			SlotMeta: meta("multi_holder", "Slot-MultiHolder", "scenario=multi_holder;1-token-3-holders"),
-			Dists:    []SeedDist{{To: "owner", Amount: 5, Override: map[string]any{"name": "MH-01"}}},
-			PostOps: []SeedPostOp{
-				{Op: "transfer", By: "owner", To: u(1), Amount: 2},
-				{Op: "transfer", By: "owner", To: u(5), Amount: 2},
-			},
-		},
-		{
-			Key: "empty", Name: "Slot-Empty", Transferable: true,
-			SlotMeta: meta("empty", "Slot-Empty", "scenario=empty;zero-tokens"),
-		},
-	}
-}
-
-func seedScenarioFilter(all []SeedScenario, keep map[string]bool) []SeedScenario {
-	out := []SeedScenario{}
-	for _, sc := range all {
-		if keep[sc.Key] {
-			out = append(out, sc)
-		}
-	}
-	return out
-}
-
-func seedTokens(names []string, decimals []uint8, freezeDecimals uint8) []SeedTokenSpec {
-	out := []SeedTokenSpec{}
-	for _, d := range decimals {
-		base := seedHumanBase[d]
-		mint := map[string]uint64{}
-		for i, name := range names {
-			mult := uint64(i + 1)
-			if d >= 12 { // 不会出现(上限 9),保留对齐 Python 的语义
-				mult = 1
-			}
-			mint[name] = base * mult * pow10u64(uint64(d))
-		}
-		freeze := ""
-		if d == freezeDecimals {
-			freeze = names[4%len(names)]
-		}
-		symbol := fmt.Sprintf("SEED%d", d)
-		out = append(out, SeedTokenSpec{
-			Symbol: symbol, Name: fmt.Sprintf("Seed Token %ddp", d), Decimals: d,
-			IconURL: seedTokenIconURL(symbol), URI: seedTokenURI(symbol),
-			MintAmounts: mint, FreezeDemoUser: freeze,
-		})
-	}
-	return out
-}
-
 func pow10u64(n uint64) uint64 {
 	v := uint64(1)
 	for i := uint64(0); i < n; i++ {
@@ -298,122 +209,26 @@ func pow10u64(n uint64) uint64 {
 	return v
 }
 
-// BuildSeedPlan 构建确定性播种计划(纯数据,零 IO)。
-func BuildSeedPlan(scale, seedPhrase string) SeedPlan {
-	var p SeedPlan
-	switch scale {
-	case "full":
-		names := seedTestNames(12)
-		p = SeedPlan{Scale: scale, SeedPhrase: seedPhrase}
-		p.Admin = SeedAccountSpec{Name: "admin", Role: "admin", Curve: "secp256k1",
-			SubjectType: "Personal", Alias: "seed-admin", AliasSuffix: 3001,
-			AvatarURL: seedAvatarURL("admin")}
-		p.Users = seedUserSpecs(names, 1001)
-		p.Issuers = []SeedAccountSpec{
-			{Name: "kycorg", Role: "issuer", Curve: "ed25519", SubjectType: "Organization",
-				Alias: "seed-kycorg", AliasSuffix: 2011, AvatarURL: seedAvatarURL("kycorg")},
-			{Name: "gameorg", Role: "issuer", Curve: "ed25519", SubjectType: "Organization",
-				Alias: "seed-gameorg", AliasSuffix: 2012, AvatarURL: seedAvatarURL("gameorg")},
-		}
-		decimals := []uint8{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-		p.Tokens = seedTokens(names, decimals, 8)
-		pack := seedScenarioPack("genesis", names)
-		keep := func(keys ...string) map[string]bool {
-			m := map[string]bool{}
-			for _, k := range keys {
-				m[k] = true
-			}
-			return m
-		}
-		p.Sfts = []SeedSftSpec{
-			{Key: "genesis", Name: "Seed Genesis Cards", Symbol: "SGC", RoyaltyBps: 250,
-				CoverURL: seedSftCoverURL("genesis"), MetadataURL: seedPicsum("milon-meta-sft-genesis", 400, 400),
-				Scenarios: seedScenarioFilter(pack, keep("no_transfer", "metadata_full", "token_override", "burn_shell", "multi_holder", "empty"))},
-			{Key: "gameitems", Name: "Seed Game Items", Symbol: "SGI", RoyaltyBps: 0,
-				CoverURL: seedSftCoverURL("gameitems"), MetadataURL: seedPicsum("milon-meta-sft-gameitems", 400, 400),
-				Scenarios: seedScenarioFilter(seedScenarioPack("gameitems", names), keep("multi_holder", "burn_shell", "token_override", "empty"))},
-		}
-		p.VcIssuers = []SeedVcIssuerSpec{
-			{IssuerName: "kycorg", SchemaPrefix: "SeedKyc", SchemaCount: 2, Schema: "SeedKyc1",
-				Certifies: append([]string{"admin"}, seedRangeNames(1, 8)...)},
-			{IssuerName: "gameorg", SchemaPrefix: "SeedPlayer", SchemaCount: 1, Schema: "SeedPlayer1",
-				Certifies: seedRangeNames(3, 10)},
-		}
-		p.VcLifecycle = []SeedLifecycleOp{
-			{IssuerName: "gameorg", Kind: "freeze", User: "test05"},
-			{IssuerName: "gameorg", Kind: "revoke", User: "test08"},
-		}
-		p.Compliance = SeedComplianceSpec{
-			Symbol: "SCUSD", Name: "Seed Compliant USD", Decimals: 6,
-			IconURL: seedTokenIconURL("SCUSD"), URI: seedTokenURI("SCUSD"),
-			IssuerName: "kycorg", Schema: "SeedKyc1", Mode: "Any",
-			MinterUser: "test02", CertifiedReceiver: "test01", UncertifiedVictim: "test09",
-		}
-		p.Txs = SeedTxsSpec{
-			MilTransfers: []SeedMilTransfer{
-				{From: "test01", To: "test03", Amount: 137 * seedMil},
-				{From: "test03", To: "test05", Amount: 89 * seedMil},
-				{From: "test05", To: "test07", Amount: 45 * seedMil},
-				{From: "test02", To: "test04", Amount: 200 * seedMil},
-				{From: "test04", To: "test06", Amount: 64 * seedMil},
-				{From: "test06", To: "test08", Amount: 100 * seedMil},
-				{From: "test08", To: "test10", Amount: 33 * seedMil},
-				{From: "test10", To: "test01", Amount: 21 * seedMil},
-			},
-			BatchFrom: "test01",
-			BatchTo:   []string{"test02", "test03", "test04", "test05", "test06"},
-			BatchAmounts: []uint64{10 * seedMil, 10 * seedMil, 10 * seedMil, 10 * seedMil, 10 * seedMil},
-			Failures: []SeedFailureSpec{
-				{Kind: "insufficient", ExpectCode: 513, By: "test04", Amount: math2Pow62(),
-					Detail: "超额转账触发 InsufficientBalance(513)"},
-			},
-		}
-	case "small":
-		names := seedTestNames(4)
-		p = SeedPlan{Scale: scale, SeedPhrase: seedPhrase}
-		p.Admin = SeedAccountSpec{Name: "admin", Role: "admin", Curve: "secp256k1",
-			SubjectType: "Personal", Alias: "seed-admin", AliasSuffix: 3001,
-			AvatarURL: seedAvatarURL("admin")}
-		p.Users = seedUserSpecs(names, 1001)
-		p.Issuers = []SeedAccountSpec{
-			{Name: "kycorg", Role: "issuer", Curve: "ed25519", SubjectType: "Organization",
-				Alias: "seed-kycorg", AliasSuffix: 2011, AvatarURL: seedAvatarURL("kycorg")},
-		}
-		p.Tokens = seedTokens(names, []uint8{0, 6, 9}, 6)
-		p.Sfts = []SeedSftSpec{
-			{Key: "genesis", Name: "Seed Genesis Cards", Symbol: "SGC", RoyaltyBps: 250,
-				CoverURL: seedSftCoverURL("genesis"), MetadataURL: seedPicsum("milon-meta-sft-genesis", 400, 400),
-				Scenarios: seedScenarioFilter(seedScenarioPack("genesis", names),
-					map[string]bool{"no_transfer": true, "burn_shell": true, "multi_holder": true})},
-		}
-		p.VcIssuers = []SeedVcIssuerSpec{
-			{IssuerName: "kycorg", SchemaPrefix: "SeedKyc", SchemaCount: 2, Schema: "SeedKyc1",
-				Certifies: []string{"admin", "test01", "test02", "test03"}},
-		}
-		p.Compliance = SeedComplianceSpec{
-			Symbol: "SCUSD", Name: "Seed Compliant USD", Decimals: 6,
-			IconURL: seedTokenIconURL("SCUSD"), URI: seedTokenURI("SCUSD"),
-			IssuerName: "kycorg", Schema: "SeedKyc1", Mode: "Any",
-			MinterUser: "test02", CertifiedReceiver: "test01", UncertifiedVictim: "test04",
-		}
-		p.Txs = SeedTxsSpec{
-			MilTransfers: []SeedMilTransfer{
-				{From: "test01", To: "test03", Amount: 137 * seedMil},
-				{From: "test02", To: "test04", Amount: 89 * seedMil},
-				{From: "test03", To: "test01", Amount: 45 * seedMil},
-			},
-			BatchFrom: "test01",
-			BatchTo:   []string{"test02", "test03"},
-			BatchAmounts: []uint64{10 * seedMil, 10 * seedMil},
-			Failures: []SeedFailureSpec{
-				{Kind: "insufficient", ExpectCode: 513, By: "test04", Amount: math2Pow62(),
-					Detail: "超额转账触发 InsufficientBalance(513)"},
-			},
-		}
-	default:
-		panic(fmt.Sprintf("seed: 未知规模 %q(可选 full/small)", scale))
+// BuildSeedPlan 旧接口兼容包装:scale → 预设配置 → v2 构建。
+// full → full 模板;small → minimal 模板(规格 §3 兼容映射)。
+func BuildSeedPlan(scale, seedPhrase string) (SeedPlan, error) {
+	preset := scale
+	if preset == "small" {
+		preset = "minimal"
 	}
-	return p
+	cfg, err := SeedConfigForPreset(preset)
+	if err != nil {
+		return SeedPlan{}, err
+	}
+	if seedPhrase != "" {
+		cfg.SeedPhrase = seedPhrase
+	}
+	p, err := BuildSeedPlanV2(cfg)
+	if err != nil {
+		return SeedPlan{}, err
+	}
+	p.Scale = scale
+	return p, nil
 }
 
 func seedTestNames(n int) []string {
