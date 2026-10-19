@@ -22,7 +22,19 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 		},
 		AvatarUri: "https://kyc.example.org/logo.png",
 	}
-	submit(client, kycOrg, "Create (organization DID)", gen.Identity.Create.Args(kycOrg.addr, orgDoc).Encode)
+	//submit(
+	//	client,
+	//	kycOrg,
+	//	"Create (organization DID)",
+	//	gen.Identity.Create.Args(kycOrg.addr, orgDoc).Encode,
+	//)
+
+	submit(
+		client,
+		kycOrg,
+		"Create (organization DID)",
+		gen.Identity.CreateWithAlias.Args(kycOrg.addr, orgDoc, gen.IdentityDidName{Alias: "Kyc", Suffix: didNameSuffix(kycOrg.addr, 0)}).Encode,
+	)
 
 	// VcIssuer / KycProvider 角色要求至少声明一个凭证 schema
 	submit(
@@ -104,7 +116,20 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 		},
 		AvatarUri: "https://temp.example.org/logo.png",
 	}
-	submit(client, tempOrg, "Create (organization DID)", gen.Identity.Create.Args(tempOrg.addr, tempDoc).Encode)
+	//submit(
+	//	client,
+	//	tempOrg,
+	//	"Create (organization DID)",
+	//	gen.Identity.Create.Args(tempOrg.addr, tempDoc).Encode,
+	//)
+
+	submit(
+		client,
+		tempOrg,
+		"Create (organization DID)",
+		gen.Identity.CreateWithAlias.Args(tempOrg.addr, tempDoc, gen.IdentityDidName{Alias: "Kyc-Temp", Suffix: didNameSuffix(tempOrg.addr, 0)}).Encode,
+	)
+
 	submit(client,
 		tempOrg,
 		"RegisterOrganization",

@@ -78,7 +78,12 @@
         {
           "name": "validator",
           "role": "input",
-          "type": "Address"
+          "type": "ValidatorId"
+        },
+        {
+          "name": "controller",
+          "role": "signer",
+          "type": "Signer"
         },
         {
           "name": "consensus_account",
@@ -151,7 +156,7 @@
       "fields": [
         {
           "name": "validator",
-          "type": "Address"
+          "type": "ValidatorId"
         },
         {
           "name": "consensus_account",
@@ -209,6 +214,11 @@
     },
     {
       "kind": "builtin",
+      "name": "ValidatorId",
+      "typeTag": 14542707920151212342
+    },
+    {
+      "kind": "builtin",
       "name": "bool",
       "typeTag": 14785269867199075517
     },
@@ -246,18 +256,18 @@
     },
     {
       "name": "_ConsensusValidatorByAccount",
-      "type": "Address",
-      "typeTag": 6478658475801454583
+      "type": "ValidatorId",
+      "typeTag": 2421475251556737200
     },
     {
       "name": "_ConsensusValidatorByPubkey",
-      "type": "Address",
-      "typeTag": 6478658475801454583
+      "type": "ValidatorId",
+      "typeTag": 2421475251556737200
     },
     {
       "name": "_ConsensusValidatorByBls",
-      "type": "Address",
-      "typeTag": 6478658475801454583
+      "type": "ValidatorId",
+      "typeTag": 2421475251556737200
     },
     {
       "name": "_AppWake",

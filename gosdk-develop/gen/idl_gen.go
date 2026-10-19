@@ -95,7 +95,12 @@ provider.IDL{
 					provider.Arg{
 						Name: "validator",
 						Role: "input",
-						Type: "Address",
+						Type: "ValidatorId",
+					},
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
 					},
 					provider.Arg{
 						Name: "consensus_account",
@@ -168,7 +173,7 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "validator",
-						Type: "Address",
+						Type: "ValidatorId",
 					},
 					provider.StructField{
 						Name: "consensus_account",
@@ -226,6 +231,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "ValidatorId",
+				TypeTag: 14542707920151212342,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "bool",
 				TypeTag: 14785269867199075517,
 			},
@@ -263,18 +273,18 @@ provider.IDL{
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByAccount",
-				Type: "Address",
-				TypeTag: 6478658475801454583,
+				Type: "ValidatorId",
+				TypeTag: 2421475251556737200,
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByPubkey",
-				Type: "Address",
-				TypeTag: 6478658475801454583,
+				Type: "ValidatorId",
+				TypeTag: 2421475251556737200,
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByBls",
-				Type: "Address",
-				TypeTag: 6478658475801454583,
+				Type: "ValidatorId",
+				TypeTag: 2421475251556737200,
 			},
 			provider.Resource{
 				Name: "_AppWake",
@@ -429,6 +439,29 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
+						Name: "signer",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "weight",
+						Role: "input",
+						Type: "u8",
+					},
+				},
+				Discriminator: 30603,
+				Handler: "add_signer_by_address",
+				Kind: "entry",
+				Name: "AddSignerByAddress",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
 						Name: "signers",
 						Role: "input",
 						Type: "vec<PublicKey>",
@@ -448,6 +481,34 @@ provider.IDL{
 				Handler: "add_signers",
 				Kind: "entry",
 				Name: "AddSigners",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "signers",
+						Role: "input",
+						Type: "vec<Address>",
+					},
+					provider.Arg{
+						Name: "weights",
+						Role: "input",
+						Type: "bytes",
+					},
+					provider.Arg{
+						Name: "threshold",
+						Role: "input",
+						Type: "u8",
+					},
+				},
+				Discriminator: 19656,
+				Handler: "add_signers_by_address",
+				Kind: "entry",
+				Name: "AddSignersByAddress",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -1014,6 +1075,11 @@ provider.IDL{
 				Code: 287,
 				Message: "App-reserved address {0:?} cannot register or authenticate an account",
 				Name: "ReservedAppAddress",
+			},
+			provider.ErrorDef{
+				Code: 288,
+				Message: "Address {0:?} index 0 is not the FN-DSA-512 key that derives it",
+				Name: "SignerAddressKeyMismatch",
 			},
 		},
 		Constants: []provider.Constant{
@@ -1882,6 +1948,53 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "creator",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "token",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "start_at_ms",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "recipients",
+						Role: "input",
+						Type: "vec<VestingRecipient>",
+					},
+				},
+				Discriminator: 47760,
+				Handler: "create_vesting",
+				Kind: "entry",
+				Name: "CreateVesting",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "claimant",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "vesting_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 14230,
+				Handler: "claim_vesting",
+				Kind: "entry",
+				Name: "ClaimVesting",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "token",
 						Role: "input",
 						Type: "Address",
@@ -1962,6 +2075,43 @@ provider.IDL{
 				Name: "CanClaimGift",
 				Returns: provider.ReturnValue{
 					Type: "bool",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "vesting_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 14246,
+				Handler: "vesting_info",
+				Kind: "view",
+				Name: "VestingInfo",
+				Returns: provider.ReturnValue{
+					Type: "VestingState",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "vesting_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "recipient",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 6878,
+				Handler: "vesting_claimable",
+				Kind: "view",
+				Name: "VestingClaimable",
+				Returns: provider.ReturnValue{
+					Type: "u64",
 				},
 			},
 		},
@@ -2178,9 +2328,96 @@ provider.IDL{
 				TypeTag: 5496675755488506181,
 			},
 			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "recipient",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "total_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "initial_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "period_seconds",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "periods",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "amount_per_period",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "VestingRecipient",
+				TypeTag: 11383286172959698066,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "vesting_id",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "creator",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "token",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "start_at_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "recipients",
+						Type: "vec<VestingRecipient>",
+					},
+					provider.StructField{
+						Name: "claimed_amounts",
+						Type: "vec<u64>",
+					},
+					provider.StructField{
+						Name: "total_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "remaining_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "gas_budget",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "gas_refunded",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "seed",
+						Type: "B256",
+					},
+				},
+				Kind: "struct",
+				Name: "VestingState",
+				TypeTag: 5151897875976358800,
+			},
+			provider.IDLType{
 				Kind: "builtin",
 				Name: "Address",
 				TypeTag: 17438174819379414968,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -2206,11 +2443,6 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u8",
 				TypeTag: 631772817358541784,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "B256",
-				TypeTag: 12016729314829497160,
 			},
 		},
 		Resources: []provider.Resource{
@@ -2304,6 +2536,11 @@ provider.IDL{
 				Type: "u8",
 				TypeTag: 631772817358541784,
 			},
+			provider.Resource{
+				Name: "_Vesting",
+				Type: "VestingState",
+				TypeTag: 5151897875976358800,
+			},
 		},
 		Events: []provider.Event{
 			provider.Event{
@@ -2326,6 +2563,79 @@ provider.IDL{
 					},
 				},
 				TypeTag: 5552105765182429402,
+			},
+			provider.Event{
+				Name: "VestingCreated",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "vesting_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "creator",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "token",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "total_amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "gas_budget",
+						Type: "u64",
+					},
+				},
+				TypeTag: 15060776178379885906,
+			},
+			provider.Event{
+				Name: "VestingClaimed",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "vesting_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "recipient",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "claimed_amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 13484328491781583963,
+			},
+			provider.Event{
+				Name: "VestingGasRefunded",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "vesting_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "creator",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 4140942304272679532,
 			},
 			provider.Event{
 				Name: "Mint",
@@ -2519,6 +2829,41 @@ provider.IDL{
 				Message: "delivery rejected for {0:?}: {1}",
 				Name: "DeliveryRejected",
 			},
+			provider.ErrorDef{
+				Code: 537,
+				Message: "invalid vesting definition: {0}",
+				Name: "InvalidVestingDefinition",
+			},
+			provider.ErrorDef{
+				Code: 538,
+				Message: "vesting not found: {0:?}",
+				Name: "VestingNotFound",
+			},
+			provider.ErrorDef{
+				Code: 539,
+				Message: "vesting id already used: {0:?}",
+				Name: "VestingAlreadyExists",
+			},
+			provider.ErrorDef{
+				Code: 540,
+				Message: "vesting recipient not eligible: {0:?}",
+				Name: "VestingNotEligible",
+			},
+			provider.ErrorDef{
+				Code: 541,
+				Message: "vesting has no claimable amount",
+				Name: "VestingNothingClaimable",
+			},
+			provider.ErrorDef{
+				Code: 542,
+				Message: "vesting creator must be token owner",
+				Name: "VestingOwnerRequired",
+			},
+			provider.ErrorDef{
+				Code: 543,
+				Message: "vesting escrow invariant violated: {0:?}",
+				Name: "VestingEscrowInvariantViolation",
+			},
 		},
 		Constants: []provider.Constant{
 			provider.Constant{
@@ -2586,6 +2931,21 @@ provider.IDL{
 				Type: "u64",
 				Value: 1000,
 			},
+			provider.Constant{
+				Name: "MAX_VESTING_RECIPIENTS",
+				Type: "usize",
+				Value: 20,
+			},
+			provider.Constant{
+				Name: "VESTING_FEE_PER_CLAIM",
+				Type: "u64",
+				Value: 100000,
+			},
+			provider.Constant{
+				Name: "VESTING_SETTLEMENT_RESERVE",
+				Type: "u64",
+				Value: 100000,
+			},
 		},
 	},
 provider.IDL{
@@ -2598,120 +2958,149 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "operator",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "nonce",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "stake_asset",
 						Role: "input",
 						Type: "Address",
 					},
 					provider.Arg{
-						Name: "consensus_account",
+						Name: "reward_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "cycle_config",
+						Role: "input",
+						Type: "PoolCycleConfig",
+					},
+					provider.Arg{
+						Name: "reward_config",
+						Role: "input",
+						Type: "PoolRewardConfig",
+					},
+				},
+				Discriminator: 52671,
+				Handler: "create_pool",
+				Kind: "entry",
+				Name: "CreatePool",
+				Returns: provider.ReturnValue{
+					Type: "PoolId",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "consensus_pubkey",
+						Name: "pool_id",
 						Role: "input",
-						Type: "bytes",
+						Type: "PoolId",
 					},
 					provider.Arg{
-						Name: "bls_pubkey",
-						Role: "input",
-						Type: "bytes",
-					},
-					provider.Arg{
-						Name: "commission_rate_bps",
+						Name: "amount",
 						Role: "input",
 						Type: "u64",
 					},
 				},
-				Discriminator: 16533,
-				Handler: "create_validator",
+				Discriminator: 65380,
+				Handler: "stake_into_pool",
 				Kind: "entry",
-				Name: "CreateValidator",
+				Name: "StakeIntoPool",
+				Returns: provider.ReturnValue{
+					Type: "B256",
+				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "token",
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "stake_id",
 						Role: "input",
-						Type: "Address",
+						Type: "B256",
 					},
 				},
-				Discriminator: 3396,
-				Handler: "set_staking_token",
+				Discriminator: 27835,
+				Handler: "cancel_stake_by_id",
 				Kind: "entry",
-				Name: "SetStakingToken",
+				Name: "CancelStakeById",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "reward_per_validator",
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "stake_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "shares",
 						Role: "input",
 						Type: "u64",
 					},
 				},
-				Discriminator: 36863,
-				Handler: "initialize_epoch_config",
+				Discriminator: 27517,
+				Handler: "request_unstake_by_id",
 				Kind: "entry",
-				Name: "InitializeEpochConfig",
+				Name: "RequestUnstakeById",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "operator",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "stake_id",
 						Role: "input",
-						Type: "Address",
+						Type: "B256",
 					},
 				},
-				Discriminator: 36277,
-				Handler: "join_candidate_pool",
+				Discriminator: 44602,
+				Handler: "cancel_unstake_by_id",
 				Kind: "entry",
-				Name: "JoinCandidatePool",
+				Name: "CancelUnstakeById",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "operator",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "stake_id",
 						Role: "input",
-						Type: "Address",
+						Type: "B256",
 					},
 				},
-				Discriminator: 62212,
-				Handler: "leave_candidate_pool",
+				Discriminator: 50003,
+				Handler: "claim_rewards_by_id",
 				Kind: "entry",
-				Name: "LeaveCandidatePool",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "operator",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "validator",
-						Role: "input",
-						Type: "Address",
-					},
+				Name: "ClaimRewardsById",
+				Returns: provider.ReturnValue{
+					Type: "u64",
 				},
-				Discriminator: 62003,
-				Handler: "declare_validator_availability",
-				Kind: "entry",
-				Name: "DeclareValidatorAvailability",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -2721,15 +3110,20 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+					provider.Arg{
 						Name: "amount",
 						Role: "input",
 						Type: "u64",
 					},
 				},
-				Discriminator: 26413,
-				Handler: "fund_reward_treasury",
+				Discriminator: 61672,
+				Handler: "accrue_pool_reward",
 				Kind: "entry",
-				Name: "FundRewardTreasury",
+				Name: "AccruePoolReward",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -2739,20 +3133,20 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "pool_id",
 						Role: "input",
-						Type: "Address",
+						Type: "PoolId",
 					},
 					provider.Arg{
-						Name: "amount",
+						Name: "config",
 						Role: "input",
-						Type: "u64",
+						Type: "PoolRewardConfig",
 					},
 				},
-				Discriminator: 7586,
-				Handler: "stake",
+				Discriminator: 37925,
+				Handler: "request_pool_reward_config",
 				Kind: "entry",
-				Name: "Stake",
+				Name: "RequestPoolRewardConfig",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -2762,38 +3156,15 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "pool_id",
 						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "amount",
-						Role: "input",
-						Type: "u64",
+						Type: "PoolId",
 					},
 				},
-				Discriminator: 26203,
-				Handler: "cancel_pending_stake",
+				Discriminator: 17449,
+				Handler: "claim_pool_commission",
 				Kind: "entry",
-				Name: "CancelPendingStake",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "validator",
-						Role: "input",
-						Type: "Address",
-					},
-				},
-				Discriminator: 49863,
-				Handler: "claim_rewards",
-				Kind: "entry",
-				Name: "ClaimRewards",
+				Name: "ClaimPoolCommission",
 				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
@@ -2801,189 +3172,110 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "operator",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "validator",
-						Role: "input",
-						Type: "Address",
-					},
-				},
-				Discriminator: 13178,
-				Handler: "claim_operator_rewards",
-				Kind: "entry",
-				Name: "ClaimOperatorRewards",
-				Returns: provider.ReturnValue{
-					Type: "OperatorRewardReceipt",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
 						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "pool_id",
 						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "shares",
-						Role: "input",
-						Type: "u64",
+						Type: "PoolId",
 					},
 				},
-				Discriminator: 34861,
-				Handler: "request_unstake",
+				Discriminator: 55077,
+				Handler: "pause_pool",
 				Kind: "entry",
-				Name: "RequestUnstake",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "validator",
-						Role: "input",
-						Type: "Address",
-					},
-				},
-				Discriminator: 43284,
-				Handler: "validator_profile",
-				Kind: "view",
-				Name: "ValidatorProfile",
-				Returns: provider.ReturnValue{
-					Type: "ValidatorProfile",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "validator",
-						Role: "input",
-						Type: "Address",
-					},
-				},
-				Discriminator: 51337,
-				Handler: "validator_pool",
-				Kind: "view",
-				Name: "ValidatorPool",
-				Returns: provider.ReturnValue{
-					Type: "ValidatorPoolView",
-				},
+				Name: "PausePool",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
 						Name: "owner",
-						Role: "input",
-						Type: "Address",
+						Role: "signer",
+						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "pool_id",
 						Role: "input",
-						Type: "Address",
+						Type: "PoolId",
 					},
 				},
-				Discriminator: 24660,
-				Handler: "stake_position",
-				Kind: "view",
-				Name: "StakePosition",
-				Returns: provider.ReturnValue{
-					Type: "StakePosition",
-				},
+				Discriminator: 55138,
+				Handler: "resume_pool",
+				Kind: "entry",
+				Name: "ResumePool",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
 						Name: "owner",
-						Role: "input",
-						Type: "Address",
+						Role: "signer",
+						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "pool_id",
 						Role: "input",
-						Type: "Address",
+						Type: "PoolId",
 					},
 				},
-				Discriminator: 24212,
-				Handler: "position_summary",
-				Kind: "view",
-				Name: "PositionSummary",
-				Returns: provider.ReturnValue{
-					Type: "PositionSummary",
-				},
-			},
-			provider.Instruction{
-				Args: nil,
-				Discriminator: 57732,
-				Handler: "candidate_pool",
-				Kind: "view",
-				Name: "CandidatePool",
-				Returns: provider.ReturnValue{
-					Type: "CandidatePool",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "epoch",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 24093,
-				Handler: "epoch_transition",
-				Kind: "view",
-				Name: "EpochTransition",
-				Returns: provider.ReturnValue{
-					Type: "EpochTransition",
-				},
-			},
-			provider.Instruction{
-				Args: nil,
-				Discriminator: 41632,
-				Handler: "epoch_config",
-				Kind: "view",
-				Name: "EpochConfig",
-				Returns: provider.ReturnValue{
-					Type: "EpochConfig",
-				},
-			},
-			provider.Instruction{
-				Args: nil,
-				Discriminator: 29979,
-				Handler: "epoch_state",
-				Kind: "view",
-				Name: "EpochState",
-				Returns: provider.ReturnValue{
-					Type: "EpochState",
-				},
-			},
-			provider.Instruction{
-				Args: nil,
-				Discriminator: 46445,
-				Handler: "reward_treasury",
-				Kind: "view",
-				Name: "RewardTreasury",
-				Returns: provider.ReturnValue{
-					Type: "RewardTreasury",
-				},
+				Discriminator: 22554,
+				Handler: "freeze_pool",
+				Kind: "entry",
+				Name: "FreezePool",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
 						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
 						Role: "input",
-						Type: "Address",
+						Type: "PoolId",
 					},
 				},
-				Discriminator: 45674,
-				Handler: "held_principal",
-				Kind: "view",
-				Name: "HeldPrincipal",
+				Discriminator: 43503,
+				Handler: "unfreeze_pool",
+				Kind: "entry",
+				Name: "UnfreezePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 40303,
+				Handler: "close_pool",
+				Kind: "entry",
+				Name: "ClosePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 51163,
+				Handler: "sweep_pool_residual",
+				Kind: "entry",
+				Name: "SweepPoolResidual",
 				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
@@ -2991,17 +3283,247 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "epoch",
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "stake_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_per_validator",
 						Role: "input",
 						Type: "u64",
 					},
 				},
-				Discriminator: 13153,
-				Handler: "list_declared_validators_for_epoch",
+				Discriminator: 48796,
+				Handler: "configure_validator_reward_policy",
+				Kind: "entry",
+				Name: "ConfigureValidatorRewardPolicy",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "funder",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "stake_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "amount",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 55411,
+				Handler: "fund_validator_reward_policy",
+				Kind: "entry",
+				Name: "FundValidatorRewardPolicy",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 60310,
+				Handler: "pool",
 				Kind: "view",
-				Name: "ListDeclaredValidatorsForEpoch",
+				Name: "Pool",
 				Returns: provider.ReturnValue{
-					Type: "vec<Address>",
+					Type: "Pool",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "stake_id",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 56858,
+				Handler: "stake_by_id",
+				Kind: "view",
+				Name: "StakeById",
+				Returns: provider.ReturnValue{
+					Type: "Stake",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 309,
+				Handler: "pool_treasury_balance",
+				Kind: "view",
+				Name: "PoolTreasuryBalance",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 28539,
+				Handler: "stake_ids",
+				Kind: "view",
+				Name: "StakeIds",
+				Returns: provider.ReturnValue{
+					Type: "vec<B256>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 8203,
+				Handler: "stake_position_by_pool",
+				Kind: "view",
+				Name: "StakePositionByPool",
+				Returns: provider.ReturnValue{
+					Type: "PoolStakePosition",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 64591,
+				Handler: "pending_stakes",
+				Kind: "view",
+				Name: "PendingStakes",
+				Returns: provider.ReturnValue{
+					Type: "vec<B256>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 32423,
+				Handler: "total_shares",
+				Kind: "view",
+				Name: "TotalShares",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 11487,
+				Handler: "total_stake",
+				Kind: "view",
+				Name: "TotalStake",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "PoolId",
+					},
+				},
+				Discriminator: 20540,
+				Handler: "reward_index",
+				Kind: "view",
+				Name: "RewardIndex",
+				Returns: provider.ReturnValue{
+					Type: "u128",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "stake_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_asset",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 16051,
+				Handler: "validator_reward_policy",
+				Kind: "view",
+				Name: "ValidatorRewardPolicy",
+				Returns: provider.ReturnValue{
+					Type: "ValidatorRewardPolicy",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 51436,
+				Handler: "validator_reward_policy_configured",
+				Kind: "view",
+				Name: "ValidatorRewardPolicyConfigured",
+				Returns: provider.ReturnValue{
+					Type: "bool",
 				},
 			},
 		},
@@ -3009,77 +3531,193 @@ provider.IDL{
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
 					provider.EnumVariant{
-						Name: "Inactive",
+						Name: "Open",
 						Kind: "unit",
 						Fields: nil,
 					},
 					provider.EnumVariant{
-						Name: "Candidate",
+						Name: "Paused",
 						Kind: "unit",
 						Fields: nil,
 					},
 					provider.EnumVariant{
-						Name: "Active",
+						Name: "Frozen",
 						Kind: "unit",
 						Fields: nil,
 					},
 					provider.EnumVariant{
-						Name: "Leaving",
+						Name: "Closing",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Drained",
 						Kind: "unit",
 						Fields: nil,
 					},
 				},
 				Kind: "enum",
-				Name: "ValidatorStatus",
-				TypeTag: 6879883576545234008,
+				Name: "PoolStatus",
+				TypeTag: 17680148924642691372,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Disabled",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "System",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "SlashingMode",
+				TypeTag: 6613645985445293540,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Epoch",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Block",
+						Kind: "struct",
+						Fields: []provider.StructField{
+							provider.StructField{
+								Name: "anchor_block",
+								Type: "u64",
+							},
+							provider.StructField{
+								Name: "length_blocks",
+								Type: "u64",
+							},
+						},
+					},
+					provider.EnumVariant{
+						Name: "Timestamp",
+						Kind: "struct",
+						Fields: []provider.StructField{
+							provider.StructField{
+								Name: "anchor_timestamp_ms",
+								Type: "u64",
+							},
+							provider.StructField{
+								Name: "length_ms",
+								Type: "u64",
+							},
+						},
+					},
+				},
+				Kind: "enum",
+				Name: "CycleBasis",
+				TypeTag: 745494636739994664,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "validator",
-						Type: "Address",
+						Name: "basis",
+						Type: "CycleBasis",
 					},
 					provider.StructField{
-						Name: "operator",
-						Type: "Address",
+						Name: "stake_activation_delay",
+						Type: "u64",
 					},
 					provider.StructField{
-						Name: "status",
-						Type: "ValidatorStatus",
+						Name: "unstake_activation_delay",
+						Type: "u64",
 					},
 					provider.StructField{
-						Name: "commission_rate_bps",
+						Name: "reward_distribution_delay",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "commission_change_delay",
 						Type: "u64",
 					},
 				},
 				Kind: "struct",
-				Name: "ValidatorProfile",
-				TypeTag: 13062373705154008667,
+				Name: "PoolCycleConfig",
+				TypeTag: 5284237065249288842,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "validator",
+						Name: "commission_rate_bps",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "commission_recipient",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "PoolRewardConfig",
+				TypeTag: 1255043119785956927,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "config",
+						Type: "PoolRewardConfig",
+					},
+					provider.StructField{
+						Name: "requested_cycle",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "effective_cycle",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "PendingRewardConfig",
+				TypeTag: 865817419697605902,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "pool_id",
+						Type: "PoolId",
+					},
+					provider.StructField{
+						Name: "owner",
 						Type: "Address",
 					},
 					provider.StructField{
-						Name: "operator",
+						Name: "stake_asset",
 						Type: "Address",
 					},
 					provider.StructField{
-						Name: "operator_stake",
-						Type: "u64",
+						Name: "reward_asset",
+						Type: "Address",
 					},
 					provider.StructField{
-						Name: "delegated_stake",
-						Type: "u64",
+						Name: "status",
+						Type: "PoolStatus",
 					},
 					provider.StructField{
-						Name: "total_stake",
-						Type: "u64",
+						Name: "slashing_mode",
+						Type: "SlashingMode",
+					},
+					provider.StructField{
+						Name: "cycle_config",
+						Type: "PoolCycleConfig",
 					},
 					provider.StructField{
 						Name: "total_shares",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "principal_assets",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "held_principal",
 						Type: "u64",
 					},
 					provider.StructField{
@@ -3091,152 +3729,142 @@ provider.IDL{
 						Type: "u128",
 					},
 					provider.StructField{
-						Name: "claimable_operator_commission",
+						Name: "reward_config",
+						Type: "PoolRewardConfig",
+					},
+					provider.StructField{
+						Name: "pending_reward_config",
+						Type: "option<PendingRewardConfig>",
+					},
+					provider.StructField{
+						Name: "claimable_commission",
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "commission_rate_bps",
+						Name: "reward_liability",
 						Type: "u64",
+					},
+					provider.StructField{
+						Name: "settlement_cursor",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "pending_stake_count",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "pending_unstake_count",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "closing_cycle",
+						Type: "option<u64>",
+					},
+					provider.StructField{
+						Name: "scheduled_cycles",
+						Type: "vec<u64>",
 					},
 				},
 				Kind: "struct",
-				Name: "ValidatorPoolView",
-				TypeTag: 11854155496224838661,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "share_rewards_paid",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "commission_paid",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "total_paid",
-						Type: "u64",
-					},
-				},
-				Kind: "struct",
-				Name: "OperatorRewardReceipt",
-				TypeTag: 18322346193701716769,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "validators",
-						Type: "vec<Address>",
-					},
-				},
-				Kind: "struct",
-				Name: "CandidatePool",
-				TypeTag: 18013819884557156931,
+				Name: "Pool",
+				TypeTag: 9857364790664378562,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
 					provider.EnumVariant{
-						Name: "Join",
+						Name: "Pending",
 						Kind: "unit",
 						Fields: nil,
 					},
 					provider.EnumVariant{
-						Name: "Leave",
+						Name: "Active",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Closed",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Cancelled",
 						Kind: "unit",
 						Fields: nil,
 					},
 				},
 				Kind: "enum",
-				Name: "CandidateAction",
-				TypeTag: 7266417073453319327,
+				Name: "StakeStatus",
+				TypeTag: 6400687400352756128,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "target_epoch",
+						Name: "shares",
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "owner",
-						Type: "Address",
+						Name: "submitted_cycle",
+						Type: "u64",
 					},
 					provider.StructField{
-						Name: "validator",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "amount",
+						Name: "effective_cycle",
 						Type: "u64",
 					},
 				},
 				Kind: "struct",
-				Name: "StakeIntent",
-				TypeTag: 463322865422871864,
+				Name: "PendingUnstake",
+				TypeTag: 18398151268513761442,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "target_epoch",
-						Type: "u64",
+						Name: "stake_id",
+						Type: "B256",
 					},
 					provider.StructField{
 						Name: "owner",
 						Type: "Address",
 					},
 					provider.StructField{
-						Name: "validator",
-						Type: "Address",
+						Name: "pool_id",
+						Type: "PoolId",
 					},
 					provider.StructField{
 						Name: "shares",
 						Type: "u64",
 					},
-				},
-				Kind: "struct",
-				Name: "UnstakeIntent",
-				TypeTag: 4619880209720658249,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "target_epoch",
+						Name: "principal",
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "operator",
-						Type: "Address",
+						Name: "reward_debt",
+						Type: "u128",
 					},
 					provider.StructField{
-						Name: "validator",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "action",
-						Type: "CandidateAction",
-					},
-				},
-				Kind: "struct",
-				Name: "CandidateIntent",
-				TypeTag: 2513136358547319627,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "target_epoch",
+						Name: "claimable_rewards",
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "validator",
-						Type: "Address",
+						Name: "submitted_cycle",
+						Type: "u64",
 					},
 					provider.StructField{
-						Name: "operator",
-						Type: "Address",
+						Name: "effective_cycle",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "status",
+						Type: "StakeStatus",
+					},
+					provider.StructField{
+						Name: "pending_unstake",
+						Type: "option<PendingUnstake>",
 					},
 				},
 				Kind: "struct",
-				Name: "ValidatorAvailabilityDeclaration",
-				TypeTag: 4179626686199785279,
+				Name: "Stake",
+				TypeTag: 1411630656601401662,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -3245,8 +3873,8 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.StructField{
-						Name: "validator",
-						Type: "Address",
+						Name: "pool_id",
+						Type: "PoolId",
 					},
 					provider.StructField{
 						Name: "shares",
@@ -3262,253 +3890,110 @@ provider.IDL{
 					},
 				},
 				Kind: "struct",
-				Name: "StakePosition",
-				TypeTag: 14190113807758788125,
+				Name: "PoolStakePosition",
+				TypeTag: 5641062029386042771,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "owner",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "validator",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "pending_stake",
+						Name: "stake_shares",
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "settled_shares",
+						Name: "unstake_shares",
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "pending_unstake_shares",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "unstakeable_shares",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "claimable_rewards",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "next_settlement_epoch",
-						Type: "option<u64>",
-					},
-				},
-				Kind: "struct",
-				Name: "PositionSummary",
-				TypeTag: 3726447748782674837,
-			},
-			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
-						Name: "PoolStakeTooLow",
-						Kind: "unit",
-						Fields: nil,
-					},
-				},
-				Kind: "enum",
-				Name: "CandidateRejectionReason",
-				TypeTag: 17201629756416083620,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "validator",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "action",
-						Type: "CandidateAction",
-					},
-					provider.StructField{
-						Name: "reason",
-						Type: "CandidateRejectionReason",
-					},
-				},
-				Kind: "struct",
-				Name: "CandidateRejection",
-				TypeTag: 15654288327322174056,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "validator",
-						Type: "Address",
-					},
-				},
-				Kind: "struct",
-				Name: "EligibleValidator",
-				TypeTag: 12967353812923512353,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "epoch",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "reward_per_validator",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "distributed_rewards",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "rewarded_epoch",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "rewarded_validator_count",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "settled_stake_intent_count",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "settled_unstake_intent_count",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "applied_candidate_intent_count",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "candidate_rejections",
-						Type: "vec<CandidateRejection>",
-					},
-				},
-				Kind: "struct",
-				Name: "EpochTransition",
-				TypeTag: 9344730928551392874,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "reward_per_validator",
+						Name: "reward",
 						Type: "u64",
 					},
 				},
 				Kind: "struct",
-				Name: "EpochConfig",
-				TypeTag: 790403047666676143,
+				Name: "CycleBucket",
+				TypeTag: 11951289580227596372,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "last_settled_epoch",
-						Type: "u64",
-					},
-				},
-				Kind: "struct",
-				Name: "EpochState",
-				TypeTag: 15778165943840037534,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "address",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "balance",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "available_rewards",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "reserved_rewards",
-						Type: "u64",
-					},
-				},
-				Kind: "struct",
-				Name: "RewardTreasury",
-				TypeTag: 1442178874165866558,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "validator",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "operator",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "commission_rate_bps",
-						Type: "u64",
-					},
-				},
-				Kind: "struct",
-				Name: "ValidatorMetadata",
-				TypeTag: 17511599964102826003,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "operator_stake",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "delegated_stake",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "total_shares",
-						Type: "u64",
+						Name: "written",
+						Type: "bool",
 					},
 					provider.StructField{
 						Name: "reward_index",
 						Type: "u128",
 					},
-					provider.StructField{
-						Name: "scaled_reward_remainder",
-						Type: "u128",
-					},
-					provider.StructField{
-						Name: "claimable_operator_commission",
-						Type: "u64",
-					},
 				},
 				Kind: "struct",
-				Name: "PoolAccounting",
-				TypeTag: 16988373117473174839,
+				Name: "CycleRecord",
+				TypeTag: 3289233420045365543,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "pool_id",
+						Type: "PoolId",
+					},
+					provider.StructField{
+						Name: "amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "effective_cycle",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "evidence_id",
+						Type: "B256",
+					},
+				},
+				Kind: "struct",
+				Name: "SlashReceipt",
+				TypeTag: 11645205427099173315,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "ids",
+						Type: "vec<B256>",
+					},
+				},
+				Kind: "struct",
+				Name: "StakeIds",
+				TypeTag: 15418512581460945264,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "stake_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "reward_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "reward_per_validator",
+						Type: "u64",
+					},
 					provider.StructField{
 						Name: "available",
 						Type: "u64",
 					},
-					provider.StructField{
-						Name: "reserved",
-						Type: "u64",
-					},
 				},
 				Kind: "struct",
-				Name: "RewardAccounting",
-				TypeTag: 1181440605041224790,
+				Name: "ValidatorRewardPolicy",
+				TypeTag: 11159178674765679005,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "addresses",
-						Type: "vec<Address>",
+						Name: "assets",
+						Type: "vec<tuple<Address,Address>>",
 					},
 				},
 				Kind: "struct",
-				Name: "AddressList",
-				TypeTag: 9080845241225858752,
+				Name: "PolicyAssets",
+				TypeTag: 5099006009109120273,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -3517,13 +4002,13 @@ provider.IDL{
 						Type: "bool",
 					},
 					provider.StructField{
-						Name: "config",
-						Type: "EpochConfig",
+						Name: "last_settled_epoch",
+						Type: "u64",
 					},
 				},
 				Kind: "struct",
-				Name: "StoredEpochConfig",
-				TypeTag: 9512231142407357626,
+				Name: "RewardCursor",
+				TypeTag: 3176201935640261171,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -3532,13 +4017,18 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
-				Name: "bool",
-				TypeTag: 14785269867199075517,
+				Name: "B256",
+				TypeTag: 12016729314829497160,
 			},
 			provider.IDLType{
 				Kind: "builtin",
-				Name: "bytes",
-				TypeTag: 10405529814227927951,
+				Name: "PoolId",
+				TypeTag: 10033863623731171282,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "bool",
+				TypeTag: 14785269867199075517,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -3553,276 +4043,239 @@ provider.IDL{
 		},
 		Resources: []provider.Resource{
 			provider.Resource{
-				Name: "_ValidatorMetadata",
-				Type: "ValidatorMetadata",
-				TypeTag: 17511599964102826003,
+				Name: "_CorePool",
+				Type: "Pool",
+				TypeTag: 9857364790664378562,
 			},
 			provider.Resource{
-				Name: "_ValidatorByOperator",
-				Type: "Address",
-				TypeTag: 9806102218600167672,
+				Name: "_CoreStake",
+				Type: "Stake",
+				TypeTag: 1411630656601401662,
 			},
 			provider.Resource{
-				Name: "_ValidatorStatus",
-				Type: "ValidatorStatus",
-				TypeTag: 5132077725531038584,
+				Name: "_CoreStakeIdsByOwner",
+				Type: "StakeIds",
+				TypeTag: 15418512581460945264,
 			},
 			provider.Resource{
-				Name: "_PoolAccounting",
-				Type: "PoolAccounting",
-				TypeTag: 16988373117473174839,
+				Name: "_CoreStakeIdsByPool",
+				Type: "StakeIds",
+				TypeTag: 15418512581460945264,
 			},
 			provider.Resource{
-				Name: "_StakePosition",
-				Type: "StakePosition",
-				TypeTag: 14859013463693066045,
+				Name: "_CoreSlashEvidence",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
 			},
 			provider.Resource{
-				Name: "_CandidatePool",
-				Type: "CandidatePool",
-				TypeTag: 15437757413694511843,
+				Name: "_CoreCycleBucket",
+				Type: "CycleBucket",
+				TypeTag: 11951289580227596372,
 			},
 			provider.Resource{
-				Name: "_StakeIntent",
-				Type: "StakeIntent",
-				TypeTag: 10313783317547306328,
+				Name: "_CoreCycleRecord",
+				Type: "CycleRecord",
+				TypeTag: 3289233420045365543,
 			},
 			provider.Resource{
-				Name: "_UnstakeIntent",
-				Type: "UnstakeIntent",
-				TypeTag: 8641460296372788969,
+				Name: "_ValidatorRewardPolicy",
+				Type: "ValidatorRewardPolicy",
+				TypeTag: 11159178674765679005,
 			},
 			provider.Resource{
-				Name: "_CandidateIntent",
-				Type: "CandidateIntent",
-				TypeTag: 4233802019945464043,
+				Name: "_PolicyAssets",
+				Type: "PolicyAssets",
+				TypeTag: 5099006009109120273,
 			},
 			provider.Resource{
-				Name: "_StakeIntentValidatorsByEpoch",
-				Type: "AddressList",
-				TypeTag: 9080845241225858752,
+				Name: "_RewardCursor",
+				Type: "RewardCursor",
+				TypeTag: 3176201935640261171,
 			},
-			provider.Resource{
-				Name: "_UnstakeIntentValidatorsByEpoch",
-				Type: "AddressList",
-				TypeTag: 9080845241225858752,
+		},
+		Events: []provider.Event{
+			provider.Event{
+				Name: "StakeCreated",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "PoolId",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "owner",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "stake_id",
+						Type: "B256",
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "effective_cycle",
+						Type: "u64",
+					},
+				},
+				TypeTag: 7761322164556565014,
 			},
-			provider.Resource{
-				Name: "_CandidateIntentValidatorsByEpoch",
-				Type: "AddressList",
-				TypeTag: 9080845241225858752,
+			provider.Event{
+				Name: "PoolRewardConfigChangeRequested",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "PoolId",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "old_config",
+						Type: "PoolRewardConfig",
+					},
+					provider.EventField{
+						Name: "pending_config",
+						Type: "PoolRewardConfig",
+					},
+					provider.EventField{
+						Name: "effective_cycle",
+						Type: "u64",
+					},
+				},
+				TypeTag: 5948611434188661073,
 			},
-			provider.Resource{
-				Name: "_AvailabilityDeclarationByEpochValidator",
-				Type: "ValidatorAvailabilityDeclaration",
-				TypeTag: 2554815861211612319,
+			provider.Event{
+				Name: "PoolCommissionDistributed",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "PoolId",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "recipient",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 12472100352688581512,
 			},
-			provider.Resource{
-				Name: "_DeclaredValidatorsByEpoch",
-				Type: "AddressList",
-				TypeTag: 9080845241225858752,
+			provider.Event{
+				Name: "PoolRewardConfigChanged",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "PoolId",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "old_config",
+						Type: "PoolRewardConfig",
+					},
+					provider.EventField{
+						Name: "new_config",
+						Type: "PoolRewardConfig",
+					},
+					provider.EventField{
+						Name: "effective_cycle",
+						Type: "u64",
+					},
+				},
+				TypeTag: 5005543581933784081,
 			},
-			provider.Resource{
-				Name: "_StakeIntentPositionsByValidator",
-				Type: "AddressList",
-				TypeTag: 9080845241225858752,
+			provider.Event{
+				Name: "PoolDrained",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "PoolId",
+						Indexed: true,
+					},
+				},
+				TypeTag: 18352118988445275085,
 			},
-			provider.Resource{
-				Name: "_UnstakeIntentPositionsByValidator",
-				Type: "AddressList",
-				TypeTag: 9080845241225858752,
+			provider.Event{
+				Name: "PoolResidualSwept",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "PoolId",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "recipient",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 249705490704053362,
 			},
-			provider.Resource{
-				Name: "_EpochTransitionByEpoch",
-				Type: "EpochTransition",
-				TypeTag: 10716014907264676618,
-			},
-			provider.Resource{
-				Name: "_EpochState",
-				Type: "EpochState",
-				TypeTag: 4913181019176484030,
-			},
-			provider.Resource{
-				Name: "_EpochConfig",
-				Type: "StoredEpochConfig",
-				TypeTag: 9512231142407357626,
-			},
-			provider.Resource{
-				Name: "_StakingToken",
-				Type: "Address",
-				TypeTag: 9806102218600167672,
-			},
-			provider.Resource{
-				Name: "_RewardAccounting",
-				Type: "RewardAccounting",
-				TypeTag: 1181440605041224790,
+			provider.Event{
+				Name: "PoolSlashed",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "PoolId",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "effective_cycle",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "evidence_id",
+						Type: "B256",
+					},
+				},
+				TypeTag: 11033796372910543802,
 			},
 		},
 		Errors: []provider.ErrorDef{
 			provider.ErrorDef{
 				Code: 768,
-				Message: "Validator already exists: {0:?}",
-				Name: "ValidatorAlreadyExists",
+				Message: "Principal custody backing mismatch: liability {0}, backing {1}",
+				Name: "PrincipalVaultBackingMismatch",
 			},
 			provider.ErrorDef{
 				Code: 769,
-				Message: "Validator not found: {0:?}",
-				Name: "ValidatorNotFound",
-			},
-			provider.ErrorDef{
-				Code: 770,
-				Message: "Validator and operator address must differ: {0:?}",
-				Name: "ValidatorAndOperatorMustDiffer",
-			},
-			provider.ErrorDef{
-				Code: 771,
-				Message: "Validator, operator, and consensus account must be distinct: {0}",
-				Name: "IdentityAddressConflict",
-			},
-			provider.ErrorDef{
-				Code: 772,
-				Message: "Validator operator already used by: {0:?}",
-				Name: "OperatorAlreadyAssigned",
-			},
-			provider.ErrorDef{
-				Code: 773,
-				Message: "Validator consensus account already used by: {0:?}",
-				Name: "ConsensusAccountAlreadyAssigned",
-			},
-			provider.ErrorDef{
-				Code: 774,
-				Message: "Validator consensus account address mismatch: {0:?}",
-				Name: "ConsensusAccountMismatch",
-			},
-			provider.ErrorDef{
-				Code: 775,
-				Message: "Validator consensus public key already used by: {0:?}",
-				Name: "ConsensusKeyAlreadyAssigned",
-			},
-			provider.ErrorDef{
-				Code: 776,
-				Message: "Validator BLS public key already used by: {0:?}",
-				Name: "BlsKeyAlreadyAssigned",
-			},
-			provider.ErrorDef{
-				Code: 777,
-				Message: "Validator already in candidate pool: {0:?}",
-				Name: "ValidatorAlreadyInCandidatePool",
-			},
-			provider.ErrorDef{
-				Code: 778,
-				Message: "Epoch already transitioned: {0}",
-				Name: "EpochAlreadyTransitioned",
-			},
-			provider.ErrorDef{
-				Code: 779,
-				Message: "Epoch control already configured",
-				Name: "EpochConfigAlreadySet",
-			},
-			provider.ErrorDef{
-				Code: 780,
-				Message: "Epoch control not configured",
-				Name: "EpochConfigNotSet",
-			},
-			provider.ErrorDef{
-				Code: 781,
-				Message: "Invalid epoch config: {0}",
-				Name: "InvalidEpochConfig",
-			},
-			provider.ErrorDef{
-				Code: 782,
-				Message: "Invalid validator status for {0:?}: {1}",
-				Name: "InvalidValidatorStatus",
-			},
-			provider.ErrorDef{
-				Code: 783,
-				Message: "Staking position not found: owner {0:?}, validator {1:?}",
-				Name: "PositionNotFound",
-			},
-			provider.ErrorDef{
-				Code: 784,
-				Message: "Operator mismatch: signer {0:?}, expected {1:?}",
-				Name: "OperatorMismatch",
-			},
-			provider.ErrorDef{
-				Code: 785,
-				Message: "Candidate pool stake too low: validator {0:?}, pool stake {1}, required {2}",
-				Name: "CandidatePoolStakeTooLow",
-			},
-			provider.ErrorDef{
-				Code: 786,
-				Message: "Pending candidate intent already exists for validator: {0:?}",
-				Name: "CandidateIntentAlreadyExists",
-			},
-			provider.ErrorDef{
-				Code: 787,
-				Message: "Pending stake intent not found: owner {0:?}, validator {1:?}",
-				Name: "StakeIntentNotFound",
-			},
-			provider.ErrorDef{
-				Code: 788,
-				Message: "Insufficient pending stake: owner {0:?}, validator {1:?}, available {2}, required {3}",
-				Name: "InsufficientPendingStake",
-			},
-			provider.ErrorDef{
-				Code: 789,
-				Message: "Pending stake remaining below minimum: owner {0:?}, validator {1:?}, remaining {2}, minimum {3}",
-				Name: "PendingStakeRemainingBelowMinimum",
-			},
-			provider.ErrorDef{
-				Code: 790,
-				Message: "Insufficient shares: owner {0:?}, validator {1:?}, available {2}, required {3}",
-				Name: "InsufficientShares",
-			},
-			provider.ErrorDef{
-				Code: 791,
-				Message: "Unstake remaining below minimum: owner {0:?}, validator {1:?}, remaining {2}, minimum {3}",
-				Name: "UnstakeRemainingBelowMinimum",
-			},
-			provider.ErrorDef{
-				Code: 792,
-				Message: "Insufficient reward treasury available balance: available {0}, required {1}",
-				Name: "InsufficientRewardTreasuryAvailable",
-			},
-			provider.ErrorDef{
-				Code: 793,
-				Message: "Insufficient reward treasury reserved balance: reserved {0}, required {1}",
-				Name: "InsufficientRewardTreasuryReserved",
-			},
-			provider.ErrorDef{
-				Code: 794,
-				Message: "Reward treasury backing mismatch: liability {0}, backing {1}",
-				Name: "RewardTreasuryBackingMismatch",
-			},
-			provider.ErrorDef{
-				Code: 795,
 				Message: "Invalid parameters: {0}",
 				Name: "InvalidParameters",
 			},
 			provider.ErrorDef{
-				Code: 796,
-				Message: "Transparent TokenError",
-				Name: "TokenError",
+				Code: 770,
+				Message: "Reward treasury backing mismatch: liability {0}, backing {1}",
+				Name: "RewardTreasuryBackingMismatch",
 			},
 			provider.ErrorDef{
-				Code: 797,
-				Message: "Epoch transition not found for epoch: {0}",
-				Name: "EpochTransitionNotFound",
-			},
-			provider.ErrorDef{
-				Code: 798,
-				Message: "Epoch transition inputs are frozen for epoch: {0}",
-				Name: "EpochTransitionInProgress",
-			},
-			provider.ErrorDef{
-				Code: 799,
+				Code: 771,
 				Message: "Staking invariant violation: {0}",
 				Name: "InvariantViolation",
 			},
 			provider.ErrorDef{
-				Code: 800,
+				Code: 772,
 				Message: "protocol epoch clock is not initialized",
 				Name: "EpochClockNotReady",
+			},
+			provider.ErrorDef{
+				Code: 773,
+				Message: "Transparent TokenError",
+				Name: "TokenError",
+			},
+			provider.ErrorDef{
+				Code: 774,
+				Message: "Transparent ContextError",
+				Name: "ContextError",
 			},
 		},
 		Constants: []provider.Constant{
@@ -3835,16 +4288,6 @@ provider.IDL{
 				Name: "MAX_COMMISSION_RATE_BPS",
 				Type: "u64",
 				Value: 10000,
-			},
-			provider.Constant{
-				Name: "MIN_CANDIDATE_POOL_STAKE",
-				Type: "u64",
-				Value: 1,
-			},
-			provider.Constant{
-				Name: "MIN_STAKE_AMOUNT",
-				Type: "u64",
-				Value: 1,
 			},
 		},
 	},
@@ -9455,6 +9898,516 @@ provider.IDL{
 	},
 provider.IDL{
 		Metadata: provider.Metadata{
+			AppID: 7,
+			Name: "validator",
+			Description: "Milon validator app IDL",
+		},
+		Instructions: []provider.Instruction{
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+				},
+				Discriminator: 51820,
+				Handler: "register_validator",
+				Kind: "entry",
+				Name: "RegisterValidator",
+				Returns: provider.ReturnValue{
+					Type: "ValidatorId",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "ValidatorId",
+					},
+					provider.Arg{
+						Name: "stake_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_config",
+						Role: "input",
+						Type: "PoolRewardConfig",
+					},
+				},
+				Discriminator: 51696,
+				Handler: "create_validator_pool",
+				Kind: "entry",
+				Name: "CreateValidatorPool",
+				Returns: provider.ReturnValue{
+					Type: "PoolId",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "ValidatorId",
+					},
+				},
+				Discriminator: 45033,
+				Handler: "join_candidate_pool",
+				Kind: "entry",
+				Name: "JoinCandidatePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "ValidatorId",
+					},
+				},
+				Discriminator: 52192,
+				Handler: "leave_candidate_pool",
+				Kind: "entry",
+				Name: "LeaveCandidatePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "ValidatorId",
+					},
+				},
+				Discriminator: 43639,
+				Handler: "declare_validator_availability",
+				Kind: "entry",
+				Name: "DeclareValidatorAvailability",
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 65512,
+				Handler: "candidate_pool",
+				Kind: "view",
+				Name: "CandidatePool",
+				Returns: provider.ReturnValue{
+					Type: "CandidatePool",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 7913,
+				Handler: "candidate_validators",
+				Kind: "view",
+				Name: "CandidateValidators",
+				Returns: provider.ReturnValue{
+					Type: "vec<CandidateValidator>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "target_epoch",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 21712,
+				Handler: "declared_validators",
+				Kind: "view",
+				Name: "DeclaredValidators",
+				Returns: provider.ReturnValue{
+					Type: "CandidatePool",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "ValidatorId",
+					},
+				},
+				Discriminator: 37544,
+				Handler: "validator_profile",
+				Kind: "view",
+				Name: "ValidatorProfile",
+				Returns: provider.ReturnValue{
+					Type: "ValidatorProfile",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 61371,
+				Handler: "validator_for_controller",
+				Kind: "view",
+				Name: "ValidatorForController",
+				Returns: provider.ReturnValue{
+					Type: "ValidatorId",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 32584,
+				Handler: "current_validator_pools",
+				Kind: "view",
+				Name: "CurrentValidatorPools",
+				Returns: provider.ReturnValue{
+					Type: "ValidatorPoolList",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 4184,
+				Handler: "candidate_validator_pools",
+				Kind: "view",
+				Name: "CandidateValidatorPools",
+				Returns: provider.ReturnValue{
+					Type: "ValidatorPoolList",
+				},
+			},
+		},
+		Types: []provider.IDLType{
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Registered",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Suspended",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Retired",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "ValidatorIdentityStatus",
+				TypeTag: 2039065263709388929,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "None",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Candidate",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Selected",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Leaving",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "ValidatorSelectionStatus",
+				TypeTag: 17411245120379223379,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "validator",
+						Type: "ValidatorId",
+					},
+					provider.StructField{
+						Name: "controller",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "identity_status",
+						Type: "ValidatorIdentityStatus",
+					},
+					provider.StructField{
+						Name: "selection_status",
+						Type: "ValidatorSelectionStatus",
+					},
+					provider.StructField{
+						Name: "pool_id",
+						Type: "option<PoolId>",
+					},
+				},
+				Kind: "struct",
+				Name: "ValidatorProfile",
+				TypeTag: 13667524927300449050,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "validators",
+						Type: "vec<ValidatorId>",
+					},
+				},
+				Kind: "struct",
+				Name: "CandidatePool",
+				TypeTag: 16438948254081357680,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "validator",
+						Type: "ValidatorId",
+					},
+					provider.StructField{
+						Name: "consensus_account",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "CandidateValidator",
+				TypeTag: 6579223508042650616,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "validator",
+						Type: "ValidatorId",
+					},
+					provider.StructField{
+						Name: "consensus_account",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "pool_id",
+						Type: "PoolId",
+					},
+					provider.StructField{
+						Name: "stake_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "reward_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "total_stake",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "commission_rate_bps",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "active_staker_count",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "ValidatorPoolOverview",
+				TypeTag: 17960705608572906744,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "epoch",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "validator_set_hash",
+						Type: "option<B256>",
+					},
+					provider.StructField{
+						Name: "validators",
+						Type: "vec<ValidatorPoolOverview>",
+					},
+				},
+				Kind: "struct",
+				Name: "ValidatorPoolList",
+				TypeTag: 5183255326291536359,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "target_epoch",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "validator",
+						Type: "ValidatorId",
+					},
+					provider.StructField{
+						Name: "controller",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "AvailabilityDeclaration",
+				TypeTag: 9892382822654520502,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "commission_rate_bps",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "commission_recipient",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "PoolRewardConfig",
+				TypeTag: 1255043119785956927,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "Address",
+				TypeTag: 17438174819379414968,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "PoolId",
+				TypeTag: 10033863623731171282,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "ValidatorId",
+				TypeTag: 14542707920151212342,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u64",
+				TypeTag: 5563585020063213298,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_ValidatorRecord",
+				Type: "ValidatorProfile",
+				TypeTag: 13990765903286555017,
+			},
+			provider.Resource{
+				Name: "_ValidatorByController",
+				Type: "ValidatorId",
+				TypeTag: 14289492322595072753,
+			},
+			provider.Resource{
+				Name: "_CandidatePool",
+				Type: "CandidatePool",
+				TypeTag: 3848641516347396045,
+			},
+			provider.Resource{
+				Name: "_AvailabilityDeclaration",
+				Type: "AvailabilityDeclaration",
+				TypeTag: 7195201208835251183,
+			},
+			provider.Resource{
+				Name: "_DeclaredByEpoch",
+				Type: "CandidatePool",
+				TypeTag: 3848641516347396045,
+			},
+		},
+		Errors: []provider.ErrorDef{
+			provider.ErrorDef{
+				Code: 1792,
+				Message: "validator already registered: {0:?}",
+				Name: "AlreadyRegistered",
+			},
+			provider.ErrorDef{
+				Code: 1793,
+				Message: "validator not registered: {0:?}",
+				Name: "NotRegistered",
+			},
+			provider.ErrorDef{
+				Code: 1794,
+				Message: "controller already assigned: {0:?}",
+				Name: "ControllerAlreadyAssigned",
+			},
+			provider.ErrorDef{
+				Code: 1795,
+				Message: "controller does not own validator: {0:?}",
+				Name: "ControllerMismatch",
+			},
+			provider.ErrorDef{
+				Code: 1796,
+				Message: "validator pool already bound: {0:?}",
+				Name: "PoolAlreadyBound",
+			},
+			provider.ErrorDef{
+				Code: 1797,
+				Message: "consensus identity not registered: {0:?}",
+				Name: "ConsensusIdentityMissing",
+			},
+			provider.ErrorDef{
+				Code: 1798,
+				Message: "invalid validator parameter: {0}",
+				Name: "InvalidParameters",
+			},
+			provider.ErrorDef{
+				Code: 1799,
+				Message: "Transparent Staking",
+				Name: "Staking",
+			},
+			provider.ErrorDef{
+				Code: 1800,
+				Message: "Transparent Context",
+				Name: "Context",
+			},
+			provider.ErrorDef{
+				Code: 1801,
+				Message: "validator set unavailable: {0}",
+				Name: "ValidatorSetUnavailable",
+			},
+		},
+		Constants: []provider.Constant{
+			provider.Constant{
+				Name: "MIN_CANDIDATE_POOL_STAKE",
+				Type: "u64",
+				Value: 1,
+			},
+		},
+	},
+provider.IDL{
+		Metadata: provider.Metadata{
 			AppID: 8,
 			Name: "keyless",
 			Description: "Milon keyless app IDL",
@@ -12794,7 +13747,7 @@ provider.IDL{
 
 // SystemConsensusValidatorIdentity matches the IDL struct ConsensusValidatorIdentity.
 type SystemConsensusValidatorIdentity struct {
-	Validator *crypto.Address
+	Validator any
 	ConsensusAccount *crypto.Address
 	ConsensusPubkey []byte
 	BlsPubkey []byte
@@ -12804,7 +13757,7 @@ type SystemConsensusValidatorIdentity struct {
 // ToValue converts SystemConsensusValidatorIdentity into the provider wire value (map[string]any).
 func (v SystemConsensusValidatorIdentity) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 5)
-	// validator: Address
+	// validator: ValidatorId
 	out["validator"] = v.Validator
 	// consensus_account: Address
 	out["consensus_account"] = v.ConsensusAccount
@@ -13217,259 +14170,464 @@ func (v TokenGiftCleanupQueueState) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// StakingValidatorStatus matches the IDL enum ValidatorStatus.
-type StakingValidatorStatus struct {
+// TokenVestingRecipient matches the IDL struct VestingRecipient.
+type TokenVestingRecipient struct {
+	Recipient *crypto.Address
+	TotalAmount uint64
+	InitialAmount uint64
+	PeriodSeconds uint64
+	Periods uint64
+	AmountPerPeriod uint64
+}
+
+// ToValue converts TokenVestingRecipient into the provider wire value (map[string]any).
+func (v TokenVestingRecipient) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 6)
+	// recipient: Address
+	out["recipient"] = v.Recipient
+	// total_amount: u64
+	out["total_amount"] = v.TotalAmount
+	// initial_amount: u64
+	out["initial_amount"] = v.InitialAmount
+	// period_seconds: u64
+	out["period_seconds"] = v.PeriodSeconds
+	// periods: u64
+	out["periods"] = v.Periods
+	// amount_per_period: u64
+	out["amount_per_period"] = v.AmountPerPeriod
+	return out, nil
+}
+
+// TokenVestingState matches the IDL struct VestingState.
+type TokenVestingState struct {
+	VestingId *crypto.Address
+	Creator *crypto.Address
+	Token *crypto.Address
+	StartAtMs uint64
+	Recipients []TokenVestingRecipient
+	ClaimedAmounts []uint64
+	TotalAmount uint64
+	RemainingAmount uint64
+	GasBudget uint64
+	GasRefunded bool
+	Seed [32]byte
+}
+
+// ToValue converts TokenVestingState into the provider wire value (map[string]any).
+func (v TokenVestingState) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 11)
+	// vesting_id: Address
+	out["vesting_id"] = v.VestingId
+	// creator: Address
+	out["creator"] = v.Creator
+	// token: Address
+	out["token"] = v.Token
+	// start_at_ms: u64
+	out["start_at_ms"] = v.StartAtMs
+	// recipients: vec<VestingRecipient>
+	v0 := make([]any, len(v.Recipients))
+	for v1, v2 := range v.Recipients {
+		v3, err := toTokenVestingRecipientValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v0[v1] = v3
+	}
+	out["recipients"] = v0
+	// claimed_amounts: vec<u64>
+	v4 := make([]any, len(v.ClaimedAmounts))
+	for v5, v6 := range v.ClaimedAmounts {
+		v4[v5] = v6
+	}
+	out["claimed_amounts"] = v4
+	// total_amount: u64
+	out["total_amount"] = v.TotalAmount
+	// remaining_amount: u64
+	out["remaining_amount"] = v.RemainingAmount
+	// gas_budget: u64
+	out["gas_budget"] = v.GasBudget
+	// gas_refunded: bool
+	out["gas_refunded"] = v.GasRefunded
+	// seed: B256
+	out["seed"] = v.Seed
+	return out, nil
+}
+
+// StakingPoolStatus matches the IDL enum PoolStatus.
+type StakingPoolStatus struct {
 	Variant string // Active variant name
 	Index   uint64 // Active variant index
 	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
 }
 
-// ToValue converts StakingValidatorStatus into the provider wire value (map[string]any).
-func (v StakingValidatorStatus) ToValue() (map[string]any, error) {
+// ToValue converts StakingPoolStatus into the provider wire value (map[string]any).
+func (v StakingPoolStatus) ToValue() (map[string]any, error) {
 	if v.Variant == "" {
-		return nil, fmt.Errorf("enum ValidatorStatus: empty variant")
+		return nil, fmt.Errorf("enum PoolStatus: empty variant")
 	}
 	switch v.Variant {
-	case "Inactive":
-		return map[string]any{"variant": "Inactive"}, nil
-	case "Candidate":
-		return map[string]any{"variant": "Candidate"}, nil
-	case "Active":
-		return map[string]any{"variant": "Active"}, nil
-	case "Leaving":
-		return map[string]any{"variant": "Leaving"}, nil
+	case "Open":
+		return map[string]any{"variant": "Open"}, nil
+	case "Paused":
+		return map[string]any{"variant": "Paused"}, nil
+	case "Frozen":
+		return map[string]any{"variant": "Frozen"}, nil
+	case "Closing":
+		return map[string]any{"variant": "Closing"}, nil
+	case "Drained":
+		return map[string]any{"variant": "Drained"}, nil
 	}
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// StakingValidatorProfile matches the IDL struct ValidatorProfile.
-type StakingValidatorProfile struct {
-	Validator *crypto.Address
-	Operator *crypto.Address
-	Status StakingValidatorStatus
-	CommissionRateBps uint64
+// StakingSlashingMode matches the IDL enum SlashingMode.
+type StakingSlashingMode struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
 }
 
-// ToValue converts StakingValidatorProfile into the provider wire value (map[string]any).
-func (v StakingValidatorProfile) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// validator: Address
-	out["validator"] = v.Validator
-	// operator: Address
-	out["operator"] = v.Operator
-	// status: ValidatorStatus
-	v0, err := toStakingValidatorStatusValue(v.Status)
+// ToValue converts StakingSlashingMode into the provider wire value (map[string]any).
+func (v StakingSlashingMode) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum SlashingMode: empty variant")
+	}
+	switch v.Variant {
+	case "Disabled":
+		return map[string]any{"variant": "Disabled"}, nil
+	case "System":
+		return map[string]any{"variant": "System"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// StakingCycleBasis matches the IDL enum CycleBasis.
+type StakingCycleBasis struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts StakingCycleBasis into the provider wire value (map[string]any).
+func (v StakingCycleBasis) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum CycleBasis: empty variant")
+	}
+	switch v.Variant {
+	case "Epoch":
+		return map[string]any{"variant": "Epoch"}, nil
+	case "Block":
+		if len(v.Fields) != 2 {
+			return nil, fmt.Errorf("enum CycleBasis: variant Block expects %d fields", len(v.Fields))
+		}
+		record := make(map[string]any, 2)
+		// anchor_block: u64
+		record["anchor_block"] = v.Fields[0]
+		// length_blocks: u64
+		record["length_blocks"] = v.Fields[1]
+		return map[string]any{"variant": "Block", "fields": record}, nil
+	case "Timestamp":
+		if len(v.Fields) != 2 {
+			return nil, fmt.Errorf("enum CycleBasis: variant Timestamp expects %d fields", len(v.Fields))
+		}
+		record := make(map[string]any, 2)
+		// anchor_timestamp_ms: u64
+		record["anchor_timestamp_ms"] = v.Fields[0]
+		// length_ms: u64
+		record["length_ms"] = v.Fields[1]
+		return map[string]any{"variant": "Timestamp", "fields": record}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// StakingPoolCycleConfig matches the IDL struct PoolCycleConfig.
+type StakingPoolCycleConfig struct {
+	Basis StakingCycleBasis
+	StakeActivationDelay uint64
+	UnstakeActivationDelay uint64
+	RewardDistributionDelay uint64
+	CommissionChangeDelay uint64
+}
+
+// ToValue converts StakingPoolCycleConfig into the provider wire value (map[string]any).
+func (v StakingPoolCycleConfig) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 5)
+	// basis: CycleBasis
+	v0, err := toStakingCycleBasisValue(v.Basis)
+	if err != nil {
+		return nil, err
+	}
+	out["basis"] = v0
+	// stake_activation_delay: u64
+	out["stake_activation_delay"] = v.StakeActivationDelay
+	// unstake_activation_delay: u64
+	out["unstake_activation_delay"] = v.UnstakeActivationDelay
+	// reward_distribution_delay: u64
+	out["reward_distribution_delay"] = v.RewardDistributionDelay
+	// commission_change_delay: u64
+	out["commission_change_delay"] = v.CommissionChangeDelay
+	return out, nil
+}
+
+// StakingPoolRewardConfig matches the IDL struct PoolRewardConfig.
+type StakingPoolRewardConfig struct {
+	CommissionRateBps uint64
+	CommissionRecipient *crypto.Address
+}
+
+// ToValue converts StakingPoolRewardConfig into the provider wire value (map[string]any).
+func (v StakingPoolRewardConfig) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// commission_rate_bps: u64
+	out["commission_rate_bps"] = v.CommissionRateBps
+	// commission_recipient: Address
+	out["commission_recipient"] = v.CommissionRecipient
+	return out, nil
+}
+
+// StakingPendingRewardConfig matches the IDL struct PendingRewardConfig.
+type StakingPendingRewardConfig struct {
+	Config StakingPoolRewardConfig
+	RequestedCycle uint64
+	EffectiveCycle uint64
+}
+
+// ToValue converts StakingPendingRewardConfig into the provider wire value (map[string]any).
+func (v StakingPendingRewardConfig) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// config: PoolRewardConfig
+	v0, err := toStakingPoolRewardConfigValue(v.Config)
+	if err != nil {
+		return nil, err
+	}
+	out["config"] = v0
+	// requested_cycle: u64
+	out["requested_cycle"] = v.RequestedCycle
+	// effective_cycle: u64
+	out["effective_cycle"] = v.EffectiveCycle
+	return out, nil
+}
+
+// StakingPool matches the IDL struct Pool.
+type StakingPool struct {
+	PoolId any
+	Owner *crypto.Address
+	StakeAsset *crypto.Address
+	RewardAsset *crypto.Address
+	Status StakingPoolStatus
+	SlashingMode StakingSlashingMode
+	CycleConfig StakingPoolCycleConfig
+	TotalShares uint64
+	PrincipalAssets uint64
+	HeldPrincipal uint64
+	RewardIndex *big.Int
+	ScaledRewardRemainder *big.Int
+	RewardConfig StakingPoolRewardConfig
+	PendingRewardConfig *StakingPendingRewardConfig
+	ClaimableCommission uint64
+	RewardLiability uint64
+	SettlementCursor uint64
+	PendingStakeCount uint64
+	PendingUnstakeCount uint64
+	ClosingCycle *uint64
+	ScheduledCycles []uint64
+}
+
+// ToValue converts StakingPool into the provider wire value (map[string]any).
+func (v StakingPool) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 21)
+	// pool_id: PoolId
+	out["pool_id"] = v.PoolId
+	// owner: Address
+	out["owner"] = v.Owner
+	// stake_asset: Address
+	out["stake_asset"] = v.StakeAsset
+	// reward_asset: Address
+	out["reward_asset"] = v.RewardAsset
+	// status: PoolStatus
+	v0, err := toStakingPoolStatusValue(v.Status)
 	if err != nil {
 		return nil, err
 	}
 	out["status"] = v0
-	// commission_rate_bps: u64
-	out["commission_rate_bps"] = v.CommissionRateBps
-	return out, nil
-}
-
-// StakingValidatorPoolView matches the IDL struct ValidatorPoolView.
-type StakingValidatorPoolView struct {
-	Validator *crypto.Address
-	Operator *crypto.Address
-	OperatorStake uint64
-	DelegatedStake uint64
-	TotalStake uint64
-	TotalShares uint64
-	RewardIndex *big.Int
-	ScaledRewardRemainder *big.Int
-	ClaimableOperatorCommission uint64
-	CommissionRateBps uint64
-}
-
-// ToValue converts StakingValidatorPoolView into the provider wire value (map[string]any).
-func (v StakingValidatorPoolView) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 10)
-	// validator: Address
-	out["validator"] = v.Validator
-	// operator: Address
-	out["operator"] = v.Operator
-	// operator_stake: u64
-	out["operator_stake"] = v.OperatorStake
-	// delegated_stake: u64
-	out["delegated_stake"] = v.DelegatedStake
-	// total_stake: u64
-	out["total_stake"] = v.TotalStake
+	// slashing_mode: SlashingMode
+	v1, err := toStakingSlashingModeValue(v.SlashingMode)
+	if err != nil {
+		return nil, err
+	}
+	out["slashing_mode"] = v1
+	// cycle_config: PoolCycleConfig
+	v2, err := toStakingPoolCycleConfigValue(v.CycleConfig)
+	if err != nil {
+		return nil, err
+	}
+	out["cycle_config"] = v2
 	// total_shares: u64
 	out["total_shares"] = v.TotalShares
+	// principal_assets: u64
+	out["principal_assets"] = v.PrincipalAssets
+	// held_principal: u64
+	out["held_principal"] = v.HeldPrincipal
 	// reward_index: u128
 	out["reward_index"] = v.RewardIndex
 	// scaled_reward_remainder: u128
 	out["scaled_reward_remainder"] = v.ScaledRewardRemainder
-	// claimable_operator_commission: u64
-	out["claimable_operator_commission"] = v.ClaimableOperatorCommission
-	// commission_rate_bps: u64
-	out["commission_rate_bps"] = v.CommissionRateBps
-	return out, nil
-}
-
-// StakingOperatorRewardReceipt matches the IDL struct OperatorRewardReceipt.
-type StakingOperatorRewardReceipt struct {
-	ShareRewardsPaid uint64
-	CommissionPaid uint64
-	TotalPaid uint64
-}
-
-// ToValue converts StakingOperatorRewardReceipt into the provider wire value (map[string]any).
-func (v StakingOperatorRewardReceipt) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 3)
-	// share_rewards_paid: u64
-	out["share_rewards_paid"] = v.ShareRewardsPaid
-	// commission_paid: u64
-	out["commission_paid"] = v.CommissionPaid
-	// total_paid: u64
-	out["total_paid"] = v.TotalPaid
-	return out, nil
-}
-
-// StakingCandidatePool matches the IDL struct CandidatePool.
-type StakingCandidatePool struct {
-	Validators []*crypto.Address
-}
-
-// ToValue converts StakingCandidatePool into the provider wire value (map[string]any).
-func (v StakingCandidatePool) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 1)
-	// validators: vec<Address>
-	v0 := make([]any, len(v.Validators))
-	for v1, v2 := range v.Validators {
-		v0[v1] = v2
+	// reward_config: PoolRewardConfig
+	v3, err := toStakingPoolRewardConfigValue(v.RewardConfig)
+	if err != nil {
+		return nil, err
 	}
-	out["validators"] = v0
+	out["reward_config"] = v3
+	// pending_reward_config: option<PendingRewardConfig>
+	if v.PendingRewardConfig == nil {
+		out["pending_reward_config"] = nil
+	} else {
+		v4, err := toStakingPendingRewardConfigValue(*v.PendingRewardConfig)
+		if err != nil {
+			return nil, err
+		}
+		out["pending_reward_config"] = v4
+	}
+	// claimable_commission: u64
+	out["claimable_commission"] = v.ClaimableCommission
+	// reward_liability: u64
+	out["reward_liability"] = v.RewardLiability
+	// settlement_cursor: u64
+	out["settlement_cursor"] = v.SettlementCursor
+	// pending_stake_count: u64
+	out["pending_stake_count"] = v.PendingStakeCount
+	// pending_unstake_count: u64
+	out["pending_unstake_count"] = v.PendingUnstakeCount
+	// closing_cycle: option<u64>
+	if v.ClosingCycle == nil {
+		out["closing_cycle"] = nil
+	} else {
+		out["closing_cycle"] = *v.ClosingCycle
+	}
+	// scheduled_cycles: vec<u64>
+	v5 := make([]any, len(v.ScheduledCycles))
+	for v6, v7 := range v.ScheduledCycles {
+		v5[v6] = v7
+	}
+	out["scheduled_cycles"] = v5
 	return out, nil
 }
 
-// StakingCandidateAction matches the IDL enum CandidateAction.
-type StakingCandidateAction struct {
+// StakingStakeStatus matches the IDL enum StakeStatus.
+type StakingStakeStatus struct {
 	Variant string // Active variant name
 	Index   uint64 // Active variant index
 	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
 }
 
-// ToValue converts StakingCandidateAction into the provider wire value (map[string]any).
-func (v StakingCandidateAction) ToValue() (map[string]any, error) {
+// ToValue converts StakingStakeStatus into the provider wire value (map[string]any).
+func (v StakingStakeStatus) ToValue() (map[string]any, error) {
 	if v.Variant == "" {
-		return nil, fmt.Errorf("enum CandidateAction: empty variant")
+		return nil, fmt.Errorf("enum StakeStatus: empty variant")
 	}
 	switch v.Variant {
-	case "Join":
-		return map[string]any{"variant": "Join"}, nil
-	case "Leave":
-		return map[string]any{"variant": "Leave"}, nil
+	case "Pending":
+		return map[string]any{"variant": "Pending"}, nil
+	case "Active":
+		return map[string]any{"variant": "Active"}, nil
+	case "Closed":
+		return map[string]any{"variant": "Closed"}, nil
+	case "Cancelled":
+		return map[string]any{"variant": "Cancelled"}, nil
 	}
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// StakingStakeIntent matches the IDL struct StakeIntent.
-type StakingStakeIntent struct {
-	TargetEpoch uint64
-	Owner *crypto.Address
-	Validator *crypto.Address
-	Amount uint64
-}
-
-// ToValue converts StakingStakeIntent into the provider wire value (map[string]any).
-func (v StakingStakeIntent) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// target_epoch: u64
-	out["target_epoch"] = v.TargetEpoch
-	// owner: Address
-	out["owner"] = v.Owner
-	// validator: Address
-	out["validator"] = v.Validator
-	// amount: u64
-	out["amount"] = v.Amount
-	return out, nil
-}
-
-// StakingUnstakeIntent matches the IDL struct UnstakeIntent.
-type StakingUnstakeIntent struct {
-	TargetEpoch uint64
-	Owner *crypto.Address
-	Validator *crypto.Address
+// StakingPendingUnstake matches the IDL struct PendingUnstake.
+type StakingPendingUnstake struct {
 	Shares uint64
+	SubmittedCycle uint64
+	EffectiveCycle uint64
 }
 
-// ToValue converts StakingUnstakeIntent into the provider wire value (map[string]any).
-func (v StakingUnstakeIntent) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// target_epoch: u64
-	out["target_epoch"] = v.TargetEpoch
-	// owner: Address
-	out["owner"] = v.Owner
-	// validator: Address
-	out["validator"] = v.Validator
+// ToValue converts StakingPendingUnstake into the provider wire value (map[string]any).
+func (v StakingPendingUnstake) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
 	// shares: u64
 	out["shares"] = v.Shares
+	// submitted_cycle: u64
+	out["submitted_cycle"] = v.SubmittedCycle
+	// effective_cycle: u64
+	out["effective_cycle"] = v.EffectiveCycle
 	return out, nil
 }
 
-// StakingCandidateIntent matches the IDL struct CandidateIntent.
-type StakingCandidateIntent struct {
-	TargetEpoch uint64
-	Operator *crypto.Address
-	Validator *crypto.Address
-	Action StakingCandidateAction
+// StakingStake matches the IDL struct Stake.
+type StakingStake struct {
+	StakeId [32]byte
+	Owner *crypto.Address
+	PoolId any
+	Shares uint64
+	Principal uint64
+	RewardDebt *big.Int
+	ClaimableRewards uint64
+	SubmittedCycle uint64
+	EffectiveCycle uint64
+	Status StakingStakeStatus
+	PendingUnstake *StakingPendingUnstake
 }
 
-// ToValue converts StakingCandidateIntent into the provider wire value (map[string]any).
-func (v StakingCandidateIntent) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// target_epoch: u64
-	out["target_epoch"] = v.TargetEpoch
-	// operator: Address
-	out["operator"] = v.Operator
-	// validator: Address
-	out["validator"] = v.Validator
-	// action: CandidateAction
-	v0, err := toStakingCandidateActionValue(v.Action)
+// ToValue converts StakingStake into the provider wire value (map[string]any).
+func (v StakingStake) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 11)
+	// stake_id: B256
+	out["stake_id"] = v.StakeId
+	// owner: Address
+	out["owner"] = v.Owner
+	// pool_id: PoolId
+	out["pool_id"] = v.PoolId
+	// shares: u64
+	out["shares"] = v.Shares
+	// principal: u64
+	out["principal"] = v.Principal
+	// reward_debt: u128
+	out["reward_debt"] = v.RewardDebt
+	// claimable_rewards: u64
+	out["claimable_rewards"] = v.ClaimableRewards
+	// submitted_cycle: u64
+	out["submitted_cycle"] = v.SubmittedCycle
+	// effective_cycle: u64
+	out["effective_cycle"] = v.EffectiveCycle
+	// status: StakeStatus
+	v0, err := toStakingStakeStatusValue(v.Status)
 	if err != nil {
 		return nil, err
 	}
-	out["action"] = v0
+	out["status"] = v0
+	// pending_unstake: option<PendingUnstake>
+	if v.PendingUnstake == nil {
+		out["pending_unstake"] = nil
+	} else {
+		v1, err := toStakingPendingUnstakeValue(*v.PendingUnstake)
+		if err != nil {
+			return nil, err
+		}
+		out["pending_unstake"] = v1
+	}
 	return out, nil
 }
 
-// StakingValidatorAvailabilityDeclaration matches the IDL struct ValidatorAvailabilityDeclaration.
-type StakingValidatorAvailabilityDeclaration struct {
-	TargetEpoch uint64
-	Validator *crypto.Address
-	Operator *crypto.Address
-}
-
-// ToValue converts StakingValidatorAvailabilityDeclaration into the provider wire value (map[string]any).
-func (v StakingValidatorAvailabilityDeclaration) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 3)
-	// target_epoch: u64
-	out["target_epoch"] = v.TargetEpoch
-	// validator: Address
-	out["validator"] = v.Validator
-	// operator: Address
-	out["operator"] = v.Operator
-	return out, nil
-}
-
-// StakingStakePosition matches the IDL struct StakePosition.
-type StakingStakePosition struct {
+// StakingPoolStakePosition matches the IDL struct PoolStakePosition.
+type StakingPoolStakePosition struct {
 	Owner *crypto.Address
-	Validator *crypto.Address
+	PoolId any
 	Shares uint64
 	RewardDebt *big.Int
 	ClaimableRewards uint64
 }
 
-// ToValue converts StakingStakePosition into the provider wire value (map[string]any).
-func (v StakingStakePosition) ToValue() (map[string]any, error) {
+// ToValue converts StakingPoolStakePosition into the provider wire value (map[string]any).
+func (v StakingPoolStakePosition) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 5)
 	// owner: Address
 	out["owner"] = v.Owner
-	// validator: Address
-	out["validator"] = v.Validator
+	// pool_id: PoolId
+	out["pool_id"] = v.PoolId
 	// shares: u64
 	out["shares"] = v.Shares
 	// reward_debt: u128
@@ -13479,293 +14637,134 @@ func (v StakingStakePosition) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// StakingPositionSummary matches the IDL struct PositionSummary.
-type StakingPositionSummary struct {
-	Owner *crypto.Address
-	Validator *crypto.Address
-	PendingStake uint64
-	SettledShares uint64
-	PendingUnstakeShares uint64
-	UnstakeableShares uint64
-	ClaimableRewards uint64
-	NextSettlementEpoch *uint64
+// StakingCycleBucket matches the IDL struct CycleBucket.
+type StakingCycleBucket struct {
+	StakeShares uint64
+	UnstakeShares uint64
+	Reward uint64
 }
 
-// ToValue converts StakingPositionSummary into the provider wire value (map[string]any).
-func (v StakingPositionSummary) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 8)
-	// owner: Address
-	out["owner"] = v.Owner
-	// validator: Address
-	out["validator"] = v.Validator
-	// pending_stake: u64
-	out["pending_stake"] = v.PendingStake
-	// settled_shares: u64
-	out["settled_shares"] = v.SettledShares
-	// pending_unstake_shares: u64
-	out["pending_unstake_shares"] = v.PendingUnstakeShares
-	// unstakeable_shares: u64
-	out["unstakeable_shares"] = v.UnstakeableShares
-	// claimable_rewards: u64
-	out["claimable_rewards"] = v.ClaimableRewards
-	// next_settlement_epoch: option<u64>
-	if v.NextSettlementEpoch == nil {
-		out["next_settlement_epoch"] = nil
-	} else {
-		out["next_settlement_epoch"] = *v.NextSettlementEpoch
-	}
-	return out, nil
-}
-
-// StakingCandidateRejectionReason matches the IDL enum CandidateRejectionReason.
-type StakingCandidateRejectionReason struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
-}
-
-// ToValue converts StakingCandidateRejectionReason into the provider wire value (map[string]any).
-func (v StakingCandidateRejectionReason) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum CandidateRejectionReason: empty variant")
-	}
-	switch v.Variant {
-	case "PoolStakeTooLow":
-		return map[string]any{"variant": "PoolStakeTooLow"}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
-}
-
-// StakingCandidateRejection matches the IDL struct CandidateRejection.
-type StakingCandidateRejection struct {
-	Validator *crypto.Address
-	Action StakingCandidateAction
-	Reason StakingCandidateRejectionReason
-}
-
-// ToValue converts StakingCandidateRejection into the provider wire value (map[string]any).
-func (v StakingCandidateRejection) ToValue() (map[string]any, error) {
+// ToValue converts StakingCycleBucket into the provider wire value (map[string]any).
+func (v StakingCycleBucket) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 3)
-	// validator: Address
-	out["validator"] = v.Validator
-	// action: CandidateAction
-	v0, err := toStakingCandidateActionValue(v.Action)
-	if err != nil {
-		return nil, err
-	}
-	out["action"] = v0
-	// reason: CandidateRejectionReason
-	v1, err := toStakingCandidateRejectionReasonValue(v.Reason)
-	if err != nil {
-		return nil, err
-	}
-	out["reason"] = v1
+	// stake_shares: u64
+	out["stake_shares"] = v.StakeShares
+	// unstake_shares: u64
+	out["unstake_shares"] = v.UnstakeShares
+	// reward: u64
+	out["reward"] = v.Reward
 	return out, nil
 }
 
-// StakingEligibleValidator matches the IDL struct EligibleValidator.
-type StakingEligibleValidator struct {
-	Validator *crypto.Address
+// StakingCycleRecord matches the IDL struct CycleRecord.
+type StakingCycleRecord struct {
+	Written bool
+	RewardIndex *big.Int
 }
 
-// ToValue converts StakingEligibleValidator into the provider wire value (map[string]any).
-func (v StakingEligibleValidator) ToValue() (map[string]any, error) {
+// ToValue converts StakingCycleRecord into the provider wire value (map[string]any).
+func (v StakingCycleRecord) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// written: bool
+	out["written"] = v.Written
+	// reward_index: u128
+	out["reward_index"] = v.RewardIndex
+	return out, nil
+}
+
+// StakingSlashReceipt matches the IDL struct SlashReceipt.
+type StakingSlashReceipt struct {
+	PoolId any
+	Amount uint64
+	EffectiveCycle uint64
+	EvidenceId [32]byte
+}
+
+// ToValue converts StakingSlashReceipt into the provider wire value (map[string]any).
+func (v StakingSlashReceipt) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// pool_id: PoolId
+	out["pool_id"] = v.PoolId
+	// amount: u64
+	out["amount"] = v.Amount
+	// effective_cycle: u64
+	out["effective_cycle"] = v.EffectiveCycle
+	// evidence_id: B256
+	out["evidence_id"] = v.EvidenceId
+	return out, nil
+}
+
+// StakingStakeIds matches the IDL struct StakeIds.
+type StakingStakeIds struct {
+	Ids [][32]byte
+}
+
+// ToValue converts StakingStakeIds into the provider wire value (map[string]any).
+func (v StakingStakeIds) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 1)
-	// validator: Address
-	out["validator"] = v.Validator
+	// ids: vec<B256>
+	v0 := make([]any, len(v.Ids))
+	for v1, v2 := range v.Ids {
+		v0[v1] = v2
+	}
+	out["ids"] = v0
 	return out, nil
 }
 
-// StakingEpochTransition matches the IDL struct EpochTransition.
-type StakingEpochTransition struct {
-	Epoch uint64
+// StakingValidatorRewardPolicy matches the IDL struct ValidatorRewardPolicy.
+type StakingValidatorRewardPolicy struct {
+	StakeAsset *crypto.Address
+	RewardAsset *crypto.Address
 	RewardPerValidator uint64
-	DistributedRewards uint64
-	RewardedEpoch uint64
-	RewardedValidatorCount uint64
-	SettledStakeIntentCount uint64
-	SettledUnstakeIntentCount uint64
-	AppliedCandidateIntentCount uint64
-	CandidateRejections []StakingCandidateRejection
+	Available uint64
 }
 
-// ToValue converts StakingEpochTransition into the provider wire value (map[string]any).
-func (v StakingEpochTransition) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 9)
-	// epoch: u64
-	out["epoch"] = v.Epoch
+// ToValue converts StakingValidatorRewardPolicy into the provider wire value (map[string]any).
+func (v StakingValidatorRewardPolicy) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// stake_asset: Address
+	out["stake_asset"] = v.StakeAsset
+	// reward_asset: Address
+	out["reward_asset"] = v.RewardAsset
 	// reward_per_validator: u64
 	out["reward_per_validator"] = v.RewardPerValidator
-	// distributed_rewards: u64
-	out["distributed_rewards"] = v.DistributedRewards
-	// rewarded_epoch: u64
-	out["rewarded_epoch"] = v.RewardedEpoch
-	// rewarded_validator_count: u64
-	out["rewarded_validator_count"] = v.RewardedValidatorCount
-	// settled_stake_intent_count: u64
-	out["settled_stake_intent_count"] = v.SettledStakeIntentCount
-	// settled_unstake_intent_count: u64
-	out["settled_unstake_intent_count"] = v.SettledUnstakeIntentCount
-	// applied_candidate_intent_count: u64
-	out["applied_candidate_intent_count"] = v.AppliedCandidateIntentCount
-	// candidate_rejections: vec<CandidateRejection>
-	v0 := make([]any, len(v.CandidateRejections))
-	for v1, v2 := range v.CandidateRejections {
-		v3, err := toStakingCandidateRejectionValue(v2)
-		if err != nil {
-			return nil, err
-		}
+	// available: u64
+	out["available"] = v.Available
+	return out, nil
+}
+
+// StakingPolicyAssets matches the IDL struct PolicyAssets.
+type StakingPolicyAssets struct {
+	Assets [][]any
+}
+
+// ToValue converts StakingPolicyAssets into the provider wire value (map[string]any).
+func (v StakingPolicyAssets) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 1)
+	// assets: vec<tuple<Address,Address>>
+	v0 := make([]any, len(v.Assets))
+	for v1, v2 := range v.Assets {
+		v3 := make([]any, 1)
+		v3[0] = v2[0]
 		v0[v1] = v3
 	}
-	out["candidate_rejections"] = v0
+	out["assets"] = v0
 	return out, nil
 }
 
-// StakingEpochConfig matches the IDL struct EpochConfig.
-type StakingEpochConfig struct {
-	RewardPerValidator uint64
-}
-
-// ToValue converts StakingEpochConfig into the provider wire value (map[string]any).
-func (v StakingEpochConfig) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 1)
-	// reward_per_validator: u64
-	out["reward_per_validator"] = v.RewardPerValidator
-	return out, nil
-}
-
-// StakingEpochState matches the IDL struct EpochState.
-type StakingEpochState struct {
+// StakingRewardCursor matches the IDL struct RewardCursor.
+type StakingRewardCursor struct {
+	Initialized bool
 	LastSettledEpoch uint64
 }
 
-// ToValue converts StakingEpochState into the provider wire value (map[string]any).
-func (v StakingEpochState) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 1)
-	// last_settled_epoch: u64
-	out["last_settled_epoch"] = v.LastSettledEpoch
-	return out, nil
-}
-
-// StakingRewardTreasury matches the IDL struct RewardTreasury.
-type StakingRewardTreasury struct {
-	Address *crypto.Address
-	Balance uint64
-	AvailableRewards uint64
-	ReservedRewards uint64
-}
-
-// ToValue converts StakingRewardTreasury into the provider wire value (map[string]any).
-func (v StakingRewardTreasury) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// address: Address
-	out["address"] = v.Address
-	// balance: u64
-	out["balance"] = v.Balance
-	// available_rewards: u64
-	out["available_rewards"] = v.AvailableRewards
-	// reserved_rewards: u64
-	out["reserved_rewards"] = v.ReservedRewards
-	return out, nil
-}
-
-// StakingValidatorMetadata matches the IDL struct ValidatorMetadata.
-type StakingValidatorMetadata struct {
-	Validator *crypto.Address
-	Operator *crypto.Address
-	CommissionRateBps uint64
-}
-
-// ToValue converts StakingValidatorMetadata into the provider wire value (map[string]any).
-func (v StakingValidatorMetadata) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 3)
-	// validator: Address
-	out["validator"] = v.Validator
-	// operator: Address
-	out["operator"] = v.Operator
-	// commission_rate_bps: u64
-	out["commission_rate_bps"] = v.CommissionRateBps
-	return out, nil
-}
-
-// StakingPoolAccounting matches the IDL struct PoolAccounting.
-type StakingPoolAccounting struct {
-	OperatorStake uint64
-	DelegatedStake uint64
-	TotalShares uint64
-	RewardIndex *big.Int
-	ScaledRewardRemainder *big.Int
-	ClaimableOperatorCommission uint64
-}
-
-// ToValue converts StakingPoolAccounting into the provider wire value (map[string]any).
-func (v StakingPoolAccounting) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 6)
-	// operator_stake: u64
-	out["operator_stake"] = v.OperatorStake
-	// delegated_stake: u64
-	out["delegated_stake"] = v.DelegatedStake
-	// total_shares: u64
-	out["total_shares"] = v.TotalShares
-	// reward_index: u128
-	out["reward_index"] = v.RewardIndex
-	// scaled_reward_remainder: u128
-	out["scaled_reward_remainder"] = v.ScaledRewardRemainder
-	// claimable_operator_commission: u64
-	out["claimable_operator_commission"] = v.ClaimableOperatorCommission
-	return out, nil
-}
-
-// StakingRewardAccounting matches the IDL struct RewardAccounting.
-type StakingRewardAccounting struct {
-	Available uint64
-	Reserved uint64
-}
-
-// ToValue converts StakingRewardAccounting into the provider wire value (map[string]any).
-func (v StakingRewardAccounting) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 2)
-	// available: u64
-	out["available"] = v.Available
-	// reserved: u64
-	out["reserved"] = v.Reserved
-	return out, nil
-}
-
-// StakingAddressList matches the IDL struct AddressList.
-type StakingAddressList struct {
-	Addresses []*crypto.Address
-}
-
-// ToValue converts StakingAddressList into the provider wire value (map[string]any).
-func (v StakingAddressList) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 1)
-	// addresses: vec<Address>
-	v0 := make([]any, len(v.Addresses))
-	for v1, v2 := range v.Addresses {
-		v0[v1] = v2
-	}
-	out["addresses"] = v0
-	return out, nil
-}
-
-// StakingStoredEpochConfig matches the IDL struct StoredEpochConfig.
-type StakingStoredEpochConfig struct {
-	Initialized bool
-	Config StakingEpochConfig
-}
-
-// ToValue converts StakingStoredEpochConfig into the provider wire value (map[string]any).
-func (v StakingStoredEpochConfig) ToValue() (map[string]any, error) {
+// ToValue converts StakingRewardCursor into the provider wire value (map[string]any).
+func (v StakingRewardCursor) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 2)
 	// initialized: bool
 	out["initialized"] = v.Initialized
-	// config: EpochConfig
-	v0, err := toStakingEpochConfigValue(v.Config)
-	if err != nil {
-		return nil, err
-	}
-	out["config"] = v0
+	// last_settled_epoch: u64
+	out["last_settled_epoch"] = v.LastSettledEpoch
 	return out, nil
 }
 
@@ -15254,6 +16253,224 @@ func (v DexDidSubjectType) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
+// ValidatorValidatorIdentityStatus matches the IDL enum ValidatorIdentityStatus.
+type ValidatorValidatorIdentityStatus struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts ValidatorValidatorIdentityStatus into the provider wire value (map[string]any).
+func (v ValidatorValidatorIdentityStatus) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum ValidatorIdentityStatus: empty variant")
+	}
+	switch v.Variant {
+	case "Registered":
+		return map[string]any{"variant": "Registered"}, nil
+	case "Suspended":
+		return map[string]any{"variant": "Suspended"}, nil
+	case "Retired":
+		return map[string]any{"variant": "Retired"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// ValidatorValidatorSelectionStatus matches the IDL enum ValidatorSelectionStatus.
+type ValidatorValidatorSelectionStatus struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts ValidatorValidatorSelectionStatus into the provider wire value (map[string]any).
+func (v ValidatorValidatorSelectionStatus) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum ValidatorSelectionStatus: empty variant")
+	}
+	switch v.Variant {
+	case "None":
+		return map[string]any{"variant": "None"}, nil
+	case "Candidate":
+		return map[string]any{"variant": "Candidate"}, nil
+	case "Selected":
+		return map[string]any{"variant": "Selected"}, nil
+	case "Leaving":
+		return map[string]any{"variant": "Leaving"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// ValidatorValidatorProfile matches the IDL struct ValidatorProfile.
+type ValidatorValidatorProfile struct {
+	Validator any
+	Controller *crypto.Address
+	IdentityStatus ValidatorValidatorIdentityStatus
+	SelectionStatus ValidatorValidatorSelectionStatus
+	PoolId *any
+}
+
+// ToValue converts ValidatorValidatorProfile into the provider wire value (map[string]any).
+func (v ValidatorValidatorProfile) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 5)
+	// validator: ValidatorId
+	out["validator"] = v.Validator
+	// controller: Address
+	out["controller"] = v.Controller
+	// identity_status: ValidatorIdentityStatus
+	v0, err := toValidatorValidatorIdentityStatusValue(v.IdentityStatus)
+	if err != nil {
+		return nil, err
+	}
+	out["identity_status"] = v0
+	// selection_status: ValidatorSelectionStatus
+	v1, err := toValidatorValidatorSelectionStatusValue(v.SelectionStatus)
+	if err != nil {
+		return nil, err
+	}
+	out["selection_status"] = v1
+	// pool_id: option<PoolId>
+	if v.PoolId == nil {
+		out["pool_id"] = nil
+	} else {
+		out["pool_id"] = *v.PoolId
+	}
+	return out, nil
+}
+
+// ValidatorCandidatePool matches the IDL struct CandidatePool.
+type ValidatorCandidatePool struct {
+	Validators []any
+}
+
+// ToValue converts ValidatorCandidatePool into the provider wire value (map[string]any).
+func (v ValidatorCandidatePool) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 1)
+	// validators: vec<ValidatorId>
+	v0 := make([]any, len(v.Validators))
+	for v1, v2 := range v.Validators {
+		v0[v1] = v2
+	}
+	out["validators"] = v0
+	return out, nil
+}
+
+// ValidatorCandidateValidator matches the IDL struct CandidateValidator.
+type ValidatorCandidateValidator struct {
+	Validator any
+	ConsensusAccount *crypto.Address
+}
+
+// ToValue converts ValidatorCandidateValidator into the provider wire value (map[string]any).
+func (v ValidatorCandidateValidator) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// validator: ValidatorId
+	out["validator"] = v.Validator
+	// consensus_account: Address
+	out["consensus_account"] = v.ConsensusAccount
+	return out, nil
+}
+
+// ValidatorValidatorPoolOverview matches the IDL struct ValidatorPoolOverview.
+type ValidatorValidatorPoolOverview struct {
+	Validator any
+	ConsensusAccount *crypto.Address
+	PoolId any
+	StakeAsset *crypto.Address
+	RewardAsset *crypto.Address
+	TotalStake uint64
+	CommissionRateBps uint64
+	ActiveStakerCount uint64
+}
+
+// ToValue converts ValidatorValidatorPoolOverview into the provider wire value (map[string]any).
+func (v ValidatorValidatorPoolOverview) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 8)
+	// validator: ValidatorId
+	out["validator"] = v.Validator
+	// consensus_account: Address
+	out["consensus_account"] = v.ConsensusAccount
+	// pool_id: PoolId
+	out["pool_id"] = v.PoolId
+	// stake_asset: Address
+	out["stake_asset"] = v.StakeAsset
+	// reward_asset: Address
+	out["reward_asset"] = v.RewardAsset
+	// total_stake: u64
+	out["total_stake"] = v.TotalStake
+	// commission_rate_bps: u64
+	out["commission_rate_bps"] = v.CommissionRateBps
+	// active_staker_count: u64
+	out["active_staker_count"] = v.ActiveStakerCount
+	return out, nil
+}
+
+// ValidatorValidatorPoolList matches the IDL struct ValidatorPoolList.
+type ValidatorValidatorPoolList struct {
+	Epoch uint64
+	ValidatorSetHash *[32]byte
+	Validators []ValidatorValidatorPoolOverview
+}
+
+// ToValue converts ValidatorValidatorPoolList into the provider wire value (map[string]any).
+func (v ValidatorValidatorPoolList) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// epoch: u64
+	out["epoch"] = v.Epoch
+	// validator_set_hash: option<B256>
+	if v.ValidatorSetHash == nil {
+		out["validator_set_hash"] = nil
+	} else {
+		out["validator_set_hash"] = *v.ValidatorSetHash
+	}
+	// validators: vec<ValidatorPoolOverview>
+	v0 := make([]any, len(v.Validators))
+	for v1, v2 := range v.Validators {
+		v3, err := toValidatorValidatorPoolOverviewValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v0[v1] = v3
+	}
+	out["validators"] = v0
+	return out, nil
+}
+
+// ValidatorAvailabilityDeclaration matches the IDL struct AvailabilityDeclaration.
+type ValidatorAvailabilityDeclaration struct {
+	TargetEpoch uint64
+	Validator any
+	Controller *crypto.Address
+}
+
+// ToValue converts ValidatorAvailabilityDeclaration into the provider wire value (map[string]any).
+func (v ValidatorAvailabilityDeclaration) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// target_epoch: u64
+	out["target_epoch"] = v.TargetEpoch
+	// validator: ValidatorId
+	out["validator"] = v.Validator
+	// controller: Address
+	out["controller"] = v.Controller
+	return out, nil
+}
+
+// ValidatorPoolRewardConfig matches the IDL struct PoolRewardConfig.
+type ValidatorPoolRewardConfig struct {
+	CommissionRateBps uint64
+	CommissionRecipient *crypto.Address
+}
+
+// ToValue converts ValidatorPoolRewardConfig into the provider wire value (map[string]any).
+func (v ValidatorPoolRewardConfig) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// commission_rate_bps: u64
+	out["commission_rate_bps"] = v.CommissionRateBps
+	// commission_recipient: Address
+	out["commission_recipient"] = v.CommissionRecipient
+	return out, nil
+}
+
 // KeylessStringOrArray matches the IDL enum StringOrArray.
 type KeylessStringOrArray struct {
 	Variant string // Active variant name
@@ -15891,45 +17108,41 @@ func fromSystemConsensusValidatorIdentity(v any) (out SystemConsensusValidatorId
 	if err != nil {
 		return out, err
 	}
-	// validator: Address
+	// validator: ValidatorId
 	{
-		v0, err := toAddress(m["validator"])
-		if err != nil {
-			return out, err
-		}
-		out.Validator = v0
+		out.Validator = m["validator"]
 	}
 	// consensus_account: Address
 	{
-		v1, err := toAddress(m["consensus_account"])
+		v0, err := toAddress(m["consensus_account"])
 		if err != nil {
 			return out, err
 		}
-		out.ConsensusAccount = v1
+		out.ConsensusAccount = v0
 	}
 	// consensus_pubkey: bytes
 	{
-		v2, err := toBytes(m["consensus_pubkey"])
+		v1, err := toBytes(m["consensus_pubkey"])
 		if err != nil {
 			return out, err
 		}
-		out.ConsensusPubkey = v2
+		out.ConsensusPubkey = v1
 	}
 	// bls_pubkey: bytes
 	{
-		v3, err := toBytes(m["bls_pubkey"])
+		v2, err := toBytes(m["bls_pubkey"])
 		if err != nil {
 			return out, err
 		}
-		out.BlsPubkey = v3
+		out.BlsPubkey = v2
 	}
 	// ed25519_pubkey: bytes
 	{
-		v4, err := toBytes(m["ed25519_pubkey"])
+		v3, err := toBytes(m["ed25519_pubkey"])
 		if err != nil {
 			return out, err
 		}
-		out.Ed25519Pubkey = v4
+		out.Ed25519Pubkey = v3
 	}
 	return out, nil
 }
@@ -16542,221 +17755,183 @@ func fromTokenGiftCleanupQueueState(v any) (out TokenGiftCleanupQueueState, err 
 	return out, nil
 }
 
-// fromStakingValidatorStatus converts a decoded IDL value into StakingValidatorStatus.
-func fromStakingValidatorStatus(v any) (out StakingValidatorStatus, err error) {
+// fromTokenVestingRecipient converts a decoded IDL value into TokenVestingRecipient.
+func fromTokenVestingRecipient(v any) (out TokenVestingRecipient, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum ValidatorStatus: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	return out, nil
-}
-
-// fromStakingValidatorProfile converts a decoded IDL value into StakingValidatorProfile.
-func fromStakingValidatorProfile(v any) (out StakingValidatorProfile, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// validator: Address
+	// recipient: Address
 	{
-		v0, err := toAddress(m["validator"])
+		v0, err := toAddress(m["recipient"])
 		if err != nil {
 			return out, err
 		}
-		out.Validator = v0
+		out.Recipient = v0
 	}
-	// operator: Address
+	// total_amount: u64
 	{
-		v1, err := toAddress(m["operator"])
+		v1, err := toUint64(m["total_amount"])
 		if err != nil {
 			return out, err
 		}
-		out.Operator = v1
+		out.TotalAmount = v1
 	}
-	// status: ValidatorStatus
+	// initial_amount: u64
 	{
-		v2, err := fromStakingValidatorStatus(m["status"])
+		v2, err := toUint64(m["initial_amount"])
 		if err != nil {
 			return out, err
 		}
-		out.Status = v2
+		out.InitialAmount = v2
 	}
-	// commission_rate_bps: u64
+	// period_seconds: u64
 	{
-		v3, err := toUint64(m["commission_rate_bps"])
+		v3, err := toUint64(m["period_seconds"])
 		if err != nil {
 			return out, err
 		}
-		out.CommissionRateBps = v3
+		out.PeriodSeconds = v3
 	}
-	return out, nil
-}
-
-// fromStakingValidatorPoolView converts a decoded IDL value into StakingValidatorPoolView.
-func fromStakingValidatorPoolView(v any) (out StakingValidatorPoolView, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// validator: Address
+	// periods: u64
 	{
-		v0, err := toAddress(m["validator"])
+		v4, err := toUint64(m["periods"])
 		if err != nil {
 			return out, err
 		}
-		out.Validator = v0
+		out.Periods = v4
 	}
-	// operator: Address
+	// amount_per_period: u64
 	{
-		v1, err := toAddress(m["operator"])
+		v5, err := toUint64(m["amount_per_period"])
 		if err != nil {
 			return out, err
 		}
-		out.Operator = v1
-	}
-	// operator_stake: u64
-	{
-		v2, err := toUint64(m["operator_stake"])
-		if err != nil {
-			return out, err
-		}
-		out.OperatorStake = v2
-	}
-	// delegated_stake: u64
-	{
-		v3, err := toUint64(m["delegated_stake"])
-		if err != nil {
-			return out, err
-		}
-		out.DelegatedStake = v3
-	}
-	// total_stake: u64
-	{
-		v4, err := toUint64(m["total_stake"])
-		if err != nil {
-			return out, err
-		}
-		out.TotalStake = v4
-	}
-	// total_shares: u64
-	{
-		v5, err := toUint64(m["total_shares"])
-		if err != nil {
-			return out, err
-		}
-		out.TotalShares = v5
-	}
-	// reward_index: u128
-	{
-		v6, err := toBigInt(m["reward_index"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardIndex = v6
-	}
-	// scaled_reward_remainder: u128
-	{
-		v7, err := toBigInt(m["scaled_reward_remainder"])
-		if err != nil {
-			return out, err
-		}
-		out.ScaledRewardRemainder = v7
-	}
-	// claimable_operator_commission: u64
-	{
-		v8, err := toUint64(m["claimable_operator_commission"])
-		if err != nil {
-			return out, err
-		}
-		out.ClaimableOperatorCommission = v8
-	}
-	// commission_rate_bps: u64
-	{
-		v9, err := toUint64(m["commission_rate_bps"])
-		if err != nil {
-			return out, err
-		}
-		out.CommissionRateBps = v9
+		out.AmountPerPeriod = v5
 	}
 	return out, nil
 }
 
-// fromStakingOperatorRewardReceipt converts a decoded IDL value into StakingOperatorRewardReceipt.
-func fromStakingOperatorRewardReceipt(v any) (out StakingOperatorRewardReceipt, err error) {
+// fromTokenVestingState converts a decoded IDL value into TokenVestingState.
+func fromTokenVestingState(v any) (out TokenVestingState, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// share_rewards_paid: u64
+	// vesting_id: Address
 	{
-		v0, err := toUint64(m["share_rewards_paid"])
+		v0, err := toAddress(m["vesting_id"])
 		if err != nil {
 			return out, err
 		}
-		out.ShareRewardsPaid = v0
+		out.VestingId = v0
 	}
-	// commission_paid: u64
+	// creator: Address
 	{
-		v1, err := toUint64(m["commission_paid"])
+		v1, err := toAddress(m["creator"])
 		if err != nil {
 			return out, err
 		}
-		out.CommissionPaid = v1
+		out.Creator = v1
 	}
-	// total_paid: u64
+	// token: Address
 	{
-		v2, err := toUint64(m["total_paid"])
+		v2, err := toAddress(m["token"])
 		if err != nil {
 			return out, err
 		}
-		out.TotalPaid = v2
+		out.Token = v2
 	}
-	return out, nil
-}
-
-// fromStakingCandidatePool converts a decoded IDL value into StakingCandidatePool.
-func fromStakingCandidatePool(v any) (out StakingCandidatePool, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// validators: vec<Address>
+	// start_at_ms: u64
 	{
-		v0, err := toSlice(m["validators"])
+		v3, err := toUint64(m["start_at_ms"])
 		if err != nil {
 			return out, err
 		}
-		out.Validators = make([]*crypto.Address, len(v0))
-		for v1, v2 := range v0 {
-			v3, err := toAddress(v2)
+		out.StartAtMs = v3
+	}
+	// recipients: vec<VestingRecipient>
+	{
+		v4, err := toSlice(m["recipients"])
+		if err != nil {
+			return out, err
+		}
+		out.Recipients = make([]TokenVestingRecipient, len(v4))
+		for v5, v6 := range v4 {
+			v7, err := fromTokenVestingRecipient(v6)
 			if err != nil {
 				return out, err
 			}
-			out.Validators[v1] = v3
+			out.Recipients[v5] = v7
 		}
+	}
+	// claimed_amounts: vec<u64>
+	{
+		v8, err := toSlice(m["claimed_amounts"])
+		if err != nil {
+			return out, err
+		}
+		out.ClaimedAmounts = make([]uint64, len(v8))
+		for v9, v10 := range v8 {
+			v11, err := toUint64(v10)
+			if err != nil {
+				return out, err
+			}
+			out.ClaimedAmounts[v9] = v11
+		}
+	}
+	// total_amount: u64
+	{
+		v12, err := toUint64(m["total_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.TotalAmount = v12
+	}
+	// remaining_amount: u64
+	{
+		v13, err := toUint64(m["remaining_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.RemainingAmount = v13
+	}
+	// gas_budget: u64
+	{
+		v14, err := toUint64(m["gas_budget"])
+		if err != nil {
+			return out, err
+		}
+		out.GasBudget = v14
+	}
+	// gas_refunded: bool
+	{
+		v15, err := toBool(m["gas_refunded"])
+		if err != nil {
+			return out, err
+		}
+		out.GasRefunded = v15
+	}
+	// seed: B256
+	{
+		v16, err := toFixed32(m["seed"])
+		if err != nil {
+			return out, err
+		}
+		out.Seed = v16
 	}
 	return out, nil
 }
 
-// fromStakingCandidateAction converts a decoded IDL value into StakingCandidateAction.
-func fromStakingCandidateAction(v any) (out StakingCandidateAction, err error) {
+// fromStakingPoolStatus converts a decoded IDL value into StakingPoolStatus.
+func fromStakingPoolStatus(v any) (out StakingPoolStatus, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
 	s, ok := m["variant"].(string)
 	if !ok {
-		return out, fmt.Errorf("enum CandidateAction: missing variant")
+		return out, fmt.Errorf("enum PoolStatus: missing variant")
 	}
 	out.Variant = s
 	n, err := toUint(m["index"])
@@ -16767,167 +17942,172 @@ func fromStakingCandidateAction(v any) (out StakingCandidateAction, err error) {
 	return out, nil
 }
 
-// fromStakingStakeIntent converts a decoded IDL value into StakingStakeIntent.
-func fromStakingStakeIntent(v any) (out StakingStakeIntent, err error) {
+// fromStakingSlashingMode converts a decoded IDL value into StakingSlashingMode.
+func fromStakingSlashingMode(v any) (out StakingSlashingMode, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// target_epoch: u64
-	{
-		v0, err := toUint64(m["target_epoch"])
-		if err != nil {
-			return out, err
-		}
-		out.TargetEpoch = v0
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum SlashingMode: missing variant")
 	}
-	// owner: Address
-	{
-		v1, err := toAddress(m["owner"])
-		if err != nil {
-			return out, err
-		}
-		out.Owner = v1
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
 	}
-	// validator: Address
-	{
-		v2, err := toAddress(m["validator"])
-		if err != nil {
-			return out, err
-		}
-		out.Validator = v2
+	out.Index = n
+	return out, nil
+}
+
+// fromStakingCycleBasis converts a decoded IDL value into StakingCycleBasis.
+func fromStakingCycleBasis(v any) (out StakingCycleBasis, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
 	}
-	// amount: u64
-	{
-		v3, err := toUint64(m["amount"])
-		if err != nil {
-			return out, err
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum CycleBasis: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	switch out.Variant {
+	case "Block":
+		out.Fields = []any{
+			m["anchor_block"],
+			m["length_blocks"],
 		}
-		out.Amount = v3
+	case "Timestamp":
+		out.Fields = []any{
+			m["anchor_timestamp_ms"],
+			m["length_ms"],
+		}
 	}
 	return out, nil
 }
 
-// fromStakingUnstakeIntent converts a decoded IDL value into StakingUnstakeIntent.
-func fromStakingUnstakeIntent(v any) (out StakingUnstakeIntent, err error) {
+// fromStakingPoolCycleConfig converts a decoded IDL value into StakingPoolCycleConfig.
+func fromStakingPoolCycleConfig(v any) (out StakingPoolCycleConfig, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// target_epoch: u64
+	// basis: CycleBasis
 	{
-		v0, err := toUint64(m["target_epoch"])
+		v0, err := fromStakingCycleBasis(m["basis"])
 		if err != nil {
 			return out, err
 		}
-		out.TargetEpoch = v0
+		out.Basis = v0
 	}
-	// owner: Address
+	// stake_activation_delay: u64
 	{
-		v1, err := toAddress(m["owner"])
+		v1, err := toUint64(m["stake_activation_delay"])
 		if err != nil {
 			return out, err
 		}
-		out.Owner = v1
+		out.StakeActivationDelay = v1
 	}
-	// validator: Address
+	// unstake_activation_delay: u64
 	{
-		v2, err := toAddress(m["validator"])
+		v2, err := toUint64(m["unstake_activation_delay"])
 		if err != nil {
 			return out, err
 		}
-		out.Validator = v2
+		out.UnstakeActivationDelay = v2
 	}
-	// shares: u64
+	// reward_distribution_delay: u64
 	{
-		v3, err := toUint64(m["shares"])
+		v3, err := toUint64(m["reward_distribution_delay"])
 		if err != nil {
 			return out, err
 		}
-		out.Shares = v3
+		out.RewardDistributionDelay = v3
+	}
+	// commission_change_delay: u64
+	{
+		v4, err := toUint64(m["commission_change_delay"])
+		if err != nil {
+			return out, err
+		}
+		out.CommissionChangeDelay = v4
 	}
 	return out, nil
 }
 
-// fromStakingCandidateIntent converts a decoded IDL value into StakingCandidateIntent.
-func fromStakingCandidateIntent(v any) (out StakingCandidateIntent, err error) {
+// fromStakingPoolRewardConfig converts a decoded IDL value into StakingPoolRewardConfig.
+func fromStakingPoolRewardConfig(v any) (out StakingPoolRewardConfig, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// target_epoch: u64
+	// commission_rate_bps: u64
 	{
-		v0, err := toUint64(m["target_epoch"])
+		v0, err := toUint64(m["commission_rate_bps"])
 		if err != nil {
 			return out, err
 		}
-		out.TargetEpoch = v0
+		out.CommissionRateBps = v0
 	}
-	// operator: Address
+	// commission_recipient: Address
 	{
-		v1, err := toAddress(m["operator"])
+		v1, err := toAddress(m["commission_recipient"])
 		if err != nil {
 			return out, err
 		}
-		out.Operator = v1
-	}
-	// validator: Address
-	{
-		v2, err := toAddress(m["validator"])
-		if err != nil {
-			return out, err
-		}
-		out.Validator = v2
-	}
-	// action: CandidateAction
-	{
-		v3, err := fromStakingCandidateAction(m["action"])
-		if err != nil {
-			return out, err
-		}
-		out.Action = v3
+		out.CommissionRecipient = v1
 	}
 	return out, nil
 }
 
-// fromStakingValidatorAvailabilityDeclaration converts a decoded IDL value into StakingValidatorAvailabilityDeclaration.
-func fromStakingValidatorAvailabilityDeclaration(v any) (out StakingValidatorAvailabilityDeclaration, err error) {
+// fromStakingPendingRewardConfig converts a decoded IDL value into StakingPendingRewardConfig.
+func fromStakingPendingRewardConfig(v any) (out StakingPendingRewardConfig, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// target_epoch: u64
+	// config: PoolRewardConfig
 	{
-		v0, err := toUint64(m["target_epoch"])
+		v0, err := fromStakingPoolRewardConfig(m["config"])
 		if err != nil {
 			return out, err
 		}
-		out.TargetEpoch = v0
+		out.Config = v0
 	}
-	// validator: Address
+	// requested_cycle: u64
 	{
-		v1, err := toAddress(m["validator"])
+		v1, err := toUint64(m["requested_cycle"])
 		if err != nil {
 			return out, err
 		}
-		out.Validator = v1
+		out.RequestedCycle = v1
 	}
-	// operator: Address
+	// effective_cycle: u64
 	{
-		v2, err := toAddress(m["operator"])
+		v2, err := toUint64(m["effective_cycle"])
 		if err != nil {
 			return out, err
 		}
-		out.Operator = v2
+		out.EffectiveCycle = v2
 	}
 	return out, nil
 }
 
-// fromStakingStakePosition converts a decoded IDL value into StakingStakePosition.
-func fromStakingStakePosition(v any) (out StakingStakePosition, err error) {
+// fromStakingPool converts a decoded IDL value into StakingPool.
+func fromStakingPool(v any) (out StakingPool, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
+	}
+	// pool_id: PoolId
+	{
+		out.PoolId = m["pool_id"]
 	}
 	// owner: Address
 	{
@@ -16937,13 +18117,257 @@ func fromStakingStakePosition(v any) (out StakingStakePosition, err error) {
 		}
 		out.Owner = v0
 	}
-	// validator: Address
+	// stake_asset: Address
 	{
-		v1, err := toAddress(m["validator"])
+		v1, err := toAddress(m["stake_asset"])
 		if err != nil {
 			return out, err
 		}
-		out.Validator = v1
+		out.StakeAsset = v1
+	}
+	// reward_asset: Address
+	{
+		v2, err := toAddress(m["reward_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardAsset = v2
+	}
+	// status: PoolStatus
+	{
+		v3, err := fromStakingPoolStatus(m["status"])
+		if err != nil {
+			return out, err
+		}
+		out.Status = v3
+	}
+	// slashing_mode: SlashingMode
+	{
+		v4, err := fromStakingSlashingMode(m["slashing_mode"])
+		if err != nil {
+			return out, err
+		}
+		out.SlashingMode = v4
+	}
+	// cycle_config: PoolCycleConfig
+	{
+		v5, err := fromStakingPoolCycleConfig(m["cycle_config"])
+		if err != nil {
+			return out, err
+		}
+		out.CycleConfig = v5
+	}
+	// total_shares: u64
+	{
+		v6, err := toUint64(m["total_shares"])
+		if err != nil {
+			return out, err
+		}
+		out.TotalShares = v6
+	}
+	// principal_assets: u64
+	{
+		v7, err := toUint64(m["principal_assets"])
+		if err != nil {
+			return out, err
+		}
+		out.PrincipalAssets = v7
+	}
+	// held_principal: u64
+	{
+		v8, err := toUint64(m["held_principal"])
+		if err != nil {
+			return out, err
+		}
+		out.HeldPrincipal = v8
+	}
+	// reward_index: u128
+	{
+		v9, err := toBigInt(m["reward_index"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardIndex = v9
+	}
+	// scaled_reward_remainder: u128
+	{
+		v10, err := toBigInt(m["scaled_reward_remainder"])
+		if err != nil {
+			return out, err
+		}
+		out.ScaledRewardRemainder = v10
+	}
+	// reward_config: PoolRewardConfig
+	{
+		v11, err := fromStakingPoolRewardConfig(m["reward_config"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardConfig = v11
+	}
+	// pending_reward_config: option<PendingRewardConfig>
+	{
+		if m["pending_reward_config"] == nil {
+			out.PendingRewardConfig = nil
+		} else {
+			var v12 StakingPendingRewardConfig
+			v13, err := fromStakingPendingRewardConfig(m["pending_reward_config"])
+			if err != nil {
+				return out, err
+			}
+			v12 = v13
+			out.PendingRewardConfig = &v12
+		}
+	}
+	// claimable_commission: u64
+	{
+		v14, err := toUint64(m["claimable_commission"])
+		if err != nil {
+			return out, err
+		}
+		out.ClaimableCommission = v14
+	}
+	// reward_liability: u64
+	{
+		v15, err := toUint64(m["reward_liability"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardLiability = v15
+	}
+	// settlement_cursor: u64
+	{
+		v16, err := toUint64(m["settlement_cursor"])
+		if err != nil {
+			return out, err
+		}
+		out.SettlementCursor = v16
+	}
+	// pending_stake_count: u64
+	{
+		v17, err := toUint64(m["pending_stake_count"])
+		if err != nil {
+			return out, err
+		}
+		out.PendingStakeCount = v17
+	}
+	// pending_unstake_count: u64
+	{
+		v18, err := toUint64(m["pending_unstake_count"])
+		if err != nil {
+			return out, err
+		}
+		out.PendingUnstakeCount = v18
+	}
+	// closing_cycle: option<u64>
+	{
+		if m["closing_cycle"] == nil {
+			out.ClosingCycle = nil
+		} else {
+			var v19 uint64
+			v20, err := toUint64(m["closing_cycle"])
+			if err != nil {
+				return out, err
+			}
+			v19 = v20
+			out.ClosingCycle = &v19
+		}
+	}
+	// scheduled_cycles: vec<u64>
+	{
+		v21, err := toSlice(m["scheduled_cycles"])
+		if err != nil {
+			return out, err
+		}
+		out.ScheduledCycles = make([]uint64, len(v21))
+		for v22, v23 := range v21 {
+			v24, err := toUint64(v23)
+			if err != nil {
+				return out, err
+			}
+			out.ScheduledCycles[v22] = v24
+		}
+	}
+	return out, nil
+}
+
+// fromStakingStakeStatus converts a decoded IDL value into StakingStakeStatus.
+func fromStakingStakeStatus(v any) (out StakingStakeStatus, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum StakeStatus: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromStakingPendingUnstake converts a decoded IDL value into StakingPendingUnstake.
+func fromStakingPendingUnstake(v any) (out StakingPendingUnstake, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// shares: u64
+	{
+		v0, err := toUint64(m["shares"])
+		if err != nil {
+			return out, err
+		}
+		out.Shares = v0
+	}
+	// submitted_cycle: u64
+	{
+		v1, err := toUint64(m["submitted_cycle"])
+		if err != nil {
+			return out, err
+		}
+		out.SubmittedCycle = v1
+	}
+	// effective_cycle: u64
+	{
+		v2, err := toUint64(m["effective_cycle"])
+		if err != nil {
+			return out, err
+		}
+		out.EffectiveCycle = v2
+	}
+	return out, nil
+}
+
+// fromStakingStake converts a decoded IDL value into StakingStake.
+func fromStakingStake(v any) (out StakingStake, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// stake_id: B256
+	{
+		v0, err := toFixed32(m["stake_id"])
+		if err != nil {
+			return out, err
+		}
+		out.StakeId = v0
+	}
+	// owner: Address
+	{
+		v1, err := toAddress(m["owner"])
+		if err != nil {
+			return out, err
+		}
+		out.Owner = v1
+	}
+	// pool_id: PoolId
+	{
+		out.PoolId = m["pool_id"]
 	}
 	// shares: u64
 	{
@@ -16953,27 +18377,73 @@ func fromStakingStakePosition(v any) (out StakingStakePosition, err error) {
 		}
 		out.Shares = v2
 	}
-	// reward_debt: u128
+	// principal: u64
 	{
-		v3, err := toBigInt(m["reward_debt"])
+		v3, err := toUint64(m["principal"])
 		if err != nil {
 			return out, err
 		}
-		out.RewardDebt = v3
+		out.Principal = v3
+	}
+	// reward_debt: u128
+	{
+		v4, err := toBigInt(m["reward_debt"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardDebt = v4
 	}
 	// claimable_rewards: u64
 	{
-		v4, err := toUint64(m["claimable_rewards"])
+		v5, err := toUint64(m["claimable_rewards"])
 		if err != nil {
 			return out, err
 		}
-		out.ClaimableRewards = v4
+		out.ClaimableRewards = v5
+	}
+	// submitted_cycle: u64
+	{
+		v6, err := toUint64(m["submitted_cycle"])
+		if err != nil {
+			return out, err
+		}
+		out.SubmittedCycle = v6
+	}
+	// effective_cycle: u64
+	{
+		v7, err := toUint64(m["effective_cycle"])
+		if err != nil {
+			return out, err
+		}
+		out.EffectiveCycle = v7
+	}
+	// status: StakeStatus
+	{
+		v8, err := fromStakingStakeStatus(m["status"])
+		if err != nil {
+			return out, err
+		}
+		out.Status = v8
+	}
+	// pending_unstake: option<PendingUnstake>
+	{
+		if m["pending_unstake"] == nil {
+			out.PendingUnstake = nil
+		} else {
+			var v9 StakingPendingUnstake
+			v10, err := fromStakingPendingUnstake(m["pending_unstake"])
+			if err != nil {
+				return out, err
+			}
+			v9 = v10
+			out.PendingUnstake = &v9
+		}
 	}
 	return out, nil
 }
 
-// fromStakingPositionSummary converts a decoded IDL value into StakingPositionSummary.
-func fromStakingPositionSummary(v any) (out StakingPositionSummary, err error) {
+// fromStakingPoolStakePosition converts a decoded IDL value into StakingPoolStakePosition.
+func fromStakingPoolStakePosition(v any) (out StakingPoolStakePosition, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
@@ -16986,444 +18456,223 @@ func fromStakingPositionSummary(v any) (out StakingPositionSummary, err error) {
 		}
 		out.Owner = v0
 	}
-	// validator: Address
+	// pool_id: PoolId
 	{
-		v1, err := toAddress(m["validator"])
-		if err != nil {
-			return out, err
-		}
-		out.Validator = v1
+		out.PoolId = m["pool_id"]
 	}
-	// pending_stake: u64
+	// shares: u64
 	{
-		v2, err := toUint64(m["pending_stake"])
+		v1, err := toUint64(m["shares"])
 		if err != nil {
 			return out, err
 		}
-		out.PendingStake = v2
+		out.Shares = v1
 	}
-	// settled_shares: u64
+	// reward_debt: u128
 	{
-		v3, err := toUint64(m["settled_shares"])
+		v2, err := toBigInt(m["reward_debt"])
 		if err != nil {
 			return out, err
 		}
-		out.SettledShares = v3
-	}
-	// pending_unstake_shares: u64
-	{
-		v4, err := toUint64(m["pending_unstake_shares"])
-		if err != nil {
-			return out, err
-		}
-		out.PendingUnstakeShares = v4
-	}
-	// unstakeable_shares: u64
-	{
-		v5, err := toUint64(m["unstakeable_shares"])
-		if err != nil {
-			return out, err
-		}
-		out.UnstakeableShares = v5
+		out.RewardDebt = v2
 	}
 	// claimable_rewards: u64
 	{
-		v6, err := toUint64(m["claimable_rewards"])
+		v3, err := toUint64(m["claimable_rewards"])
 		if err != nil {
 			return out, err
 		}
-		out.ClaimableRewards = v6
-	}
-	// next_settlement_epoch: option<u64>
-	{
-		if m["next_settlement_epoch"] == nil {
-			out.NextSettlementEpoch = nil
-		} else {
-			var v7 uint64
-			v8, err := toUint64(m["next_settlement_epoch"])
-			if err != nil {
-				return out, err
-			}
-			v7 = v8
-			out.NextSettlementEpoch = &v7
-		}
+		out.ClaimableRewards = v3
 	}
 	return out, nil
 }
 
-// fromStakingCandidateRejectionReason converts a decoded IDL value into StakingCandidateRejectionReason.
-func fromStakingCandidateRejectionReason(v any) (out StakingCandidateRejectionReason, err error) {
+// fromStakingCycleBucket converts a decoded IDL value into StakingCycleBucket.
+func fromStakingCycleBucket(v any) (out StakingCycleBucket, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum CandidateRejectionReason: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	return out, nil
-}
-
-// fromStakingCandidateRejection converts a decoded IDL value into StakingCandidateRejection.
-func fromStakingCandidateRejection(v any) (out StakingCandidateRejection, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// validator: Address
+	// stake_shares: u64
 	{
-		v0, err := toAddress(m["validator"])
+		v0, err := toUint64(m["stake_shares"])
 		if err != nil {
 			return out, err
 		}
-		out.Validator = v0
+		out.StakeShares = v0
 	}
-	// action: CandidateAction
+	// unstake_shares: u64
 	{
-		v1, err := fromStakingCandidateAction(m["action"])
+		v1, err := toUint64(m["unstake_shares"])
 		if err != nil {
 			return out, err
 		}
-		out.Action = v1
+		out.UnstakeShares = v1
 	}
-	// reason: CandidateRejectionReason
+	// reward: u64
 	{
-		v2, err := fromStakingCandidateRejectionReason(m["reason"])
+		v2, err := toUint64(m["reward"])
 		if err != nil {
 			return out, err
 		}
-		out.Reason = v2
+		out.Reward = v2
 	}
 	return out, nil
 }
 
-// fromStakingEligibleValidator converts a decoded IDL value into StakingEligibleValidator.
-func fromStakingEligibleValidator(v any) (out StakingEligibleValidator, err error) {
+// fromStakingCycleRecord converts a decoded IDL value into StakingCycleRecord.
+func fromStakingCycleRecord(v any) (out StakingCycleRecord, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// validator: Address
+	// written: bool
 	{
-		v0, err := toAddress(m["validator"])
+		v0, err := toBool(m["written"])
 		if err != nil {
 			return out, err
 		}
-		out.Validator = v0
-	}
-	return out, nil
-}
-
-// fromStakingEpochTransition converts a decoded IDL value into StakingEpochTransition.
-func fromStakingEpochTransition(v any) (out StakingEpochTransition, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// epoch: u64
-	{
-		v0, err := toUint64(m["epoch"])
-		if err != nil {
-			return out, err
-		}
-		out.Epoch = v0
-	}
-	// reward_per_validator: u64
-	{
-		v1, err := toUint64(m["reward_per_validator"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardPerValidator = v1
-	}
-	// distributed_rewards: u64
-	{
-		v2, err := toUint64(m["distributed_rewards"])
-		if err != nil {
-			return out, err
-		}
-		out.DistributedRewards = v2
-	}
-	// rewarded_epoch: u64
-	{
-		v3, err := toUint64(m["rewarded_epoch"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardedEpoch = v3
-	}
-	// rewarded_validator_count: u64
-	{
-		v4, err := toUint64(m["rewarded_validator_count"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardedValidatorCount = v4
-	}
-	// settled_stake_intent_count: u64
-	{
-		v5, err := toUint64(m["settled_stake_intent_count"])
-		if err != nil {
-			return out, err
-		}
-		out.SettledStakeIntentCount = v5
-	}
-	// settled_unstake_intent_count: u64
-	{
-		v6, err := toUint64(m["settled_unstake_intent_count"])
-		if err != nil {
-			return out, err
-		}
-		out.SettledUnstakeIntentCount = v6
-	}
-	// applied_candidate_intent_count: u64
-	{
-		v7, err := toUint64(m["applied_candidate_intent_count"])
-		if err != nil {
-			return out, err
-		}
-		out.AppliedCandidateIntentCount = v7
-	}
-	// candidate_rejections: vec<CandidateRejection>
-	{
-		v8, err := toSlice(m["candidate_rejections"])
-		if err != nil {
-			return out, err
-		}
-		out.CandidateRejections = make([]StakingCandidateRejection, len(v8))
-		for v9, v10 := range v8 {
-			v11, err := fromStakingCandidateRejection(v10)
-			if err != nil {
-				return out, err
-			}
-			out.CandidateRejections[v9] = v11
-		}
-	}
-	return out, nil
-}
-
-// fromStakingEpochConfig converts a decoded IDL value into StakingEpochConfig.
-func fromStakingEpochConfig(v any) (out StakingEpochConfig, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// reward_per_validator: u64
-	{
-		v0, err := toUint64(m["reward_per_validator"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardPerValidator = v0
-	}
-	return out, nil
-}
-
-// fromStakingEpochState converts a decoded IDL value into StakingEpochState.
-func fromStakingEpochState(v any) (out StakingEpochState, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// last_settled_epoch: u64
-	{
-		v0, err := toUint64(m["last_settled_epoch"])
-		if err != nil {
-			return out, err
-		}
-		out.LastSettledEpoch = v0
-	}
-	return out, nil
-}
-
-// fromStakingRewardTreasury converts a decoded IDL value into StakingRewardTreasury.
-func fromStakingRewardTreasury(v any) (out StakingRewardTreasury, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// address: Address
-	{
-		v0, err := toAddress(m["address"])
-		if err != nil {
-			return out, err
-		}
-		out.Address = v0
-	}
-	// balance: u64
-	{
-		v1, err := toUint64(m["balance"])
-		if err != nil {
-			return out, err
-		}
-		out.Balance = v1
-	}
-	// available_rewards: u64
-	{
-		v2, err := toUint64(m["available_rewards"])
-		if err != nil {
-			return out, err
-		}
-		out.AvailableRewards = v2
-	}
-	// reserved_rewards: u64
-	{
-		v3, err := toUint64(m["reserved_rewards"])
-		if err != nil {
-			return out, err
-		}
-		out.ReservedRewards = v3
-	}
-	return out, nil
-}
-
-// fromStakingValidatorMetadata converts a decoded IDL value into StakingValidatorMetadata.
-func fromStakingValidatorMetadata(v any) (out StakingValidatorMetadata, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// validator: Address
-	{
-		v0, err := toAddress(m["validator"])
-		if err != nil {
-			return out, err
-		}
-		out.Validator = v0
-	}
-	// operator: Address
-	{
-		v1, err := toAddress(m["operator"])
-		if err != nil {
-			return out, err
-		}
-		out.Operator = v1
-	}
-	// commission_rate_bps: u64
-	{
-		v2, err := toUint64(m["commission_rate_bps"])
-		if err != nil {
-			return out, err
-		}
-		out.CommissionRateBps = v2
-	}
-	return out, nil
-}
-
-// fromStakingPoolAccounting converts a decoded IDL value into StakingPoolAccounting.
-func fromStakingPoolAccounting(v any) (out StakingPoolAccounting, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// operator_stake: u64
-	{
-		v0, err := toUint64(m["operator_stake"])
-		if err != nil {
-			return out, err
-		}
-		out.OperatorStake = v0
-	}
-	// delegated_stake: u64
-	{
-		v1, err := toUint64(m["delegated_stake"])
-		if err != nil {
-			return out, err
-		}
-		out.DelegatedStake = v1
-	}
-	// total_shares: u64
-	{
-		v2, err := toUint64(m["total_shares"])
-		if err != nil {
-			return out, err
-		}
-		out.TotalShares = v2
+		out.Written = v0
 	}
 	// reward_index: u128
 	{
-		v3, err := toBigInt(m["reward_index"])
+		v1, err := toBigInt(m["reward_index"])
 		if err != nil {
 			return out, err
 		}
-		out.RewardIndex = v3
-	}
-	// scaled_reward_remainder: u128
-	{
-		v4, err := toBigInt(m["scaled_reward_remainder"])
-		if err != nil {
-			return out, err
-		}
-		out.ScaledRewardRemainder = v4
-	}
-	// claimable_operator_commission: u64
-	{
-		v5, err := toUint64(m["claimable_operator_commission"])
-		if err != nil {
-			return out, err
-		}
-		out.ClaimableOperatorCommission = v5
+		out.RewardIndex = v1
 	}
 	return out, nil
 }
 
-// fromStakingRewardAccounting converts a decoded IDL value into StakingRewardAccounting.
-func fromStakingRewardAccounting(v any) (out StakingRewardAccounting, err error) {
+// fromStakingSlashReceipt converts a decoded IDL value into StakingSlashReceipt.
+func fromStakingSlashReceipt(v any) (out StakingSlashReceipt, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// available: u64
+	// pool_id: PoolId
 	{
-		v0, err := toUint64(m["available"])
-		if err != nil {
-			return out, err
-		}
-		out.Available = v0
+		out.PoolId = m["pool_id"]
 	}
-	// reserved: u64
+	// amount: u64
 	{
-		v1, err := toUint64(m["reserved"])
+		v0, err := toUint64(m["amount"])
 		if err != nil {
 			return out, err
 		}
-		out.Reserved = v1
+		out.Amount = v0
+	}
+	// effective_cycle: u64
+	{
+		v1, err := toUint64(m["effective_cycle"])
+		if err != nil {
+			return out, err
+		}
+		out.EffectiveCycle = v1
+	}
+	// evidence_id: B256
+	{
+		v2, err := toFixed32(m["evidence_id"])
+		if err != nil {
+			return out, err
+		}
+		out.EvidenceId = v2
 	}
 	return out, nil
 }
 
-// fromStakingAddressList converts a decoded IDL value into StakingAddressList.
-func fromStakingAddressList(v any) (out StakingAddressList, err error) {
+// fromStakingStakeIds converts a decoded IDL value into StakingStakeIds.
+func fromStakingStakeIds(v any) (out StakingStakeIds, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// addresses: vec<Address>
+	// ids: vec<B256>
 	{
-		v0, err := toSlice(m["addresses"])
+		v0, err := toSlice(m["ids"])
 		if err != nil {
 			return out, err
 		}
-		out.Addresses = make([]*crypto.Address, len(v0))
+		out.Ids = make([][32]byte, len(v0))
 		for v1, v2 := range v0 {
-			v3, err := toAddress(v2)
+			v3, err := toFixed32(v2)
 			if err != nil {
 				return out, err
 			}
-			out.Addresses[v1] = v3
+			out.Ids[v1] = v3
 		}
 	}
 	return out, nil
 }
 
-// fromStakingStoredEpochConfig converts a decoded IDL value into StakingStoredEpochConfig.
-func fromStakingStoredEpochConfig(v any) (out StakingStoredEpochConfig, err error) {
+// fromStakingValidatorRewardPolicy converts a decoded IDL value into StakingValidatorRewardPolicy.
+func fromStakingValidatorRewardPolicy(v any) (out StakingValidatorRewardPolicy, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// stake_asset: Address
+	{
+		v0, err := toAddress(m["stake_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.StakeAsset = v0
+	}
+	// reward_asset: Address
+	{
+		v1, err := toAddress(m["reward_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardAsset = v1
+	}
+	// reward_per_validator: u64
+	{
+		v2, err := toUint64(m["reward_per_validator"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardPerValidator = v2
+	}
+	// available: u64
+	{
+		v3, err := toUint64(m["available"])
+		if err != nil {
+			return out, err
+		}
+		out.Available = v3
+	}
+	return out, nil
+}
+
+// fromStakingPolicyAssets converts a decoded IDL value into StakingPolicyAssets.
+func fromStakingPolicyAssets(v any) (out StakingPolicyAssets, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// assets: vec<tuple<Address,Address>>
+	{
+		v0, err := toSlice(m["assets"])
+		if err != nil {
+			return out, err
+		}
+		out.Assets = make([][]any, len(v0))
+		for v1, v2 := range v0 {
+			v3, err := toSlice(v2)
+			if err != nil {
+				return out, err
+			}
+			out.Assets[v1] = v3
+		}
+	}
+	return out, nil
+}
+
+// fromStakingRewardCursor converts a decoded IDL value into StakingRewardCursor.
+func fromStakingRewardCursor(v any) (out StakingRewardCursor, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
@@ -17436,13 +18685,13 @@ func fromStakingStoredEpochConfig(v any) (out StakingStoredEpochConfig, err erro
 		}
 		out.Initialized = v0
 	}
-	// config: EpochConfig
+	// last_settled_epoch: u64
 	{
-		v1, err := fromStakingEpochConfig(m["config"])
+		v1, err := toUint64(m["last_settled_epoch"])
 		if err != nil {
 			return out, err
 		}
-		out.Config = v1
+		out.LastSettledEpoch = v1
 	}
 	return out, nil
 }
@@ -19707,6 +20956,297 @@ func fromDexDidSubjectType(v any) (out DexDidSubjectType, err error) {
 	return out, nil
 }
 
+// fromValidatorValidatorIdentityStatus converts a decoded IDL value into ValidatorValidatorIdentityStatus.
+func fromValidatorValidatorIdentityStatus(v any) (out ValidatorValidatorIdentityStatus, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum ValidatorIdentityStatus: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromValidatorValidatorSelectionStatus converts a decoded IDL value into ValidatorValidatorSelectionStatus.
+func fromValidatorValidatorSelectionStatus(v any) (out ValidatorValidatorSelectionStatus, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum ValidatorSelectionStatus: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromValidatorValidatorProfile converts a decoded IDL value into ValidatorValidatorProfile.
+func fromValidatorValidatorProfile(v any) (out ValidatorValidatorProfile, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// validator: ValidatorId
+	{
+		out.Validator = m["validator"]
+	}
+	// controller: Address
+	{
+		v0, err := toAddress(m["controller"])
+		if err != nil {
+			return out, err
+		}
+		out.Controller = v0
+	}
+	// identity_status: ValidatorIdentityStatus
+	{
+		v1, err := fromValidatorValidatorIdentityStatus(m["identity_status"])
+		if err != nil {
+			return out, err
+		}
+		out.IdentityStatus = v1
+	}
+	// selection_status: ValidatorSelectionStatus
+	{
+		v2, err := fromValidatorValidatorSelectionStatus(m["selection_status"])
+		if err != nil {
+			return out, err
+		}
+		out.SelectionStatus = v2
+	}
+	// pool_id: option<PoolId>
+	{
+		if m["pool_id"] == nil {
+			out.PoolId = nil
+		} else {
+			var v3 any
+			v3 = m["pool_id"]
+			out.PoolId = &v3
+		}
+	}
+	return out, nil
+}
+
+// fromValidatorCandidatePool converts a decoded IDL value into ValidatorCandidatePool.
+func fromValidatorCandidatePool(v any) (out ValidatorCandidatePool, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// validators: vec<ValidatorId>
+	{
+		v0, err := toSlice(m["validators"])
+		if err != nil {
+			return out, err
+		}
+		out.Validators = make([]any, len(v0))
+		for v1, v2 := range v0 {
+			out.Validators[v1] = v2
+		}
+	}
+	return out, nil
+}
+
+// fromValidatorCandidateValidator converts a decoded IDL value into ValidatorCandidateValidator.
+func fromValidatorCandidateValidator(v any) (out ValidatorCandidateValidator, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// validator: ValidatorId
+	{
+		out.Validator = m["validator"]
+	}
+	// consensus_account: Address
+	{
+		v0, err := toAddress(m["consensus_account"])
+		if err != nil {
+			return out, err
+		}
+		out.ConsensusAccount = v0
+	}
+	return out, nil
+}
+
+// fromValidatorValidatorPoolOverview converts a decoded IDL value into ValidatorValidatorPoolOverview.
+func fromValidatorValidatorPoolOverview(v any) (out ValidatorValidatorPoolOverview, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// validator: ValidatorId
+	{
+		out.Validator = m["validator"]
+	}
+	// consensus_account: Address
+	{
+		v0, err := toAddress(m["consensus_account"])
+		if err != nil {
+			return out, err
+		}
+		out.ConsensusAccount = v0
+	}
+	// pool_id: PoolId
+	{
+		out.PoolId = m["pool_id"]
+	}
+	// stake_asset: Address
+	{
+		v1, err := toAddress(m["stake_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.StakeAsset = v1
+	}
+	// reward_asset: Address
+	{
+		v2, err := toAddress(m["reward_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardAsset = v2
+	}
+	// total_stake: u64
+	{
+		v3, err := toUint64(m["total_stake"])
+		if err != nil {
+			return out, err
+		}
+		out.TotalStake = v3
+	}
+	// commission_rate_bps: u64
+	{
+		v4, err := toUint64(m["commission_rate_bps"])
+		if err != nil {
+			return out, err
+		}
+		out.CommissionRateBps = v4
+	}
+	// active_staker_count: u64
+	{
+		v5, err := toUint64(m["active_staker_count"])
+		if err != nil {
+			return out, err
+		}
+		out.ActiveStakerCount = v5
+	}
+	return out, nil
+}
+
+// fromValidatorValidatorPoolList converts a decoded IDL value into ValidatorValidatorPoolList.
+func fromValidatorValidatorPoolList(v any) (out ValidatorValidatorPoolList, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// epoch: u64
+	{
+		v0, err := toUint64(m["epoch"])
+		if err != nil {
+			return out, err
+		}
+		out.Epoch = v0
+	}
+	// validator_set_hash: option<B256>
+	{
+		if m["validator_set_hash"] == nil {
+			out.ValidatorSetHash = nil
+		} else {
+			var v1 [32]byte
+			v2, err := toFixed32(m["validator_set_hash"])
+			if err != nil {
+				return out, err
+			}
+			v1 = v2
+			out.ValidatorSetHash = &v1
+		}
+	}
+	// validators: vec<ValidatorPoolOverview>
+	{
+		v3, err := toSlice(m["validators"])
+		if err != nil {
+			return out, err
+		}
+		out.Validators = make([]ValidatorValidatorPoolOverview, len(v3))
+		for v4, v5 := range v3 {
+			v6, err := fromValidatorValidatorPoolOverview(v5)
+			if err != nil {
+				return out, err
+			}
+			out.Validators[v4] = v6
+		}
+	}
+	return out, nil
+}
+
+// fromValidatorAvailabilityDeclaration converts a decoded IDL value into ValidatorAvailabilityDeclaration.
+func fromValidatorAvailabilityDeclaration(v any) (out ValidatorAvailabilityDeclaration, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// target_epoch: u64
+	{
+		v0, err := toUint64(m["target_epoch"])
+		if err != nil {
+			return out, err
+		}
+		out.TargetEpoch = v0
+	}
+	// validator: ValidatorId
+	{
+		out.Validator = m["validator"]
+	}
+	// controller: Address
+	{
+		v1, err := toAddress(m["controller"])
+		if err != nil {
+			return out, err
+		}
+		out.Controller = v1
+	}
+	return out, nil
+}
+
+// fromValidatorPoolRewardConfig converts a decoded IDL value into ValidatorPoolRewardConfig.
+func fromValidatorPoolRewardConfig(v any) (out ValidatorPoolRewardConfig, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// commission_rate_bps: u64
+	{
+		v0, err := toUint64(m["commission_rate_bps"])
+		if err != nil {
+			return out, err
+		}
+		out.CommissionRateBps = v0
+	}
+	// commission_recipient: Address
+	{
+		v1, err := toAddress(m["commission_recipient"])
+		if err != nil {
+			return out, err
+		}
+		out.CommissionRecipient = v1
+	}
+	return out, nil
+}
+
 // fromKeylessStringOrArray converts a decoded IDL value into KeylessStringOrArray.
 func fromKeylessStringOrArray(v any) (out KeylessStringOrArray, err error) {
 	m, err := toRecord(v)
@@ -20851,363 +22391,303 @@ func toTokenGiftCleanupQueueStateValue(v any) (map[string]any, error) {
 	}
 }
 
-// toStakingValidatorStatusValue converts any into StakingValidatorStatus for provider serialization.
-func toStakingValidatorStatusValue(v any) (map[string]any, error) {
+// toTokenVestingRecipientValue converts any into TokenVestingRecipient for provider serialization.
+func toTokenVestingRecipientValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingValidatorStatus:
+	case TokenVestingRecipient:
 		return x.ToValue()
-	case *StakingValidatorStatus:
+	case *TokenVestingRecipient:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingValidatorStatus")
+			return nil, fmt.Errorf("nil TokenVestingRecipient")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingValidatorStatus, got %T", v)
+		return nil, fmt.Errorf("expected TokenVestingRecipient, got %T", v)
 	}
 }
 
-// toStakingValidatorProfileValue converts any into StakingValidatorProfile for provider serialization.
-func toStakingValidatorProfileValue(v any) (map[string]any, error) {
+// toTokenVestingStateValue converts any into TokenVestingState for provider serialization.
+func toTokenVestingStateValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingValidatorProfile:
+	case TokenVestingState:
 		return x.ToValue()
-	case *StakingValidatorProfile:
+	case *TokenVestingState:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingValidatorProfile")
+			return nil, fmt.Errorf("nil TokenVestingState")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingValidatorProfile, got %T", v)
+		return nil, fmt.Errorf("expected TokenVestingState, got %T", v)
 	}
 }
 
-// toStakingValidatorPoolViewValue converts any into StakingValidatorPoolView for provider serialization.
-func toStakingValidatorPoolViewValue(v any) (map[string]any, error) {
+// toStakingPoolStatusValue converts any into StakingPoolStatus for provider serialization.
+func toStakingPoolStatusValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingValidatorPoolView:
+	case StakingPoolStatus:
 		return x.ToValue()
-	case *StakingValidatorPoolView:
+	case *StakingPoolStatus:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingValidatorPoolView")
+			return nil, fmt.Errorf("nil StakingPoolStatus")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingValidatorPoolView, got %T", v)
+		return nil, fmt.Errorf("expected StakingPoolStatus, got %T", v)
 	}
 }
 
-// toStakingOperatorRewardReceiptValue converts any into StakingOperatorRewardReceipt for provider serialization.
-func toStakingOperatorRewardReceiptValue(v any) (map[string]any, error) {
+// toStakingSlashingModeValue converts any into StakingSlashingMode for provider serialization.
+func toStakingSlashingModeValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingOperatorRewardReceipt:
+	case StakingSlashingMode:
 		return x.ToValue()
-	case *StakingOperatorRewardReceipt:
+	case *StakingSlashingMode:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingOperatorRewardReceipt")
+			return nil, fmt.Errorf("nil StakingSlashingMode")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingOperatorRewardReceipt, got %T", v)
+		return nil, fmt.Errorf("expected StakingSlashingMode, got %T", v)
 	}
 }
 
-// toStakingCandidatePoolValue converts any into StakingCandidatePool for provider serialization.
-func toStakingCandidatePoolValue(v any) (map[string]any, error) {
+// toStakingCycleBasisValue converts any into StakingCycleBasis for provider serialization.
+func toStakingCycleBasisValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingCandidatePool:
+	case StakingCycleBasis:
 		return x.ToValue()
-	case *StakingCandidatePool:
+	case *StakingCycleBasis:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingCandidatePool")
+			return nil, fmt.Errorf("nil StakingCycleBasis")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingCandidatePool, got %T", v)
+		return nil, fmt.Errorf("expected StakingCycleBasis, got %T", v)
 	}
 }
 
-// toStakingCandidateActionValue converts any into StakingCandidateAction for provider serialization.
-func toStakingCandidateActionValue(v any) (map[string]any, error) {
+// toStakingPoolCycleConfigValue converts any into StakingPoolCycleConfig for provider serialization.
+func toStakingPoolCycleConfigValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingCandidateAction:
+	case StakingPoolCycleConfig:
 		return x.ToValue()
-	case *StakingCandidateAction:
+	case *StakingPoolCycleConfig:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingCandidateAction")
+			return nil, fmt.Errorf("nil StakingPoolCycleConfig")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingCandidateAction, got %T", v)
+		return nil, fmt.Errorf("expected StakingPoolCycleConfig, got %T", v)
 	}
 }
 
-// toStakingStakeIntentValue converts any into StakingStakeIntent for provider serialization.
-func toStakingStakeIntentValue(v any) (map[string]any, error) {
+// toStakingPoolRewardConfigValue converts any into StakingPoolRewardConfig for provider serialization.
+func toStakingPoolRewardConfigValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingStakeIntent:
+	case StakingPoolRewardConfig:
 		return x.ToValue()
-	case *StakingStakeIntent:
+	case *StakingPoolRewardConfig:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingStakeIntent")
+			return nil, fmt.Errorf("nil StakingPoolRewardConfig")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingStakeIntent, got %T", v)
+		return nil, fmt.Errorf("expected StakingPoolRewardConfig, got %T", v)
 	}
 }
 
-// toStakingUnstakeIntentValue converts any into StakingUnstakeIntent for provider serialization.
-func toStakingUnstakeIntentValue(v any) (map[string]any, error) {
+// toStakingPendingRewardConfigValue converts any into StakingPendingRewardConfig for provider serialization.
+func toStakingPendingRewardConfigValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingUnstakeIntent:
+	case StakingPendingRewardConfig:
 		return x.ToValue()
-	case *StakingUnstakeIntent:
+	case *StakingPendingRewardConfig:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingUnstakeIntent")
+			return nil, fmt.Errorf("nil StakingPendingRewardConfig")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingUnstakeIntent, got %T", v)
+		return nil, fmt.Errorf("expected StakingPendingRewardConfig, got %T", v)
 	}
 }
 
-// toStakingCandidateIntentValue converts any into StakingCandidateIntent for provider serialization.
-func toStakingCandidateIntentValue(v any) (map[string]any, error) {
+// toStakingPoolValue converts any into StakingPool for provider serialization.
+func toStakingPoolValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingCandidateIntent:
+	case StakingPool:
 		return x.ToValue()
-	case *StakingCandidateIntent:
+	case *StakingPool:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingCandidateIntent")
+			return nil, fmt.Errorf("nil StakingPool")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingCandidateIntent, got %T", v)
+		return nil, fmt.Errorf("expected StakingPool, got %T", v)
 	}
 }
 
-// toStakingValidatorAvailabilityDeclarationValue converts any into StakingValidatorAvailabilityDeclaration for provider serialization.
-func toStakingValidatorAvailabilityDeclarationValue(v any) (map[string]any, error) {
+// toStakingStakeStatusValue converts any into StakingStakeStatus for provider serialization.
+func toStakingStakeStatusValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingValidatorAvailabilityDeclaration:
+	case StakingStakeStatus:
 		return x.ToValue()
-	case *StakingValidatorAvailabilityDeclaration:
+	case *StakingStakeStatus:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingValidatorAvailabilityDeclaration")
+			return nil, fmt.Errorf("nil StakingStakeStatus")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingValidatorAvailabilityDeclaration, got %T", v)
+		return nil, fmt.Errorf("expected StakingStakeStatus, got %T", v)
 	}
 }
 
-// toStakingStakePositionValue converts any into StakingStakePosition for provider serialization.
-func toStakingStakePositionValue(v any) (map[string]any, error) {
+// toStakingPendingUnstakeValue converts any into StakingPendingUnstake for provider serialization.
+func toStakingPendingUnstakeValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingStakePosition:
+	case StakingPendingUnstake:
 		return x.ToValue()
-	case *StakingStakePosition:
+	case *StakingPendingUnstake:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingStakePosition")
+			return nil, fmt.Errorf("nil StakingPendingUnstake")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingStakePosition, got %T", v)
+		return nil, fmt.Errorf("expected StakingPendingUnstake, got %T", v)
 	}
 }
 
-// toStakingPositionSummaryValue converts any into StakingPositionSummary for provider serialization.
-func toStakingPositionSummaryValue(v any) (map[string]any, error) {
+// toStakingStakeValue converts any into StakingStake for provider serialization.
+func toStakingStakeValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingPositionSummary:
+	case StakingStake:
 		return x.ToValue()
-	case *StakingPositionSummary:
+	case *StakingStake:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingPositionSummary")
+			return nil, fmt.Errorf("nil StakingStake")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingPositionSummary, got %T", v)
+		return nil, fmt.Errorf("expected StakingStake, got %T", v)
 	}
 }
 
-// toStakingCandidateRejectionReasonValue converts any into StakingCandidateRejectionReason for provider serialization.
-func toStakingCandidateRejectionReasonValue(v any) (map[string]any, error) {
+// toStakingPoolStakePositionValue converts any into StakingPoolStakePosition for provider serialization.
+func toStakingPoolStakePositionValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingCandidateRejectionReason:
+	case StakingPoolStakePosition:
 		return x.ToValue()
-	case *StakingCandidateRejectionReason:
+	case *StakingPoolStakePosition:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingCandidateRejectionReason")
+			return nil, fmt.Errorf("nil StakingPoolStakePosition")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingCandidateRejectionReason, got %T", v)
+		return nil, fmt.Errorf("expected StakingPoolStakePosition, got %T", v)
 	}
 }
 
-// toStakingCandidateRejectionValue converts any into StakingCandidateRejection for provider serialization.
-func toStakingCandidateRejectionValue(v any) (map[string]any, error) {
+// toStakingCycleBucketValue converts any into StakingCycleBucket for provider serialization.
+func toStakingCycleBucketValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingCandidateRejection:
+	case StakingCycleBucket:
 		return x.ToValue()
-	case *StakingCandidateRejection:
+	case *StakingCycleBucket:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingCandidateRejection")
+			return nil, fmt.Errorf("nil StakingCycleBucket")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingCandidateRejection, got %T", v)
+		return nil, fmt.Errorf("expected StakingCycleBucket, got %T", v)
 	}
 }
 
-// toStakingEligibleValidatorValue converts any into StakingEligibleValidator for provider serialization.
-func toStakingEligibleValidatorValue(v any) (map[string]any, error) {
+// toStakingCycleRecordValue converts any into StakingCycleRecord for provider serialization.
+func toStakingCycleRecordValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingEligibleValidator:
+	case StakingCycleRecord:
 		return x.ToValue()
-	case *StakingEligibleValidator:
+	case *StakingCycleRecord:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingEligibleValidator")
+			return nil, fmt.Errorf("nil StakingCycleRecord")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingEligibleValidator, got %T", v)
+		return nil, fmt.Errorf("expected StakingCycleRecord, got %T", v)
 	}
 }
 
-// toStakingEpochTransitionValue converts any into StakingEpochTransition for provider serialization.
-func toStakingEpochTransitionValue(v any) (map[string]any, error) {
+// toStakingSlashReceiptValue converts any into StakingSlashReceipt for provider serialization.
+func toStakingSlashReceiptValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingEpochTransition:
+	case StakingSlashReceipt:
 		return x.ToValue()
-	case *StakingEpochTransition:
+	case *StakingSlashReceipt:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingEpochTransition")
+			return nil, fmt.Errorf("nil StakingSlashReceipt")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingEpochTransition, got %T", v)
+		return nil, fmt.Errorf("expected StakingSlashReceipt, got %T", v)
 	}
 }
 
-// toStakingEpochConfigValue converts any into StakingEpochConfig for provider serialization.
-func toStakingEpochConfigValue(v any) (map[string]any, error) {
+// toStakingStakeIdsValue converts any into StakingStakeIds for provider serialization.
+func toStakingStakeIdsValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingEpochConfig:
+	case StakingStakeIds:
 		return x.ToValue()
-	case *StakingEpochConfig:
+	case *StakingStakeIds:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingEpochConfig")
+			return nil, fmt.Errorf("nil StakingStakeIds")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingEpochConfig, got %T", v)
+		return nil, fmt.Errorf("expected StakingStakeIds, got %T", v)
 	}
 }
 
-// toStakingEpochStateValue converts any into StakingEpochState for provider serialization.
-func toStakingEpochStateValue(v any) (map[string]any, error) {
+// toStakingValidatorRewardPolicyValue converts any into StakingValidatorRewardPolicy for provider serialization.
+func toStakingValidatorRewardPolicyValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingEpochState:
+	case StakingValidatorRewardPolicy:
 		return x.ToValue()
-	case *StakingEpochState:
+	case *StakingValidatorRewardPolicy:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingEpochState")
+			return nil, fmt.Errorf("nil StakingValidatorRewardPolicy")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingEpochState, got %T", v)
+		return nil, fmt.Errorf("expected StakingValidatorRewardPolicy, got %T", v)
 	}
 }
 
-// toStakingRewardTreasuryValue converts any into StakingRewardTreasury for provider serialization.
-func toStakingRewardTreasuryValue(v any) (map[string]any, error) {
+// toStakingPolicyAssetsValue converts any into StakingPolicyAssets for provider serialization.
+func toStakingPolicyAssetsValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingRewardTreasury:
+	case StakingPolicyAssets:
 		return x.ToValue()
-	case *StakingRewardTreasury:
+	case *StakingPolicyAssets:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingRewardTreasury")
+			return nil, fmt.Errorf("nil StakingPolicyAssets")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingRewardTreasury, got %T", v)
+		return nil, fmt.Errorf("expected StakingPolicyAssets, got %T", v)
 	}
 }
 
-// toStakingValidatorMetadataValue converts any into StakingValidatorMetadata for provider serialization.
-func toStakingValidatorMetadataValue(v any) (map[string]any, error) {
+// toStakingRewardCursorValue converts any into StakingRewardCursor for provider serialization.
+func toStakingRewardCursorValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingValidatorMetadata:
+	case StakingRewardCursor:
 		return x.ToValue()
-	case *StakingValidatorMetadata:
+	case *StakingRewardCursor:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingValidatorMetadata")
+			return nil, fmt.Errorf("nil StakingRewardCursor")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingValidatorMetadata, got %T", v)
-	}
-}
-
-// toStakingPoolAccountingValue converts any into StakingPoolAccounting for provider serialization.
-func toStakingPoolAccountingValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingPoolAccounting:
-		return x.ToValue()
-	case *StakingPoolAccounting:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingPoolAccounting")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingPoolAccounting, got %T", v)
-	}
-}
-
-// toStakingRewardAccountingValue converts any into StakingRewardAccounting for provider serialization.
-func toStakingRewardAccountingValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingRewardAccounting:
-		return x.ToValue()
-	case *StakingRewardAccounting:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingRewardAccounting")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingRewardAccounting, got %T", v)
-	}
-}
-
-// toStakingAddressListValue converts any into StakingAddressList for provider serialization.
-func toStakingAddressListValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingAddressList:
-		return x.ToValue()
-	case *StakingAddressList:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingAddressList")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingAddressList, got %T", v)
-	}
-}
-
-// toStakingStoredEpochConfigValue converts any into StakingStoredEpochConfig for provider serialization.
-func toStakingStoredEpochConfigValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingStoredEpochConfig:
-		return x.ToValue()
-	case *StakingStoredEpochConfig:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingStoredEpochConfig")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingStoredEpochConfig, got %T", v)
+		return nil, fmt.Errorf("expected StakingRewardCursor, got %T", v)
 	}
 }
 
@@ -22126,6 +23606,141 @@ func toDexDidSubjectTypeValue(v any) (map[string]any, error) {
 	}
 }
 
+// toValidatorValidatorIdentityStatusValue converts any into ValidatorValidatorIdentityStatus for provider serialization.
+func toValidatorValidatorIdentityStatusValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorValidatorIdentityStatus:
+		return x.ToValue()
+	case *ValidatorValidatorIdentityStatus:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorValidatorIdentityStatus")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorValidatorIdentityStatus, got %T", v)
+	}
+}
+
+// toValidatorValidatorSelectionStatusValue converts any into ValidatorValidatorSelectionStatus for provider serialization.
+func toValidatorValidatorSelectionStatusValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorValidatorSelectionStatus:
+		return x.ToValue()
+	case *ValidatorValidatorSelectionStatus:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorValidatorSelectionStatus")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorValidatorSelectionStatus, got %T", v)
+	}
+}
+
+// toValidatorValidatorProfileValue converts any into ValidatorValidatorProfile for provider serialization.
+func toValidatorValidatorProfileValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorValidatorProfile:
+		return x.ToValue()
+	case *ValidatorValidatorProfile:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorValidatorProfile")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorValidatorProfile, got %T", v)
+	}
+}
+
+// toValidatorCandidatePoolValue converts any into ValidatorCandidatePool for provider serialization.
+func toValidatorCandidatePoolValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorCandidatePool:
+		return x.ToValue()
+	case *ValidatorCandidatePool:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorCandidatePool")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorCandidatePool, got %T", v)
+	}
+}
+
+// toValidatorCandidateValidatorValue converts any into ValidatorCandidateValidator for provider serialization.
+func toValidatorCandidateValidatorValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorCandidateValidator:
+		return x.ToValue()
+	case *ValidatorCandidateValidator:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorCandidateValidator")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorCandidateValidator, got %T", v)
+	}
+}
+
+// toValidatorValidatorPoolOverviewValue converts any into ValidatorValidatorPoolOverview for provider serialization.
+func toValidatorValidatorPoolOverviewValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorValidatorPoolOverview:
+		return x.ToValue()
+	case *ValidatorValidatorPoolOverview:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorValidatorPoolOverview")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorValidatorPoolOverview, got %T", v)
+	}
+}
+
+// toValidatorValidatorPoolListValue converts any into ValidatorValidatorPoolList for provider serialization.
+func toValidatorValidatorPoolListValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorValidatorPoolList:
+		return x.ToValue()
+	case *ValidatorValidatorPoolList:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorValidatorPoolList")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorValidatorPoolList, got %T", v)
+	}
+}
+
+// toValidatorAvailabilityDeclarationValue converts any into ValidatorAvailabilityDeclaration for provider serialization.
+func toValidatorAvailabilityDeclarationValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorAvailabilityDeclaration:
+		return x.ToValue()
+	case *ValidatorAvailabilityDeclaration:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorAvailabilityDeclaration")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorAvailabilityDeclaration, got %T", v)
+	}
+}
+
+// toValidatorPoolRewardConfigValue converts any into ValidatorPoolRewardConfig for provider serialization.
+func toValidatorPoolRewardConfigValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorPoolRewardConfig:
+		return x.ToValue()
+	case *ValidatorPoolRewardConfig:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorPoolRewardConfig")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorPoolRewardConfig, got %T", v)
+	}
+}
+
 // toKeylessStringOrArrayValue converts any into KeylessStringOrArray for provider serialization.
 func toKeylessStringOrArrayValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -22662,7 +24277,8 @@ type SystemRegisterValidatorIdentityIx struct {
 }
 
 type SystemRegisterValidatorIdentityArgs struct {
-	validator *crypto.Address
+	validator any
+	controller *crypto.Address
 	consensus_account *crypto.Address
 	consensus_pubkey []byte
 	bls_pubkey []byte
@@ -22671,9 +24287,10 @@ type SystemRegisterValidatorIdentityArgs struct {
 }
 
 // Args builds the IDL arguments of RegisterValidatorIdentity.
-func (ix *SystemRegisterValidatorIdentityIx) Args(validator *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, ed25519_pubkey []byte) *SystemRegisterValidatorIdentityArgs {
+func (ix *SystemRegisterValidatorIdentityIx) Args(validator any, controller *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, ed25519_pubkey []byte) *SystemRegisterValidatorIdentityArgs {
 	return &SystemRegisterValidatorIdentityArgs{
 		validator: validator,
+		controller: controller,
 		consensus_account: consensus_account,
 		consensus_pubkey: consensus_pubkey,
 		bls_pubkey: bls_pubkey,
@@ -22688,8 +24305,10 @@ func (a *SystemRegisterValidatorIdentityArgs) Encode() (api.PackedInstruction, e
 		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// validator: Address
+	// validator: ValidatorId
 	args["validator"] = a.validator
+	// controller: Signer
+	args["controller"] = a.controller
 	// consensus_account: Signer
 	args["consensus_account"] = a.consensus_account
 	// consensus_pubkey: bytes
@@ -22832,7 +24451,9 @@ type AccountApp struct {
 	EnsureAccount *AccountEnsureAccountIx
 	CreateMultisig *AccountCreateMultisigIx
 	AddSigner *AccountAddSignerIx
+	AddSignerByAddress *AccountAddSignerByAddressIx
 	AddSigners *AccountAddSignersIx
+	AddSignersByAddress *AccountAddSignersByAddressIx
 	RemoveSigner *AccountRemoveSignerIx
 	SetThreshold *AccountSetThresholdIx
 	SetSignerWeight *AccountSetSignerWeightIx
@@ -22851,7 +24472,9 @@ var Account = &AccountApp{
 	EnsureAccount: &AccountEnsureAccountIx{},
 	CreateMultisig: &AccountCreateMultisigIx{},
 	AddSigner: &AccountAddSignerIx{},
+	AddSignerByAddress: &AccountAddSignerByAddressIx{},
 	AddSigners: &AccountAddSignersIx{},
+	AddSignersByAddress: &AccountAddSignersByAddressIx{},
 	RemoveSigner: &AccountRemoveSignerIx{},
 	SetThreshold: &AccountSetThresholdIx{},
 	SetSignerWeight: &AccountSetSignerWeightIx{},
@@ -22871,7 +24494,9 @@ func (a *AccountApp) bind(pd *provider.Provider) {
 	a.EnsureAccount.pd = pd
 	a.CreateMultisig.pd = pd
 	a.AddSigner.pd = pd
+	a.AddSignerByAddress.pd = pd
 	a.AddSigners.pd = pd
+	a.AddSignersByAddress.pd = pd
 	a.RemoveSigner.pd = pd
 	a.SetThreshold.pd = pd
 	a.SetSignerWeight.pd = pd
@@ -23037,6 +24662,46 @@ func (a *AccountAddSignerArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type AccountAddSignerByAddressIx struct {
+	pd *provider.Provider
+}
+
+type AccountAddSignerByAddressArgs struct {
+	owner *crypto.Address
+	signer *crypto.Address
+	weight uint8
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AddSignerByAddress.
+func (ix *AccountAddSignerByAddressIx) Args(owner *crypto.Address, signer *crypto.Address, weight uint8) *AccountAddSignerByAddressArgs {
+	return &AccountAddSignerByAddressArgs{
+		owner: owner,
+		signer: signer,
+		weight: weight,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *AccountAddSignerByAddressArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app account is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// signer: Address
+	args["signer"] = a.signer
+	// weight: u8
+	args["weight"] = a.weight
+	wire, err := a.pd.Encode("AddSignerByAddress", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type AccountAddSignersIx struct {
 	pd *provider.Provider
 }
@@ -23079,6 +24744,54 @@ func (a *AccountAddSignersArgs) Encode() (api.PackedInstruction, error) {
 	// threshold: u8
 	args["threshold"] = a.threshold
 	wire, err := a.pd.Encode("AddSigners", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type AccountAddSignersByAddressIx struct {
+	pd *provider.Provider
+}
+
+type AccountAddSignersByAddressArgs struct {
+	owner *crypto.Address
+	signers []*crypto.Address
+	weights []byte
+	threshold uint8
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AddSignersByAddress.
+func (ix *AccountAddSignersByAddressIx) Args(owner *crypto.Address, signers []*crypto.Address, weights []byte, threshold uint8) *AccountAddSignersByAddressArgs {
+	return &AccountAddSignersByAddressArgs{
+		owner: owner,
+		signers: signers,
+		weights: weights,
+		threshold: threshold,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *AccountAddSignersByAddressArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app account is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// signers: vec<Address>
+	v0 := make([]any, len(a.signers))
+	for v1, v2 := range a.signers {
+		v0[v1] = v2
+	}
+	args["signers"] = v0
+	// weights: bytes
+	args["weights"] = a.weights
+	// threshold: u8
+	args["threshold"] = a.threshold
+	wire, err := a.pd.Encode("AddSignersByAddress", args)
 	if err != nil {
 		return nil, err
 	}
@@ -23635,11 +25348,15 @@ type TokenApp struct {
 	ClaimGift *TokenClaimGiftIx
 	RefundGift *TokenRefundGiftIx
 	RunGiftCleanup *TokenRunGiftCleanupIx
+	CreateVesting *TokenCreateVestingIx
+	ClaimVesting *TokenClaimVestingIx
 	Compliance *TokenComplianceIx
 	FaucetCooldownRemaining *TokenFaucetCooldownRemainingIx
 	GiftInfo *TokenGiftInfoIx
 	GiftSettlement *TokenGiftSettlementIx
 	CanClaimGift *TokenCanClaimGiftIx
+	VestingInfo *TokenVestingInfoIx
+	VestingClaimable *TokenVestingClaimableIx
 }
 
 var Token = &TokenApp{
@@ -23676,11 +25393,15 @@ var Token = &TokenApp{
 	ClaimGift: &TokenClaimGiftIx{},
 	RefundGift: &TokenRefundGiftIx{},
 	RunGiftCleanup: &TokenRunGiftCleanupIx{},
+	CreateVesting: &TokenCreateVestingIx{},
+	ClaimVesting: &TokenClaimVestingIx{},
 	Compliance: &TokenComplianceIx{},
 	FaucetCooldownRemaining: &TokenFaucetCooldownRemainingIx{},
 	GiftInfo: &TokenGiftInfoIx{},
 	GiftSettlement: &TokenGiftSettlementIx{},
 	CanClaimGift: &TokenCanClaimGiftIx{},
+	VestingInfo: &TokenVestingInfoIx{},
+	VestingClaimable: &TokenVestingClaimableIx{},
 }
 
 func (a *TokenApp) bind(pd *provider.Provider) {
@@ -23718,11 +25439,15 @@ func (a *TokenApp) bind(pd *provider.Provider) {
 	a.ClaimGift.pd = pd
 	a.RefundGift.pd = pd
 	a.RunGiftCleanup.pd = pd
+	a.CreateVesting.pd = pd
+	a.ClaimVesting.pd = pd
 	a.Compliance.pd = pd
 	a.FaucetCooldownRemaining.pd = pd
 	a.GiftInfo.pd = pd
 	a.GiftSettlement.pd = pd
 	a.CanClaimGift.pd = pd
+	a.VestingInfo.pd = pd
+	a.VestingClaimable.pd = pd
 }
 
 type TokenCreateIx struct {
@@ -25121,6 +26846,94 @@ func (a *TokenRunGiftCleanupArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type TokenCreateVestingIx struct {
+	pd *provider.Provider
+}
+
+type TokenCreateVestingArgs struct {
+	creator *crypto.Address
+	token *crypto.Address
+	start_at_ms uint64
+	recipients []TokenVestingRecipient
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateVesting.
+func (ix *TokenCreateVestingIx) Args(creator *crypto.Address, token *crypto.Address, start_at_ms uint64, recipients []TokenVestingRecipient) *TokenCreateVestingArgs {
+	return &TokenCreateVestingArgs{
+		creator: creator,
+		token: token,
+		start_at_ms: start_at_ms,
+		recipients: recipients,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenCreateVestingArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// creator: Signer
+	args["creator"] = a.creator
+	// token: Address
+	args["token"] = a.token
+	// start_at_ms: u64
+	args["start_at_ms"] = a.start_at_ms
+	// recipients: vec<VestingRecipient>
+	v0 := make([]any, len(a.recipients))
+	for v1, v2 := range a.recipients {
+		v3, err := toTokenVestingRecipientValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v0[v1] = v3
+	}
+	args["recipients"] = v0
+	wire, err := a.pd.Encode("CreateVesting", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type TokenClaimVestingIx struct {
+	pd *provider.Provider
+}
+
+type TokenClaimVestingArgs struct {
+	claimant *crypto.Address
+	vesting_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimVesting.
+func (ix *TokenClaimVestingIx) Args(claimant *crypto.Address, vesting_id *crypto.Address) *TokenClaimVestingArgs {
+	return &TokenClaimVestingArgs{
+		claimant: claimant,
+		vesting_id: vesting_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenClaimVestingArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// claimant: Signer
+	args["claimant"] = a.claimant
+	// vesting_id: Address
+	args["vesting_id"] = a.vesting_id
+	wire, err := a.pd.Encode("ClaimVesting", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type TokenComplianceIx struct {
 	pd *provider.Provider
 }
@@ -25385,584 +27198,51 @@ func (ix *TokenCanClaimGiftIx) DecodeView(body []byte) (out bool, err error) {
 	return out, nil
 }
 
-// StakingApp exposes type-safe instruction builders for IDL app "staking".
-type StakingApp struct {
-	Pd *provider.Provider
-	CreateValidator *StakingCreateValidatorIx
-	SetStakingToken *StakingSetStakingTokenIx
-	InitializeEpochConfig *StakingInitializeEpochConfigIx
-	JoinCandidatePool *StakingJoinCandidatePoolIx
-	LeaveCandidatePool *StakingLeaveCandidatePoolIx
-	DeclareValidatorAvailability *StakingDeclareValidatorAvailabilityIx
-	FundRewardTreasury *StakingFundRewardTreasuryIx
-	Stake *StakingStakeIx
-	CancelPendingStake *StakingCancelPendingStakeIx
-	ClaimRewards *StakingClaimRewardsIx
-	ClaimOperatorRewards *StakingClaimOperatorRewardsIx
-	RequestUnstake *StakingRequestUnstakeIx
-	ValidatorProfile *StakingValidatorProfileIx
-	ValidatorPool *StakingValidatorPoolIx
-	StakePosition *StakingStakePositionIx
-	PositionSummary *StakingPositionSummaryIx
-	CandidatePool *StakingCandidatePoolIx
-	EpochTransition *StakingEpochTransitionIx
-	EpochConfig *StakingEpochConfigIx
-	EpochState *StakingEpochStateIx
-	RewardTreasury *StakingRewardTreasuryIx
-	HeldPrincipal *StakingHeldPrincipalIx
-	ListDeclaredValidatorsForEpoch *StakingListDeclaredValidatorsForEpochIx
-}
-
-var Staking = &StakingApp{
-	CreateValidator: &StakingCreateValidatorIx{},
-	SetStakingToken: &StakingSetStakingTokenIx{},
-	InitializeEpochConfig: &StakingInitializeEpochConfigIx{},
-	JoinCandidatePool: &StakingJoinCandidatePoolIx{},
-	LeaveCandidatePool: &StakingLeaveCandidatePoolIx{},
-	DeclareValidatorAvailability: &StakingDeclareValidatorAvailabilityIx{},
-	FundRewardTreasury: &StakingFundRewardTreasuryIx{},
-	Stake: &StakingStakeIx{},
-	CancelPendingStake: &StakingCancelPendingStakeIx{},
-	ClaimRewards: &StakingClaimRewardsIx{},
-	ClaimOperatorRewards: &StakingClaimOperatorRewardsIx{},
-	RequestUnstake: &StakingRequestUnstakeIx{},
-	ValidatorProfile: &StakingValidatorProfileIx{},
-	ValidatorPool: &StakingValidatorPoolIx{},
-	StakePosition: &StakingStakePositionIx{},
-	PositionSummary: &StakingPositionSummaryIx{},
-	CandidatePool: &StakingCandidatePoolIx{},
-	EpochTransition: &StakingEpochTransitionIx{},
-	EpochConfig: &StakingEpochConfigIx{},
-	EpochState: &StakingEpochStateIx{},
-	RewardTreasury: &StakingRewardTreasuryIx{},
-	HeldPrincipal: &StakingHeldPrincipalIx{},
-	ListDeclaredValidatorsForEpoch: &StakingListDeclaredValidatorsForEpochIx{},
-}
-
-func (a *StakingApp) bind(pd *provider.Provider) {
-	a.Pd = pd
-	a.CreateValidator.pd = pd
-	a.SetStakingToken.pd = pd
-	a.InitializeEpochConfig.pd = pd
-	a.JoinCandidatePool.pd = pd
-	a.LeaveCandidatePool.pd = pd
-	a.DeclareValidatorAvailability.pd = pd
-	a.FundRewardTreasury.pd = pd
-	a.Stake.pd = pd
-	a.CancelPendingStake.pd = pd
-	a.ClaimRewards.pd = pd
-	a.ClaimOperatorRewards.pd = pd
-	a.RequestUnstake.pd = pd
-	a.ValidatorProfile.pd = pd
-	a.ValidatorPool.pd = pd
-	a.StakePosition.pd = pd
-	a.PositionSummary.pd = pd
-	a.CandidatePool.pd = pd
-	a.EpochTransition.pd = pd
-	a.EpochConfig.pd = pd
-	a.EpochState.pd = pd
-	a.RewardTreasury.pd = pd
-	a.HeldPrincipal.pd = pd
-	a.ListDeclaredValidatorsForEpoch.pd = pd
-}
-
-type StakingCreateValidatorIx struct {
+type TokenVestingInfoIx struct {
 	pd *provider.Provider
 }
 
-type StakingCreateValidatorArgs struct {
-	operator *crypto.Address
-	validator *crypto.Address
-	consensus_account *crypto.Address
-	consensus_pubkey []byte
-	bls_pubkey []byte
-	commission_rate_bps uint64
+type TokenVestingInfoArgs struct {
+	vesting_id *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CreateValidator.
-func (ix *StakingCreateValidatorIx) Args(operator *crypto.Address, validator *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, commission_rate_bps uint64) *StakingCreateValidatorArgs {
-	return &StakingCreateValidatorArgs{
-		operator: operator,
-		validator: validator,
-		consensus_account: consensus_account,
-		consensus_pubkey: consensus_pubkey,
-		bls_pubkey: bls_pubkey,
-		commission_rate_bps: commission_rate_bps,
+// Args builds the IDL arguments of VestingInfo.
+func (ix *TokenVestingInfoIx) Args(vesting_id *crypto.Address) *TokenVestingInfoArgs {
+	return &TokenVestingInfoArgs{
+		vesting_id: vesting_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingCreateValidatorArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenVestingInfoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// operator: Signer
-	args["operator"] = a.operator
-	// validator: Address
-	args["validator"] = a.validator
-	// consensus_account: Signer
-	args["consensus_account"] = a.consensus_account
-	// consensus_pubkey: bytes
-	args["consensus_pubkey"] = a.consensus_pubkey
-	// bls_pubkey: bytes
-	args["bls_pubkey"] = a.bls_pubkey
-	// commission_rate_bps: u64
-	args["commission_rate_bps"] = a.commission_rate_bps
-	wire, err := a.pd.Encode("CreateValidator", args)
+	// vesting_id: Address
+	args["vesting_id"] = a.vesting_id
+	wire, err := a.pd.Encode("VestingInfo", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type StakingSetStakingTokenIx struct {
-	pd *provider.Provider
-}
-
-type StakingSetStakingTokenArgs struct {
-	token *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SetStakingToken.
-func (ix *StakingSetStakingTokenIx) Args(token *crypto.Address) *StakingSetStakingTokenArgs {
-	return &StakingSetStakingTokenArgs{
-		token: token,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingSetStakingTokenArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// token: Address
-	args["token"] = a.token
-	wire, err := a.pd.Encode("SetStakingToken", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingInitializeEpochConfigIx struct {
-	pd *provider.Provider
-}
-
-type StakingInitializeEpochConfigArgs struct {
-	reward_per_validator uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of InitializeEpochConfig.
-func (ix *StakingInitializeEpochConfigIx) Args(reward_per_validator uint64) *StakingInitializeEpochConfigArgs {
-	return &StakingInitializeEpochConfigArgs{
-		reward_per_validator: reward_per_validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingInitializeEpochConfigArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// reward_per_validator: u64
-	args["reward_per_validator"] = a.reward_per_validator
-	wire, err := a.pd.Encode("InitializeEpochConfig", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingJoinCandidatePoolIx struct {
-	pd *provider.Provider
-}
-
-type StakingJoinCandidatePoolArgs struct {
-	operator *crypto.Address
-	validator *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of JoinCandidatePool.
-func (ix *StakingJoinCandidatePoolIx) Args(operator *crypto.Address, validator *crypto.Address) *StakingJoinCandidatePoolArgs {
-	return &StakingJoinCandidatePoolArgs{
-		operator: operator,
-		validator: validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingJoinCandidatePoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// operator: Signer
-	args["operator"] = a.operator
-	// validator: Address
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("JoinCandidatePool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingLeaveCandidatePoolIx struct {
-	pd *provider.Provider
-}
-
-type StakingLeaveCandidatePoolArgs struct {
-	operator *crypto.Address
-	validator *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of LeaveCandidatePool.
-func (ix *StakingLeaveCandidatePoolIx) Args(operator *crypto.Address, validator *crypto.Address) *StakingLeaveCandidatePoolArgs {
-	return &StakingLeaveCandidatePoolArgs{
-		operator: operator,
-		validator: validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingLeaveCandidatePoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// operator: Signer
-	args["operator"] = a.operator
-	// validator: Address
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("LeaveCandidatePool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingDeclareValidatorAvailabilityIx struct {
-	pd *provider.Provider
-}
-
-type StakingDeclareValidatorAvailabilityArgs struct {
-	operator *crypto.Address
-	validator *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of DeclareValidatorAvailability.
-func (ix *StakingDeclareValidatorAvailabilityIx) Args(operator *crypto.Address, validator *crypto.Address) *StakingDeclareValidatorAvailabilityArgs {
-	return &StakingDeclareValidatorAvailabilityArgs{
-		operator: operator,
-		validator: validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingDeclareValidatorAvailabilityArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// operator: Signer
-	args["operator"] = a.operator
-	// validator: Address
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("DeclareValidatorAvailability", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingFundRewardTreasuryIx struct {
-	pd *provider.Provider
-}
-
-type StakingFundRewardTreasuryArgs struct {
-	funder *crypto.Address
-	amount uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of FundRewardTreasury.
-func (ix *StakingFundRewardTreasuryIx) Args(funder *crypto.Address, amount uint64) *StakingFundRewardTreasuryArgs {
-	return &StakingFundRewardTreasuryArgs{
-		funder: funder,
-		amount: amount,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingFundRewardTreasuryArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// funder: Signer
-	args["funder"] = a.funder
-	// amount: u64
-	args["amount"] = a.amount
-	wire, err := a.pd.Encode("FundRewardTreasury", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingStakeIx struct {
-	pd *provider.Provider
-}
-
-type StakingStakeArgs struct {
-	owner *crypto.Address
-	validator *crypto.Address
-	amount uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of Stake.
-func (ix *StakingStakeIx) Args(owner *crypto.Address, validator *crypto.Address, amount uint64) *StakingStakeArgs {
-	return &StakingStakeArgs{
-		owner: owner,
-		validator: validator,
-		amount: amount,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingStakeArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// validator: Address
-	args["validator"] = a.validator
-	// amount: u64
-	args["amount"] = a.amount
-	wire, err := a.pd.Encode("Stake", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingCancelPendingStakeIx struct {
-	pd *provider.Provider
-}
-
-type StakingCancelPendingStakeArgs struct {
-	owner *crypto.Address
-	validator *crypto.Address
-	amount uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of CancelPendingStake.
-func (ix *StakingCancelPendingStakeIx) Args(owner *crypto.Address, validator *crypto.Address, amount uint64) *StakingCancelPendingStakeArgs {
-	return &StakingCancelPendingStakeArgs{
-		owner: owner,
-		validator: validator,
-		amount: amount,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingCancelPendingStakeArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// validator: Address
-	args["validator"] = a.validator
-	// amount: u64
-	args["amount"] = a.amount
-	wire, err := a.pd.Encode("CancelPendingStake", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingClaimRewardsIx struct {
-	pd *provider.Provider
-}
-
-type StakingClaimRewardsArgs struct {
-	owner *crypto.Address
-	validator *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ClaimRewards.
-func (ix *StakingClaimRewardsIx) Args(owner *crypto.Address, validator *crypto.Address) *StakingClaimRewardsArgs {
-	return &StakingClaimRewardsArgs{
-		owner: owner,
-		validator: validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingClaimRewardsArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// validator: Address
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("ClaimRewards", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingClaimOperatorRewardsIx struct {
-	pd *provider.Provider
-}
-
-type StakingClaimOperatorRewardsArgs struct {
-	operator *crypto.Address
-	validator *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ClaimOperatorRewards.
-func (ix *StakingClaimOperatorRewardsIx) Args(operator *crypto.Address, validator *crypto.Address) *StakingClaimOperatorRewardsArgs {
-	return &StakingClaimOperatorRewardsArgs{
-		operator: operator,
-		validator: validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingClaimOperatorRewardsArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// operator: Signer
-	args["operator"] = a.operator
-	// validator: Address
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("ClaimOperatorRewards", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingRequestUnstakeIx struct {
-	pd *provider.Provider
-}
-
-type StakingRequestUnstakeArgs struct {
-	owner *crypto.Address
-	validator *crypto.Address
-	shares uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of RequestUnstake.
-func (ix *StakingRequestUnstakeIx) Args(owner *crypto.Address, validator *crypto.Address, shares uint64) *StakingRequestUnstakeArgs {
-	return &StakingRequestUnstakeArgs{
-		owner: owner,
-		validator: validator,
-		shares: shares,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingRequestUnstakeArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// validator: Address
-	args["validator"] = a.validator
-	// shares: u64
-	args["shares"] = a.shares
-	wire, err := a.pd.Encode("RequestUnstake", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingValidatorProfileIx struct {
-	pd *provider.Provider
-}
-
-type StakingValidatorProfileArgs struct {
-	validator *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ValidatorProfile.
-func (ix *StakingValidatorProfileIx) Args(validator *crypto.Address) *StakingValidatorProfileArgs {
-	return &StakingValidatorProfileArgs{
-		validator: validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingValidatorProfileArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// validator: Address
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("ValidatorProfile", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of ValidatorProfile into StakingValidatorProfile.
-func (ix *StakingValidatorProfileIx) DecodeView(body []byte) (out StakingValidatorProfile, err error) {
+// DecodeView decodes the raw view response body of VestingInfo into TokenVestingState.
+func (ix *TokenVestingInfoIx) DecodeView(body []byte) (out TokenVestingState, err error) {
 	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ValidatorProfile", body)
+	v, err := ix.pd.DecodeViewData("VestingInfo", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ValidatorProfile failed: %s", failure)
+		return out, fmt.Errorf("view VestingInfo failed: %s", failure)
 	}
-	v0, err := fromStakingValidatorProfile(v)
+	v0, err := fromTokenVestingState(v)
 	if err != nil {
 		return out, err
 	}
@@ -25970,457 +27250,53 @@ func (ix *StakingValidatorProfileIx) DecodeView(body []byte) (out StakingValidat
 	return out, nil
 }
 
-type StakingValidatorPoolIx struct {
+type TokenVestingClaimableIx struct {
 	pd *provider.Provider
 }
 
-type StakingValidatorPoolArgs struct {
-	validator *crypto.Address
+type TokenVestingClaimableArgs struct {
+	vesting_id *crypto.Address
+	recipient *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ValidatorPool.
-func (ix *StakingValidatorPoolIx) Args(validator *crypto.Address) *StakingValidatorPoolArgs {
-	return &StakingValidatorPoolArgs{
-		validator: validator,
+// Args builds the IDL arguments of VestingClaimable.
+func (ix *TokenVestingClaimableIx) Args(vesting_id *crypto.Address, recipient *crypto.Address) *TokenVestingClaimableArgs {
+	return &TokenVestingClaimableArgs{
+		vesting_id: vesting_id,
+		recipient: recipient,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingValidatorPoolArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenVestingClaimableArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// validator: Address
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("ValidatorPool", args)
+	// vesting_id: Address
+	args["vesting_id"] = a.vesting_id
+	// recipient: Address
+	args["recipient"] = a.recipient
+	wire, err := a.pd.Encode("VestingClaimable", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of ValidatorPool into StakingValidatorPoolView.
-func (ix *StakingValidatorPoolIx) DecodeView(body []byte) (out StakingValidatorPoolView, err error) {
+// DecodeView decodes the raw view response body of VestingClaimable into uint64.
+func (ix *TokenVestingClaimableIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ValidatorPool", body)
+	v, err := ix.pd.DecodeViewData("VestingClaimable", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ValidatorPool failed: %s", failure)
-	}
-	v0, err := fromStakingValidatorPoolView(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingStakePositionIx struct {
-	pd *provider.Provider
-}
-
-type StakingStakePositionArgs struct {
-	owner *crypto.Address
-	validator *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of StakePosition.
-func (ix *StakingStakePositionIx) Args(owner *crypto.Address, validator *crypto.Address) *StakingStakePositionArgs {
-	return &StakingStakePositionArgs{
-		owner: owner,
-		validator: validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingStakePositionArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Address
-	args["owner"] = a.owner
-	// validator: Address
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("StakePosition", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of StakePosition into StakingStakePosition.
-func (ix *StakingStakePositionIx) DecodeView(body []byte) (out StakingStakePosition, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("StakePosition", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view StakePosition failed: %s", failure)
-	}
-	v0, err := fromStakingStakePosition(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingPositionSummaryIx struct {
-	pd *provider.Provider
-}
-
-type StakingPositionSummaryArgs struct {
-	owner *crypto.Address
-	validator *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of PositionSummary.
-func (ix *StakingPositionSummaryIx) Args(owner *crypto.Address, validator *crypto.Address) *StakingPositionSummaryArgs {
-	return &StakingPositionSummaryArgs{
-		owner: owner,
-		validator: validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingPositionSummaryArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Address
-	args["owner"] = a.owner
-	// validator: Address
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("PositionSummary", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of PositionSummary into StakingPositionSummary.
-func (ix *StakingPositionSummaryIx) DecodeView(body []byte) (out StakingPositionSummary, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("PositionSummary", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view PositionSummary failed: %s", failure)
-	}
-	v0, err := fromStakingPositionSummary(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingCandidatePoolIx struct {
-	pd *provider.Provider
-}
-
-type StakingCandidatePoolArgs struct {
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of CandidatePool.
-func (ix *StakingCandidatePoolIx) Args() *StakingCandidatePoolArgs {
-	return &StakingCandidatePoolArgs{
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingCandidatePoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	wire, err := a.pd.Encode("CandidatePool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of CandidatePool into StakingCandidatePool.
-func (ix *StakingCandidatePoolIx) DecodeView(body []byte) (out StakingCandidatePool, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("CandidatePool", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CandidatePool failed: %s", failure)
-	}
-	v0, err := fromStakingCandidatePool(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingEpochTransitionIx struct {
-	pd *provider.Provider
-}
-
-type StakingEpochTransitionArgs struct {
-	epoch uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of EpochTransition.
-func (ix *StakingEpochTransitionIx) Args(epoch uint64) *StakingEpochTransitionArgs {
-	return &StakingEpochTransitionArgs{
-		epoch: epoch,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingEpochTransitionArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// epoch: u64
-	args["epoch"] = a.epoch
-	wire, err := a.pd.Encode("EpochTransition", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of EpochTransition into StakingEpochTransition.
-func (ix *StakingEpochTransitionIx) DecodeView(body []byte) (out StakingEpochTransition, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("EpochTransition", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view EpochTransition failed: %s", failure)
-	}
-	v0, err := fromStakingEpochTransition(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingEpochConfigIx struct {
-	pd *provider.Provider
-}
-
-type StakingEpochConfigArgs struct {
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of EpochConfig.
-func (ix *StakingEpochConfigIx) Args() *StakingEpochConfigArgs {
-	return &StakingEpochConfigArgs{
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingEpochConfigArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	wire, err := a.pd.Encode("EpochConfig", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of EpochConfig into StakingEpochConfig.
-func (ix *StakingEpochConfigIx) DecodeView(body []byte) (out StakingEpochConfig, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("EpochConfig", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view EpochConfig failed: %s", failure)
-	}
-	v0, err := fromStakingEpochConfig(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingEpochStateIx struct {
-	pd *provider.Provider
-}
-
-type StakingEpochStateArgs struct {
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of EpochState.
-func (ix *StakingEpochStateIx) Args() *StakingEpochStateArgs {
-	return &StakingEpochStateArgs{
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingEpochStateArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	wire, err := a.pd.Encode("EpochState", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of EpochState into StakingEpochState.
-func (ix *StakingEpochStateIx) DecodeView(body []byte) (out StakingEpochState, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("EpochState", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view EpochState failed: %s", failure)
-	}
-	v0, err := fromStakingEpochState(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingRewardTreasuryIx struct {
-	pd *provider.Provider
-}
-
-type StakingRewardTreasuryArgs struct {
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of RewardTreasury.
-func (ix *StakingRewardTreasuryIx) Args() *StakingRewardTreasuryArgs {
-	return &StakingRewardTreasuryArgs{
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingRewardTreasuryArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	wire, err := a.pd.Encode("RewardTreasury", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of RewardTreasury into StakingRewardTreasury.
-func (ix *StakingRewardTreasuryIx) DecodeView(body []byte) (out StakingRewardTreasury, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("RewardTreasury", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view RewardTreasury failed: %s", failure)
-	}
-	v0, err := fromStakingRewardTreasury(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingHeldPrincipalIx struct {
-	pd *provider.Provider
-}
-
-type StakingHeldPrincipalArgs struct {
-	owner *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of HeldPrincipal.
-func (ix *StakingHeldPrincipalIx) Args(owner *crypto.Address) *StakingHeldPrincipalArgs {
-	return &StakingHeldPrincipalArgs{
-		owner: owner,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingHeldPrincipalArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Address
-	args["owner"] = a.owner
-	wire, err := a.pd.Encode("HeldPrincipal", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of HeldPrincipal into uint64.
-func (ix *StakingHeldPrincipalIx) DecodeView(body []byte) (out uint64, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("HeldPrincipal", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view HeldPrincipal failed: %s", failure)
+		return out, fmt.Errorf("view VestingClaimable failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -26430,62 +27306,1369 @@ func (ix *StakingHeldPrincipalIx) DecodeView(body []byte) (out uint64, err error
 	return out, nil
 }
 
-type StakingListDeclaredValidatorsForEpochIx struct {
+// StakingApp exposes type-safe instruction builders for IDL app "staking".
+type StakingApp struct {
+	Pd *provider.Provider
+	CreatePool *StakingCreatePoolIx
+	StakeIntoPool *StakingStakeIntoPoolIx
+	CancelStakeById *StakingCancelStakeByIdIx
+	RequestUnstakeById *StakingRequestUnstakeByIdIx
+	CancelUnstakeById *StakingCancelUnstakeByIdIx
+	ClaimRewardsById *StakingClaimRewardsByIdIx
+	AccruePoolReward *StakingAccruePoolRewardIx
+	RequestPoolRewardConfig *StakingRequestPoolRewardConfigIx
+	ClaimPoolCommission *StakingClaimPoolCommissionIx
+	PausePool *StakingPausePoolIx
+	ResumePool *StakingResumePoolIx
+	FreezePool *StakingFreezePoolIx
+	UnfreezePool *StakingUnfreezePoolIx
+	ClosePool *StakingClosePoolIx
+	SweepPoolResidual *StakingSweepPoolResidualIx
+	ConfigureValidatorRewardPolicy *StakingConfigureValidatorRewardPolicyIx
+	FundValidatorRewardPolicy *StakingFundValidatorRewardPolicyIx
+	Pool *StakingPoolIx
+	StakeById *StakingStakeByIdIx
+	PoolTreasuryBalance *StakingPoolTreasuryBalanceIx
+	StakeIds *StakingStakeIdsIx
+	StakePositionByPool *StakingStakePositionByPoolIx
+	PendingStakes *StakingPendingStakesIx
+	TotalShares *StakingTotalSharesIx
+	TotalStake *StakingTotalStakeIx
+	RewardIndex *StakingRewardIndexIx
+	ValidatorRewardPolicy *StakingValidatorRewardPolicyIx
+	ValidatorRewardPolicyConfigured *StakingValidatorRewardPolicyConfiguredIx
+}
+
+var Staking = &StakingApp{
+	CreatePool: &StakingCreatePoolIx{},
+	StakeIntoPool: &StakingStakeIntoPoolIx{},
+	CancelStakeById: &StakingCancelStakeByIdIx{},
+	RequestUnstakeById: &StakingRequestUnstakeByIdIx{},
+	CancelUnstakeById: &StakingCancelUnstakeByIdIx{},
+	ClaimRewardsById: &StakingClaimRewardsByIdIx{},
+	AccruePoolReward: &StakingAccruePoolRewardIx{},
+	RequestPoolRewardConfig: &StakingRequestPoolRewardConfigIx{},
+	ClaimPoolCommission: &StakingClaimPoolCommissionIx{},
+	PausePool: &StakingPausePoolIx{},
+	ResumePool: &StakingResumePoolIx{},
+	FreezePool: &StakingFreezePoolIx{},
+	UnfreezePool: &StakingUnfreezePoolIx{},
+	ClosePool: &StakingClosePoolIx{},
+	SweepPoolResidual: &StakingSweepPoolResidualIx{},
+	ConfigureValidatorRewardPolicy: &StakingConfigureValidatorRewardPolicyIx{},
+	FundValidatorRewardPolicy: &StakingFundValidatorRewardPolicyIx{},
+	Pool: &StakingPoolIx{},
+	StakeById: &StakingStakeByIdIx{},
+	PoolTreasuryBalance: &StakingPoolTreasuryBalanceIx{},
+	StakeIds: &StakingStakeIdsIx{},
+	StakePositionByPool: &StakingStakePositionByPoolIx{},
+	PendingStakes: &StakingPendingStakesIx{},
+	TotalShares: &StakingTotalSharesIx{},
+	TotalStake: &StakingTotalStakeIx{},
+	RewardIndex: &StakingRewardIndexIx{},
+	ValidatorRewardPolicy: &StakingValidatorRewardPolicyIx{},
+	ValidatorRewardPolicyConfigured: &StakingValidatorRewardPolicyConfiguredIx{},
+}
+
+func (a *StakingApp) bind(pd *provider.Provider) {
+	a.Pd = pd
+	a.CreatePool.pd = pd
+	a.StakeIntoPool.pd = pd
+	a.CancelStakeById.pd = pd
+	a.RequestUnstakeById.pd = pd
+	a.CancelUnstakeById.pd = pd
+	a.ClaimRewardsById.pd = pd
+	a.AccruePoolReward.pd = pd
+	a.RequestPoolRewardConfig.pd = pd
+	a.ClaimPoolCommission.pd = pd
+	a.PausePool.pd = pd
+	a.ResumePool.pd = pd
+	a.FreezePool.pd = pd
+	a.UnfreezePool.pd = pd
+	a.ClosePool.pd = pd
+	a.SweepPoolResidual.pd = pd
+	a.ConfigureValidatorRewardPolicy.pd = pd
+	a.FundValidatorRewardPolicy.pd = pd
+	a.Pool.pd = pd
+	a.StakeById.pd = pd
+	a.PoolTreasuryBalance.pd = pd
+	a.StakeIds.pd = pd
+	a.StakePositionByPool.pd = pd
+	a.PendingStakes.pd = pd
+	a.TotalShares.pd = pd
+	a.TotalStake.pd = pd
+	a.RewardIndex.pd = pd
+	a.ValidatorRewardPolicy.pd = pd
+	a.ValidatorRewardPolicyConfigured.pd = pd
+}
+
+type StakingCreatePoolIx struct {
 	pd *provider.Provider
 }
 
-type StakingListDeclaredValidatorsForEpochArgs struct {
-	epoch uint64
+type StakingCreatePoolArgs struct {
+	owner *crypto.Address
+	nonce uint64
+	stake_asset *crypto.Address
+	reward_asset *crypto.Address
+	cycle_config StakingPoolCycleConfig
+	reward_config StakingPoolRewardConfig
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ListDeclaredValidatorsForEpoch.
-func (ix *StakingListDeclaredValidatorsForEpochIx) Args(epoch uint64) *StakingListDeclaredValidatorsForEpochArgs {
-	return &StakingListDeclaredValidatorsForEpochArgs{
-		epoch: epoch,
+// Args builds the IDL arguments of CreatePool.
+func (ix *StakingCreatePoolIx) Args(owner *crypto.Address, nonce uint64, stake_asset *crypto.Address, reward_asset *crypto.Address, cycle_config StakingPoolCycleConfig, reward_config StakingPoolRewardConfig) *StakingCreatePoolArgs {
+	return &StakingCreatePoolArgs{
+		owner: owner,
+		nonce: nonce,
+		stake_asset: stake_asset,
+		reward_asset: reward_asset,
+		cycle_config: cycle_config,
+		reward_config: reward_config,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingListDeclaredValidatorsForEpochArgs) Encode() (api.PackedInstruction, error) {
+func (a *StakingCreatePoolArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// epoch: u64
-	args["epoch"] = a.epoch
-	wire, err := a.pd.Encode("ListDeclaredValidatorsForEpoch", args)
+	// owner: Signer
+	args["owner"] = a.owner
+	// nonce: u64
+	args["nonce"] = a.nonce
+	// stake_asset: Address
+	args["stake_asset"] = a.stake_asset
+	// reward_asset: Address
+	args["reward_asset"] = a.reward_asset
+	// cycle_config: PoolCycleConfig
+	v0, err := toStakingPoolCycleConfigValue(a.cycle_config)
+	if err != nil {
+		return nil, err
+	}
+	args["cycle_config"] = v0
+	// reward_config: PoolRewardConfig
+	v1, err := toStakingPoolRewardConfigValue(a.reward_config)
+	if err != nil {
+		return nil, err
+	}
+	args["reward_config"] = v1
+	wire, err := a.pd.Encode("CreatePool", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of ListDeclaredValidatorsForEpoch into []*crypto.Address.
-func (ix *StakingListDeclaredValidatorsForEpochIx) DecodeView(body []byte) (out []*crypto.Address, err error) {
+type StakingStakeIntoPoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingStakeIntoPoolArgs struct {
+	owner *crypto.Address
+	pool_id any
+	amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of StakeIntoPool.
+func (ix *StakingStakeIntoPoolIx) Args(owner *crypto.Address, pool_id any, amount uint64) *StakingStakeIntoPoolArgs {
+	return &StakingStakeIntoPoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		amount: amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingStakeIntoPoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("StakeIntoPool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingCancelStakeByIdIx struct {
+	pd *provider.Provider
+}
+
+type StakingCancelStakeByIdArgs struct {
+	owner *crypto.Address
+	stake_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CancelStakeById.
+func (ix *StakingCancelStakeByIdIx) Args(owner *crypto.Address, stake_id [32]byte) *StakingCancelStakeByIdArgs {
+	return &StakingCancelStakeByIdArgs{
+		owner: owner,
+		stake_id: stake_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingCancelStakeByIdArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// stake_id: B256
+	args["stake_id"] = a.stake_id
+	wire, err := a.pd.Encode("CancelStakeById", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingRequestUnstakeByIdIx struct {
+	pd *provider.Provider
+}
+
+type StakingRequestUnstakeByIdArgs struct {
+	owner *crypto.Address
+	stake_id [32]byte
+	shares uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RequestUnstakeById.
+func (ix *StakingRequestUnstakeByIdIx) Args(owner *crypto.Address, stake_id [32]byte, shares uint64) *StakingRequestUnstakeByIdArgs {
+	return &StakingRequestUnstakeByIdArgs{
+		owner: owner,
+		stake_id: stake_id,
+		shares: shares,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingRequestUnstakeByIdArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// stake_id: B256
+	args["stake_id"] = a.stake_id
+	// shares: u64
+	args["shares"] = a.shares
+	wire, err := a.pd.Encode("RequestUnstakeById", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingCancelUnstakeByIdIx struct {
+	pd *provider.Provider
+}
+
+type StakingCancelUnstakeByIdArgs struct {
+	owner *crypto.Address
+	stake_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CancelUnstakeById.
+func (ix *StakingCancelUnstakeByIdIx) Args(owner *crypto.Address, stake_id [32]byte) *StakingCancelUnstakeByIdArgs {
+	return &StakingCancelUnstakeByIdArgs{
+		owner: owner,
+		stake_id: stake_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingCancelUnstakeByIdArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// stake_id: B256
+	args["stake_id"] = a.stake_id
+	wire, err := a.pd.Encode("CancelUnstakeById", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingClaimRewardsByIdIx struct {
+	pd *provider.Provider
+}
+
+type StakingClaimRewardsByIdArgs struct {
+	owner *crypto.Address
+	stake_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimRewardsById.
+func (ix *StakingClaimRewardsByIdIx) Args(owner *crypto.Address, stake_id [32]byte) *StakingClaimRewardsByIdArgs {
+	return &StakingClaimRewardsByIdArgs{
+		owner: owner,
+		stake_id: stake_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingClaimRewardsByIdArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// stake_id: B256
+	args["stake_id"] = a.stake_id
+	wire, err := a.pd.Encode("ClaimRewardsById", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingAccruePoolRewardIx struct {
+	pd *provider.Provider
+}
+
+type StakingAccruePoolRewardArgs struct {
+	funder *crypto.Address
+	pool_id any
+	amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AccruePoolReward.
+func (ix *StakingAccruePoolRewardIx) Args(funder *crypto.Address, pool_id any, amount uint64) *StakingAccruePoolRewardArgs {
+	return &StakingAccruePoolRewardArgs{
+		funder: funder,
+		pool_id: pool_id,
+		amount: amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingAccruePoolRewardArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// funder: Signer
+	args["funder"] = a.funder
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("AccruePoolReward", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingRequestPoolRewardConfigIx struct {
+	pd *provider.Provider
+}
+
+type StakingRequestPoolRewardConfigArgs struct {
+	owner *crypto.Address
+	pool_id any
+	config StakingPoolRewardConfig
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RequestPoolRewardConfig.
+func (ix *StakingRequestPoolRewardConfigIx) Args(owner *crypto.Address, pool_id any, config StakingPoolRewardConfig) *StakingRequestPoolRewardConfigArgs {
+	return &StakingRequestPoolRewardConfigArgs{
+		owner: owner,
+		pool_id: pool_id,
+		config: config,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingRequestPoolRewardConfigArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	// config: PoolRewardConfig
+	v0, err := toStakingPoolRewardConfigValue(a.config)
+	if err != nil {
+		return nil, err
+	}
+	args["config"] = v0
+	wire, err := a.pd.Encode("RequestPoolRewardConfig", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingClaimPoolCommissionIx struct {
+	pd *provider.Provider
+}
+
+type StakingClaimPoolCommissionArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimPoolCommission.
+func (ix *StakingClaimPoolCommissionIx) Args(owner *crypto.Address, pool_id any) *StakingClaimPoolCommissionArgs {
+	return &StakingClaimPoolCommissionArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingClaimPoolCommissionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("ClaimPoolCommission", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingPausePoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingPausePoolArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of PausePool.
+func (ix *StakingPausePoolIx) Args(owner *crypto.Address, pool_id any) *StakingPausePoolArgs {
+	return &StakingPausePoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingPausePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("PausePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingResumePoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingResumePoolArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ResumePool.
+func (ix *StakingResumePoolIx) Args(owner *crypto.Address, pool_id any) *StakingResumePoolArgs {
+	return &StakingResumePoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingResumePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("ResumePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingFreezePoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingFreezePoolArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of FreezePool.
+func (ix *StakingFreezePoolIx) Args(owner *crypto.Address, pool_id any) *StakingFreezePoolArgs {
+	return &StakingFreezePoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingFreezePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("FreezePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingUnfreezePoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingUnfreezePoolArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of UnfreezePool.
+func (ix *StakingUnfreezePoolIx) Args(owner *crypto.Address, pool_id any) *StakingUnfreezePoolArgs {
+	return &StakingUnfreezePoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingUnfreezePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("UnfreezePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingClosePoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingClosePoolArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClosePool.
+func (ix *StakingClosePoolIx) Args(owner *crypto.Address, pool_id any) *StakingClosePoolArgs {
+	return &StakingClosePoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingClosePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("ClosePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingSweepPoolResidualIx struct {
+	pd *provider.Provider
+}
+
+type StakingSweepPoolResidualArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SweepPoolResidual.
+func (ix *StakingSweepPoolResidualIx) Args(owner *crypto.Address, pool_id any) *StakingSweepPoolResidualArgs {
+	return &StakingSweepPoolResidualArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingSweepPoolResidualArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("SweepPoolResidual", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingConfigureValidatorRewardPolicyIx struct {
+	pd *provider.Provider
+}
+
+type StakingConfigureValidatorRewardPolicyArgs struct {
+	owner *crypto.Address
+	stake_asset *crypto.Address
+	reward_asset *crypto.Address
+	reward_per_validator uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ConfigureValidatorRewardPolicy.
+func (ix *StakingConfigureValidatorRewardPolicyIx) Args(owner *crypto.Address, stake_asset *crypto.Address, reward_asset *crypto.Address, reward_per_validator uint64) *StakingConfigureValidatorRewardPolicyArgs {
+	return &StakingConfigureValidatorRewardPolicyArgs{
+		owner: owner,
+		stake_asset: stake_asset,
+		reward_asset: reward_asset,
+		reward_per_validator: reward_per_validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingConfigureValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// stake_asset: Address
+	args["stake_asset"] = a.stake_asset
+	// reward_asset: Address
+	args["reward_asset"] = a.reward_asset
+	// reward_per_validator: u64
+	args["reward_per_validator"] = a.reward_per_validator
+	wire, err := a.pd.Encode("ConfigureValidatorRewardPolicy", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingFundValidatorRewardPolicyIx struct {
+	pd *provider.Provider
+}
+
+type StakingFundValidatorRewardPolicyArgs struct {
+	funder *crypto.Address
+	stake_asset *crypto.Address
+	reward_asset *crypto.Address
+	amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of FundValidatorRewardPolicy.
+func (ix *StakingFundValidatorRewardPolicyIx) Args(funder *crypto.Address, stake_asset *crypto.Address, reward_asset *crypto.Address, amount uint64) *StakingFundValidatorRewardPolicyArgs {
+	return &StakingFundValidatorRewardPolicyArgs{
+		funder: funder,
+		stake_asset: stake_asset,
+		reward_asset: reward_asset,
+		amount: amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingFundValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// funder: Signer
+	args["funder"] = a.funder
+	// stake_asset: Address
+	args["stake_asset"] = a.stake_asset
+	// reward_asset: Address
+	args["reward_asset"] = a.reward_asset
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("FundValidatorRewardPolicy", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingPoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingPoolArgs struct {
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Pool.
+func (ix *StakingPoolIx) Args(pool_id any) *StakingPoolArgs {
+	return &StakingPoolArgs{
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingPoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("Pool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of Pool into StakingPool.
+func (ix *StakingPoolIx) DecodeView(body []byte) (out StakingPool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ListDeclaredValidatorsForEpoch", body)
+	v, err := ix.pd.DecodeViewData("Pool", body)
 	if err != nil {
 		return out, err
 	}
 	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ListDeclaredValidatorsForEpoch failed: %s", failure)
+		return out, fmt.Errorf("view Pool failed: %s", failure)
+	}
+	v0, err := fromStakingPool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type StakingStakeByIdIx struct {
+	pd *provider.Provider
+}
+
+type StakingStakeByIdArgs struct {
+	stake_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of StakeById.
+func (ix *StakingStakeByIdIx) Args(stake_id [32]byte) *StakingStakeByIdArgs {
+	return &StakingStakeByIdArgs{
+		stake_id: stake_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingStakeByIdArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// stake_id: B256
+	args["stake_id"] = a.stake_id
+	wire, err := a.pd.Encode("StakeById", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of StakeById into StakingStake.
+func (ix *StakingStakeByIdIx) DecodeView(body []byte) (out StakingStake, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("StakeById", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view StakeById failed: %s", failure)
+	}
+	v0, err := fromStakingStake(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type StakingPoolTreasuryBalanceIx struct {
+	pd *provider.Provider
+}
+
+type StakingPoolTreasuryBalanceArgs struct {
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of PoolTreasuryBalance.
+func (ix *StakingPoolTreasuryBalanceIx) Args(pool_id any) *StakingPoolTreasuryBalanceArgs {
+	return &StakingPoolTreasuryBalanceArgs{
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingPoolTreasuryBalanceArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("PoolTreasuryBalance", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of PoolTreasuryBalance into uint64.
+func (ix *StakingPoolTreasuryBalanceIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("PoolTreasuryBalance", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view PoolTreasuryBalance failed: %s", failure)
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type StakingStakeIdsIx struct {
+	pd *provider.Provider
+}
+
+type StakingStakeIdsArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of StakeIds.
+func (ix *StakingStakeIdsIx) Args(owner *crypto.Address, pool_id any) *StakingStakeIdsArgs {
+	return &StakingStakeIdsArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingStakeIdsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Address
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("StakeIds", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of StakeIds into [][32]byte.
+func (ix *StakingStakeIdsIx) DecodeView(body []byte) (out [][32]byte, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("StakeIds", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view StakeIds failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
 		return out, err
 	}
-	out = make([]*crypto.Address, len(v0))
+	out = make([][32]byte, len(v0))
 	for v1, v2 := range v0 {
-		v3, err := toAddress(v2)
+		v3, err := toFixed32(v2)
 		if err != nil {
 			return out, err
 		}
 		out[v1] = v3
 	}
+	return out, nil
+}
+
+type StakingStakePositionByPoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingStakePositionByPoolArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of StakePositionByPool.
+func (ix *StakingStakePositionByPoolIx) Args(owner *crypto.Address, pool_id any) *StakingStakePositionByPoolArgs {
+	return &StakingStakePositionByPoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingStakePositionByPoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Address
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("StakePositionByPool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of StakePositionByPool into StakingPoolStakePosition.
+func (ix *StakingStakePositionByPoolIx) DecodeView(body []byte) (out StakingPoolStakePosition, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("StakePositionByPool", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view StakePositionByPool failed: %s", failure)
+	}
+	v0, err := fromStakingPoolStakePosition(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type StakingPendingStakesIx struct {
+	pd *provider.Provider
+}
+
+type StakingPendingStakesArgs struct {
+	owner *crypto.Address
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of PendingStakes.
+func (ix *StakingPendingStakesIx) Args(owner *crypto.Address, pool_id any) *StakingPendingStakesArgs {
+	return &StakingPendingStakesArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingPendingStakesArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Address
+	args["owner"] = a.owner
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("PendingStakes", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of PendingStakes into [][32]byte.
+func (ix *StakingPendingStakesIx) DecodeView(body []byte) (out [][32]byte, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("PendingStakes", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view PendingStakes failed: %s", failure)
+	}
+	v0, err := toSlice(v)
+	if err != nil {
+		return out, err
+	}
+	out = make([][32]byte, len(v0))
+	for v1, v2 := range v0 {
+		v3, err := toFixed32(v2)
+		if err != nil {
+			return out, err
+		}
+		out[v1] = v3
+	}
+	return out, nil
+}
+
+type StakingTotalSharesIx struct {
+	pd *provider.Provider
+}
+
+type StakingTotalSharesArgs struct {
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TotalShares.
+func (ix *StakingTotalSharesIx) Args(pool_id any) *StakingTotalSharesArgs {
+	return &StakingTotalSharesArgs{
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingTotalSharesArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("TotalShares", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of TotalShares into uint64.
+func (ix *StakingTotalSharesIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("TotalShares", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view TotalShares failed: %s", failure)
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type StakingTotalStakeIx struct {
+	pd *provider.Provider
+}
+
+type StakingTotalStakeArgs struct {
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TotalStake.
+func (ix *StakingTotalStakeIx) Args(pool_id any) *StakingTotalStakeArgs {
+	return &StakingTotalStakeArgs{
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingTotalStakeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("TotalStake", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of TotalStake into uint64.
+func (ix *StakingTotalStakeIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("TotalStake", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view TotalStake failed: %s", failure)
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type StakingRewardIndexIx struct {
+	pd *provider.Provider
+}
+
+type StakingRewardIndexArgs struct {
+	pool_id any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RewardIndex.
+func (ix *StakingRewardIndexIx) Args(pool_id any) *StakingRewardIndexArgs {
+	return &StakingRewardIndexArgs{
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingRewardIndexArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool_id: PoolId
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("RewardIndex", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of RewardIndex into *big.Int.
+func (ix *StakingRewardIndexIx) DecodeView(body []byte) (out *big.Int, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("RewardIndex", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view RewardIndex failed: %s", failure)
+	}
+	v0, err := toBigInt(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type StakingValidatorRewardPolicyIx struct {
+	pd *provider.Provider
+}
+
+type StakingValidatorRewardPolicyArgs struct {
+	stake_asset *crypto.Address
+	reward_asset *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ValidatorRewardPolicy.
+func (ix *StakingValidatorRewardPolicyIx) Args(stake_asset *crypto.Address, reward_asset *crypto.Address) *StakingValidatorRewardPolicyArgs {
+	return &StakingValidatorRewardPolicyArgs{
+		stake_asset: stake_asset,
+		reward_asset: reward_asset,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// stake_asset: Address
+	args["stake_asset"] = a.stake_asset
+	// reward_asset: Address
+	args["reward_asset"] = a.reward_asset
+	wire, err := a.pd.Encode("ValidatorRewardPolicy", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ValidatorRewardPolicy into StakingValidatorRewardPolicy.
+func (ix *StakingValidatorRewardPolicyIx) DecodeView(body []byte) (out StakingValidatorRewardPolicy, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("ValidatorRewardPolicy", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ValidatorRewardPolicy failed: %s", failure)
+	}
+	v0, err := fromStakingValidatorRewardPolicy(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type StakingValidatorRewardPolicyConfiguredIx struct {
+	pd *provider.Provider
+}
+
+type StakingValidatorRewardPolicyConfiguredArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ValidatorRewardPolicyConfigured.
+func (ix *StakingValidatorRewardPolicyConfiguredIx) Args() *StakingValidatorRewardPolicyConfiguredArgs {
+	return &StakingValidatorRewardPolicyConfiguredArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingValidatorRewardPolicyConfiguredArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("ValidatorRewardPolicyConfigured", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ValidatorRewardPolicyConfigured into bool.
+func (ix *StakingValidatorRewardPolicyConfiguredIx) DecodeView(body []byte) (out bool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("ValidatorRewardPolicyConfigured", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ValidatorRewardPolicyConfigured failed: %s", failure)
+	}
+	v0, err := toBool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
 	return out, nil
 }
 
@@ -32189,6 +34372,597 @@ func (ix *DexVaultLiabilityIx) DecodeView(body []byte) (out uint64, err error) {
 	return out, nil
 }
 
+// ValidatorApp exposes type-safe instruction builders for IDL app "validator".
+type ValidatorApp struct {
+	Pd *provider.Provider
+	RegisterValidator *ValidatorRegisterValidatorIx
+	CreateValidatorPool *ValidatorCreateValidatorPoolIx
+	JoinCandidatePool *ValidatorJoinCandidatePoolIx
+	LeaveCandidatePool *ValidatorLeaveCandidatePoolIx
+	DeclareValidatorAvailability *ValidatorDeclareValidatorAvailabilityIx
+	CandidatePool *ValidatorCandidatePoolIx
+	CandidateValidators *ValidatorCandidateValidatorsIx
+	DeclaredValidators *ValidatorDeclaredValidatorsIx
+	ValidatorProfile *ValidatorValidatorProfileIx
+	ValidatorForController *ValidatorValidatorForControllerIx
+	CurrentValidatorPools *ValidatorCurrentValidatorPoolsIx
+	CandidateValidatorPools *ValidatorCandidateValidatorPoolsIx
+}
+
+var Validator = &ValidatorApp{
+	RegisterValidator: &ValidatorRegisterValidatorIx{},
+	CreateValidatorPool: &ValidatorCreateValidatorPoolIx{},
+	JoinCandidatePool: &ValidatorJoinCandidatePoolIx{},
+	LeaveCandidatePool: &ValidatorLeaveCandidatePoolIx{},
+	DeclareValidatorAvailability: &ValidatorDeclareValidatorAvailabilityIx{},
+	CandidatePool: &ValidatorCandidatePoolIx{},
+	CandidateValidators: &ValidatorCandidateValidatorsIx{},
+	DeclaredValidators: &ValidatorDeclaredValidatorsIx{},
+	ValidatorProfile: &ValidatorValidatorProfileIx{},
+	ValidatorForController: &ValidatorValidatorForControllerIx{},
+	CurrentValidatorPools: &ValidatorCurrentValidatorPoolsIx{},
+	CandidateValidatorPools: &ValidatorCandidateValidatorPoolsIx{},
+}
+
+func (a *ValidatorApp) bind(pd *provider.Provider) {
+	a.Pd = pd
+	a.RegisterValidator.pd = pd
+	a.CreateValidatorPool.pd = pd
+	a.JoinCandidatePool.pd = pd
+	a.LeaveCandidatePool.pd = pd
+	a.DeclareValidatorAvailability.pd = pd
+	a.CandidatePool.pd = pd
+	a.CandidateValidators.pd = pd
+	a.DeclaredValidators.pd = pd
+	a.ValidatorProfile.pd = pd
+	a.ValidatorForController.pd = pd
+	a.CurrentValidatorPools.pd = pd
+	a.CandidateValidatorPools.pd = pd
+}
+
+type ValidatorRegisterValidatorIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorRegisterValidatorArgs struct {
+	controller *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RegisterValidator.
+func (ix *ValidatorRegisterValidatorIx) Args(controller *crypto.Address) *ValidatorRegisterValidatorArgs {
+	return &ValidatorRegisterValidatorArgs{
+		controller: controller,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorRegisterValidatorArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	wire, err := a.pd.Encode("RegisterValidator", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorCreateValidatorPoolIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorCreateValidatorPoolArgs struct {
+	controller *crypto.Address
+	validator any
+	stake_asset *crypto.Address
+	reward_asset *crypto.Address
+	reward_config ValidatorPoolRewardConfig
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateValidatorPool.
+func (ix *ValidatorCreateValidatorPoolIx) Args(controller *crypto.Address, validator any, stake_asset *crypto.Address, reward_asset *crypto.Address, reward_config ValidatorPoolRewardConfig) *ValidatorCreateValidatorPoolArgs {
+	return &ValidatorCreateValidatorPoolArgs{
+		controller: controller,
+		validator: validator,
+		stake_asset: stake_asset,
+		reward_asset: reward_asset,
+		reward_config: reward_config,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorCreateValidatorPoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: ValidatorId
+	args["validator"] = a.validator
+	// stake_asset: Address
+	args["stake_asset"] = a.stake_asset
+	// reward_asset: Address
+	args["reward_asset"] = a.reward_asset
+	// reward_config: PoolRewardConfig
+	v0, err := toValidatorPoolRewardConfigValue(a.reward_config)
+	if err != nil {
+		return nil, err
+	}
+	args["reward_config"] = v0
+	wire, err := a.pd.Encode("CreateValidatorPool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorJoinCandidatePoolIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorJoinCandidatePoolArgs struct {
+	controller *crypto.Address
+	validator any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of JoinCandidatePool.
+func (ix *ValidatorJoinCandidatePoolIx) Args(controller *crypto.Address, validator any) *ValidatorJoinCandidatePoolArgs {
+	return &ValidatorJoinCandidatePoolArgs{
+		controller: controller,
+		validator: validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorJoinCandidatePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: ValidatorId
+	args["validator"] = a.validator
+	wire, err := a.pd.Encode("JoinCandidatePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorLeaveCandidatePoolIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorLeaveCandidatePoolArgs struct {
+	controller *crypto.Address
+	validator any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of LeaveCandidatePool.
+func (ix *ValidatorLeaveCandidatePoolIx) Args(controller *crypto.Address, validator any) *ValidatorLeaveCandidatePoolArgs {
+	return &ValidatorLeaveCandidatePoolArgs{
+		controller: controller,
+		validator: validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorLeaveCandidatePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: ValidatorId
+	args["validator"] = a.validator
+	wire, err := a.pd.Encode("LeaveCandidatePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorDeclareValidatorAvailabilityIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorDeclareValidatorAvailabilityArgs struct {
+	controller *crypto.Address
+	validator any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of DeclareValidatorAvailability.
+func (ix *ValidatorDeclareValidatorAvailabilityIx) Args(controller *crypto.Address, validator any) *ValidatorDeclareValidatorAvailabilityArgs {
+	return &ValidatorDeclareValidatorAvailabilityArgs{
+		controller: controller,
+		validator: validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorDeclareValidatorAvailabilityArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: ValidatorId
+	args["validator"] = a.validator
+	wire, err := a.pd.Encode("DeclareValidatorAvailability", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorCandidatePoolIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorCandidatePoolArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CandidatePool.
+func (ix *ValidatorCandidatePoolIx) Args() *ValidatorCandidatePoolArgs {
+	return &ValidatorCandidatePoolArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorCandidatePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("CandidatePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CandidatePool into ValidatorCandidatePool.
+func (ix *ValidatorCandidatePoolIx) DecodeView(body []byte) (out ValidatorCandidatePool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CandidatePool", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CandidatePool failed: %s", failure)
+	}
+	v0, err := fromValidatorCandidatePool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type ValidatorCandidateValidatorsIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorCandidateValidatorsArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CandidateValidators.
+func (ix *ValidatorCandidateValidatorsIx) Args() *ValidatorCandidateValidatorsArgs {
+	return &ValidatorCandidateValidatorsArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorCandidateValidatorsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("CandidateValidators", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CandidateValidators into []ValidatorCandidateValidator.
+func (ix *ValidatorCandidateValidatorsIx) DecodeView(body []byte) (out []ValidatorCandidateValidator, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CandidateValidators", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CandidateValidators failed: %s", failure)
+	}
+	v0, err := toSlice(v)
+	if err != nil {
+		return out, err
+	}
+	out = make([]ValidatorCandidateValidator, len(v0))
+	for v1, v2 := range v0 {
+		v3, err := fromValidatorCandidateValidator(v2)
+		if err != nil {
+			return out, err
+		}
+		out[v1] = v3
+	}
+	return out, nil
+}
+
+type ValidatorDeclaredValidatorsIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorDeclaredValidatorsArgs struct {
+	target_epoch uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of DeclaredValidators.
+func (ix *ValidatorDeclaredValidatorsIx) Args(target_epoch uint64) *ValidatorDeclaredValidatorsArgs {
+	return &ValidatorDeclaredValidatorsArgs{
+		target_epoch: target_epoch,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorDeclaredValidatorsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// target_epoch: u64
+	args["target_epoch"] = a.target_epoch
+	wire, err := a.pd.Encode("DeclaredValidators", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of DeclaredValidators into ValidatorCandidatePool.
+func (ix *ValidatorDeclaredValidatorsIx) DecodeView(body []byte) (out ValidatorCandidatePool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("DeclaredValidators", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view DeclaredValidators failed: %s", failure)
+	}
+	v0, err := fromValidatorCandidatePool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type ValidatorValidatorProfileIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorValidatorProfileArgs struct {
+	validator any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ValidatorProfile.
+func (ix *ValidatorValidatorProfileIx) Args(validator any) *ValidatorValidatorProfileArgs {
+	return &ValidatorValidatorProfileArgs{
+		validator: validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorValidatorProfileArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// validator: ValidatorId
+	args["validator"] = a.validator
+	wire, err := a.pd.Encode("ValidatorProfile", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ValidatorProfile into ValidatorValidatorProfile.
+func (ix *ValidatorValidatorProfileIx) DecodeView(body []byte) (out ValidatorValidatorProfile, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("ValidatorProfile", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ValidatorProfile failed: %s", failure)
+	}
+	v0, err := fromValidatorValidatorProfile(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type ValidatorValidatorForControllerIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorValidatorForControllerArgs struct {
+	controller *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ValidatorForController.
+func (ix *ValidatorValidatorForControllerIx) Args(controller *crypto.Address) *ValidatorValidatorForControllerArgs {
+	return &ValidatorValidatorForControllerArgs{
+		controller: controller,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorValidatorForControllerArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Address
+	args["controller"] = a.controller
+	wire, err := a.pd.Encode("ValidatorForController", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ValidatorForController into any.
+func (ix *ValidatorValidatorForControllerIx) DecodeView(body []byte) (out any, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("ValidatorForController", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ValidatorForController failed: %s", failure)
+	}
+	out = v
+	return out, nil
+}
+
+type ValidatorCurrentValidatorPoolsIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorCurrentValidatorPoolsArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CurrentValidatorPools.
+func (ix *ValidatorCurrentValidatorPoolsIx) Args() *ValidatorCurrentValidatorPoolsArgs {
+	return &ValidatorCurrentValidatorPoolsArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorCurrentValidatorPoolsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("CurrentValidatorPools", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CurrentValidatorPools into ValidatorValidatorPoolList.
+func (ix *ValidatorCurrentValidatorPoolsIx) DecodeView(body []byte) (out ValidatorValidatorPoolList, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CurrentValidatorPools", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CurrentValidatorPools failed: %s", failure)
+	}
+	v0, err := fromValidatorValidatorPoolList(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type ValidatorCandidateValidatorPoolsIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorCandidateValidatorPoolsArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CandidateValidatorPools.
+func (ix *ValidatorCandidateValidatorPoolsIx) Args() *ValidatorCandidateValidatorPoolsArgs {
+	return &ValidatorCandidateValidatorPoolsArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorCandidateValidatorPoolsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("CandidateValidatorPools", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CandidateValidatorPools into ValidatorValidatorPoolList.
+func (ix *ValidatorCandidateValidatorPoolsIx) DecodeView(body []byte) (out ValidatorValidatorPoolList, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("CandidateValidatorPools", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view CandidateValidatorPools failed: %s", failure)
+	}
+	v0, err := fromValidatorValidatorPoolList(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
 // KeylessApp exposes type-safe instruction builders for IDL app "keyless".
 type KeylessApp struct {
 	Pd *provider.Provider
@@ -36395,6 +39169,7 @@ func init() {
 	RegisterApp("identity", func(pd *provider.Provider) error { Identity.bind(pd); return nil })
 	RegisterApp("sftoken", func(pd *provider.Provider) error { Sftoken.bind(pd); return nil })
 	RegisterApp("dex", func(pd *provider.Provider) error { Dex.bind(pd); return nil })
+	RegisterApp("validator", func(pd *provider.Provider) error { Validator.bind(pd); return nil })
 	RegisterApp("keyless", func(pd *provider.Provider) error { Keyless.bind(pd); return nil })
 	RegisterApp("social", func(pd *provider.Provider) error { Social.bind(pd); return nil })
 	RegisterApp("demo", func(pd *provider.Provider) error { Demo.bind(pd); return nil })

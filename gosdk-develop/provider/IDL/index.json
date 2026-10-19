@@ -36,6 +36,11 @@
       "name": "dex"
     },
     {
+      "app_id": 7,
+      "idl": "./validator.idl.json",
+      "name": "validator"
+    },
+    {
       "app_id": 8,
       "idl": "./keyless.idl.json",
       "name": "keyless"

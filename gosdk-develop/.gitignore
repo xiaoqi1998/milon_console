@@ -7,3 +7,5 @@
 /example/list_resource_path
 /example/chainhead_block
 /example/get_tx_history_proof
+/example/identity_demo
+/example/identity_test

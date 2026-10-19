@@ -294,9 +294,9 @@ func example(networkConfig milon.Network) {
 		fmt.Printf("token account1 frozen: %+v \n", wireViewDecode)
 	}
 
-	fmt.Printf("\n================ 7.Unfreeze(account1 unfreeze 300 + owner sign) ================\n")
+	fmt.Printf("\n================ 7.Unfreeze(account1 unfreeze 200 + owner sign) ================\n")
 
-	wire, err = gen.Token.Unfreeze.Args(token, account1, 300).Encode()
+	wire, err = gen.Token.Unfreeze.Args(token, account1, 200).Encode()
 	if err != nil {
 		panic("failed to encode Unfreeze instruction:" + err.Error())
 	}
