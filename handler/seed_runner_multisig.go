@@ -21,11 +21,14 @@ import (
 // 阶段状态键固定为 faucet:/did:/create: 前缀,调整顺序不改键名。
 var seedMultisigStageOrder = []string{"faucet", "did", "create"}
 
-// seedMultisigDidSkippable 判断多签 DID 失败是否属于「多签已激活,单公钥签名被拒」:
-// 链端 285 PubkeyModeForbidden,或消息含 pubkey mode / signers list(大小写不敏感)。
+// seedMultisigSigForbidden 判断多签账户单签失败(faucet/DID 两阶段共用)是否属于
+// 「多签已激活,单公钥签名被拒」:链端 285 PubkeyModeForbidden,或消息含
+// pubkey mode / signers list(大小写不敏感)。
 // 语义取 "signers list" 而非裸 "signer":避免 ListSigners 视图的网络错误被误判可跳过。
-// 该场景仅出现在续跑(旧状态 create 已注册而 did 未完成),降级为跳过。
-func seedMultisigDidSkippable(errMsg string) bool {
+// 命中即降级为跳过,不再看 state 门槛——285 的报文本身就是链端宣告
+// "the account is registered on chain":同 seed 短语换配置 = 新命名空间状态为空
+// 而链上已注册,正是真机踩过的坑(20261020),状态门槛在这种场景会漏放行。
+func seedMultisigSigForbidden(errMsg string) bool {
 	if seedHasCode(errMsg, 285) {
 		return true
 	}
@@ -104,6 +107,14 @@ func (r *seedRunner) runMultisig() error {
 					stage := "faucet:" + ms.Name
 					if !r.state.IsDone("multisig", stage) {
 						if _, err := flowEnsureFaucet(r.mc, *a.ADR, a.SK, a.PUB); err != nil {
+							// 链上已注册多签(同短语换配置重跑)时单签领水同样被 285 拒——
+							// 与 DID 段同款降级:跳过并标记,不阻断任务
+							if seedMultisigSigForbidden(err.Error()) {
+								r.logf("  ⚠ 多签已激活,无法单签领水,跳过(标记 skipped)")
+								r.state.Mark("multisig", stage, map[string]any{"skipped": "multisig-active"})
+								r.state.Save()
+								continue
+							}
 							return fmt.Errorf("faucet %s: %w", ms.Name, err)
 						}
 						r.logf("  %s 领水 ✓ (%s)", ms.Name, shortAddr(a.Address))
@@ -120,10 +131,9 @@ func (r *seedRunner) runMultisig() error {
 						opts := &vcFlowDidOptions{Alias: ms.Alias, Suffix: &suffix, AliasOptional: true}
 						step, err := vcFlowEnsureDID(r.mc, *a.ADR, a.SK, a.PUB, "Personal", opts)
 						if err != nil {
-							// 续跑兜底:create 阶段已注册多签(旧状态/旧版顺序残留)时,
-							// 链端拒绝单公钥签名(285 PubkeyModeForbidden)——降级为
-							// 跳过 DID 不阻断任务;其余错误照常返回
-							if r.state.IsDone("multisig", "create:"+ms.Name) && seedMultisigDidSkippable(err.Error()) {
+							// 链上已注册多签时链端拒绝单公钥签名(285 PubkeyModeForbidden)
+							// ——不看 state 门槛,285 报文本身即宣告已注册;降级跳过不阻断
+							if seedMultisigSigForbidden(err.Error()) {
 								r.logf("  ⚠ 多签已激活,无法单签建 DID,跳过(标记 skipped)")
 								r.state.Mark("multisig", stage, map[string]any{"skipped": "multisig-active"})
 								r.state.Save()

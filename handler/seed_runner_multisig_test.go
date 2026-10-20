@@ -69,10 +69,10 @@ func TestSeedMultisigStageOrder(t *testing.T) {
 	}
 }
 
-// TestSeedMultisigDidSkippable 表驱动:多签 DID 失败是否可降级跳过。
-// 仅「多签已激活,单公钥签名被拒」类错误可跳过(285/pubkey mode/signer 语义),
-// 其余(网络错/别名占用/参数错)必须照常返回。
-func TestSeedMultisigDidSkippable(t *testing.T) {
+// TestSeedMultisigSigForbidden 表驱动:多签账户单签失败是否可降级跳过
+// (faucet/DID 两阶段共用)。仅「多签已激活,单公钥签名被拒」类错误可跳过
+// (285/pubkey mode/signers list 语义),其余(网络错/别名占用/参数错)必须照常返回。
+func TestSeedMultisigSigForbidden(t *testing.T) {
 	cases := []struct {
 		name string
 		msg  string
@@ -83,6 +83,7 @@ func TestSeedMultisigDidSkippable(t *testing.T) {
 		{"signers list 语义小写", "publickey is not in the on-chain signers list of account", true},
 		{"语义大写变体", "PUBKEY MODE forbidden for registered account", true},
 		{"signers list 完整句", "The public key is not in the on-chain SIGNERS LIST of account 2n2Mnzb8", true},
+		{"真机 20261020 完整报文(同短语换配置重跑)", "did ms01: failed to resolve signature mode for 2n2Mnzb8pRd4y6vP2Rs71hKNjQWf: publicKey 27aNwSdEGaV4zSB2wPfjpXLqb7guN61yFZG2htUiw1Ezc is not in the on-chain signers list of account 2n2Mnzb8pRd4y6vP2Rs71hKNjQWf (signers: [2AcgwZYnDKB488HmmzKJ7f6TYdJDch3MoEMVrqxnSrFpE EMHQWdS87vwUmghdfKbonp3R4TB187q9LT4mFD7kaxfh hFzcFP13WTHss1iUHbs32b14ghVVbiRMNfYnfZhouDSL 5dn7wqMkRqR6jXPLkviMY32MzFWzEp5ptBwM46mhXTgX g4xXUTzJ9ib7YnAe1Eag2BoxrRoZCsDz3chzSmSkdkEr]); the account is registered on chain, so pubkey mode is rejected by the chain (error 285 PubkeyModeForbidden) — check that signatureMode.publicKey matches the signing private key, or pass {\"type\":\"multisig\",\"index\":N} explicitly", true},
 		{"别名占用 1028 不可跳过", `did admin: API returned error status 6: {code: 1028, message: "DID name already bound: seed-admin-3001"}`, false},
 		{"网络错误不可跳过", "view account.ListSigners failed: connection refused", false},
 		{"参数错误不可跳过", "invalid parameter: alias format", false},
@@ -90,8 +91,8 @@ func TestSeedMultisigDidSkippable(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := seedMultisigDidSkippable(tc.msg); got != tc.want {
-				t.Fatalf("seedMultisigDidSkippable(%q) = %v, want %v", tc.msg, got, tc.want)
+			if got := seedMultisigSigForbidden(tc.msg); got != tc.want {
+				t.Fatalf("seedMultisigSigForbidden(%q) = %v, want %v", tc.msg, got, tc.want)
 			}
 		})
 	}
