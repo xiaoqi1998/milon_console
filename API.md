@@ -2810,7 +2810,7 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 | `multisig.faucet` | bool | true | — |
 | `multisig.did` | bool | true | 须 multisig.faucet=true（多签账户自身付 gas） |
 | `tokens.count` | int | 3 | 1..20 |
-| `tokens.decimals` | uint8[] | `[0,6,9]` | 非空、无重复、每个 0..9 |
+| `tokens.decimals` | uint8[] | `[0,6,9]` | 非空、无重复、每个 0..9；POST 请求侧接受数组，GET 响应为 base64 字符串（Go `[]uint8` 经 `encoding/json` 线上序列化为 base64，前端 `seedDecimalsToArr` 已兼容） |
 | `tokens.complianceCount` | int | 1 | 0..tokens.count；>0 时须 accounts.vcCert=true 且 accounts.count≥3 |
 | `tokens.freezeDemo` | bool | true | — |
 | `sft.count` | int | 2 | 0..10 |

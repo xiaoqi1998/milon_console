@@ -186,7 +186,7 @@ func BuildSeedPlanV2(cfg SeedConfig) (SeedPlan, error) {
 	}
 
 	// SFT:场景按 cfg 轮转铺满 slotsPerSft;tokensPerSlot 决定每 slot 分发笔数
-	warnMerge := false
+	// (merge 场景配 tokensPerSlot<2 的警告由 SeedPlanSummary 重算,此处无需标记)
 	for s := 0; s < cfg.SFT.Count; s++ {
 		key := fmt.Sprintf("set%02d", s+1)
 		symbol := fmt.Sprintf("SS%d", s+1)
@@ -197,15 +197,11 @@ func BuildSeedPlanV2(cfg SeedConfig) (SeedPlan, error) {
 		}
 		for k := 0; k < cfg.SFT.SlotsPerSft; k++ {
 			scKey := cfg.SFT.Scenarios[k%len(cfg.SFT.Scenarios)]
-			if scKey == "merge" && cfg.SFT.TokensPerSlot < 2 {
-				warnMerge = true
-			}
 			spec.Scenarios = append(spec.Scenarios,
 				seedScenarioV2(key, scKey, names, cfg.SFT.TokensPerSlot, cfg.SFT.PostOps))
 		}
 		p.Sfts = append(p.Sfts, spec)
 	}
-	_ = warnMerge
 
 	// VC 证书链:kycorg 双 schema 给 admin+全员;生命周期演示(≥3 人时)
 	if cfg.Accounts.VcCert {

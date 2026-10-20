@@ -89,6 +89,9 @@ func seedResolveConfig(req seedStartRequest) (SeedConfig, error) {
 			return SeedConfig{}, err
 		}
 		base = b
+	case req.Scale != "" && req.Scale != "full" && req.Scale != "small":
+		// 对齐 v1:非法 scale 报 400,不静默落默认
+		return SeedConfig{}, fmt.Errorf("未知 scale %q(可选 full/small)", req.Scale)
 	default:
 		base = SeedConfigDefaults()
 	}

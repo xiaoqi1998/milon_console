@@ -13,7 +13,7 @@ var seedTemplateCache = null;
 
 // chips 容器 → 字段映射(data-key 为配置原值,.on 为选中态)
 var SEED_CHIPS = {
-  seedCurvesChips: { list: ['secp256k1', 'ed25519', 'fndsa512'], field: 'curves' },
+  seedCurvesChips: { list: ['secp256k1', 'ed25519'], field: 'curves' }, // fndsa512 服务端恒 400(Go SDK 无法种子派生),UI 不提供
   seedTiersChips: { list: ['hundred', 'thousand', 'ten_k'], field: 'balanceTiers' },
   seedDecimalsChips: { list: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], field: 'decimals' },
   seedScenariosChips: { list: ['transferable', 'frozen', 'merge', 'burn', 'reject_transfer'], field: 'scenarios' },
@@ -422,11 +422,9 @@ function startSeedJob() {
             seedBeginJob(res.body.data.jobId);
             showToast('播种任务已启动', 'success');
           } else {
+            // 409(已有任务在跑)等失败:服务端 409 的 data 为 nil,直接显示错误 message
             showToast(res.body.message || '启动失败', 'error');
-            if (res.body.data && res.body.data.jobId) {
-              // 409:已有任务在跑,直接接管轮询
-              seedBeginJob(res.body.data.jobId);
-            } else if (Array.isArray(res.body.data) && res.body.data.length) {
+            if (Array.isArray(res.body.data) && res.body.data.length) {
               seedShowErrors(res.body.message || '启动失败', res.body.data);
             }
           }

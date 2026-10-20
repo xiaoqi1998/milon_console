@@ -189,6 +189,15 @@ func (h *VcFlowHandler) VcFlow(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
+	// 外部端点禁止注入播种器专用降级开关:AliasOptional 是「别名被占降级为
+	// 不带别名创建」的播种器内部语义,issuerDid/userDid 经 JSON 整体绑定会把
+	// 该开关静默带进来,显式清零以保证显式别名被占时照常报错
+	if req.IssuerDid != nil {
+		req.IssuerDid.AliasOptional = false
+	}
+	if req.UserDid != nil {
+		req.UserDid.AliasOptional = false
+	}
 	// 地址即引用回填：issuer/user 双角色独立按各自地址命中配置账户时注入
 	// 私钥/公钥（仅本请求同步消费，不跨 goroutine 持有账户）。
 	fillFromConfiguredAccounts(c,

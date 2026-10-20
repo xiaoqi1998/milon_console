@@ -110,6 +110,10 @@ func TestSeedResolveConfig_Priority(t *testing.T) {
 	if _, err = seedResolveConfig(req); err == nil {
 		t.Fatal("未知 preset 应报错")
 	}
+	req = seedStartRequest{Scale: "typo"}
+	if _, err = seedResolveConfig(req); err == nil {
+		t.Fatal("非法 scale 应报错,不得静默落默认(对齐 v1 scale 校验)")
+	}
 }
 
 func TestSeedPlanEndpoint_ValidationErrors(t *testing.T) {
