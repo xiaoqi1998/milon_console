@@ -3,6 +3,8 @@ package handler
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
 
 	"github.com/milon-labs/milon-go-sdk/provider"
 )
@@ -15,6 +17,51 @@ import (
 // seedMultisigSignersReady 幂等判定:视图返回的签名者条数与计划一致。
 func seedMultisigSignersReady(want int, view []any) bool {
 	return view != nil && len(view) == want && want > 0
+}
+
+// seedMultisigViewSigners 从 ListSigners 视图结果中取签名者 vec。
+// 链端返回 tuple<Account, vec<tuple<PublicKey,u8,u8>>>——postcard 解码后
+// 外层 tuple 是 []any(下标 1)或 map(键 "1"),签名者 vec 自身也有这两种形态。
+// 解析失败返回 nil(预检退化,走注册路径)。
+func seedMultisigViewSigners(view any) []any {
+	if view == nil {
+		return nil
+	}
+	outer := view
+	switch v := view.(type) {
+	case []any:
+		if len(v) < 2 {
+			return nil
+		}
+		outer = v[1]
+	case map[string]any:
+		outer = v["1"]
+	}
+	switch v := outer.(type) {
+	case []any:
+		return v
+	case map[string]any:
+		return seedTupleMapToSlice(v)
+	}
+	return nil
+}
+
+// seedTupleMapToSlice 把 postcard 序列/元组解码出的 map(键 "0","1",...)还原为有序切片。
+func seedTupleMapToSlice(m map[string]any) []any {
+	idx := make([]int, 0, len(m))
+	for k := range m {
+		n, err := strconv.Atoi(k)
+		if err != nil {
+			return nil
+		}
+		idx = append(idx, n)
+	}
+	sort.Ints(idx)
+	out := make([]any, len(idx))
+	for i, n := range idx {
+		out[i] = m[strconv.Itoa(n)]
+	}
+	return out
 }
 
 // seedMultisigWeights 等权 bytes:每个签名者权重 1。
@@ -47,10 +94,13 @@ func (r *seedRunner) runMultisig() error {
 			registered := false
 			if v, err := flowCallView(r.mc, "account", "ListSigners",
 				provider.Args{"owner": a.Address}); err == nil {
-				if list, ok := v.([]any); ok && seedMultisigSignersReady(len(ms.SignerNames), list) {
+				list := seedMultisigViewSigners(v)
+				if seedMultisigSignersReady(len(ms.SignerNames), list) {
 					registered = true
 					r.logf("  %s 已注册多签(%d 签者),跳过", ms.Name, len(list))
 				}
+			} else {
+				r.logf("  %s ListSigners 视图失败(%v),转注册路径", ms.Name, err)
 			}
 			if !registered {
 				signers := make([]any, len(ms.SignerNames))
@@ -61,11 +111,14 @@ func (r *seedRunner) runMultisig() error {
 					"owner": a.Address, "signers": signers,
 					"weights": seedMultisigWeights(len(ms.SignerNames)), "threshold": ms.Threshold,
 				}, a)
-				if err != nil && !seedHasCode(err.Error(), 1059, 1064) {
+				// 1059/1064 为 identity 域幂等码(保留无害);account 域真实码待 devNet
+				// 冒烟确认,先以消息语义 AlreadyExist 兜底(大小写不敏感)。
+				if err != nil && !seedHasCode(err.Error(), 1059, 1064) &&
+					!containsFold(err.Error(), "alreadyexist") {
 					return fmt.Errorf("create multisig %s: %w", ms.Name, err)
 				}
 				if err != nil {
-					r.logf("  %s 链上已注册(幂等码),跳过", ms.Name)
+					r.logf("  %s 链上已注册(幂等码/AlreadyExist),跳过", ms.Name)
 				} else {
 					r.logf("  %s 多签注册 ✓ %d-of-%d 签者 %v",
 						ms.Name, ms.Threshold, len(ms.SignerNames), ms.SignerNames)

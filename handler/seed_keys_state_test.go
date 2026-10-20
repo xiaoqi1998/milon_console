@@ -156,9 +156,8 @@ func TestSeedState_ResetClearsAll(t *testing.T) {
 
 func TestSeedBuildAccounts_IncludesMultisigAndComplianceList(t *testing.T) {
 	cfg := SeedConfigDefaults()
-	// 偏离简报一行:曲线轮转去掉 fndsa512——Go SDK FnDsa512Public 未实现,
-	// 无法从私钥派生公钥(简报未察觉的结构性限制,运行期缺口见 task-4-5-report)。
-	cfg.Accounts.Curves = []string{"secp256k1", "ed25519"}
+	// 历史:此处曾显式覆盖 Curves=[secp256k1,ed25519] 规避 fndsa512 派生缺口,
+	// 9d1fc13 后 defaults 已等价,覆盖删除(背景见 task-4-5-report)。
 	plan, err := BuildSeedPlanV2(cfg)
 	if err != nil {
 		t.Fatal(err)
