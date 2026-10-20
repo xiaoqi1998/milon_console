@@ -24,7 +24,8 @@ const (
 	seedMintRetryMax = 3
 )
 
-var seedCodeRe = regexp.MustCompile(`\b(5\d\d|10\d\d|12\d\d)\b`)
+// 285 PubkeyModeForbidden(多签激活后拒绝单公钥签名)与 5xx/10xx/12xx 同为链端码
+var seedCodeRe = regexp.MustCompile(`\b(285|5\d\d|10\d\d|12\d\d)\b`)
 
 // seedCodesIn 从错误文本提取链端错误码。
 func seedCodesIn(msg string) []int {

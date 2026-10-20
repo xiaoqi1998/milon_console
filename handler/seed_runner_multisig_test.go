@@ -52,3 +52,47 @@ func TestSeedMultisigViewSigners(t *testing.T) {
 		t.Fatalf("nil 应返回 nil, got %v", got)
 	}
 }
+
+// TestSeedMultisigStageOrder 锁定多签模块阶段执行顺序:
+// DID 必须先于 CreateMultisig 注册——注册后链端拒绝单公钥签名
+// (285 PubkeyModeForbidden),顺序被无意调换会导致 DID 阶段必败。
+func TestSeedMultisigStageOrder(t *testing.T) {
+	want := []string{"faucet", "did", "create"}
+	if len(seedMultisigStageOrder) != len(want) {
+		t.Fatalf("阶段数不符: got %v, want %v", seedMultisigStageOrder, want)
+	}
+	for i, w := range want {
+		if seedMultisigStageOrder[i] != w {
+			t.Fatalf("阶段顺序错误(下标 %d): got %q, want %q —— DID 必须先于 create 注册",
+				i, seedMultisigStageOrder[i], w)
+		}
+	}
+}
+
+// TestSeedMultisigDidSkippable 表驱动:多签 DID 失败是否可降级跳过。
+// 仅「多签已激活,单公钥签名被拒」类错误可跳过(285/pubkey mode/signer 语义),
+// 其余(网络错/别名占用/参数错)必须照常返回。
+func TestSeedMultisigDidSkippable(t *testing.T) {
+	cases := []struct {
+		name string
+		msg  string
+		want bool
+	}{
+		{"链端 285 数字码", `API returned error status 6: {code: 285, message: "PubkeyModeForbidden"}`, true},
+		{"PubkeyModeForbidden 语义", "failed to resolve signature mode: publicKey is not in the on-chain signers list; the account is registered on chain, so pubkey mode is rejected by the chain (error 285 PubkeyModeForbidden)", true},
+		{"signers list 语义小写", "publickey is not in the on-chain signers list of account", true},
+		{"语义大写变体", "PUBKEY MODE forbidden for registered account", true},
+		{"signers list 完整句", "The public key is not in the on-chain SIGNERS LIST of account 2n2Mnzb8", true},
+		{"别名占用 1028 不可跳过", `did admin: API returned error status 6: {code: 1028, message: "DID name already bound: seed-admin-3001"}`, false},
+		{"网络错误不可跳过", "view account.ListSigners failed: connection refused", false},
+		{"参数错误不可跳过", "invalid parameter: alias format", false},
+		{"空消息不可跳过", "", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := seedMultisigDidSkippable(tc.msg); got != tc.want {
+				t.Fatalf("seedMultisigDidSkippable(%q) = %v, want %v", tc.msg, got, tc.want)
+			}
+		})
+	}
+}
