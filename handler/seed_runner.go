@@ -224,6 +224,10 @@ func (r *seedRunner) run(modules []string) error {
 
 func (r *seedRunner) runAccounts() error {
 	cfg := r.plan.Config
+	if cfg == nil {
+		d := SeedConfigDefaults()
+		cfg = &d
+	}
 	// [1] 领水:admin/issuers 恒领水(全局 gas 池);普通账号按开关
 	if !r.state.IsDone("accounts", "faucet") {
 		people := append([]SeedAccountSpec{r.plan.Admin}, r.plan.Issuers...)
@@ -447,7 +451,7 @@ func (r *seedRunner) runCompliance() error {
 	return nil
 }
 
-// runComplianceOne 单个合规代币的七阶段链路(阶段键带代币符号,多代币互不串位)。
+// runComplianceOne 单个合规代币的八阶段链路(阶段键带代币符号,多代币互不串位)。
 func (r *seedRunner) runComplianceOne(c SeedComplianceSpec) error {
 	token := r.acct(c.Symbol)
 	admin := r.acct("admin")

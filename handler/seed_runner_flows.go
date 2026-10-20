@@ -188,7 +188,8 @@ func (r *seedRunner) seedSftPostOps(sftSpec SeedSftSpec, sc SeedScenario, rec ma
 			_, err := seedSendSingle(r.mc, sftFlowIdentityApp, "Freeze", provider.Args{
 				"freezer": admin.Address, "sft": sftAddr, "token_id": tid, "owner": holder.Address,
 			}, admin)
-			if err != nil && !seedHasCode(err.Error(), 1073, 1282, 1283) {
+			// 1290=TokenFrozen(已冻结再冻结,幂等);1283=TokenNotFound(已完成销账)
+			if err != nil && !seedHasCode(err.Error(), 1290, 1283) {
 				return fmt.Errorf("freeze token: %w", err)
 			}
 			if err != nil {

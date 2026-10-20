@@ -71,7 +71,7 @@ type SeedAccountSpec struct {
 }
 
 type SeedPostOp struct {
-	Op     string `json:"op"` // burn | transfer | reject_transfer
+	Op     string `json:"op"` // burn | transfer | reject_transfer | freeze | merge
 	By     string `json:"by"`
 	To     string `json:"to,omitempty"`
 	Amount uint64 `json:"amount,omitempty"`
