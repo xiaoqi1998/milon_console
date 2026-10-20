@@ -3958,3 +3958,9 @@ body {
 .vc-pair { display: flex; gap: 8px; }
 .vc-result { background: var(--bg-primary, #141416); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-size: 11px; line-height: 1.5; color: var(--text-secondary); white-space: pre-wrap; word-break: break-all; margin: 10px 0 6px; min-height: 38px; max-height: 300px; overflow: auto; }
 .vc-result.is-error { color: #e06c60; }
+.vc-row input[type="number"] { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); padding: 7px 9px; font-size: 12px; font-family: var(--font-mono, monospace); width: 110px; }
+/* 播种器 v2:chips 多选(选中态 .on,值在 data-key) */
+.seed-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 999px; color: var(--text-secondary); padding: 3px 10px; font-size: 11px; font-family: var(--font-mono, monospace); line-height: 1.4; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease; }
+.chip:hover { border-color: var(--border-light); color: var(--text-primary); }
+.chip.on { border-color: var(--accent); color: var(--accent); background: rgba(124, 156, 255, 0.08); }

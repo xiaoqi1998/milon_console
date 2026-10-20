@@ -7,7 +7,7 @@
 <title>Milon Chain API 调试控制台 | 区块链接口测试与文档</title>
 <meta name="description" content="Milon Chain 区块链 API 调试控制台，提供合约读写、账户查询、交易查询、事件监听等 RESTful 接口的在线测试与 SDK 调用。" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='4' fill='%23141416' stroke='%23e0a458' stroke-width='2'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='%23e0a458' font-family='monospace' font-weight='700'>∞</text></svg>" type="image/svg+xml" />
-<link rel="stylesheet" href="/static/css/style.css?v=20261015a" />
+<link rel="stylesheet" href="/static/css/style.css?v=20261019" />
 </head>
 <body>
 <div id="app">
@@ -576,48 +576,142 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
       <div class="vc-layout">
         <div class="errors-header">
           <div class="errors-title-block">
-            <h2>一键测试数据播种</h2>
-            <p>重新创世后一条命令还原整条 devNet 测试环境;确定性派生,同 seed 短语重建后地址不变</p>
+            <h2>测试数据播种</h2>
+            <p>确定性派生测试数据一键写入当前网络,同 seed 短语重建后地址不变。v2:模板 + 旋钮全参数化,计划预览不上链</p>
           </div>
         </div>
         <div class="vc-grid">
           <div class="vc-card">
             <div class="vc-card-header">
-              <h3>播种配置</h3>
-              <span class="vc-card-desc">POST /api/tool/seed — 异步任务,同刻仅允许一个;模块选 compliance 自动带上 vc</span>
+              <h3>模板与启动</h3>
+              <span class="vc-card-desc">模板由服务端下发;改任一旋钮 500ms 后自动刷新计划预览</span>
             </div>
             <div class="vc-row">
-              <label>规模</label>
-              <select id="seedScale" class="network-select" style="width:100%">
-                <option value="full">full(12 用户 / 10 代币 / 2 SFT / 17 人持证)</option>
-                <option value="small">small(4 用户 / 3 代币 / 1 SFT / 4 人持证)</option>
-              </select>
+              <label>内置模板(应用后覆盖下方全部旋钮)</label>
+              <div class="vc-pair" id="seedTemplateBtns" style="flex-wrap:wrap;gap:6px"></div>
             </div>
             <div class="vc-row">
-              <label>seed 短语</label>
+              <label>seed 短语(决定派生命名空间,改动 = 全新数据集)</label>
               <input type="text" id="seedPhrase" value="milon-devnet-seed-v1" />
-            </div>
-            <div class="vc-row">
-              <label>模块(不勾 = 全部)</label>
-              <div class="vc-pair" style="flex-wrap:wrap;gap:6px">
-                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="accounts">账户</label>
-                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="tokens">代币</label>
-                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="sft">SFT</label>
-                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="vc">VC</label>
-                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="compliance">合规</label>
-                <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" class="seed-mod-check" value="txs">交易流</label>
-              </div>
             </div>
             <div class="vc-row">
               <label style="display:flex;gap:6px;align-items:center">
                 <input type="checkbox" id="seedReset"> 忽略历史状态从头重播(--reset)
               </label>
             </div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-secondary" id="seedPreviewBtn">计划预览</button>
+            <div style="display:flex;gap:8px;margin-top:10px">
               <button class="btn btn-primary" id="seedStartBtn">开始播种</button>
             </div>
-            <pre class="vc-result" id="seedPreview">点「计划预览」查看将要创建的数据</pre>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>账户</h3>
+              <span class="vc-card-desc">普通账号:领水 / 余额档 / DID / VC 证书</span>
+            </div>
+            <div class="vc-row">
+              <label>数量(1..200)</label>
+              <input type="number" id="seedAcctCount" min="1" max="200" value="8" />
+            </div>
+            <div class="vc-row">
+              <label>密钥曲线(多选)</label>
+              <div class="seed-chips" id="seedCurvesChips"></div>
+            </div>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seedAcctFaucet" checked> 领水(faucet)</label>
+            </div>
+            <div class="vc-row">
+              <label>余额档位(多选,开启领水时生效)</label>
+              <div class="seed-chips" id="seedTiersChips"></div>
+            </div>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seedAcctDid" checked> 建 DID</label>
+            </div>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seedAcctVc" checked> 发放 VC 证书(勾选自动带 DID)</label>
+            </div>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>多签</h3>
+              <span class="vc-card-desc">签名者从普通账号轮取;数量 0 = 不建多签</span>
+            </div>
+            <div class="vc-row">
+              <label>数量(0..20)</label>
+              <input type="number" id="seedMsCount" min="0" max="20" value="1" />
+            </div>
+            <div class="vc-row">
+              <label>签名者数(2..20)</label>
+              <input type="number" id="seedMsSigners" min="2" max="20" value="5" />
+            </div>
+            <div class="vc-row">
+              <label>阈值(1..签名者数)</label>
+              <input type="number" id="seedMsThreshold" min="1" max="20" value="3" />
+            </div>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seedMsFaucet" checked> 多签账户领水(建 DID 需开启)</label>
+            </div>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seedMsDid" checked> 多签建 DID</label>
+            </div>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>代币</h3>
+              <span class="vc-card-desc">多精度铸造 + 可选合规/冻结演示</span>
+            </div>
+            <div class="vc-row">
+              <label>数量(1..20)</label>
+              <input type="number" id="seedTokCount" min="1" max="20" value="3" />
+            </div>
+            <div class="vc-row">
+              <label>精度(多选,符号轮转分配)</label>
+              <div class="seed-chips" id="seedDecimalsChips"></div>
+            </div>
+            <div class="vc-row">
+              <label>合规代币数(0..数量;需 VC 证书 + ≥3 账号)</label>
+              <input type="number" id="seedCompCount" min="0" value="1" />
+            </div>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seedFreezeDemo" checked> 冻结演示(冻结 → 转账失败 → 解冻)</label>
+            </div>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>SFT</h3>
+              <span class="vc-card-desc">集合 + 场景 slot;数量 0 = 不建 SFT</span>
+            </div>
+            <div class="vc-row">
+              <label>集合数(0..10)</label>
+              <input type="number" id="seedSftCount" min="0" max="10" value="2" />
+            </div>
+            <div class="vc-row">
+              <label>每集合 slot 数(1..20)</label>
+              <input type="number" id="seedSftSlots" min="1" max="20" value="2" />
+            </div>
+            <div class="vc-row">
+              <label>每 slot 铸造数(1..100)</label>
+              <input type="number" id="seedSftTokens" min="1" max="100" value="3" />
+            </div>
+            <div class="vc-row">
+              <label>场景(多选)</label>
+              <div class="seed-chips" id="seedScenariosChips"></div>
+            </div>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seedPostOps" checked> 场景后置操作(转移/冻结/合并/销毁/拒收实测)</label>
+            </div>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
+              <h3>计划预览</h3>
+              <span class="vc-card-desc">POST /api/tool/seed/plan — 不上链;配置非法时在此列出全部错误</span>
+            </div>
+            <pre class="vc-result" id="seedSummary" style="min-height:0">改任一旋钮后自动预览</pre>
+            <pre class="vc-result" id="seedPreview" style="max-height:420px">改任一旋钮后自动预览</pre>
           </div>
 
           <div class="vc-card">
@@ -625,19 +719,17 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
               <h3>执行进度</h3>
               <span class="vc-card-desc">job <span id="seedJobId">—</span> 状态 <span id="seedStatus">idle</span>(2s 轮询)</span>
             </div>
-            <div id="seedProgressBox" style="display:none">
-              <pre class="vc-result" id="seedStages">-</pre>
-              <pre class="vc-result" id="seedLog" style="max-height:420px;overflow:auto">-</pre>
-            </div>
+            <pre class="vc-result" id="seedStages" style="min-height:0">尚未启动</pre>
+            <pre class="vc-result" id="seedLog" style="max-height:360px">尚未启动</pre>
           </div>
 
-          <div class="vc-card" id="seedAccountsBox" style="display:none">
+          <div class="vc-card" id="seedAddrBox" style="display:none">
             <div class="vc-card-header">
               <h3>关键地址</h3>
               <span class="vc-card-desc">完成后可引用的确定性地址(私钥见 data/seed_state.json,页面不返回)</span>
             </div>
-            <pre class="vc-result" id="seedAccounts">-</pre>
-            <button class="btn btn-secondary" id="seedCopyBtn">复制地址表</button>
+            <pre class="vc-result" id="seedAddrTable">-</pre>
+            <button class="btn btn-secondary" id="seedAddrCopy">复制地址表</button>
           </div>
         </div>
       </div>
@@ -761,6 +853,6 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
 </div>
 <script src="/static/js/app.js?v=20261015a"></script>
 <script src="/static/js/saved-instructions.js?v=20261013"></script>
-<script src="/static/js/seed.js?v=20261015"></script>
+<script src="/static/js/seed.js?v=20261019"></script>
 </body>
 </html>
