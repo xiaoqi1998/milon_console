@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/milon-labs/milon-go-sdk/provider"
 )
@@ -133,9 +134,14 @@ func (r *seedRunner) runMultisig() error {
 			stage = "did:" + ms.Name
 			if !r.state.IsDone("multisig", stage) {
 				suffix := ms.AliasSuffix
-				opts := &vcFlowDidOptions{Alias: ms.Alias, Suffix: &suffix}
-				if _, err := vcFlowEnsureDID(r.mc, *a.ADR, a.SK, a.PUB, "Personal", opts); err != nil {
+				opts := &vcFlowDidOptions{Alias: ms.Alias, Suffix: &suffix, AliasOptional: true}
+				step, err := vcFlowEnsureDID(r.mc, *a.ADR, a.SK, a.PUB, "Personal", opts)
+				if err != nil {
 					return fmt.Errorf("did %s: %w", ms.Name, err)
+				}
+				if strings.Contains(step.Detail, "alias occupied") {
+					// 别名是装饰性数据:被其他地址占用时跳过绑定,DID 本体已建成
+					r.logf("  ⚠ 别名 %s 已被占用,跳过绑定(DID 本体不受影响)", ms.Alias)
 				}
 				r.logf("  %s DID ✓", ms.Name)
 				r.state.Mark("multisig", stage, nil)

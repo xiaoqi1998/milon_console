@@ -80,6 +80,11 @@ type vcFlowDidOptions struct {
 	Services  []didServiceSpec `json:"services"`
 	AvatarURI string           `json:"avatarUri"`
 	AutoAlias *bool            `json:"autoAlias"` // 缺省 true:未显式给别名时由服务端按角色+地址自动生成
+	// AliasOptional:别名是装饰性数据(测试数据构建器语义)——被其他地址占用
+	// (NameAlreadyBound=1028)时不硬失败:未建文档降级为不带别名创建,
+	// 已建文档跳过绑定;仅 DID 文档本体创建失败才返回错误。
+	// 仅供播种器路径置位;/api/tool/did/create 与 vc-flow 不受影响(显式要求别名时被占仍报错)。
+	AliasOptional bool `json:"aliasOptional,omitempty"`
 }
 
 // autoDidAlias 生成 vc-flow 默认别名主体:角色前缀 + 地址 base58 前 8 位,
@@ -378,6 +383,10 @@ func summarizeDidEnsure(res didEnsureResult) flowStep {
 		actions = append(actions, "avatar updated")
 	}
 	step.Skipped = allSkipped
+	if res.Alias != nil && res.Alias.Skipped && res.Alias.Detail != "" {
+		// AliasOptional 降级痕迹(播种器据此 logf 警告):别名被占、跳过绑定
+		step.Detail += "; " + res.Alias.Detail
+	}
 	if len(actions) > 0 {
 		step.Detail += "; " + strings.Join(actions, ", ")
 	}
@@ -948,7 +957,8 @@ func didQueryNameBinding(mc *milon.Client, name map[string]any) any {
 //   - 链上已有:按 planDidBackfill 的差异执行 SetAlias/AddService/SetAvatarUri
 //
 // 幂等容忍:DidAlreadyExists(1024);NameAlreadyBound(1028) 仅在别名绑在本人时容忍,
-// 绑在他人则原样报错。供 POST /api/tool/did/create 与 vc-flow DID 步骤共用。
+// 绑在他人则原样报错——除非 opts.AliasOptional(播种器语义:别名装饰性,被占降级为
+// 无别名创建/跳过绑定,DID 本体必须建成)。供 POST /api/tool/did/create 与 vc-flow DID 步骤共用。
 func didEnsureDocument(mc *milon.Client, addr crypto.Address, sk crypto.SecretKeyer, pub *crypto.PublicKey, subjectType string, opts *vcFlowDidOptions) (didEnsureResult, error) {
 	res := didEnsureResult{}
 	opts = normalizeVcFlowDidOptions(opts)
@@ -979,6 +989,21 @@ func didEnsureDocument(mc *milon.Client, addr crypto.Address, sk crypto.SecretKe
 				}, addr, sk, pub)
 			})
 			if out.Err != nil {
+				// AliasOptional:别名被其他地址占用(1028)时降级为不带别名创建——
+				// 别名是装饰性数据,DID 文档本体必须建成;本体也失败才返回错误
+				if opts.AliasOptional && isTolerableChainError(out.Err.Error(), "NameAlreadyBound", "1028", "already bound") {
+					txHash, cerr := didSend(mc, "Create", provider.Args{"subject": addr.ToBase58(), "doc": docInput}, addr, sk, pub)
+					if cerr != nil {
+						if isTolerableChainError(cerr.Error(), "DidAlreadyExists", "1024") {
+							res.Create = flowStep{Skipped: true, Detail: "DID already exists on chain: " + cerr.Error()}
+							return res, nil
+						}
+						return res, cerr
+					}
+					res.Created = true
+					res.Create = flowStep{TxHash: txHash, Detail: "created without alias: " + out.Err.Error()}
+					return res, nil
+				}
 				return res, out.Err
 			}
 			res.Created = true
@@ -1012,9 +1037,16 @@ func didEnsureDocument(mc *milon.Client, addr crypto.Address, sk crypto.SecretKe
 			return didSend(mc, "SetAlias", provider.Args{"subject": addr.ToBase58(), "name": name}, addr, sk, pub)
 		})
 		if out.Err != nil {
-			return res, out.Err
+			// AliasOptional:别名已被其他地址占用(1028)时跳过绑定不硬失败——
+			// 文档本体已在,别名缺失不影响 DID 功能(装饰性数据)
+			if opts.AliasOptional && isTolerableChainError(out.Err.Error(), "NameAlreadyBound", "1028", "already bound") {
+				res.Alias = &flowStep{Skipped: true, Detail: "alias occupied, binding skipped: " + out.Err.Error()}
+			} else {
+				return res, out.Err
+			}
+		} else {
+			res.Alias = &flowStep{TxHash: out.TxHash}
 		}
-		res.Alias = &flowStep{TxHash: out.TxHash}
 	}
 
 	for _, s := range plan.AddServices {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
@@ -25,30 +26,58 @@ func (r *seedRunner) runSft() error {
 	for _, sftSpec := range r.plan.Sfts {
 		res := r.acct(sftSpec.Key)
 
+		// createSft 用确定性 ed25519 资源账户创建 SFT;
+		// 链端实际已存在(SftAlreadyExists=516)视为复用成功——重建分支的
+		// SftOwnerOf 核实与创建之间存在窗口,或 state 脱节但视图瞬断时兜底。
+		createSft := func() error {
+			attr := fmt.Sprintf("collection=%s", sftSpec.Key)
+			meta := &sftFlowMetadata{
+				Name: sftSpec.Name, Symbol: sftSpec.Symbol,
+				CoverUrl: sftSpec.CoverURL, Metadata: sftSpec.MetadataURL,
+				Attribute: &attr,
+			}
+			if _, err := sftFlowCreateSft(r.mc, *res.ADR, res.SK, res.PUB,
+				meta, sftSpec.RoyaltyBps, *admin.ADR, admin.SK, admin.PUB); err != nil {
+				if isTolerableChainError(err.Error(), "SftAlreadyExists", "516") {
+					r.logf("  SFT %s 链端已存在(516),视为复用 → %s", sftSpec.Key, shortAddr(res.Address))
+					return nil
+				}
+				return fmt.Errorf("create sft %s: %w", sftSpec.Key, err)
+			}
+			return nil
+		}
+
 		stage := "create:" + sftSpec.Key
 		if !r.state.IsDone("sft", stage) {
-			// 已存在(SftOwnerOf 可读)则跳过创建;否则用确定性 ed25519 资源账户创建
-			existing := true
-			if _, err := flowCallView(r.mc, sftFlowIdentityApp, "SftOwnerOf",
-				provider.Args{"sft": res.Address}); err != nil {
-				existing = false
+			// 已存在(SftOwnerOf 可读且 Ok)则跳过创建;否则创建。
+			// 注意链端 Err 载荷经 flowCallView 解码为 *api.ApiFailure 而非 error,
+			// 存在性判定必须加 flowViewOK,否则不存在的 SFT 会被误判「已存在」。
+			existing := false
+			if value, err := flowCallView(r.mc, sftFlowIdentityApp, "SftOwnerOf",
+				provider.Args{"sft": res.Address}); err == nil && flowViewOK(value) {
+				existing = true
 			}
 			if existing {
 				r.logf("  SFT %s(%s) 已存在,复用 → %s", sftSpec.Key, sftSpec.Symbol, shortAddr(res.Address))
 			} else {
-				attr := fmt.Sprintf("collection=%s", sftSpec.Key)
-				meta := &sftFlowMetadata{
-					Name: sftSpec.Name, Symbol: sftSpec.Symbol,
-					CoverUrl: sftSpec.CoverURL, Metadata: sftSpec.MetadataURL,
-					Attribute: &attr,
-				}
-				if _, err := sftFlowCreateSft(r.mc, *res.ADR, res.SK, res.PUB,
-					meta, sftSpec.RoyaltyBps, *admin.ADR, admin.SK, admin.PUB); err != nil {
-					return fmt.Errorf("create sft %s: %w", sftSpec.Key, err)
+				if err := createSft(); err != nil {
+					return err
 				}
 				r.logf("  SFT %s(%s) 创建 ✓ → %s", sftSpec.Key, sftSpec.Symbol, shortAddr(res.Address))
 			}
 			r.state.Mark("sft", stage, map[string]any{"address": res.Address})
+			r.state.Save()
+		} else if value, err := flowCallView(r.mc, sftFlowIdentityApp, "SftOwnerOf",
+			provider.Args{"sft": res.Address}); err != nil || !flowViewOK(value) {
+			// 状态标记 create 已完成仍须链端核实:seed_state 与链可能脱节
+			// (如重建创世后 state 未清),此时标记不可信——重建 SFT 走创建分支;
+			// 链端实际仍存在时创建报 516,由 createSft 已有容忍兜底。
+			r.logf("  SFT %s 状态标记与链端不一致,重建 SFT", sftSpec.Key)
+			if err := createSft(); err != nil {
+				return err
+			}
+			r.logf("  SFT %s(%s) 重建 ✓ → %s", sftSpec.Key, sftSpec.Symbol, shortAddr(res.Address))
+			r.state.Mark("sft", stage, map[string]any{"address": res.Address, "recreated": true})
 			r.state.Save()
 		}
 
@@ -309,9 +338,13 @@ func (r *seedRunner) seedVcFlow(issuer, user *SeedPlanAccount, vi SeedVcIssuerSp
 	}
 	// [2][3] issuer 建 Organization DID + 注册组织(幂等)
 	issuerOpts := &vcFlowDidOptions{Alias: issuer.Alias, Suffix: &issuer.AliasSuffix,
-		AvatarURI: issuer.AvatarURL}
-	if _, err := vcFlowEnsureDID(mc, *issuer.ADR, issuer.SK, issuer.PUB, "Organization", issuerOpts); err != nil {
+		AvatarURI: issuer.AvatarURL, AliasOptional: true}
+	issuerDidStep, err := vcFlowEnsureDID(mc, *issuer.ADR, issuer.SK, issuer.PUB, "Organization", issuerOpts)
+	if err != nil {
 		return fmt.Errorf("issuer did: %w", err)
+	}
+	if strings.Contains(issuerDidStep.Detail, "alias occupied") {
+		r.logf("    ⚠ 别名 %s 已被占用,跳过绑定(DID 本体不受影响)", issuer.Alias)
 	}
 	schemas := make([]string, 0, vi.SchemaCount)
 	for i := 1; i <= vi.SchemaCount; i++ {
@@ -322,9 +355,13 @@ func (r *seedRunner) seedVcFlow(issuer, user *SeedPlanAccount, vi SeedVcIssuerSp
 	}
 	// [4] user 建 Personal DID(幂等)
 	userOpts := &vcFlowDidOptions{Alias: user.Alias, Suffix: &user.AliasSuffix,
-		AvatarURI: user.AvatarURL}
-	if _, err := vcFlowEnsureDID(mc, *user.ADR, user.SK, user.PUB, "Personal", userOpts); err != nil {
+		AvatarURI: user.AvatarURL, AliasOptional: true}
+	userDidStep, err := vcFlowEnsureDID(mc, *user.ADR, user.SK, user.PUB, "Personal", userOpts)
+	if err != nil {
 		return fmt.Errorf("user did: %w", err)
+	}
+	if strings.Contains(userDidStep.Detail, "alias occupied") {
+		r.logf("    ⚠ 别名 %s 已被占用,跳过绑定(DID 本体不受影响)", user.Alias)
 	}
 	// [5] 链下签发 N 张
 	chainID, err := flowChainID(mc)

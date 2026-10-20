@@ -276,9 +276,15 @@ func (r *seedRunner) runAccounts() error {
 		for _, spec := range people {
 			a := r.acct(spec.Name)
 			suffix := spec.AliasSuffix
-			opts := &vcFlowDidOptions{Alias: spec.Alias, Suffix: &suffix, AvatarURI: spec.AvatarURL}
-			if _, err := vcFlowEnsureDID(r.mc, *a.ADR, a.SK, a.PUB, spec.SubjectType, opts); err != nil {
+			opts := &vcFlowDidOptions{Alias: spec.Alias, Suffix: &suffix, AvatarURI: spec.AvatarURL,
+				AliasOptional: true}
+			step, err := vcFlowEnsureDID(r.mc, *a.ADR, a.SK, a.PUB, spec.SubjectType, opts)
+			if err != nil {
 				return fmt.Errorf("did %s: %w", spec.Name, err)
+			}
+			if strings.Contains(step.Detail, "alias occupied") {
+				// 别名是装饰性数据:被其他地址占用时跳过绑定,DID 本体已建成
+				r.logf("    ⚠ 别名 %s 已被占用,跳过绑定(DID 本体不受影响)", spec.Alias)
 			}
 		}
 		r.logf("    DID 全部就绪(幂等补齐,别名 seed-*)")

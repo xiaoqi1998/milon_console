@@ -17,9 +17,11 @@ import (
 )
 
 // ==================== 播种器:异步任务 + HTTP 端点 ====================
-// POST /api/tool/seed           启动(同刻仅允许一个,重复返回 409)
-// GET  /api/tool/seed/plan      计划预览(不上链)
+// GET  /api/tool/seed/templates   内置模板清单(minimal/standard/full)
+// POST /api/tool/seed/plan       计划预览 v2(config 直传 / preset+overrides / scale 兼容,不上链)
+// POST /api/tool/seed            启动(同刻仅允许一个,重复返回 409)
 // GET  /api/tool/seed/status/:id 进度快照(模块阶段/日志 tail/地址表)
+// GET  /api/tool/seed/plan       旧 scale 口径预览(兼容保留)
 
 const (
 	seedStatePath   = "data/seed_state.json"
