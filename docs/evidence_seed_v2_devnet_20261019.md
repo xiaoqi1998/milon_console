@@ -22,3 +22,8 @@
 2. **SFT Freeze 的 freezer 权限(非 owner 场景)**:端到端里 freeze 由持有者(owner)执行;`freeze` 后置操作在 freezer ≠ owner 的场景下链端行为/错误码未验证。
 3. **faucet 冷却下的重跑体验**:端到端运行时领水未触发冷却;冷却窗口内重跑播种,领水/补差阶段的退避与跳过行为未实测。
 4. **控制台浏览器全流程人工过一遍**:Task 8 冒烟已覆盖模板回填/预览/启动/轮询/地址表,但「全量模板从点开始到 completed 的一次完整人工走查」(含确认弹窗、日志滚动、失败恢复)建议由用户在浏览器中复核一次。
+
+## 20261020 追记:两起真机事件与裁定
+
+1. **multisig 285 兜底门槛漏放行**:同 seed 短语 + 改任一旋钮 = 新 configHash 命名空间(状态为空),但派生地址相同、链上已注册多签 → DID 段 285 PubkeyModeForbidden 硬失败。修复:`seedMultisigSigForbidden` 去 state 门槛(285 报文本身即链端宣告已注册)+ faucet 段同款降级。用户原始报文已入表驱动用例。
+2. **图片源改真实内容**:原 picsum 随机照片当头像/图标被视为占位图。裁定:头像=randomuser.me 真人照片、代币图标=cryptocurrency-icons 真实货币 logo(SCUSD* 钉 usdt)、URI/封面维持 picsum 真实摄影图;三域均本机 curl 实测 200。测试 TestSeedImageURLs 锁定。

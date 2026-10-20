@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"crypto/sha256"
 	"fmt"
 )
 
 // ==================== 播种器:确定性计划 ====================
 // 与 tools/seeder/seedlib/plan.py 逐项对齐(数据源同构):
 // 同一 seed 短语 + 同一规模,每次重建的地址/代币/SFT/证书矩阵完全一致。
-// 图片一律 picsum.photos 固定 seed——真实公网可见,重建后 URL 不变。
 
 var SeedModuleOrder = []string{"accounts", "multisig", "tokens", "sft", "vc", "compliance", "txs"}
 
@@ -20,12 +20,47 @@ func seedPicsum(seed string, w, h int) string {
 	return fmt.Sprintf("%s/%s/%d/%d.jpg", seedPicsumBase, seed, w, h)
 }
 
+// ---------- 真实图源(20261020 裁定:全部用真实内容,弃随机占位图) ----------
+// 头像     = randomuser.me 真人照片(男女 × 0..99,按名字确定性选取)
+// 代币图标 = spothq/cryptocurrency-icons 真实货币 logo(真实币种池确定性轮转;
+//            合规稳定币 SCUSD* 钉 usdt)
+// URI/封面/卡片 = picsum.photos 真实摄影图(语义中性大图,维持)
+// 三个域均经本机 curl 实测 200 可达(20261020)。
+
+// seedIconCurrencies 真实货币 logo 池(cryptocurrency-icons 库确有 128/color 资源)。
+var seedIconCurrencies = []string{
+	"btc", "eth", "bnb", "sol", "ada", "xrp", "doge", "dot",
+	"link", "matic", "ltc", "avax", "atom", "near", "trx", "eos",
+}
+
+// seedHashPick 名字确定性选桶:sha256 前 2 字节取模,同名恒同图。
+func seedHashPick(name string, mod int) int {
+	if mod <= 0 {
+		return 0
+	}
+	sum := sha256.Sum256([]byte(name))
+	return int(uint16(sum[0])<<8|uint16(sum[1])) % mod
+}
+
 func seedAvatarURL(name string) string {
-	return seedPicsum("milon-ava-"+name, 200, 200)
+	gender := "men"
+	if seedHashPick("gender:"+name, 2) == 1 {
+		gender = "women"
+	}
+	return fmt.Sprintf("https://randomuser.me/api/portraits/%s/%d.jpg", gender, seedHashPick("ava:"+name, 100))
 }
 
 func seedTokenIconURL(symbol string) string {
-	return seedPicsum("milon-icon-"+strings2Lower(symbol), 128, 128)
+	// 合规稳定币语义钉 usdt(SCUSD/SCUSD2..);其余按池轮转
+	if strings2HasPrefix(symbol, "SCUSD") {
+		return "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/usdt.png"
+	}
+	cur := seedIconCurrencies[seedHashPick("icon:"+symbol, len(seedIconCurrencies))]
+	return fmt.Sprintf("https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/%s.png", cur)
+}
+
+func strings2HasPrefix(s, prefix string) bool {
+	return len(s) >= len(prefix) && s[:len(prefix)] == prefix
 }
 
 func seedTokenURI(symbol string) string {

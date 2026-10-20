@@ -3,6 +3,7 @@ package handler
 
 import (
 	"encoding/json"
+	"regexp"
 	"testing"
 )
 
@@ -130,5 +131,30 @@ func TestSeedEstimateTxs_Positive(t *testing.T) {
 	p, _ := BuildSeedPlanV2(SeedConfigDefaults())
 	if SeedEstimateTxs(p) <= 0 {
 		t.Fatal("预估交易数须为正")
+	}
+}
+
+// TestSeedImageURLs 锁定真实图源(20261020 裁定:弃随机占位,全部真实内容):
+// 头像=randomuser 真人照片;代币图标=真实货币 logo;URI/封面=picsum 真实摄影图。
+func TestSeedImageURLs(t *testing.T) {
+	ava := seedAvatarURL("test01")
+	if !regexp.MustCompile(`^https://randomuser\.me/api/portraits/(men|women)/\d+\.jpg$`).MatchString(ava) {
+		t.Fatalf("头像须为 randomuser 真人照片, got %s", ava)
+	}
+	if seedAvatarURL("test01") != ava {
+		t.Fatal("头像 URL 须确定性")
+	}
+	icon := seedTokenIconURL("ST01")
+	if !regexp.MustCompile(`^https://raw\.githubusercontent\.com/spothq/cryptocurrency-icons/master/128/color/[a-z0-9]+\.png$`).MatchString(icon) {
+		t.Fatalf("代币图标须为真实货币 logo, got %s", icon)
+	}
+	if got := seedTokenIconURL("SCUSD"); !regexp.MustCompile(`/usdt\.png$`).MatchString(got) {
+		t.Fatalf("合规稳定币 SCUSD 须钉 usdt logo, got %s", got)
+	}
+	if seedTokenIconURL("ST01") != seedTokenIconURL("ST01") {
+		t.Fatal("图标 URL 须确定性")
+	}
+	if !regexp.MustCompile(`^https://picsum\.photos/`).MatchString(seedTokenURI("ST01")) {
+		t.Fatalf("URI 大图维持 picsum 真实摄影图, got %s", seedTokenURI("ST01"))
 	}
 }
