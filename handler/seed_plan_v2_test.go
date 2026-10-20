@@ -40,8 +40,8 @@ func TestBuildSeedPlanV2_Matrix(t *testing.T) {
 	if len(p.Users) != 8 {
 		t.Fatalf("用户数 %d", len(p.Users))
 	}
-	// 曲线轮转:8 人三曲线 → secp/ed/fndsa/secp/ed/fndsa/secp/ed
-	wantCurves := []string{"secp256k1", "ed25519", "fndsa512", "secp256k1", "ed25519", "fndsa512", "secp256k1", "ed25519"}
+	// 曲线轮转:8 人双曲线(secp/ed 交替)——fndsa512 播种器确定性派生不支持
+	wantCurves := []string{"secp256k1", "ed25519", "secp256k1", "ed25519", "secp256k1", "ed25519", "secp256k1", "ed25519"}
 	for i, w := range wantCurves {
 		if p.Users[i].Curve != w {
 			t.Errorf("users[%d].Curve=%s want %s", i, p.Users[i].Curve, w)

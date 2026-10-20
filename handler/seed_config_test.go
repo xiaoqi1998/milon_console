@@ -22,6 +22,8 @@ func TestValidateSeedConfig_FieldPathErrors(t *testing.T) {
 		{"账号数越界", func(c *SeedConfig) { c.Accounts.Count = 0 }, "accounts.count"},
 		{"曲线为空", func(c *SeedConfig) { c.Accounts.Curves = nil }, "accounts.curves"},
 		{"非法曲线", func(c *SeedConfig) { c.Accounts.Curves = []string{"rsa"} }, "accounts.curves[rsa]"},
+		// fndsa512 虽是链端合法曲线,但 Go SDK 无法从种子确定性派生,播种器必须快速失败。
+		{"fndsa512 不支持", func(c *SeedConfig) { c.Accounts.Curves = []string{"secp256k1", "fndsa512"} }, "fndsa512"},
 		{"精度越界", func(c *SeedConfig) { c.Tokens.Decimals = []uint8{10} }, "tokens.decimals[10]"},
 		{"合规数超代币数", func(c *SeedConfig) { c.Tokens.ComplianceCount = 9 }, "tokens.complianceCount"},
 		{"合规但无证书", func(c *SeedConfig) { c.Tokens.ComplianceCount = 1; c.Accounts.VcCert = false }, "tokens.complianceCount"},

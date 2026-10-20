@@ -29,7 +29,8 @@ func SeedTemplates() []SeedTemplate {
 	standard := SeedConfigDefaults()
 
 	full := SeedConfigDefaults()
-	full.Accounts = SeedAccountsCfg{Count: 12, Curves: []string{"secp256k1", "ed25519", "fndsa512"},
+	// 同默认配置:播种器确定性派生仅支持双曲线(Go SDK 无法从种子派生 fndsa512 公钥)。
+	full.Accounts = SeedAccountsCfg{Count: 12, Curves: []string{"secp256k1", "ed25519"},
 		Faucet: true, BalanceTiers: []string{"hundred", "thousand", "ten_k"}, DID: true, VcCert: true}
 	full.Multisig = SeedMultisigCfg{Count: 2, Signers: 5, Threshold: 3, Faucet: true, DID: true}
 	full.Tokens = SeedTokensCfg{Count: 10, Decimals: []uint8{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
