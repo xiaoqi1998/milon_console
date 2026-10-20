@@ -197,6 +197,8 @@ func (r *seedRunner) run(modules []string) error {
 		switch m {
 		case "accounts":
 			err = r.runAccounts()
+		case "multisig":
+			err = r.runMultisig()
 		case "tokens":
 			err = r.runTokens()
 		case "sft":
@@ -221,13 +223,16 @@ func (r *seedRunner) run(modules []string) error {
 // ---------- accounts ----------
 
 func (r *seedRunner) runAccounts() error {
+	cfg := r.plan.Config
+	// [1] 领水:admin/issuers 恒领水(全局 gas 池);普通账号按开关
 	if !r.state.IsDone("accounts", "faucet") {
-		people := append([]SeedAccountSpec{r.plan.Admin}, r.plan.Users...)
-		people = append(people, r.plan.Issuers...)
+		people := append([]SeedAccountSpec{r.plan.Admin}, r.plan.Issuers...)
+		if cfg.Accounts.Faucet {
+			people = append(people, r.plan.Users...)
+		}
 		r.logf("  领水 %d 个账户(冷却守卫,单次尝试)…", len(people))
 		for _, spec := range people {
 			a := r.acct(spec.Name)
-			// 冷却视图:冷却中绝不尝试(尝试即续期)
 			cooldown, err := seedViewU64(r.mc, seedTokenApp, "FaucetCooldownRemaining",
 				provider.Args{"account": a.Address})
 			if err != nil {
@@ -257,24 +262,56 @@ func (r *seedRunner) runAccounts() error {
 		r.state.Mark("accounts", "faucet", map[string]any{"count": len(people)})
 		r.state.Save()
 	}
+	// [2] DID:admin/issuers 恒建;普通账号按开关
 	if !r.state.IsDone("accounts", "did") {
-		people := append([]SeedAccountSpec{r.plan.Admin}, r.plan.Users...)
-		people = append(people, r.plan.Issuers...)
+		people := append([]SeedAccountSpec{r.plan.Admin}, r.plan.Issuers...)
+		if cfg.Accounts.DID {
+			people = append(people, r.plan.Users...)
+		}
 		r.logf("  创建 DID %d 个…", len(people))
 		for _, spec := range people {
 			a := r.acct(spec.Name)
 			suffix := spec.AliasSuffix
-			opts := &vcFlowDidOptions{
-				Alias:     spec.Alias,
-				Suffix:    &suffix,
-				AvatarURI: spec.AvatarURL,
-			}
+			opts := &vcFlowDidOptions{Alias: spec.Alias, Suffix: &suffix, AvatarURI: spec.AvatarURL}
 			if _, err := vcFlowEnsureDID(r.mc, *a.ADR, a.SK, a.PUB, spec.SubjectType, opts); err != nil {
 				return fmt.Errorf("did %s: %w", spec.Name, err)
 			}
 		}
 		r.logf("    DID 全部就绪(幂等补齐,别名 seed-*)")
 		r.state.Mark("accounts", "did", map[string]any{"count": len(people)})
+		r.state.Save()
+	}
+	// [3] 余额档位:目标不足部分由 admin 补差(规格 §2;领水 10000 MIL 已覆盖全部档位,
+	// 档位在 faucet=false 或沿用旧账户时生效)
+	if len(cfg.Accounts.BalanceTiers) > 0 && !r.state.IsDone("accounts", "tiers") {
+		admin := r.acct("admin")
+		r.logf("  余额档位补差 %d 个账户…", len(r.plan.Users))
+		for i, spec := range r.plan.Users {
+			target := seedTierTargetMIL(cfg.Accounts.BalanceTiers[i%len(cfg.Accounts.BalanceTiers)]) * seedMil
+			if target == 0 {
+				continue
+			}
+			a := r.acct(spec.Name)
+			bal, err := r.mc.BalanceOf(a.ADR)
+			if err != nil {
+				bal = 0
+			}
+			if bal >= target {
+				continue
+			}
+			_, err = seedSendSingle(r.mc, seedTokenApp, "Transfer", provider.Args{
+				"from": admin.Address, "token": api.MILToken.ToBase58(),
+				"to": a.Address, "amount": target - bal,
+			}, admin)
+			if err != nil {
+				if seedHasCode(err.Error(), 513) {
+					return fmt.Errorf("余额档补差 %s: admin MIL 不足(目标 %d)", spec.Name, target)
+				}
+				return fmt.Errorf("余额档补差 %s: %w", spec.Name, err)
+			}
+			r.logf("    %s 补差至 %d MIL ✓ (+%d)", spec.Name, target, target-bal)
+		}
+		r.state.Mark("accounts", "tiers", map[string]any{"tiers": cfg.Accounts.BalanceTiers})
 		r.state.Save()
 	}
 	r.logf("accounts 模块完成")
@@ -398,9 +435,20 @@ func (r *seedRunner) runTokens() error {
 
 func (r *seedRunner) runCompliance() error {
 	if len(r.plan.Compliance) == 0 {
+		r.logf("compliance 模块完成: 无合规代币,跳过")
 		return nil
 	}
-	c := r.plan.Compliance[0]
+	for _, c := range r.plan.Compliance {
+		if err := r.runComplianceOne(c); err != nil {
+			return err
+		}
+	}
+	r.logf("compliance 模块完成: %d 个合规代币", len(r.plan.Compliance))
+	return nil
+}
+
+// runComplianceOne 单个合规代币的七阶段链路(阶段键带代币符号,多代币互不串位)。
+func (r *seedRunner) runComplianceOne(c SeedComplianceSpec) error {
 	token := r.acct(c.Symbol)
 	admin := r.acct("admin")
 	issuer := r.acct(c.IssuerName)
@@ -416,7 +464,7 @@ func (r *seedRunner) runCompliance() error {
 
 	stage := "credential"
 	credID := ""
-	if v := r.state.Get("compliance", stage); v != nil {
+	if v := r.state.Get("compliance", seedComplianceStageKey(stage, c.Symbol)); v != nil {
 		if m, ok := v.(map[string]any); ok {
 			credID, _ = m["credentialId"].(string)
 		}
@@ -437,11 +485,11 @@ func (r *seedRunner) runCompliance() error {
 		}
 		credID = s
 		r.logf("  凭证 ID(%s/%s) = %s", c.IssuerName, c.Schema, credID)
-		mark(stage, map[string]any{"credentialId": credID})
+		mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"credentialId": credID})
 	}
 
 	stage = "create"
-	if !r.state.IsDone("compliance", stage) {
+	if !r.state.IsDone("compliance", seedComplianceStageKey(stage, c.Symbol)) {
 		metadata := map[string]any{
 			"name": c.Name, "symbol": c.Symbol,
 			"decimals": uint32(c.Decimals), "icon": c.IconURL, "uri": c.URI,
@@ -458,21 +506,21 @@ func (r *seedRunner) runCompliance() error {
 		} else {
 			r.logf("  合规代币 %s 创建 ✓(挂证 %s)", c.Symbol, credID)
 		}
-		mark(stage, map[string]any{"address": token.Address})
+		mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"address": token.Address})
 	}
 
 	stage = "mode"
-	if !r.state.IsDone("compliance", stage) {
+	if !r.state.IsDone("compliance", seedComplianceStageKey(stage, c.Symbol)) {
 		if _, err := seedSendSingle(r.mc, seedTokenApp, "SetComplianceMode", provider.Args{
 			"token": token.Address, "mode": c.Mode,
 		}, admin); err != nil {
 			return fmt.Errorf("set mode: %w", err)
 		}
-		mark(stage, map[string]any{"mode": c.Mode})
+		mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"mode": c.Mode})
 	}
 
 	stage = "requirements"
-	if !r.state.IsDone("compliance", stage) {
+	if !r.state.IsDone("compliance", seedComplianceStageKey(stage, c.Symbol)) {
 		if _, err := seedSendSingle(r.mc, seedTokenApp, "AddComplianceRequirement", provider.Args{
 			"token": token.Address, "credential_ids": []string{credID},
 		}, admin); err != nil {
@@ -482,11 +530,11 @@ func (r *seedRunner) runCompliance() error {
 			}
 			r.logf("  凭证要求已存在,跳过")
 		}
-		mark(stage, map[string]any{"credentialIds": []string{credID}})
+		mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"credentialIds": []string{credID}})
 	}
 
 	stage = "mint"
-	if !r.state.IsDone("compliance", stage) {
+	if !r.state.IsDone("compliance", seedComplianceStageKey(stage, c.Symbol)) {
 		bal, err := seedViewU64(r.mc, seedTokenApp, "BalanceOf",
 			provider.Args{"token": token.Address, "account": minter.Address})
 		if err != nil {
@@ -502,11 +550,11 @@ func (r *seedRunner) runCompliance() error {
 		} else {
 			r.logf("  %s minter 余额充足(%d),跳过铸造", c.Symbol, bal)
 		}
-		mark(stage, map[string]any{"amount": mintAmt})
+		mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"amount": mintAmt})
 	}
 
 	stage = "accept"
-	if !r.state.IsDone("compliance", stage) {
+	if !r.state.IsDone("compliance", seedComplianceStageKey(stage, c.Symbol)) {
 		bal, err := seedViewU64(r.mc, seedTokenApp, "BalanceOf",
 			provider.Args{"token": token.Address, "account": receiver.Address})
 		if err != nil {
@@ -525,11 +573,11 @@ func (r *seedRunner) runCompliance() error {
 		} else {
 			r.logf("  持证接收方已有余额(%d),跳过成功转账", bal)
 		}
-		mark(stage, map[string]any{"to": c.CertifiedReceiver})
+		mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"to": c.CertifiedReceiver})
 	}
 
 	stage = "reject"
-	if !r.state.IsDone("compliance", stage) {
+	if !r.state.IsDone("compliance", seedComplianceStageKey(stage, c.Symbol)) {
 		victimAcct := victim
 		// 自适应:同链可能先跑过更大规模的证书矩阵,victim 已持证。
 		// 此时换一个真正无证的用户;全员持证才跳过拦截实测(记录而非失败)。
@@ -545,7 +593,7 @@ func (r *seedRunner) runCompliance() error {
 			}
 			if alt == "" {
 				r.logf("  全员持证,无法实测无证拦截——跳过(已记录)")
-				mark(stage, map[string]any{"skipped": "all certified"})
+				mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"skipped": "all certified"})
 			} else {
 				r.logf("  victim %s 已持证,改用无证用户 %s 实测拦截", c.UncertifiedVictim, alt)
 				victimAcct = r.acct(alt)
@@ -563,22 +611,20 @@ func (r *seedRunner) runCompliance() error {
 				return fmt.Errorf("无证拦截错误码异常(期望 521/522): %v", truncateErr(xerr))
 			}
 			r.logf("  无证用户 %s 被拦截 ✓", victimAcct.Name)
-			mark(stage, map[string]any{"victim": victimAcct.Name})
+			mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"victim": victimAcct.Name})
 		}
 	}
 
 	stage = "verify"
-	if !r.state.IsDone("compliance", stage) {
+	if !r.state.IsDone("compliance", seedComplianceStageKey(stage, c.Symbol)) {
 		v, err := flowCallView(r.mc, seedTokenApp, "Compliance", provider.Args{"token": token.Address})
 		if err == nil {
 			r.logf("  链上合规配置: %v", v)
-			mark(stage, map[string]any{"compliance": fmt.Sprint(v)})
+			mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"compliance": fmt.Sprint(v)})
 		} else {
-			mark(stage, map[string]any{"error": err.Error()})
+			mark(seedComplianceStageKey(stage, c.Symbol), map[string]any{"error": err.Error()})
 		}
 	}
-	r.logf("compliance 模块完成: %s 挂证 [%s@%s] mode=%s,持证可收/无证拦截均实测 ✓",
-		c.Symbol, c.Schema, c.IssuerName, c.Mode)
 	return nil
 }
 
@@ -654,6 +700,12 @@ func (r *seedRunner) runTxs() error {
 }
 
 // ---------- 小工具 ----------
+
+// seedTierTargetMIL 档位 → MIL 数;未知档位 0(跳过)。
+func seedTierTargetMIL(tier string) uint64 { return seedBalanceTiers[tier] }
+
+// seedComplianceStageKey 合规阶段键:带代币符号,多合规代币互不串位。
+func seedComplianceStageKey(stage, symbol string) string { return stage + ":" + symbol }
 
 func shortAddr(addr string) string {
 	if len(addr) > 10 {

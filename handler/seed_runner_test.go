@@ -65,3 +65,30 @@ func TestSeedFreezeAmount(t *testing.T) {
 		t.Fatalf("小额持有 freeze = %d, want 0(跳过)", got)
 	}
 }
+
+func TestSeedModuleOrderV2(t *testing.T) {
+	want := []string{"accounts", "multisig", "tokens", "sft", "vc", "compliance", "txs"}
+	if len(SeedModuleOrder) != len(want) {
+		t.Fatalf("模块数 %d", len(SeedModuleOrder))
+	}
+	for i := range want {
+		if SeedModuleOrder[i] != want[i] {
+			t.Fatalf("顺序不符: %v", SeedModuleOrder)
+		}
+	}
+}
+
+func TestSeedTierTargetMIL(t *testing.T) {
+	if seedTierTargetMIL("hundred") != 100 || seedTierTargetMIL("thousand") != 1000 || seedTierTargetMIL("ten_k") != 10000 {
+		t.Fatal("档位换算不符")
+	}
+	if seedTierTargetMIL("nope") != 0 {
+		t.Fatal("未知档位应为 0")
+	}
+}
+
+func TestSeedComplianceStageKey(t *testing.T) {
+	if got := seedComplianceStageKey("credential", "SCUSD"); got != "credential:SCUSD" {
+		t.Fatalf("got %q", got)
+	}
+}

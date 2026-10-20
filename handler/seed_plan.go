@@ -9,7 +9,7 @@ import (
 // 同一 seed 短语 + 同一规模,每次重建的地址/代币/SFT/证书矩阵完全一致。
 // 图片一律 picsum.photos 固定 seed——真实公网可见,重建后 URL 不变。
 
-var SeedModuleOrder = []string{"accounts", "tokens", "sft", "vc", "compliance", "txs"}
+var SeedModuleOrder = []string{"accounts", "multisig", "tokens", "sft", "vc", "compliance", "txs"}
 
 const SeedDefaultPhrase = "milon-devnet-seed-v1"
 

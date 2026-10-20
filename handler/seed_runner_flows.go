@@ -182,6 +182,42 @@ func (r *seedRunner) seedSftPostOps(sftSpec SeedSftSpec, sc SeedScenario, rec ma
 			}
 			r.logf("  [%s/%s] 拒绝转移实测 ✓ 被链端拦截", sftSpec.Key, sc.Key)
 			r.state.Mark("sft", stage, map[string]any{"op": "reject_transfer"})
+		case "freeze":
+			holder := r.acct(op.By)
+			tid := tokenIds[0]
+			_, err := seedSendSingle(r.mc, sftFlowIdentityApp, "Freeze", provider.Args{
+				"freezer": admin.Address, "sft": sftAddr, "token_id": tid, "owner": holder.Address,
+			}, admin)
+			if err != nil && !seedHasCode(err.Error(), 1073, 1282, 1283) {
+				return fmt.Errorf("freeze token: %w", err)
+			}
+			if err != nil {
+				r.logf("  [%s/%s] freeze token %d 已完成,跳过", sftSpec.Key, sc.Key, tid)
+			} else {
+				r.logf("  [%s/%s] freeze token %d ✓ (owner=%s)", sftSpec.Key, sc.Key, tid, op.By)
+			}
+			r.state.Mark("sft", stage, map[string]any{"op": "freeze", "tokenId": tid})
+		case "merge":
+			if len(tokenIds) < 2 {
+				r.logf("  [%s/%s] merge 需 ≥2 token,该 slot 仅 %d,跳过", sftSpec.Key, sc.Key, len(tokenIds))
+				r.state.Mark("sft", stage, map[string]any{"op": "merge", "skipped": "insufficient-tokens"})
+				break
+			}
+			holder := r.acct(op.By)
+			from, to := tokenIds[0], tokenIds[1]
+			_, err := seedSendSingle(r.mc, sftFlowIdentityApp, "Merge", provider.Args{
+				"owner": holder.Address, "sft": sftAddr,
+				"from_token_id": from, "to_token_id": to,
+			}, holder)
+			if err != nil && !seedHasCode(err.Error(), 1282, 1283) {
+				return fmt.Errorf("merge token: %w", err)
+			}
+			if err != nil {
+				r.logf("  [%s/%s] merge %d→%d 已完成,跳过", sftSpec.Key, sc.Key, from, to)
+			} else {
+				r.logf("  [%s/%s] merge token %d → %d ✓", sftSpec.Key, sc.Key, from, to)
+			}
+			r.state.Mark("sft", stage, map[string]any{"op": "merge", "from": from, "to": to})
 		default:
 			return fmt.Errorf("未知后置操作 %q", op.Op)
 		}
