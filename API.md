@@ -2726,6 +2726,115 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 
 ---
 
+## 十四、测试数据播种器（seed v2）
+
+一键在 devNet 重建全套测试数据：账户（领水/DID/VC 证书/余额档）、多签、普通+合规代币、SFT 多场景、VC 生命周期、交易演示。全部参数由 `SeedConfig` 描述，模板展开与执行围绕它进行（唯一真相源：`handler/seed_config.go`）。确定性：同 seed 短语 + 同配置 → 每次重建的地址/代币/SFT/证书矩阵完全一致；进度按 `configHash` 命名空间写入 `data/seed_state.json`，中断后重跑同配置自动跳过已完成阶段。
+
+#### 70. 播种端点总览
+
+| 端点 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/tool/seed/templates` | `GET` | 内置模板列表（minimal/standard/full） |
+| `/api/tool/seed/plan` | `POST` | 计划预览，不上链；body 支持 `config` 直传 / `preset`+`overrides` 深合并 / `scale`（兼容） |
+| `/api/tool/seed` | `POST` | 启动播种任务（异步，202 返回 `jobId`；**同刻仅一个**，重复返回 409） |
+| `/api/tool/seed/status/:id` | `GET` | 任务进度快照（模块阶段/日志 tail/完成后关键地址表） |
+
+#### 71. GET /api/tool/seed/templates
+
+响应 `data`：三模板数组，元素 `{key, name, description, config: SeedConfig}`。前端只是拉取填充；API 直调方同样可用。
+
+三模板矩阵（内容取自 `handler/seed_templates.go`）：
+
+| 旋钮 | minimal 极简 | standard 标准（=默认配置） | full 全量 |
+| --- | --- | --- | --- |
+| accounts.count | 3 | 8 | 12 |
+| accounts.curves | secp256k1 | secp256k1, ed25519 | secp256k1, ed25519 |
+| accounts.faucet / did / vcCert | true / false / false | true / true / true | true / true / true |
+| accounts.balanceTiers | hundred | thousand | hundred, thousand, ten_k |
+| multisig.count（signers/threshold，faucet/did） | 0 | 1（5/3，true/true） | 2（5/3，true/true） |
+| tokens.count / decimals / complianceCount | 1 / [6] / 0 | 3 / [0,6,9] / 1 | 10 / [0..9] / 2 |
+| tokens.freezeDemo | false | true | true |
+| sft.count / slotsPerSft / tokensPerSlot | 1 / 1 / 3 | 2 / 2 / 3 | 3 / 2 / 3 |
+| sft.scenarios | transferable | 全部五场景 | 全部五场景 |
+| sft.postOps | false | true | true |
+
+> 场景五键：`transferable`（可转+后置互转）/ `frozen`（铸后冻结）/ `merge`（两枚合一）/ `burn`（销毁一枚）/ `reject_transfer`（不可转 slot，转账预期被拒）。
+
+#### 72. POST /api/tool/seed 与 POST /api/tool/seed/plan
+
+两端点共用同一请求体，配置解析优先级：**`config` 直传 > `preset`+`overrides` 深合并 > `scale` 映射 > 默认 standard**。`overrides` 为对 base 配置的 JSON 深合并（未提及字段保留 base 值；显式 `0`/`false`/`null` 即覆盖为零值）。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `preset` | string | 否 | 模板键 `minimal` / `standard` / `full` |
+| `overrides` | object | 否 | 对模板/默认配置的深合并覆盖 |
+| `config` | SeedConfig | 否 | 完整配置直传（最高优先级，忽略 preset/overrides） |
+| `scale` | string | 否 | 兼容旧参数：`full`→full 模板、`small`→minimal 模板 |
+| `seedPhrase` | string | 否 | 种子短语，缺省 `milon-devnet-seed-v1` |
+| `modules` | string[] | 否 | 要执行的模块（缺省全序 accounts/multisig/tokens/sft/vc/compliance/txs；选 compliance 自动补 vc） |
+| `reset` | bool | 否 | true 时清空 seed_state 后再跑（仅 POST /api/tool/seed 生效） |
+
+校验失败返回 400，`data` 为带字段路径的错误数组（如 `accounts.count: 须在 1..200, got 0`）；`/plan` 预览与 `/seed` 启动共享同一校验。校验通过时 `/plan` 返回 `{plan, summary}`：`plan` 为确定性播种计划（scale=custom/configHash/seedPhrase/admin/users/issuers/multisig/tokens/sfts/vcIssuers/vcLifecycle/compliance/txs），`summary` 为 `{accounts, multisig, tokens, tokensCompliance, sftSets, sftSlots, sftTokens, txEstimate, warnings?}`。
+
+`POST /api/tool/seed` 校验通过后立即返回 202 `{jobId, status:"running", preset, scale, modules}`；已有任务在运行时返回 409（message 附运行中任务的 id 与状态）。执行器任何 panic 转为任务失败，不拖垮进程。
+
+#### 73. GET /api/tool/seed/status/:id
+
+响应 `data` 快照：
+
+| 字段 | 说明 |
+| --- | --- |
+| `id` / `status` | 任务 id；`running` / `completed` / `failed` |
+| `error` | 失败原因（仅 failed） |
+| `preset` / `configHash` | 模板键；配置命名空间哈希（sha256(seedPhrase+规范 JSON) 前 16 hex，同配置同哈希→断点续跑，改任一旋钮→新命名空间） |
+| `modules` / `startedAt` / `finishedAt` | 模块列表与毫秒时间戳 |
+| `config` / `summary` | 生效配置与计数摘要（计划已构建并发布，状态回显直接读） |
+| `stages` | 模块 → 已完成阶段名列表（剥 configHash 前缀显示；仅本任务命名空间） |
+| `logs` | 日志 tail（最多 120 行） |
+| `accounts` | completed 后的关键地址表（admin/用户/代币符号/SFT，仅展示，**私钥永不返回**） |
+
+#### SeedConfig 字段表（与 `handler/seed_config.go` JSON tag 逐字对齐）
+
+| 路径 | 类型 | 缺省（standard） | 约束（校验错误带字段路径） |
+| --- | --- | --- | --- |
+| `seedPhrase` | string | `milon-devnet-seed-v1` | 空 → 请求级 `seedPhrase` 兜底 |
+| `accounts.count` | int | 8 | 1..200 |
+| `accounts.curves` | string[] | `["secp256k1","ed25519"]` | 非空、无重复；**仅 secp256k1/ed25519**（见下方规格偏差 ①） |
+| `accounts.faucet` | bool | true | faucet=true 时 balanceTiers 须至少一档 |
+| `accounts.balanceTiers` | string[] | `["thousand"]` | 取值 `hundred`(100) / `thousand`(1000) / `ten_k`(10000)，无重复 |
+| `accounts.did` | bool | true | 建 DID 需账户有 gas（开 faucet 或选档位） |
+| `accounts.vcCert` | bool | true | 隐含规则：vcCert ⇒ did（Normalize 自动置位） |
+| `multisig.count` | int | 1 | 0..20 |
+| `multisig.signers` | int | 5 | count>0 时 2..20，且 ≤ accounts.count（签名者从普通账号头部轮取） |
+| `multisig.threshold` | int | 3 | count>0 时 1..signers |
+| `multisig.faucet` | bool | true | — |
+| `multisig.did` | bool | true | 须 multisig.faucet=true（多签账户自身付 gas） |
+| `tokens.count` | int | 3 | 1..20 |
+| `tokens.decimals` | uint8[] | `[0,6,9]` | 非空、无重复、每个 0..9 |
+| `tokens.complianceCount` | int | 1 | 0..tokens.count；>0 时须 accounts.vcCert=true 且 accounts.count≥3 |
+| `tokens.freezeDemo` | bool | true | — |
+| `sft.count` | int | 2 | 0..10 |
+| `sft.slotsPerSft` | int | 2 | count>0 时 1..20 |
+| `sft.tokensPerSlot` | int | 3 | count>0 时 1..100 |
+| `sft.scenarios` | string[] | 五场景全选 | count>0 时非空、无重复（键见 71） |
+| `sft.postOps` | bool | true | — |
+
+> merge 场景配 `tokensPerSlot<2` 时 summary 附加 warning「该 slot 将只分发不合并」。
+
+#### 规格偏差的最终语义
+
+1. **密钥曲线仅 `secp256k1` / `ed25519`**：链端合法三选一中的 `fndsa512` 在播种器配置校验中**直接拒绝**（错误文案：`播种器确定性派生不支持 fndsa512(Go SDK 无法从种子派生公钥)——请用 secp256k1/ed25519,fndsa512 账号请走配置账户路径`）——Go SDK 无法从种子确定性派生 fndsa512 公钥，该曲线账户请走 `X-Milon-Accounts` 配置账户路径。
+2. **控制台启动确认阈值**：前端 `txEstimate > 100` 时弹 `window.confirm`（极简/标准模板预估约 19/87 笔不弹，全量约 136 笔弹）；REST 直调不做确认拦截。
+
+#### 旧接口兼容：GET /api/tool/seed/plan?scale=
+
+- **方法**: `GET`　**路径**: `/api/tool/seed/plan?scale=full|small&seedPhrase=`
+- v1 口径的计划预览，**兼容保留一个小版本**；映射：`full`→full 模板、`small`→minimal 模板（scale 取值仅此二，其他返回 400）。响应为单个 plan 对象（`scale` 字段回显原值 full/small，其余结构与 v2 plan 相同）。新集成请改用 `POST /api/tool/seed/plan`。
+
+> v1 Python CLI（`tools/seeder/seed.py`）自 2026-10-19 起标注 DEPRECATED，不再维护，仅作历史参考。
+
+---
+
 ## MCP 端点（/mcp）
 
 除 REST API 外，服务在同一端口内置 MCP（Model Context Protocol）端点，把 REST 能力全量映射为 **64 个 MCP 工具**，供 ZCode、Claude 等 AI 编程代理直接调用。

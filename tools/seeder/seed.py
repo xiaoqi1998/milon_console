@@ -12,6 +12,12 @@
 确定性:固定 seed 短语派生全部密钥,重新创世后重建出的地址/代币/SFT 地址不变。
 断点续跑:进度写入 seed_state.json,中途失败直接重跑同一条命令。
 """
+# ---------------------------------------------------------------------------
+# DEPRECATED 2026-10-19: 播种器 v2 已原生进 API(POST /api/tool/seed,
+# preset/overrides/config 参数化;模板+旋钮见控制台「测试数据」页)。
+# 本 CLI 不再维护,仅作 v1 全量/小型矩阵的历史参考。
+# 新参数模型:docs/superpowers/specs/2026-10-19-seed-builder-v2-design.md
+# ---------------------------------------------------------------------------
 import argparse
 import sys
 import time
