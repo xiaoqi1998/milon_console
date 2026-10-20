@@ -118,3 +118,64 @@ func TestSeedStateOverwriteStage(t *testing.T) {
 	}
 	_ = os.Remove(path)
 }
+
+func TestSeedState_NamespacePrefix(t *testing.T) {
+	dir := t.TempDir()
+	st := LoadSeedState(dir + "/s.json")
+	st.UsePrefix("abc123")
+	st.Mark("accounts", "faucet", map[string]any{"count": 3})
+	if err := st.Save(); err != nil {
+		t.Fatal(err)
+	}
+	if !st.IsDone("accounts", "faucet") {
+		t.Fatal("同前缀应读到完成态")
+	}
+	// 另一命名空间互不可见
+	st2 := LoadSeedState(dir + "/s.json")
+	st2.UsePrefix("def456")
+	if st2.IsDone("accounts", "faucet") {
+		t.Fatal("不同前缀不得互相可见")
+	}
+	// 重载同前缀仍可见
+	st3 := LoadSeedState(dir + "/s.json")
+	st3.UsePrefix("abc123")
+	if !st3.IsDone("accounts", "faucet") {
+		t.Fatal("落盘后同前缀应可续跑")
+	}
+}
+
+func TestSeedState_ResetClearsAll(t *testing.T) {
+	st := LoadSeedState(t.TempDir() + "/s.json")
+	st.UsePrefix("p1")
+	st.Mark("tokens", "create:ST01", nil)
+	st.Reset()
+	if st.IsDone("tokens", "create:ST01") {
+		t.Fatal("Reset 须清空")
+	}
+}
+
+func TestSeedBuildAccounts_IncludesMultisigAndComplianceList(t *testing.T) {
+	cfg := SeedConfigDefaults()
+	// 偏离简报一行:曲线轮转去掉 fndsa512——Go SDK FnDsa512Public 未实现,
+	// 无法从私钥派生公钥(简报未察觉的结构性限制,运行期缺口见 task-4-5-report)。
+	cfg.Accounts.Curves = []string{"secp256k1", "ed25519"}
+	plan, err := BuildSeedPlanV2(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	accts, err := SeedBuildAccounts(plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if accts["ms01"] == nil {
+		t.Fatal("多签账户 ms01 未注册")
+	}
+	if accts["ms01"].Role != "multisig" {
+		t.Errorf("ms01 role=%s", accts["ms01"].Role)
+	}
+	for _, cm := range plan.Compliance {
+		if accts[cm.Symbol] == nil {
+			t.Fatalf("合规代币资源账户 %s 未注册", cm.Symbol)
+		}
+	}
+}

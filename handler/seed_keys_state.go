@@ -113,6 +113,13 @@ func SeedBuildAccounts(plan SeedPlan) (map[string]*SeedPlanAccount, error) {
 			return nil, err
 		}
 	}
+	for _, ms := range plan.Multisig {
+		spec := SeedAccountSpec{Name: ms.Name, Role: "multisig", Curve: ms.Curve,
+			SubjectType: "Personal", Alias: ms.Alias, AliasSuffix: ms.AliasSuffix}
+		if err := reg(spec, ms.Name); err != nil {
+			return nil, err
+		}
+	}
 	for _, tk := range plan.Tokens {
 		spec := SeedAccountSpec{Name: tk.Symbol, Role: "token", Curve: "secp256k1"}
 		if err := reg(spec, tk.Symbol); err != nil {
@@ -136,11 +143,43 @@ func SeedBuildAccounts(plan SeedPlan) (map[string]*SeedPlanAccount, error) {
 
 // ==================== 断点状态 ====================
 
-// SeedState 断点续跑状态:{module: {stage: data}},schema 与 Python 版一致,
-// 共用 data/seed_state.json——两个实现可互相接续。
+// SeedState 断点续跑状态:{module: {stage: data}}。
+// v2:模块键实际存储为 "<prefix>:<module>",prefix=configHash——
+// 同配置续跑幂等,改配置自动开新命名空间(规格 §5)。
 type SeedState struct {
-	data map[string]map[string]any
-	path string
+	data   map[string]map[string]any
+	path   string
+	prefix string
+}
+
+// UsePrefix 设置命名空间前缀(模块键变为 "<prefix>:<module>")。
+func (s *SeedState) UsePrefix(prefix string) { s.prefix = prefix }
+
+func (s *SeedState) key(module string) string {
+	if s.prefix == "" {
+		return module
+	}
+	return s.prefix + ":" + module
+}
+
+// IsDone 判断某模块某阶段是否已完成。
+func (s *SeedState) IsDone(module, stage string) bool {
+	_, ok := s.data[s.key(module)][stage]
+	return ok
+}
+
+// Get 取某阶段产物数据。
+func (s *SeedState) Get(module, stage string) any {
+	return s.data[s.key(module)][stage]
+}
+
+// Mark 标记阶段完成并记录产物。
+func (s *SeedState) Mark(module, stage string, data any) {
+	k := s.key(module)
+	if s.data[k] == nil {
+		s.data[k] = map[string]any{}
+	}
+	s.data[k][stage] = data
 }
 
 // LoadSeedState 读取状态文件;缺失/损坏视为空。
@@ -154,25 +193,6 @@ func LoadSeedState(path string) *SeedState {
 		}
 	}
 	return st
-}
-
-// IsDone 判断某模块某阶段是否已完成。
-func (s *SeedState) IsDone(module, stage string) bool {
-	_, ok := s.data[module][stage]
-	return ok
-}
-
-// Get 取某阶段产物数据。
-func (s *SeedState) Get(module, stage string) any {
-	return s.data[module][stage]
-}
-
-// Mark 标记阶段完成并记录产物。
-func (s *SeedState) Mark(module, stage string, data any) {
-	if s.data[module] == nil {
-		s.data[module] = map[string]any{}
-	}
-	s.data[module][stage] = data
 }
 
 // Reset 清空全部标记(等价 Python --reset)。
