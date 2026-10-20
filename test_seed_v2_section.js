@@ -71,5 +71,10 @@ try {
 // 6. 静态版本号已 bump
 check('版本 bump 20261019', htmlSrc.includes('seed.js?v=20261019'));
 
+// 7. seed 视图内部滚动(应用外壳 .view overflow:hidden,v2 内容超一屏须自建滚动容器)
+const cssSrc = fs.readFileSync(path.join(ROOT, 'static', 'css', 'style.css'), 'utf8');
+check('#view-seed 滚动容器', /#view-seed\s*{[^}]*overflow-y:\s*auto/.test(cssSrc));
+check('style.css 版本 bump 20261020', htmlSrc.includes('style.css?v=20261020'));
+
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

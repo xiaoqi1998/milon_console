@@ -3964,3 +3964,6 @@ body {
 .chip { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 999px; color: var(--text-secondary); padding: 3px 10px; font-size: 11px; font-family: var(--font-mono, monospace); line-height: 1.4; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease; }
 .chip:hover { border-color: var(--border-light); color: var(--text-primary); }
 .chip.on { border-color: var(--accent); color: var(--accent); background: rgba(124, 156, 255, 0.08); }
+
+/* 播种器 v2:应用外壳 .view overflow:hidden,v2 页内容超一屏——视图内自建滚动容器 */
+#view-seed { overflow-y: auto; }
