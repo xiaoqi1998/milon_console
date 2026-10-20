@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -67,6 +68,65 @@ func TestSeedPlanPreviewEndpoint(t *testing.T) {
 	r.ServeHTTP(w2, httptest.NewRequest("GET", "/api/tool/seed/plan?scale=huge", nil))
 	if w2.Code != http.StatusBadRequest {
 		t.Fatalf("非法 scale 应 400, got %d", w2.Code)
+	}
+}
+
+func TestSeedResolveConfig_Priority(t *testing.T) {
+	// config > preset+overrides > scale 映射 > 默认
+	req := seedStartRequest{Scale: "small"}
+	cfg, err := seedResolveConfig(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Accounts.Count != 3 {
+		t.Fatalf("scale=small 应映射 minimal(3 账号), got %d", cfg.Accounts.Count)
+	}
+	req = seedStartRequest{Preset: "full"}
+	cfg, err = seedResolveConfig(req)
+	if err != nil || cfg.Accounts.Count != 12 {
+		t.Fatalf("preset=full 应 12 账号: %v %d", err, cfg.Accounts.Count)
+	}
+	req = seedStartRequest{Preset: "minimal",
+		Overrides: json.RawMessage(`{"accounts":{"count":7},"seedPhrase":"custom-phrase"}`)}
+	cfg, err = seedResolveConfig(req)
+	if err != nil || cfg.Accounts.Count != 7 || cfg.SeedPhrase != "custom-phrase" {
+		t.Fatalf("overrides 应生效: %v %+v", err, cfg.Accounts)
+	}
+	if cfg.Tokens.Count != 1 {
+		t.Fatalf("未覆盖字段应保留 minimal 值, got %d", cfg.Tokens.Count)
+	}
+	full, _ := SeedConfigForPreset("full")
+	req = seedStartRequest{Config: &full}
+	cfg, err = seedResolveConfig(req)
+	if err != nil || cfg.Accounts.Count != 12 {
+		t.Fatalf("config 直传应优先: %v", err)
+	}
+	req = seedStartRequest{}
+	cfg, err = seedResolveConfig(req)
+	if err != nil || cfg.Accounts.Count != 8 {
+		t.Fatalf("空请求应取默认 standard: %v %d", err, cfg.Accounts.Count)
+	}
+	req = seedStartRequest{Preset: "nope"}
+	if _, err = seedResolveConfig(req); err == nil {
+		t.Fatal("未知 preset 应报错")
+	}
+}
+
+func TestSeedPlanEndpoint_ValidationErrors(t *testing.T) {
+	// 直接构造 handler 调用(gin test recorder),非法 config → 400 且错误含字段路径
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/api/tool/seed/plan",
+		strings.NewReader(`{"config":{"accounts":{"count":0}}}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+	h := NewSeedJobHandler(nil)
+	h.SeedPlanV2(c)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("应 400, got %d: %s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "accounts.count") {
+		t.Fatalf("错误须含字段路径: %s", w.Body.String())
 	}
 }
 

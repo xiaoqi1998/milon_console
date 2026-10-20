@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -45,10 +47,63 @@ func NewSeedJobHandler(nm *client.NetworkManager) *SeedJobHandler {
 }
 
 type seedStartRequest struct {
-	Scale      string   `json:"scale"`
-	Modules    []string `json:"modules"`
-	SeedPhrase string   `json:"seedPhrase"`
-	Reset      bool     `json:"reset"`
+	Preset     string          `json:"preset"`    // minimal|standard|full
+	Overrides  json.RawMessage `json:"overrides"` // 对 preset 的深合并覆盖
+	Config     *SeedConfig     `json:"config"`    // 完整配置直传(最高优先)
+	Scale      string          `json:"scale"`     // 兼容:full→full,small→minimal
+	Modules    []string        `json:"modules"`
+	SeedPhrase string          `json:"seedPhrase"`
+	Reset      bool            `json:"reset"`
+}
+
+// seedResolveConfig 请求 → 生效 SeedConfig。
+// 优先级:Config > Preset+Overrides > Scale 映射 > 默认 standard。
+func seedResolveConfig(req seedStartRequest) (SeedConfig, error) {
+	if req.Config != nil {
+		cfg := *req.Config
+		if cfg.SeedPhrase == "" {
+			cfg.SeedPhrase = req.SeedPhrase
+		}
+		if cfg.SeedPhrase == "" {
+			cfg.SeedPhrase = SeedDefaultPhrase
+		}
+		return cfg, nil
+	}
+	var base SeedConfig
+	switch {
+	case req.Preset != "":
+		b, err := SeedConfigForPreset(req.Preset)
+		if err != nil {
+			return SeedConfig{}, err
+		}
+		base = b
+	case req.Scale == "full" || req.Scale == "small":
+		preset := req.Scale
+		if preset == "small" {
+			preset = "minimal"
+		}
+		b, err := SeedConfigForPreset(preset)
+		if err != nil {
+			return SeedConfig{}, err
+		}
+		base = b
+	default:
+		base = SeedConfigDefaults()
+	}
+	if len(req.Overrides) > 0 {
+		merged, err := seedMergeConfig(base, req.Overrides)
+		if err != nil {
+			return SeedConfig{}, err
+		}
+		base = merged
+	}
+	if req.SeedPhrase != "" {
+		base.SeedPhrase = req.SeedPhrase
+	}
+	if base.SeedPhrase == "" {
+		base.SeedPhrase = SeedDefaultPhrase
+	}
+	return base, nil
 }
 
 type seedJob struct {
@@ -60,6 +115,11 @@ type seedJob struct {
 	Error      string   `json:"error,omitempty"`
 	StartedAt  int64    `json:"startedAt"`
 	FinishedAt int64    `json:"finishedAt"`
+	Preset     string   `json:"preset,omitempty"`
+	ConfigHash string   `json:"configHash,omitempty"`
+
+	// plan 启动时已构建,发布后只读:状态回显(config/summary/地址表)直接读,不再重建计划
+	plan *SeedPlan
 
 	mu   sync.Mutex
 	logs []string
@@ -91,6 +151,10 @@ type seedJobSnapshot struct {
 	Error      string   `json:"error,omitempty"`
 	StartedAt  int64    `json:"startedAt"`
 	FinishedAt int64    `json:"finishedAt"`
+	Preset     string       `json:"preset,omitempty"`
+	ConfigHash string       `json:"configHash,omitempty"`
+	Config     *SeedConfig  `json:"config,omitempty"`
+	Summary    *SeedSummary `json:"summary,omitempty"`
 	Stages     map[string][]string `json:"stages,omitempty"` // 模块 → 已完成阶段
 	Logs       []string `json:"logs"`
 	Accounts   map[string]string `json:"accounts,omitempty"` // 完成后关键地址
@@ -104,20 +168,25 @@ func (h *SeedJobHandler) Seed(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
 		return
 	}
-	if req.Scale == "" {
-		req.Scale = "full"
-	}
-	if req.Scale != "full" && req.Scale != "small" {
-		logParamError(c, "Seed", fmt.Errorf("scale %q", req.Scale))
-		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "scale must be full or small", nil))
+	cfg, err := seedResolveConfig(req)
+	if err != nil {
+		logParamError(c, "Seed", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 		return
 	}
-	if req.SeedPhrase == "" {
-		req.SeedPhrase = SeedDefaultPhrase
+	if errs := ValidateSeedConfig(cfg); len(errs) > 0 {
+		logParamError(c, "Seed", fmt.Errorf("%v", errs))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "配置校验失败", errs))
+		return
 	}
 	modules, err := seedNormalizeModules(req.Modules)
 	if err != nil {
 		logParamError(c, "Seed", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+	plan, err := BuildSeedPlanV2(cfg)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
 		return
 	}
@@ -142,8 +211,9 @@ func (h *SeedJobHandler) Seed(c *gin.Context) {
 	}
 	jobID := fmt.Sprintf("%d", time.Now().UnixNano())
 	job := &seedJob{
-		ID: jobID, Scale: req.Scale, Modules: modules, SeedPhrase: req.SeedPhrase,
+		ID: jobID, Scale: req.Scale, Modules: modules, SeedPhrase: cfg.SeedPhrase,
 		Status: "running", StartedAt: time.Now().UnixMilli(),
+		Preset: req.Preset, ConfigHash: plan.ConfigHash, plan: &plan,
 	}
 	h.jobs[jobID] = job
 	h.runningID = jobID
@@ -167,21 +237,6 @@ func (h *SeedJobHandler) Seed(c *gin.Context) {
 				h.jobsMu.Unlock()
 			}
 		}()
-		plan, perr := BuildSeedPlan(req.Scale, req.SeedPhrase)
-		if perr != nil {
-			job.addLog("✗ 计划构建失败: %v", perr)
-			job.mu.Lock()
-			job.Status = "failed"
-			job.Error = perr.Error()
-			job.FinishedAt = time.Now().UnixMilli()
-			job.mu.Unlock()
-			h.jobsMu.Lock()
-			if h.runningID == jobID {
-				h.runningID = ""
-			}
-			h.jobsMu.Unlock()
-			return
-		}
 		r := &seedRunner{
 			mc:   mc,
 			plan: plan,
@@ -191,6 +246,7 @@ func (h *SeedJobHandler) Seed(c *gin.Context) {
 					st.Reset()
 					_ = st.Save()
 				}
+				st.UsePrefix(plan.ConfigHash)
 				return st
 			}(),
 			logf: job.addLog,
@@ -217,7 +273,8 @@ func (h *SeedJobHandler) Seed(c *gin.Context) {
 	}()
 
 	c.JSON(http.StatusAccepted, types.SuccessResponse(gin.H{
-		"jobId": jobID, "status": "running", "scale": req.Scale, "modules": modules,
+		"jobId": jobID, "status": "running", "preset": req.Preset,
+		"scale": req.Scale, "modules": modules,
 	}, "seed started"))
 }
 
@@ -237,38 +294,88 @@ func (h *SeedJobHandler) SeedStatus(c *gin.Context) {
 		ID: job.ID, Scale: job.Scale, Modules: job.Modules, Status: job.Status,
 		Error: job.Error, StartedAt: job.StartedAt, FinishedAt: job.FinishedAt,
 		Logs: logs,
+		Preset: job.Preset, ConfigHash: job.ConfigHash,
+	}
+	if job.plan != nil {
+		// plan 发布后只读,读取无需额外同步
+		snap.Config = job.plan.Config
+		s := SeedPlanSummary(*job.plan)
+		snap.Summary = &s
 	}
 	job.mu.Unlock()
 	snap.Stages = map[string][]string{}
 	st := LoadSeedState(h.statePath)
 	for module, stages := range st.Data() {
+		// v2 模块键为 "<configHash>:<module>":只回显本任务命名空间,显示时剥掉前缀;
+		// 无前缀键属 v1 遗留数据,归 configHash 为空的旧任务所有。
+		display := module
+		if i := strings.Index(module, ":"); i >= 0 {
+			if module[:i] != job.ConfigHash {
+				continue
+			}
+			display = module[i+1:]
+		} else if job.ConfigHash != "" {
+			continue
+		}
 		names := make([]string, 0, len(stages))
 		for name := range stages {
 			names = append(names, name)
 		}
-		snap.Stages[module] = names
+		snap.Stages[display] = names
 	}
-	if snap.Status == "completed" {
-		plan, perr := BuildSeedPlan(job.Scale, job.SeedPhrase)
-		if perr == nil {
-			// 地址表仅展示,私钥永不返回
-			accts, err := SeedBuildAccounts(plan)
-			if err == nil {
-				snap.Accounts = map[string]string{}
-				snap.Accounts["admin"] = accts["admin"].Address
-				for _, u := range plan.Users {
-					snap.Accounts[u.Name] = accts[u.Name].Address
-				}
-				for _, tk := range plan.Tokens {
-					snap.Accounts[tk.Symbol] = accts[tk.Symbol].Address
-				}
-				for _, s := range plan.Sfts {
-					snap.Accounts["SFT:"+s.Symbol] = accts[s.Key].Address
-				}
+	if snap.Status == "completed" && job.plan != nil {
+		plan := job.plan
+		// 地址表仅展示,私钥永不返回
+		if accts, err := SeedBuildAccounts(*plan); err == nil {
+			snap.Accounts = map[string]string{}
+			snap.Accounts["admin"] = accts["admin"].Address
+			for _, u := range plan.Users {
+				snap.Accounts[u.Name] = accts[u.Name].Address
+			}
+			for _, tk := range plan.Tokens {
+				snap.Accounts[tk.Symbol] = accts[tk.Symbol].Address
+			}
+			for _, s := range plan.Sfts {
+				snap.Accounts["SFT:"+s.Symbol] = accts[s.Key].Address
 			}
 		}
 	}
 	c.JSON(http.StatusOK, types.SuccessResponse(snap, "ok"))
+}
+
+// SeedTemplatesList 列出内置模板。
+func (h *SeedJobHandler) SeedTemplatesList(c *gin.Context) {
+	c.JSON(http.StatusOK, types.SuccessResponse(SeedTemplates(), "ok"))
+}
+
+// SeedPlanV2 计划预览(不上链)。body: SeedConfig | {preset, overrides} | {scale}(兼容)。
+func (h *SeedJobHandler) SeedPlanV2(c *gin.Context) {
+	var req seedStartRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logParamError(c, "SeedPlanV2", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "invalid request body: "+err.Error(), nil))
+		return
+	}
+	cfg, err := seedResolveConfig(req)
+	if err != nil {
+		logParamError(c, "SeedPlanV2", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+	if errs := ValidateSeedConfig(cfg); len(errs) > 0 {
+		logParamError(c, "SeedPlanV2", fmt.Errorf("%v", errs))
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER,
+			"配置校验失败", errs))
+		return
+	}
+	plan, err := BuildSeedPlanV2(cfg)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
+		"plan": plan, "summary": SeedPlanSummary(plan),
+	}, "ok"))
 }
 
 // SeedPlanPreview 返回计划预览(不上链)。
