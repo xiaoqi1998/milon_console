@@ -1053,7 +1053,7 @@
       ],
       "kind": "struct",
       "name": "Metadata",
-      "typeTag": 16597600053100423329
+      "typeTag": 14606240850061279456
     },
     {
       "fields": [
@@ -1080,7 +1080,7 @@
       ],
       "kind": "struct",
       "name": "MetadataOverride",
-      "typeTag": 1521786355183284625
+      "typeTag": 18305222463683997936
     },
     {
       "fields": [
@@ -1091,7 +1091,7 @@
       ],
       "kind": "struct",
       "name": "Token",
-      "typeTag": 14126857848543451857
+      "typeTag": 15244655057074605074
     },
     {
       "fields": [
@@ -1102,7 +1102,7 @@
       ],
       "kind": "struct",
       "name": "SlotData",
-      "typeTag": 16546317778011887664
+      "typeTag": 16053204672031418177
     },
     {
       "fields": [
@@ -1117,7 +1117,7 @@
       ],
       "kind": "struct",
       "name": "Royalty",
-      "typeTag": 8013111409802783456
+      "typeTag": 15605079096527761999
     },
     {
       "kind": "builtin",
@@ -1149,17 +1149,17 @@
     {
       "name": "_SftOwner",
       "type": "Address",
-      "typeTag": 15146535206056819577
+      "typeTag": 6985331877380045022
     },
     {
       "name": "_SftMetadata",
       "type": "Metadata",
-      "typeTag": 3119835375849690086
+      "typeTag": 7640396538560339667
     },
     {
       "name": "_SftRoyalty",
       "type": "Royalty",
-      "typeTag": 16416299771797568401
+      "typeTag": 16586850674820846406
     },
     {
       "name": "_SftNextSlotId",
@@ -1174,22 +1174,22 @@
     {
       "name": "_SftMintPermission",
       "type": "Address",
-      "typeTag": 15146535206056819577
+      "typeTag": 6985331877380045022
     },
     {
       "name": "_SftUpdatePermission",
       "type": "Address",
-      "typeTag": 15146535206056819577
+      "typeTag": 6985331877380045022
     },
     {
       "name": "_SftFreezePermission",
       "type": "Address",
-      "typeTag": 15146535206056819577
+      "typeTag": 6985331877380045022
     },
     {
       "name": "_Slot",
       "type": "SlotData",
-      "typeTag": 6310559783402314447
+      "typeTag": 383744842715771362
     },
     {
       "name": "_SlotExists",
@@ -1204,10 +1204,15 @@
     {
       "name": "_Token",
       "type": "Token",
-      "typeTag": 7491257169663686040
+      "typeTag": 15544724241338340387
     },
     {
       "name": "_TokenSlotId",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_TokenSupply",
       "type": "u64",
       "typeTag": 5563585020063213298
     },
@@ -1247,7 +1252,7 @@
         }
       ],
       "name": "SftCreatedEvent",
-      "typeTag": 14598215378642513979
+      "typeTag": 2981143492345285184
     },
     {
       "fields": [
@@ -1268,7 +1273,7 @@
         }
       ],
       "name": "SlotCreatedEvent",
-      "typeTag": 1769434390890356512
+      "typeTag": 4235690943934686077
     },
     {
       "fields": [
@@ -1299,7 +1304,7 @@
         }
       ],
       "name": "TokenMintedEvent",
-      "typeTag": 6248943049156148556
+      "typeTag": 1828566942864293301
     },
     {
       "fields": [
@@ -1330,7 +1335,7 @@
         }
       ],
       "name": "TokenBurnedEvent",
-      "typeTag": 3949389203557328607
+      "typeTag": 10040848747697517430
     },
     {
       "fields": [
@@ -1366,7 +1371,7 @@
         }
       ],
       "name": "TokenTransferredEvent",
-      "typeTag": 4473315672219730635
+      "typeTag": 9654273125643600240
     },
     {
       "fields": [
@@ -1387,7 +1392,7 @@
         }
       ],
       "name": "AttributeSetEvent",
-      "typeTag": 4045023747084950996
+      "typeTag": 12159843087237117007
     },
     {
       "fields": [
@@ -1408,7 +1413,7 @@
         }
       ],
       "name": "RoyaltyRecipientTransferredEvent",
-      "typeTag": 567351340953111585
+      "typeTag": 6008898740863307008
     }
   ],
   "errors": [
@@ -1496,11 +1501,6 @@
       "code": 1296,
       "message": "insufficient approval (token: {0}, owner: {1:?}, spender: {2:?}, available: {3}, required: {4})",
       "name": "InsufficientApproval"
-    },
-    {
-      "code": 1297,
-      "message": "address not signed in current transaction: {0:?}",
-      "name": "AddressNotSignatured"
     }
   ]
 }

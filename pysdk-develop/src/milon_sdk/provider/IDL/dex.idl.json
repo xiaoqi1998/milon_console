@@ -13,6 +13,282 @@
           "type": "Signer"
         },
         {
+          "name": "provider",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "base_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "quote_amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 60506,
+      "handler": "create_amm_pool",
+      "kind": "entry",
+      "name": "CreateAmmPool",
+      "returns": {
+        "type": "AmmPoolInfo"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "authority",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "provider",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "base_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "quote_amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 37332,
+      "handler": "initialize_amm_pool",
+      "kind": "entry",
+      "name": "InitializeAmmPool",
+      "returns": {
+        "type": "AmmPoolInfo"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "authority",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "status",
+          "role": "input",
+          "type": "AmmStatus"
+        }
+      ],
+      "discriminator": 20736,
+      "handler": "set_amm_status",
+      "kind": "entry",
+      "name": "SetAmmStatus"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "base_max",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "quote_max",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "min_lp_shares",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 50155,
+      "handler": "add_liquidity",
+      "kind": "entry",
+      "name": "AddLiquidity",
+      "returns": {
+        "type": "AddLiquidityResult"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "lp_shares",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "min_base_out",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "min_quote_out",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 15914,
+      "handler": "remove_liquidity",
+      "kind": "entry",
+      "name": "RemoveLiquidity",
+      "returns": {
+        "type": "RemoveLiquidityResult"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 60394,
+      "handler": "amm_pool_info",
+      "kind": "view",
+      "name": "AmmPoolInfo",
+      "returns": {
+        "type": "AmmPoolInfo"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 18436,
+      "handler": "amm_lp_balance",
+      "kind": "view",
+      "name": "AmmLpBalance",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "input_token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount_in",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "min_amount_out",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "worst_tick",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "max_book_makers",
+          "role": "input",
+          "type": "u16"
+        },
+        {
+          "name": "max_amm_segments",
+          "role": "input",
+          "type": "u16"
+        },
+        {
+          "name": "channel",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 34800,
+      "handler": "swap_exact_in",
+      "kind": "entry",
+      "name": "SwapExactIn",
+      "returns": {
+        "type": "HybridSwapResult"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "market_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 52994,
+      "handler": "amm_swap_enabled",
+      "kind": "view",
+      "name": "AmmSwapEnabled",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "authority",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
           "name": "base_token",
           "role": "input",
           "type": "Address"
@@ -430,7 +706,7 @@
     {
       "kind": "enum",
       "name": "MarketStatus",
-      "typeTag": 16951893849801157528,
+      "typeTag": 8136658246324658662,
       "variants": [
         {
           "fields": [],
@@ -451,8 +727,25 @@
     },
     {
       "kind": "enum",
+      "name": "AmmStatus",
+      "typeTag": 17255121327010776923,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Active"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Stopped"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
       "name": "OrderSide",
-      "typeTag": 13972451060350856701,
+      "typeTag": 4344453968824886479,
       "variants": [
         {
           "fields": [],
@@ -469,7 +762,7 @@
     {
       "kind": "enum",
       "name": "OrderTimeInForce",
-      "typeTag": 6464719643566272127,
+      "typeTag": 2553469515074015685,
       "variants": [
         {
           "fields": [],
@@ -491,7 +784,7 @@
     {
       "kind": "enum",
       "name": "OrderSelfTradePolicy",
-      "typeTag": 7007226021324580664,
+      "typeTag": 17023551718460680910,
       "variants": [
         {
           "fields": [],
@@ -513,6 +806,33 @@
     {
       "fields": [
         {
+          "name": "amount_in_used",
+          "type": "u64"
+        },
+        {
+          "name": "amount_out",
+          "type": "u64"
+        },
+        {
+          "name": "refund",
+          "type": "u64"
+        },
+        {
+          "name": "clob_fills",
+          "type": "u16"
+        },
+        {
+          "name": "amm_segments",
+          "type": "u16"
+        }
+      ],
+      "kind": "struct",
+      "name": "HybridSwapResult",
+      "typeTag": 6696471684896552292
+    },
+    {
+      "fields": [
+        {
           "name": "base_token",
           "type": "Address"
         },
@@ -522,7 +842,7 @@
         },
         {
           "name": "vault_seed",
-          "type": "u16"
+          "type": "u64"
         },
         {
           "name": "base_lot_atoms",
@@ -567,7 +887,80 @@
       ],
       "kind": "struct",
       "name": "Market",
-      "typeTag": 14379241867177925174
+      "typeTag": 11417720480643744764
+    },
+    {
+      "fields": [
+        {
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "name": "vault",
+          "type": "Address"
+        },
+        {
+          "name": "vault_seed",
+          "type": "u64"
+        },
+        {
+          "name": "status",
+          "type": "AmmStatus"
+        },
+        {
+          "name": "reserve_base",
+          "type": "u64"
+        },
+        {
+          "name": "reserve_quote",
+          "type": "u64"
+        },
+        {
+          "name": "total_lp_supply",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "AmmPoolInfo",
+      "typeTag": 8750917677195605499
+    },
+    {
+      "fields": [
+        {
+          "name": "base_amount",
+          "type": "u64"
+        },
+        {
+          "name": "quote_amount",
+          "type": "u64"
+        },
+        {
+          "name": "lp_shares",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "AddLiquidityResult",
+      "typeTag": 12058079632508823720
+    },
+    {
+      "fields": [
+        {
+          "name": "base_amount",
+          "type": "u64"
+        },
+        {
+          "name": "quote_amount",
+          "type": "u64"
+        },
+        {
+          "name": "lp_shares",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "RemoveLiquidityResult",
+      "typeTag": 10496775677469623417
     },
     {
       "fields": [
@@ -598,7 +991,7 @@
       ],
       "kind": "struct",
       "name": "PlaceOrderResult",
-      "typeTag": 2935855982233369986
+      "typeTag": 18135230787032878776
     },
     {
       "fields": [
@@ -641,7 +1034,7 @@
       ],
       "kind": "struct",
       "name": "OrderInfo",
-      "typeTag": 14941930351407067118
+      "typeTag": 15140638547846931512
     },
     {
       "fields": [
@@ -660,7 +1053,7 @@
       ],
       "kind": "struct",
       "name": "BookLevel",
-      "typeTag": 14458181887817329403
+      "typeTag": 4379979403434364617
     },
     {
       "fields": [
@@ -675,7 +1068,7 @@
       ],
       "kind": "struct",
       "name": "BestBidAsk",
-      "typeTag": 10798078011748760512
+      "typeTag": 13185949738965680898
     },
     {
       "fields": [
@@ -690,7 +1083,7 @@
       ],
       "kind": "struct",
       "name": "OrderbookDepth",
-      "typeTag": 3436467991477045676
+      "typeTag": 16803552831728342894
     },
     {
       "fields": [
@@ -705,7 +1098,7 @@
       ],
       "kind": "struct",
       "name": "LevelOrderPage",
-      "typeTag": 11648156999977740375
+      "typeTag": 11296366812560025265
     },
     {
       "fields": [
@@ -728,7 +1121,7 @@
       ],
       "kind": "struct",
       "name": "BookRootState",
-      "typeTag": 11909102844735751704
+      "typeTag": 18219184753090619018
     },
     {
       "fields": [
@@ -759,7 +1152,7 @@
       ],
       "kind": "struct",
       "name": "PriceLevelState",
-      "typeTag": 17278780363699941720
+      "typeTag": 13364006570784410242
     },
     {
       "fields": [
@@ -773,12 +1166,12 @@
         },
         {
           "name": "vault_seed",
-          "type": "u16"
+          "type": "u64"
         }
       ],
       "kind": "struct",
       "name": "MarketTokensState",
-      "typeTag": 5654559684954199973
+      "typeTag": 8338807595321766147
     },
     {
       "fields": [
@@ -817,7 +1210,7 @@
       ],
       "kind": "struct",
       "name": "MarketRulesState",
-      "typeTag": 11123398268661740058
+      "typeTag": 7299804946635011476
     },
     {
       "fields": [
@@ -836,7 +1229,7 @@
       ],
       "kind": "struct",
       "name": "BookTotalsState",
-      "typeTag": 16631658590519238925
+      "typeTag": 6922838953909205275
     },
     {
       "fields": [
@@ -851,7 +1244,7 @@
       ],
       "kind": "struct",
       "name": "PriceLevelLinkState",
-      "typeTag": 15822207962510117388
+      "typeTag": 1801410411082824438
     },
     {
       "fields": [
@@ -874,7 +1267,7 @@
       ],
       "kind": "struct",
       "name": "PriceLevelQueueState",
-      "typeTag": 11467908556707130883
+      "typeTag": 13284688305301641569
     },
     {
       "fields": [
@@ -913,7 +1306,7 @@
       ],
       "kind": "struct",
       "name": "OrderStaticState",
-      "typeTag": 17960764635315497153
+      "typeTag": 15886539911693317967
     },
     {
       "fields": [
@@ -932,7 +1325,7 @@
       ],
       "kind": "struct",
       "name": "OrderMutableState",
-      "typeTag": 9595926857480671517
+      "typeTag": 14240391053584906675
     },
     {
       "fields": [
@@ -947,7 +1340,37 @@
       ],
       "kind": "struct",
       "name": "OrderLinkState",
-      "typeTag": 17455953695198391291
+      "typeTag": 17905626364172625097
+    },
+    {
+      "fields": [
+        {
+          "name": "vault_seed",
+          "type": "u64"
+        },
+        {
+          "name": "status",
+          "type": "u8"
+        }
+      ],
+      "kind": "struct",
+      "name": "AmmConfigState",
+      "typeTag": 16434333257679736300
+    },
+    {
+      "fields": [
+        {
+          "name": "reserve_base",
+          "type": "u64"
+        },
+        {
+          "name": "reserve_quote",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "AmmReservesState",
+      "typeTag": 37886788338217041
     },
     {
       "fields": [
@@ -970,7 +1393,7 @@
       ],
       "kind": "struct",
       "name": "DidDocumentInput",
-      "typeTag": 16587227066181147487
+      "typeTag": 8309071724875749370
     },
     {
       "fields": [
@@ -985,7 +1408,7 @@
       ],
       "kind": "struct",
       "name": "DidKeyInput",
-      "typeTag": 18437325469875962493
+      "typeTag": 15014017011896880766
     },
     {
       "fields": [
@@ -1000,12 +1423,12 @@
       ],
       "kind": "struct",
       "name": "DidServiceInput",
-      "typeTag": 7956246246609137121
+      "typeTag": 2422875015207670442
     },
     {
       "kind": "enum",
       "name": "DidSubjectType",
-      "typeTag": 2309684872828421392,
+      "typeTag": 9478614490553199961,
       "variants": [
         {
           "fields": [],
@@ -1074,17 +1497,17 @@
     {
       "name": "_MarketTokens",
       "type": "MarketTokensState",
-      "typeTag": 5654559684954199973
+      "typeTag": 8338807595321766147
     },
     {
       "name": "_MarketRules",
       "type": "MarketRulesState",
-      "typeTag": 11123398268661740058
+      "typeTag": 7299804946635011476
     },
     {
       "name": "_MarketAuthority",
       "type": "Address",
-      "typeTag": 7718767688299500702
+      "typeTag": 3104220516395023708
     },
     {
       "name": "_MarketStatus",
@@ -1099,7 +1522,7 @@
     {
       "name": "_BookTotals",
       "type": "BookTotalsState",
-      "typeTag": 16631658590519238925
+      "typeTag": 6922838953909205275
     },
     {
       "name": "_PriceBitmap",
@@ -1109,27 +1532,27 @@
     {
       "name": "_PriceLevelLinks",
       "type": "PriceLevelLinkState",
-      "typeTag": 15822207962510117388
+      "typeTag": 1801410411082824438
     },
     {
       "name": "_PriceLevelQueue",
       "type": "PriceLevelQueueState",
-      "typeTag": 11467908556707130883
+      "typeTag": 13284688305301641569
     },
     {
       "name": "_OrderStatic",
       "type": "OrderStaticState",
-      "typeTag": 17960764635315497153
+      "typeTag": 15886539911693317967
     },
     {
       "name": "_OrderMutable",
       "type": "OrderMutableState",
-      "typeTag": 9595926857480671517
+      "typeTag": 14240391053584906675
     },
     {
       "name": "_OrderLinks",
       "type": "OrderLinkState",
-      "typeTag": 17455953695198391291
+      "typeTag": 17905626364172625097
     },
     {
       "name": "_ClientOrder",
@@ -1154,7 +1577,27 @@
     {
       "name": "_MarketSeedOwner",
       "type": "Address",
-      "typeTag": 7718767688299500702
+      "typeTag": 3104220516395023708
+    },
+    {
+      "name": "_AmmConfig",
+      "type": "AmmConfigState",
+      "typeTag": 16434333257679736300
+    },
+    {
+      "name": "_AmmReserves",
+      "type": "AmmReservesState",
+      "typeTag": 37886788338217041
+    },
+    {
+      "name": "_AmmLpSupply",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_AmmLpBalance",
+      "type": "u64",
+      "typeTag": 5563585020063213298
     }
   ],
   "constants": [
@@ -1220,7 +1663,7 @@
         {
           "indexed": false,
           "name": "vault_seed",
-          "type": "u16"
+          "type": "u64"
         },
         {
           "indexed": false,
@@ -1254,7 +1697,7 @@
         }
       ],
       "name": "EventMarketCreated",
-      "typeTag": 5964668819498663630
+      "typeTag": 13227381435063572748
     },
     {
       "fields": [
@@ -1280,7 +1723,7 @@
         }
       ],
       "name": "EventMarketStatusChanged",
-      "typeTag": 11067723932439739904
+      "typeTag": 11184352840010842698
     },
     {
       "fields": [
@@ -1296,7 +1739,7 @@
         }
       ],
       "name": "EventMarketDidInitialized",
-      "typeTag": 7059747331868676939
+      "typeTag": 3002442202873949541
     },
     {
       "fields": [
@@ -1337,7 +1780,7 @@
         }
       ],
       "name": "EventMarketVcAttestationDisclosed",
-      "typeTag": 949979366553590319
+      "typeTag": 7835306905623771085
     },
     {
       "fields": [
@@ -1398,7 +1841,7 @@
         }
       ],
       "name": "EventOrderPlaced",
-      "typeTag": 13071246516272651571
+      "typeTag": 608602095549601449
     },
     {
       "fields": [
@@ -1434,7 +1877,7 @@
         }
       ],
       "name": "EventOrderRested",
-      "typeTag": 14283557354538227929
+      "typeTag": 10581901349291685003
     },
     {
       "fields": [
@@ -1500,7 +1943,7 @@
         }
       ],
       "name": "EventOrderFilled",
-      "typeTag": 6139633433842553158
+      "typeTag": 960997472381498316
     },
     {
       "fields": [
@@ -1536,7 +1979,7 @@
         }
       ],
       "name": "EventOrderCancelled",
-      "typeTag": 16269317253269013757
+      "typeTag": 6530968372354649335
     },
     {
       "fields": [
@@ -1557,7 +2000,7 @@
         }
       ],
       "name": "EventPriceLevelOpened",
-      "typeTag": 10557899254584470782
+      "typeTag": 901970323028649804
     },
     {
       "fields": [
@@ -1578,7 +2021,238 @@
         }
       ],
       "name": "EventPriceLevelClosed",
-      "typeTag": 2783597273965581783
+      "typeTag": 9710101719406525001
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "provider",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "vault",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "vault_seed",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "base_amount",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "quote_amount",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "lp_shares",
+          "type": "u64"
+        }
+      ],
+      "name": "EventAmmPoolCreated",
+      "typeTag": 7420929212751057073
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "authority",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "old_status",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "new_status",
+          "type": "u8"
+        }
+      ],
+      "name": "EventAmmStatusChanged",
+      "typeTag": 17999427990604139897
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "provider",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "base_amount",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "quote_amount",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "lp_shares",
+          "type": "u64"
+        }
+      ],
+      "name": "EventLiquidityAdded",
+      "typeTag": 14988758762828335514
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "provider",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "base_amount",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "quote_amount",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "lp_shares",
+          "type": "u64"
+        }
+      ],
+      "name": "EventLiquidityRemoved",
+      "typeTag": 15805841629718478652
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "taker",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "side",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "input",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "output",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "base_before",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "quote_before",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "base_after",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "quote_after",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "boundary_tick",
+          "type": "u32"
+        }
+      ],
+      "name": "EventAmmSwapSegment",
+      "typeTag": 11173999819263416163
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "market_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "taker",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "input_token",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "input",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "output",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "refund",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "clob_fills",
+          "type": "u16"
+        },
+        {
+          "indexed": false,
+          "name": "amm_segments",
+          "type": "u16"
+        }
+      ],
+      "name": "EventHybridSwapCompleted",
+      "typeTag": 9012270725748501978
     }
   ],
   "errors": [
@@ -1689,33 +2363,88 @@
     },
     {
       "code": 1557,
-      "message": "address did not sign the current instruction: {0:?}",
-      "name": "AddressNotSignatured"
-    },
-    {
-      "code": 1558,
-      "message": "execution context is not bound",
-      "name": "ContextNotBound"
-    },
-    {
-      "code": 1559,
-      "message": "direct public-key signer context is not bound: {0:?}",
-      "name": "DirectPubkeySignerContextNotBound"
-    },
-    {
-      "code": 1560,
-      "message": "direct public-key signer does not match: {0:?}",
-      "name": "DirectPubkeySignerMismatch"
-    },
-    {
-      "code": 1561,
       "message": "identity operation failed with identity error code {0}",
       "name": "IdentityFailure"
     },
     {
-      "code": 1562,
+      "code": 1558,
       "message": "market DID must use the organization subject type",
       "name": "MarketDidMustBeOrganization"
+    },
+    {
+      "code": 1559,
+      "message": "AMM pool already exists: {0:?}",
+      "name": "AmmPoolAlreadyExists"
+    },
+    {
+      "code": 1560,
+      "message": "AMM pool not found: {0:?}",
+      "name": "AmmPoolNotFound"
+    },
+    {
+      "code": 1561,
+      "message": "AMM pool is not active: {0:?}",
+      "name": "AmmPoolNotActive"
+    },
+    {
+      "code": 1562,
+      "message": "AMM pool is not stopped: {0:?}",
+      "name": "AmmPoolNotStopped"
+    },
+    {
+      "code": 1563,
+      "message": "AMM pool state is corrupted: {0:?}",
+      "name": "AmmPoolStateCorrupted"
+    },
+    {
+      "code": 1564,
+      "message": "AMM liquidity amounts and minimum shares must be non-zero",
+      "name": "ZeroLiquidityParameter"
+    },
+    {
+      "code": 1565,
+      "message": "AMM liquidity calculation overflow",
+      "name": "AmmLiquidityOverflow"
+    },
+    {
+      "code": 1566,
+      "message": "AMM liquidity would mint zero shares",
+      "name": "ZeroLpShares"
+    },
+    {
+      "code": 1567,
+      "message": "AMM minted shares {0} are below minimum {1}",
+      "name": "MinLpSharesNotMet"
+    },
+    {
+      "code": 1568,
+      "message": "AMM LP balance {0} is below requested burn {1}",
+      "name": "InsufficientLpShares"
+    },
+    {
+      "code": 1569,
+      "message": "AMM liquidity output is below minimum",
+      "name": "MinLiquidityOutputNotMet"
+    },
+    {
+      "code": 1570,
+      "message": "invalid hybrid swap protection or work limits",
+      "name": "InvalidSwapParameter"
+    },
+    {
+      "code": 1571,
+      "message": "swap input token is not part of the market",
+      "name": "InvalidSwapInputToken"
+    },
+    {
+      "code": 1572,
+      "message": "hybrid swap arithmetic overflow",
+      "name": "SwapOverflow"
+    },
+    {
+      "code": 1573,
+      "message": "swap output {0} is below minimum {1}",
+      "name": "MinSwapOutputNotMet"
     }
   ]
 }

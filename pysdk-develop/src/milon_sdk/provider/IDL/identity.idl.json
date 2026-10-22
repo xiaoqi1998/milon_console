@@ -883,7 +883,7 @@
     {
       "kind": "enum",
       "name": "VcStatus",
-      "typeTag": 18204943549511253276,
+      "typeTag": 9880462679300830655,
       "variants": [
         {
           "fields": [],
@@ -919,7 +919,7 @@
       ],
       "kind": "struct",
       "name": "VcAttestationCore",
-      "typeTag": 5275629503764841895
+      "typeTag": 13284599887158957426
     },
     {
       "fields": [
@@ -934,7 +934,7 @@
       ],
       "kind": "struct",
       "name": "VcAttestationLifecycle",
-      "typeTag": 11310965231460569252
+      "typeTag": 12816573726947866147
     },
     {
       "fields": [
@@ -949,7 +949,7 @@
       ],
       "kind": "struct",
       "name": "AcceptedVcIssuer",
-      "typeTag": 16581567360265979532
+      "typeTag": 5463606248591120631
     },
     {
       "fields": [
@@ -980,12 +980,12 @@
       ],
       "kind": "struct",
       "name": "DisclosedVcSummary",
-      "typeTag": 9995445207742309256
+      "typeTag": 12260028373739227139
     },
     {
       "kind": "enum",
       "name": "DidSubjectType",
-      "typeTag": 2309684872828421392,
+      "typeTag": 9478614490553199961,
       "variants": [
         {
           "fields": [],
@@ -1012,7 +1012,7 @@
       ],
       "kind": "struct",
       "name": "DidSubject",
-      "typeTag": 14012622825467845240
+      "typeTag": 416089716071506385
     },
     {
       "fields": [
@@ -1027,7 +1027,7 @@
       ],
       "kind": "struct",
       "name": "DidKeyInput",
-      "typeTag": 18437325469875962493
+      "typeTag": 15014017011896880766
     },
     {
       "fields": [
@@ -1046,7 +1046,7 @@
       ],
       "kind": "struct",
       "name": "DidKey",
-      "typeTag": 6808078180298008975
+      "typeTag": 8586647650877785738
     },
     {
       "fields": [
@@ -1061,7 +1061,7 @@
       ],
       "kind": "struct",
       "name": "DidServiceInput",
-      "typeTag": 7956246246609137121
+      "typeTag": 2422875015207670442
     },
     {
       "fields": [
@@ -1080,7 +1080,7 @@
       ],
       "kind": "struct",
       "name": "DidService",
-      "typeTag": 9558035208667919587
+      "typeTag": 15584128414415683126
     },
     {
       "fields": [
@@ -1119,7 +1119,7 @@
       ],
       "kind": "struct",
       "name": "DidDocumentState",
-      "typeTag": 11269429974754267674
+      "typeTag": 8048280242232229915
     },
     {
       "fields": [
@@ -1142,7 +1142,7 @@
       ],
       "kind": "struct",
       "name": "DidDocumentInput",
-      "typeTag": 16587227066181147487
+      "typeTag": 8309071724875749370
     },
     {
       "fields": [
@@ -1157,7 +1157,7 @@
       ],
       "kind": "struct",
       "name": "DidName",
-      "typeTag": 1816879182884645427
+      "typeTag": 7698729844929259832
     },
     {
       "fields": [
@@ -1172,7 +1172,7 @@
       ],
       "kind": "struct",
       "name": "DidNameBinding",
-      "typeTag": 11976108436880291804
+      "typeTag": 9074654765198733705
     },
     {
       "fields": [
@@ -1187,7 +1187,7 @@
       ],
       "kind": "struct",
       "name": "DidCoreState",
-      "typeTag": 9239335515597431984
+      "typeTag": 4816427468430260189
     },
     {
       "fields": [
@@ -1202,7 +1202,7 @@
       ],
       "kind": "struct",
       "name": "DidKeyIndexState",
-      "typeTag": 2872292561178606790
+      "typeTag": 7485109064351211459
     },
     {
       "fields": [
@@ -1217,7 +1217,7 @@
       ],
       "kind": "struct",
       "name": "DidServiceIndexState",
-      "typeTag": 15068076793216390618
+      "typeTag": 10048772681438653071
     },
     {
       "fields": [
@@ -1232,7 +1232,7 @@
       ],
       "kind": "struct",
       "name": "DidAliasState",
-      "typeTag": 5069792348825440705
+      "typeTag": 17095860255518781422
     },
     {
       "fields": [
@@ -1247,12 +1247,12 @@
       ],
       "kind": "struct",
       "name": "DidAvatarState",
-      "typeTag": 17427120674153500170
+      "typeTag": 8035018328542407503
     },
     {
       "kind": "enum",
       "name": "EntityRole",
-      "typeTag": 10882321849738616826,
+      "typeTag": 2513156503778733663,
       "variants": [
         {
           "fields": [],
@@ -1269,7 +1269,7 @@
     {
       "kind": "enum",
       "name": "OrganizationStatus",
-      "typeTag": 6886365030236042100,
+      "typeTag": 597923890167821929,
       "variants": [
         {
           "fields": [],
@@ -1296,7 +1296,7 @@
       ],
       "kind": "struct",
       "name": "OrganizationCapabilities",
-      "typeTag": 16180937054376829620
+      "typeTag": 4475269952521160741
     },
     {
       "fields": [
@@ -1311,7 +1311,7 @@
       ],
       "kind": "struct",
       "name": "CredentialDefinition",
-      "typeTag": 2804905021398639289
+      "typeTag": 16303250594096098228
     },
     {
       "kind": "builtin",
@@ -1373,12 +1373,12 @@
     {
       "name": "_VcAttestationCore",
       "type": "VcAttestationCore",
-      "typeTag": 5275629503764841895
+      "typeTag": 13284599887158957426
     },
     {
       "name": "_VcAttestationLifecycle",
       "type": "VcAttestationLifecycle",
-      "typeTag": 11310965231460569252
+      "typeTag": 12816573726947866147
     },
     {
       "name": "_AcceptedVcIssuerIndexMeta",
@@ -1388,7 +1388,7 @@
     {
       "name": "_AcceptedVcIssuers",
       "type": "vec<AcceptedVcIssuer>",
-      "typeTag": 13839084772846465265
+      "typeTag": 13749091394093327390
     },
     {
       "name": "_DisclosedVcSchemas",
@@ -1398,37 +1398,37 @@
     {
       "name": "_DidCore",
       "type": "DidCoreState",
-      "typeTag": 9239335515597431984
+      "typeTag": 4816427468430260189
     },
     {
       "name": "_DidKeyIndex",
       "type": "DidKeyIndexState",
-      "typeTag": 2872292561178606790
+      "typeTag": 7485109064351211459
     },
     {
       "name": "_DidKey",
       "type": "DidKey",
-      "typeTag": 6808078180298008975
+      "typeTag": 8586647650877785738
     },
     {
       "name": "_DidServiceIndex",
       "type": "DidServiceIndexState",
-      "typeTag": 15068076793216390618
+      "typeTag": 10048772681438653071
     },
     {
       "name": "_DidService",
       "type": "DidService",
-      "typeTag": 9558035208667919587
+      "typeTag": 15584128414415683126
     },
     {
       "name": "_DidAlias",
       "type": "DidAliasState",
-      "typeTag": 5069792348825440705
+      "typeTag": 17095860255518781422
     },
     {
       "name": "_DidAvatar",
       "type": "DidAvatarState",
-      "typeTag": 17427120674153500170
+      "typeTag": 8035018328542407503
     },
     {
       "name": "_DidUpdatedAt",
@@ -1443,22 +1443,22 @@
     {
       "name": "_NameBinding",
       "type": "DidNameBinding",
-      "typeTag": 11976108436880291804
+      "typeTag": 9074654765198733705
     },
     {
       "name": "_OrganizationCapabilities",
       "type": "OrganizationCapabilities",
-      "typeTag": 16180937054376829620
+      "typeTag": 4475269952521160741
     },
     {
       "name": "_CredentialDefinition",
       "type": "CredentialDefinition",
-      "typeTag": 2804905021398639289
+      "typeTag": 16303250594096098228
     },
     {
       "name": "_OrganizationStatus",
       "type": "OrganizationStatus",
-      "typeTag": 6886365030236042100
+      "typeTag": 597923890167821929
     },
     {
       "name": "_OrganizationUpdatedAt",
@@ -1499,231 +1499,226 @@
     },
     {
       "code": 1030,
-      "message": "Address not signed in current transaction: {0:?}",
-      "name": "AddressNotSignatured"
-    },
-    {
-      "code": 1031,
       "message": "Organization profile not found: {0:?}",
       "name": "OrganizationNotFound"
     },
     {
-      "code": 1032,
+      "code": 1031,
       "message": "Organization already registered: {0:?}",
       "name": "OrganizationAlreadyExists"
     },
     {
-      "code": 1033,
+      "code": 1032,
       "message": "VC attestation not found: subject={0:?}, issuer={1:?}",
       "name": "VcAttestationNotFound"
     },
     {
-      "code": 1034,
+      "code": 1033,
       "message": "VC issuer DID does not exist or is deactivated: {0:?}",
       "name": "IssuerDidNotActive"
     },
     {
-      "code": 1035,
+      "code": 1034,
       "message": "DID name length is invalid",
       "name": "NameInvalidLength"
     },
     {
-      "code": 1036,
+      "code": 1035,
       "message": "DID name must use alias-digits format",
       "name": "NameInvalidFormat"
     },
     {
-      "code": 1037,
+      "code": 1036,
       "message": "DID name alias length is invalid",
       "name": "NameAliasInvalidLength"
     },
     {
-      "code": 1038,
+      "code": 1037,
       "message": "DID name suffix must contain the required number of digits",
       "name": "NameSuffixInvalid"
     },
     {
-      "code": 1039,
+      "code": 1038,
       "message": "DID name hash collision",
       "name": "NameHashCollision"
     },
     {
-      "code": 1040,
+      "code": 1039,
       "message": "DID document key count is invalid",
       "name": "InvalidKeyCount"
     },
     {
-      "code": 1041,
+      "code": 1040,
       "message": "DID key was not found",
       "name": "DidKeyNotFound"
     },
     {
-      "code": 1042,
+      "code": 1041,
       "message": "The last DID key cannot be removed",
       "name": "CannotRemoveLastKey"
     },
     {
-      "code": 1043,
+      "code": 1042,
       "message": "DID key resource does not match its numeric ID",
       "name": "DidKeyResourceMismatch"
     },
     {
-      "code": 1044,
+      "code": 1043,
       "message": "DID key label is empty or exceeds the length limit",
       "name": "InvalidKeyLabel"
     },
     {
-      "code": 1045,
+      "code": 1044,
       "message": "DID avatar URI length must be between 1 and 512 bytes",
       "name": "InvalidAvatarUri"
     },
     {
-      "code": 1046,
+      "code": 1045,
       "message": "DID service count exceeds the limit",
       "name": "TooManyServices"
     },
     {
-      "code": 1047,
+      "code": 1046,
       "message": "DID service label is invalid",
       "name": "InvalidServiceLabel"
     },
     {
-      "code": 1048,
+      "code": 1047,
       "message": "DID service endpoint length is invalid",
       "name": "ServiceEndpointInvalidLength"
     },
     {
-      "code": 1049,
+      "code": 1048,
       "message": "DID service endpoint is not an absolute URI",
       "name": "ServiceEndpointNotAbsolute"
     },
     {
-      "code": 1050,
+      "code": 1049,
       "message": "DID service endpoint scheme is invalid",
       "name": "ServiceEndpointInvalidScheme"
     },
     {
-      "code": 1051,
+      "code": 1050,
       "message": "DID service was not found",
       "name": "ServiceNotFound"
     },
     {
-      "code": 1052,
+      "code": 1051,
       "message": "DID service resource does not match its numeric ID",
       "name": "DidServiceResourceMismatch"
     },
     {
-      "code": 1053,
+      "code": 1052,
       "message": "Organization registration requires an organization DID: {0:?}",
       "name": "OrganizationDidRequired"
     },
     {
-      "code": 1054,
+      "code": 1053,
       "message": "Organization is permanently deactivated: {0:?}",
       "name": "OrganizationDeactivated"
     },
     {
-      "code": 1055,
+      "code": 1054,
       "message": "Organization role count is invalid",
       "name": "InvalidOrganizationRoleCount"
     },
     {
-      "code": 1056,
+      "code": 1055,
       "message": "Organization roles must be unique",
       "name": "DuplicateOrganizationRole"
     },
     {
-      "code": 1057,
+      "code": 1056,
       "message": "Organization credential schema count exceeds the limit",
       "name": "TooManyCredentialSchemas"
     },
     {
-      "code": 1058,
+      "code": 1057,
       "message": "Credential schema is invalid",
       "name": "InvalidCredentialSchema"
     },
     {
-      "code": 1059,
+      "code": 1058,
       "message": "Organization credential schemas must be unique",
       "name": "DuplicateCredentialSchema"
     },
     {
-      "code": 1060,
+      "code": 1059,
       "message": "VC issuer or KYC provider must declare a credential schema",
       "name": "IssuerCredentialSchemaRequired"
     },
     {
-      "code": 1061,
+      "code": 1060,
       "message": "Credential ID hash collision",
       "name": "CredentialIdCollision"
     },
     {
-      "code": 1062,
+      "code": 1061,
       "message": "Credential ID is invalid",
       "name": "InvalidCredentialId"
     },
     {
-      "code": 1063,
+      "code": 1062,
       "message": "Credential definition not found: {0}",
       "name": "CredentialDefinitionNotFound"
     },
     {
-      "code": 1064,
+      "code": 1063,
       "message": "Credential schema index does not match the requested schema",
       "name": "CredentialSchemaMismatch"
     },
     {
-      "code": 1065,
+      "code": 1064,
       "message": "Accepted VC issuer count exceeds the limit",
       "name": "TooManyAcceptedVcIssuers"
     },
     {
-      "code": 1066,
+      "code": 1065,
       "message": "Disclosed VC schema count exceeds the limit",
       "name": "TooManyDisclosedVcSchemas"
     },
     {
-      "code": 1067,
+      "code": 1066,
       "message": "Only a currently valid VC attestation can be accepted",
       "name": "VcAttestationNotCurrentlyValid"
     },
     {
-      "code": 1068,
+      "code": 1067,
       "message": "VC acceptance index does not exist for subject",
       "name": "VcAcceptanceIndexNotFound"
     },
     {
-      "code": 1069,
+      "code": 1068,
       "message": "VC issuer is not in the subject acceptance index",
       "name": "VcIssuerNotAccepted"
     },
     {
-      "code": 1070,
+      "code": 1069,
       "message": "VC attestation issuer signature is invalid",
       "name": "InvalidVcIssuerSignature"
     },
     {
-      "code": 1071,
+      "code": 1070,
       "message": "VC issuer DID key was not found: issuer={0:?}, key_id={1}",
       "name": "VcIssuerKeyNotFound"
     },
     {
-      "code": 1072,
+      "code": 1071,
       "message": "VC attestation already exists with different immutable content",
       "name": "VcAttestationAlreadyExists"
     },
     {
-      "code": 1073,
+      "code": 1072,
       "message": "VC attestation has been permanently revoked",
       "name": "VcAttestationRevoked"
     },
     {
-      "code": 1074,
+      "code": 1073,
       "message": "VC attestation is already frozen",
       "name": "VcAttestationAlreadyFrozen"
     },
     {
-      "code": 1075,
+      "code": 1074,
       "message": "VC attestation is not frozen",
       "name": "VcAttestationNotFrozen"
     }

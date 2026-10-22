@@ -1,9 +1,9 @@
-"""彻底检查轮新增回归：account_signer_bit 真实语义 / gen 11 apps / 顶层导出面。"""
+"""彻底检查轮新增回归：account_signer_bit 真实语义 / gen index 驱动 app 面 / 顶层导出面。"""
 
 import pytest
 
 import milon_sdk as m
-from milon_sdk import gen, new_client
+from milon_sdk import gen, new_client, provider
 from milon_sdk.crypto import Address
 from milon_sdk.types.bitbap import Bitmap64
 
@@ -52,13 +52,13 @@ def test_account_signer_bit_bad_shapes():
         _FakeRpc([{"bitmap": 1}, "not-a-list"]).account_signer_bit(Address(bytes(20)))
 
 
-def test_gen_eleven_apps_bound():
+def test_gen_apps_bound_from_index():
     c = new_client(m.DEV_NET)
-    apps = [
-        "SYSTEM", "ACCOUNT", "TOKEN", "STAKING", "IDENTITY", "SFTOKEN",
-        "DEX", "KEYLESS", "LUCKY_BOX", "SOCIAL", "DEMO",
-    ]
-    for name in apps:
+    names = [name.upper() for name in provider.default_idl_app_names()]
+    # gosdk 20261015/20261018：新增 validator(app 7)，lucky_box 退出 index
+    assert "VALIDATOR" in names
+    assert "LUCKY_BOX" not in names
+    for name in names:
         app = getattr(gen, name)
         assert app.provider is not None, name
         assert len(app.provider.InstructionByName) > 0, name

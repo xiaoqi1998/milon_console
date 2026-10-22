@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, Optional
 from ..provider import (
     IDL,
     Provider,
+    default_idl_app_names,
     idl_from_json_dict,
     load_default_idls,
 )
@@ -122,37 +123,27 @@ class GenApp:
         return inst
 
 
-# ---- 内置 app 对象（对齐 Go gen 包级变量：11 个 app 全量）----
+# ---- 内置 app 对象（对齐 Go gen 包级变量；集合以 provider/IDL/index.json 为准，
+# gosdk 增删 app 时 Python 侧自动跟随，无需改本文件）----
 
-_APPS = {
-    "system": GenApp("system"),
-    "account": GenApp("account"),
-    "token": GenApp("token"),
-    "staking": GenApp("staking"),
-    "identity": GenApp("identity"),
-    "sftoken": GenApp("sftoken"),
-    "dex": GenApp("dex"),
-    "keyless": GenApp("keyless"),
-    "lucky_box": GenApp("lucky_box"),
-    "social": GenApp("social"),
-    "demo": GenApp("demo"),
-}
-
-# 模块级变量（UPPER_SNAKE；Go 侧为 PascalCase 包级变量）
-SYSTEM = _APPS["system"]
-ACCOUNT = _APPS["account"]
-TOKEN = _APPS["token"]
-STAKING = _APPS["staking"]
-IDENTITY = _APPS["identity"]
-SFTOKEN = _APPS["sftoken"]
-DEX = _APPS["dex"]
-KEYLESS = _APPS["keyless"]
-LUCKY_BOX = _APPS["lucky_box"]
-SOCIAL = _APPS["social"]
-DEMO = _APPS["demo"]
+_APPS = {name: GenApp(name) for name in default_idl_app_names()}
 
 for _name, _app in _APPS.items():
     register_app(_name, _app.rebind)
+
+
+def __getattr__(app_name: str) -> "GenApp":
+    """PEP 562：``gen.TOKEN`` / ``gen.VALIDATOR`` 等包级 app 变量。"""
+    if app_name.startswith("_"):
+        raise AttributeError(f"module {__name__!r} has no attribute {app_name!r}")
+    app = _APPS.get(app_name.lower())
+    if app is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {app_name!r}")
+    return app
+
+
+def __dir__() -> list:
+    return sorted(set(globals()) | set(_APPS))
 
 
 def _load_default_idls() -> Dict[str, IDL]:
