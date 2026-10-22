@@ -75,3 +75,20 @@
 LICENSE / README.md（英文主）+ README.zh-CN.md / docs/PORTING.md（由 CONVENTIONS.md 改造）/
 GitHub Actions pytest 矩阵；examples 去本机绝对路径；版本 0.2.0；敏感信息终扫；
 `tools/check_gen_parity.py` 保留。推公开仓前需用户确认。
+
+## 4. 完成记录（2026-10-22）
+
+阶段一（主仓 `pysdk-develop`，3 个独立 commit：`84ad242` / `8c39542` / `19cd625`）：
+
+- IDL 对账：11 apps / 295 instructions / 216 types PASS（基线为 11/245/193）。
+- `gen` 硬编码 11 app 名改为 `index.json` 驱动，消除同类同步阻塞点；`load_default_idls()` 同样以 index 为准。
+- pytest：195 passed / 20 skipped（原 172 绿；新增 23 例）。
+- devNet 实测：`e2e_token_demo` 10/10、`sig_modes_demo` 12/12，证明 method 16（BatchView）、新 typeTag、新地址派生在链上可用。
+- 遗留项与设计一致：blockStream/gRPC 未移植、FN-DSA-512 仍 20 skip、Batch 6/11 仅协议常量。
+
+阶段二（开源仓）：<https://github.com/xiaoqi1998/milon-python-sdk>（public，MIT，版本 0.2.0）
+
+- 94 文件、全新 git 历史；独立 clone 后 pytest 195 绿；GitHub Actions 3.10/3.11/3.12/3.13 全绿。
+- 首轮 CI（`39739327794`）失败：`[project.urls]` 误插在 `dependencies` 前，pip 把依赖解析成 URL 键；
+  `8657ba2` 修复，`pip wheel` 复验通过。
+- 敏感信息终扫：无本机绝对路径、无密钥/助记词；examples 的 `sys.path` 改为 `Path(__file__)` 相对注入。
