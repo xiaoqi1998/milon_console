@@ -12,8 +12,9 @@ Vote gate（MIP-25）为链下/单元级语义，已有 Go 向量对拍（tests/
 
 import sys
 import time
+from pathlib import Path
 
-sys.path.insert(0, "D:/pprojiect/milon-api-server/pysdk-develop/src")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import milon_sdk as m
 from milon_sdk import gen
