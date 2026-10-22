@@ -4,6 +4,9 @@ from .rpc_request import (
     CONTENT_TYPE_MILON_JSON,
     CONTENT_TYPE_MILON_POSTCARD,
     METHOD_TYPE_BATCH_GET_RESOURCE_PATH_BY_HASH,
+    METHOD_TYPE_BATCH_SIMULATE_TX,
+    METHOD_TYPE_BATCH_SUBMIT_TX,
+    METHOD_TYPE_BATCH_VIEW,
     METHOD_TYPE_CHAIN_HEAD,
     METHOD_TYPE_EVENTS_BY_TX_HASH,
     METHOD_TYPE_GET_ACCESS_VALUE,
@@ -29,7 +32,6 @@ from .rpc_response import (
     RPC_RESPONSE_STATUS_OK,
     RPC_RESPONSE_STATUS_UNAVAILABLE,
     RpcResponse,
-    RpcResponseError,
 )
 from .transaction import Transaction, TransactionSignatures
 from .chain_id import GetChainId, get_chain_id, set_chain_id

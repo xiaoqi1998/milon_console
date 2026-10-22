@@ -61,5 +61,6 @@ from .tx_history import (
 )
 from .get_tx_history_proof import GetTxHistoryProof
 from .simulate_receipt import SimulateReceipt, TxFailurePayload
+from .api_failure import ApiFailure
 
 __all__ = [n for n in dir() if not n.startswith("_")]

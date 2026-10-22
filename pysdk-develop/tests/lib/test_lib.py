@@ -9,6 +9,7 @@ from milon_sdk.crypto import (
     new_pure_classical_secret_key,
     new_signature_from_bytes,
 )
+from milon_sdk.api import ApiFailure
 from milon_sdk.lib import (
     AUTH_PAYER_BIT,
     AUTH_RESERVED_BIT,
@@ -20,7 +21,6 @@ from milon_sdk.lib import (
     MultisigKeySignatureMode,
     PubKeySignatureMode,
     RpcResponse,
-    RpcResponseError,
     Transaction,
     TransactionSignatures,
     auth_ix,
@@ -38,6 +38,9 @@ from milon_sdk.lib import (
     unsigned,
     vote_batch_hash,
     MethodType,
+    METHOD_TYPE_BATCH_SUBMIT_TX,
+    METHOD_TYPE_BATCH_SIMULATE_TX,
+    METHOD_TYPE_BATCH_VIEW,
     Signer,
     SigningSlot,
 )
@@ -498,15 +501,39 @@ def test_rpc_response_marshal_postcard():
         RequestId=8,
         Status=6,
         Body=b"",
-        Error=RpcResponseError(Message="boom", Code=5, Data=b"\x01"),
+        Error=ApiFailure(Message="boom", Code=5, Data=b"\x01"),
     )
     ser2 = Serializer()
     rsp2.marshal_postcard(ser2)
     back2 = RpcResponse()
     back2.unmarshal_postcard(Deserializer(ser2.bytes()))
-    assert back2.Error.Message == "boom"
-    assert back2.Error.Code == 5
-    assert back2.Error.Data == b"\x01"
+    assert back2.Error == ApiFailure(Message="boom", Code=5, Data=b"\x01")
+
+
+def test_rpc_response_error_without_code_and_data():
+    rsp = RpcResponse(
+        RequestId=555,
+        Status=5,
+        Body=b"",
+        Error=ApiFailure(Message="internal error"),
+    )
+    ser = Serializer()
+    rsp.marshal_postcard(ser)
+    back = RpcResponse()
+    back.unmarshal_postcard(Deserializer(ser.bytes()))
+    assert back.Error.Message == "internal error"
+    assert back.Error.Code is None
+    assert back.Error.Data is None
+
+
+def test_method_type_batch_numbers():
+    # gosdk 20261015：批交易/批 view 的方法号（6/11 为占位，16 已接 View）
+    assert MethodType.BATCH_SUBMIT_TX == 6
+    assert MethodType.BATCH_SIMULATE_TX == 11
+    assert MethodType.BATCH_VIEW == 16
+    assert METHOD_TYPE_BATCH_SUBMIT_TX == 6
+    assert METHOD_TYPE_BATCH_SIMULATE_TX == 11
+    assert METHOD_TYPE_BATCH_VIEW == 16
 
 
 def test_rpc_response_deserialize_errors():

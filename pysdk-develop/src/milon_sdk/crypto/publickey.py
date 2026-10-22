@@ -18,12 +18,14 @@ PUBLIC_KEY_SECP256K1_SIZE = 33
 PUBLIC_KEY_ED25519_SIZE = 32
 PUBLIC_KEY_BLS12381_SIZE = 48
 PUBLIC_KEY_FN_DSA512_SIZE = 897
+PUBLIC_KEY_KEYLESS_DERIVED_SIZE = 32
 
 # 模块级别名（CONVENTIONS：枚举成员 UPPER_SNAKE + 模块级别名）
 PUBLIC_KEY_TYPE_SECP256K1 = 0
 PUBLIC_KEY_TYPE_ED25519 = 1
 PUBLIC_KEY_TYPE_BLS12381 = 2
 PUBLIC_KEY_TYPE_FN_DSA512 = 3
+PUBLIC_KEY_TYPE_KEYLESS_DERIVED = 4
 
 
 class PublicKeyType(IntEnum):
@@ -31,6 +33,7 @@ class PublicKeyType(IntEnum):
     ED25519 = 1
     BLS12381 = 2
     FN_DSA512 = 3
+    KEYLESS_DERIVED = 4
 
 
 def new_public_key_from_bytes(raw: bytes) -> "PublicKey":
@@ -82,10 +85,25 @@ def _new_public_key_from_base58(b58_str: str) -> "PublicKey":
     return new_public_key_from_bytes(buf)
 
 
+def new_keyless_derived_public_key(seed: bytes) -> "PublicKey":
+    """Builds a keyless derived pseudo public key whose bytes are an address
+    seed rather than a real curve point. new_public_key_from_bytes and textual
+    parsing never produce this variant (32 bytes always parse as Ed25519); it
+    does not participate in traditional signature verification and its address
+    derivation uses the dedicated keyless domain."""
+    if len(seed) != PUBLIC_KEY_KEYLESS_DERIVED_SIZE:
+        raise ValueError(
+            "invalid keyless seed length: expected "
+            f"{PUBLIC_KEY_KEYLESS_DERIVED_SIZE}, got {len(seed)}"
+        )
+    return PublicKey(PublicKeyType.KEYLESS_DERIVED, bytes(seed))
+
+
 class PublicKey:
     def __init__(self, variant: PublicKeyType = None, data: bytes = None) -> None:
         self.Variant = variant
         self.Bytes = data
+
 
     # ---- 字段访问（CONVENTIONS：字段 snake_case 别名） ----
     @property
@@ -167,6 +185,9 @@ class PublicKey:
     def is_fn_dsa512(self) -> bool:
         return self.Variant == PublicKeyType.FN_DSA512
 
+    def is_keyless_derived(self) -> bool:
+        return self.Variant == PublicKeyType.KEYLESS_DERIVED
+
     def from_secp256k1_native(self, p: _SecpPublicKey) -> None:
         """Converts from a secp256k1 public key back to PublicKey."""
         if p is None:
@@ -240,6 +261,7 @@ class PublicKey:
                 PublicKeyType.ED25519: PUBLIC_KEY_ED25519_SIZE,
                 PublicKeyType.BLS12381: PUBLIC_KEY_BLS12381_SIZE,
                 PublicKeyType.FN_DSA512: PUBLIC_KEY_FN_DSA512_SIZE,
+                PublicKeyType.KEYLESS_DERIVED: PUBLIC_KEY_KEYLESS_DERIVED_SIZE,
             }[PublicKeyType(variant)]
         except ValueError:
             raise ValueError(f"unknown public key variant: {variant}") from None

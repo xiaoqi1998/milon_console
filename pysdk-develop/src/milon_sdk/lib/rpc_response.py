@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import List, Optional
+from dataclasses import dataclass
+from typing import Optional
 
+from ..api import ApiFailure
 from ..postcard import (
     Deserializer,
     Serializer,
@@ -22,54 +23,11 @@ RPC_RESPONSE_STATUS_FAILED = 6
 
 
 @dataclass
-class RpcResponseError:
-    Message: str = ""
-    Code: Optional[int] = None
-    Data: Optional[bytes] = None
-
-    def marshal_postcard(self, serializer: Serializer) -> None:
-        try:
-            serializer.serialize_str(self.Message)
-        except ValueError as exc:
-            raise ValueError(f"failed to serialize Message: {exc}") from exc
-        try:
-            serialize_option(
-                serializer, self.Code, lambda s, c: s.serialize_u16(c)
-            )
-        except ValueError as exc:
-            raise ValueError(f"failed to serialize Code: {exc}") from exc
-        try:
-            serialize_option(
-                serializer, self.Data, lambda s, d: s.serialize_bytes(d)
-            )
-        except ValueError as exc:
-            raise ValueError(f"failed to serialize Data: {exc}") from exc
-
-    def unmarshal_postcard(self, deserializer: Deserializer) -> None:
-        try:
-            self.Message = deserializer.deserialize_str()
-        except ValueError as exc:
-            raise ValueError(f"failed to deserialize Message: {exc}") from exc
-        try:
-            self.Code = deserialize_option(
-                deserializer, lambda d: d.deserialize_u16()
-            )
-        except ValueError as exc:
-            raise ValueError(f"failed to deserialize Code: {exc}") from exc
-        try:
-            self.Data = deserialize_option(
-                deserializer, lambda d: d.deserialize_bytes()
-            )
-        except ValueError as exc:
-            raise ValueError(f"failed to deserialize Data: {exc}") from exc
-
-
-@dataclass
 class RpcResponse:
     RequestId: int = 0
     Status: int = 0
     Body: bytes = b""
-    Error: Optional[RpcResponseError] = None
+    Error: Optional[ApiFailure] = None
 
     def to_json_value(self) -> dict:
         return {
@@ -123,8 +81,8 @@ class RpcResponse:
         except ValueError as exc:
             raise ValueError(f"failed to deserialize Body: {exc}") from exc
 
-        def _read_err(d: Deserializer) -> RpcResponseError:
-            af = RpcResponseError()
+        def _read_err(d: Deserializer) -> ApiFailure:
+            af = ApiFailure()
             try:
                 af.unmarshal_postcard(d)
             except ValueError as exc:

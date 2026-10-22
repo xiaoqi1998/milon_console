@@ -212,3 +212,86 @@ def test_public_key_deserialize_postcard_invalid_data():
 
     with pytest.raises(ValueError, match="failed to deserialize public key Bytes"):
         pk.unmarshal_postcard(Deserializer(b"\x01\x02\x03\x04\x05"))
+
+
+# ---- gosdk 20261015：keyless 派生伪公钥 ----
+
+
+def _keyless_pk(seed_byte: int):
+    return crypto.new_keyless_derived_public_key(bytes([seed_byte]) * 32)
+
+
+def test_public_key_variant_keyless_flags():
+    for pk in (
+        _classical_pk_secp(),
+        _pure_pk_ed(),
+        _pure_pk_bls(),
+    ):
+        assert not pk.is_keyless_derived()
+
+    pk = _keyless_pk(0x07)
+    assert pk.Variant == crypto.PublicKeyType.KEYLESS_DERIVED
+    assert pk.is_keyless_derived()
+    assert not pk.is_secp256k1()
+    assert not pk.is_ed25519()
+    assert not pk.is_bls12381()
+    assert not pk.is_fn_dsa512()
+    assert len(pk.Bytes) == crypto.PUBLIC_KEY_KEYLESS_DERIVED_SIZE
+
+
+def test_public_key_from_bytes_never_yields_keyless_derived():
+    # 32 字节永远解析为 Ed25519；keyless 变体只能显式构造
+    for raw in (bytes(32), bytes([0x01]) * 32, bytes([0xFF]) * 32):
+        pk = crypto.new_public_key_from_bytes(raw)
+        assert pk.Variant == crypto.PublicKeyType.ED25519
+        assert not pk.is_keyless_derived()
+
+    valid = _pure_pk_ed()
+    pk = crypto.new_public_key_from_bytes(valid.Bytes)
+    assert pk.Variant == crypto.PublicKeyType.ED25519
+    assert not pk.is_keyless_derived()
+
+
+def test_keyless_derived_public_key_serde_round_trip():
+    pk = _keyless_pk(0xFF)
+    ser = Serializer()
+    pk.marshal_postcard(ser)
+    data = ser.bytes()
+
+    # wire：变体 4 + 32 字节原文
+    assert len(data) == 1 + crypto.PUBLIC_KEY_KEYLESS_DERIVED_SIZE
+    assert data[0] == int(crypto.PublicKeyType.KEYLESS_DERIVED)
+
+    decoded = crypto.PublicKey()
+    d = Deserializer(data)
+    decoded.unmarshal_postcard(d)
+    d.assert_end()
+    assert decoded.is_keyless_derived()
+    assert decoded == pk
+
+    # 文本编码可产出，但解析永不还原 keyless：32 字节按 Ed25519 解析
+    parsed = crypto.PublicKey()
+    parsed.from_json_value(json.loads(json.dumps(pk.to_json_value())))
+    assert parsed.Variant == crypto.PublicKeyType.ED25519
+    assert not parsed.is_keyless_derived()
+    assert parsed.Bytes == pk.Bytes
+
+
+def test_keyless_derived_public_key_fails_traditional_sign_and_verify():
+    sk = crypto.new_pure_classical_secret_key()
+    msg = b"milon-keyless-test"
+    sig = sk.sign_ed25519(msg)
+    keyless_pk = _keyless_pk(0xAB)
+
+    with pytest.raises(
+        ValueError, match="signature type mismatch: 1 vs 4"
+    ):
+        sig.verify(msg, keyless_pk)
+
+    sig.verify(msg, sk.ed25519_public())
+
+    with pytest.raises(
+        ValueError,
+        match="unsupported public key type for classical secret key: 4",
+    ):
+        sk.sign_for(keyless_pk, msg)

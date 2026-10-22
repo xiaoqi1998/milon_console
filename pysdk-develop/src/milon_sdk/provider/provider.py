@@ -769,7 +769,7 @@ def _decode_view_result_item(
 
     if variant_index == 1:
         try:
-            failure, offset = _decode_tx_failure_payload(body, offset)
+            failure, offset = _decode_api_failure(body, offset)
         except ValueError as exc:
             raise ValueError(f"failed to decode Err payload: {exc}") from exc
         return failure, offset
@@ -777,28 +777,67 @@ def _decode_view_result_item(
     raise ValueError(f"invalid result variant index: {variant_index}")
 
 
-def _decode_tx_failure_payload(body: bytes, offset: int):
-    from ..api.simulate_receipt import TxFailurePayload
+def _decode_api_failure(body: bytes, offset: int):
+    """Decodes the ApiFailure layout carried by Err items:
+    message(String) + code(Option<u16>) + data(Option<Vec<u8>>)."""
+    from ..api import ApiFailure
 
-    code_raw, offset = _decode_view_var_uint(body, offset)
-    code = code_raw & 0xFFFF
+    try:
+        message, offset = _decode_view_string(body, offset)
+    except ValueError as exc:
+        raise ValueError(f"failed to decode failure message: {exc}") from exc
 
-    message_len, offset = _decode_view_var_uint(body, offset)
-    if offset + message_len > len(body):
-        raise ValueError("insufficient data for failure message")
-    message = body[offset : offset + message_len].decode("utf-8", errors="replace")
-    offset += message_len
+    failure = ApiFailure(Message=message)
 
-    data_len, offset = _decode_view_var_uint(body, offset)
-    if offset + data_len > len(body):
-        raise ValueError("insufficient data for failure data")
-    data = body[offset : offset + data_len]
-    offset += data_len
+    try:
+        has_code, offset = _decode_view_option_flag(body, offset)
+    except ValueError as exc:
+        raise ValueError(f"failed to decode failure code flag: {exc}") from exc
+    if has_code:
+        try:
+            code_raw, offset = _decode_view_var_uint(body, offset)
+        except ValueError as exc:
+            raise ValueError(f"failed to decode failure code: {exc}") from exc
+        if code_raw > 0xFFFF:
+            raise ValueError(f"failure code {code_raw} overflows u16")
+        failure.Code = code_raw
 
-    return (
-        TxFailurePayload(Code=code, Message=message, Data=bytes(data)),
-        offset,
-    )
+    try:
+        has_data, offset = _decode_view_option_flag(body, offset)
+    except ValueError as exc:
+        raise ValueError(f"failed to decode failure data flag: {exc}") from exc
+    if has_data:
+        try:
+            data_len, offset = _decode_view_var_uint(body, offset)
+        except ValueError as exc:
+            raise ValueError(
+                f"failed to decode failure data length: {exc}"
+            ) from exc
+        if offset + data_len > len(body):
+            raise ValueError("insufficient data for failure data")
+        failure.Data = bytes(body[offset : offset + data_len])
+        offset += data_len
+
+    return failure, offset
+
+
+def _decode_view_string(input: bytes, offset: int) -> Tuple[str, int]:
+    """Decodes a length-prefixed UTF-8 string."""
+    length, offset = _decode_view_var_uint(input, offset)
+    if offset + length > len(input):
+        raise ValueError("insufficient data for string")
+    value = input[offset : offset + length].decode("utf-8", errors="replace")
+    return value, offset + length
+
+
+def _decode_view_option_flag(input: bytes, offset: int) -> Tuple[bool, int]:
+    """Decodes a postcard Option flag (0 = None, 1 = Some)."""
+    flag, offset = _decode_view_var_uint(input, offset)
+    if flag == 0:
+        return False, offset
+    if flag == 1:
+        return True, offset
+    raise ValueError(f"invalid option flag: {flag}")
 
 
 # ---- varint helpers ----

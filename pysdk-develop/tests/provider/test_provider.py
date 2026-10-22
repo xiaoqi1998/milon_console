@@ -3,6 +3,7 @@
 
 import pytest
 
+from milon_sdk import api
 from milon_sdk import provider as pv
 from milon_sdk.crypto import Address, new_address_from_bytes
 from milon_sdk.postcard import Serializer
@@ -213,16 +214,36 @@ def test_decode_view_datas_result_branches():
     values = pd.decode_view_datas("BalanceOf", ser.bytes())
     assert values[0].Value == 77
 
-    # Err 分支
-    ser = Serializer()
-    ser.serialize_u32(1)
-    ser.serialize_enum_variant(1)  # Err
-    ser.serialize_u16(5)  # code
-    ser.serialize_str("boom")  # message
-    ser.serialize_bytes(b"\x01")  # data
-    values = pd.decode_view_datas("BalanceOf", ser.bytes())
-    assert values[0].Value.Code == 5
-    assert values[0].Value.Message == "boom"
+    # Err 分支：ApiFailure 布局 message + Option<code u16> + Option<data bytes>
+    body = bytes([
+        1,                # vec len=1
+        1,                # variant=1 (Err)
+        2, ord("o"), ord("k"),  # message="ok"
+        1, 5,             # code=Some(5)
+        1, 2, 0xAA, 0xBB,  # data=Some([0xAA,0xBB])
+    ])
+    values = pd.decode_view_datas("BalanceOf", body)
+    failure = values[0].Value
+    assert isinstance(failure, api.ApiFailure)
+    assert failure.Message == "ok"
+    assert failure.Code == 5
+    assert failure.Data == b"\xaa\xbb"
+
+    # Err 分支：code/data 均为 None
+    body = bytes([1, 1, 2, ord("o"), ord("k"), 0, 0])
+    values = pd.decode_view_datas("BalanceOf", body)
+    failure = values[0].Value
+    assert failure.Message == "ok"
+    assert failure.Code is None
+    assert failure.Data is None
+
+    # Ok 载荷尾部多余字节要报错（payload len=2，u64 只消费 1 字节）
+    with pytest.raises(ValueError, match="trailing bytes"):
+        pd.decode_view_datas("BalanceOf", bytes([1, 0, 2, 1, 99]))
+
+    # 非法 Result variant
+    with pytest.raises(ValueError, match="invalid result variant index"):
+        pd.decode_view_datas("BalanceOf", bytes([1, 2]))
 
     # 非 view 报错
     with pytest.raises(ValueError, match="is not a view instruction"):

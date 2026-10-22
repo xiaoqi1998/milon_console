@@ -15,6 +15,7 @@ from .api import (
     TX_STATE_PENDING,
     TX_STATE_SUCCESS,
     AccountView,
+    ApiFailure,
     Block,
     BlobHash,
     ChainHead,
@@ -41,6 +42,7 @@ from .lib import (
     CONTENT_TYPE_MILON_JSON,
     CONTENT_TYPE_MILON_POSTCARD,
     METHOD_TYPE_BATCH_GET_RESOURCE_PATH_BY_HASH,
+    METHOD_TYPE_BATCH_VIEW,
     METHOD_TYPE_CHAIN_HEAD,
     METHOD_TYPE_EVENTS_BY_TX_HASH,
     METHOD_TYPE_GET_ACCESS_VALUE,
@@ -52,7 +54,6 @@ from .lib import (
     METHOD_TYPE_GET_TX_HISTORY_PROOF,
     METHOD_TYPE_SIMULATE_TX,
     METHOD_TYPE_SUBMIT_TX,
-    METHOD_TYPE_VIEW,
     RPC_RESPONSE_STATUS_OK,
     PubKeySignatureMode,
     RpcRequest,
@@ -145,6 +146,16 @@ class GetTxHistoryProofResult:
     BodyGetTxHistoryProof: Optional[GetTxHistoryProof] = None
 
 
+def _api_failure_from_json(raw: dict) -> ApiFailure:
+    """JSON 信封的 error 对象 → ApiFailure（链端 data 为十进制字节数组）。"""
+    data = raw.get("data")
+    return ApiFailure(
+        Message=str(raw.get("message") or ""),
+        Code=raw.get("code"),
+        Data=bytes(data) if isinstance(data, list) else None,
+    )
+
+
 class RpcClientV1:
     def __init__(
         self,
@@ -208,7 +219,7 @@ class RpcClientV1:
             RequestId=data.get("request_id", 0),
             Status=data.get("status", 0),
             Body=bytes.fromhex(data["body"]) if isinstance(data.get("body"), str) else bytes(data.get("body") or []),
-            Error=None,
+            Error=_api_failure_from_json(data["error"]) if data.get("error") else None,
         )
         if api_response.RequestId != request_id:
             raise ValueError(
@@ -216,10 +227,10 @@ class RpcClientV1:
                 f"request {request_id}"
             )
         if api_response.Status != RPC_RESPONSE_STATUS_OK:
-            err = data.get("error")
-            if err:
+            if api_response.Error is not None:
                 raise ValueError(
-                    f"API returned error status {api_response.Status}: {err}"
+                    f"API returned error status {api_response.Status}: "
+                    f"{api_response.Error}"
                 )
             raise ValueError(f"API returned error status: {api_response.Status}")
         return api_response
@@ -388,7 +399,7 @@ class RpcClientV1:
         serializer.serialize_u32(len(wires))
         for w in wires:
             serializer.serialize_bytes(w)
-        api_response = self._call_json_rpc(METHOD_TYPE_VIEW, serializer.bytes(), self._next_id(request_id))
+        api_response = self._call_json_rpc(METHOD_TYPE_BATCH_VIEW, serializer.bytes(), self._next_id(request_id))
         return ViewResult(HTTPResponseBody=api_response.Body)
 
     def get_account(self, account_relaxed: Any, request_id: Optional[int] = None) -> GetAccountResult:
