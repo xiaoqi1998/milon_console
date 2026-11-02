@@ -1149,17 +1149,17 @@
     {
       "name": "_SftOwner",
       "type": "Address",
-      "typeTag": 6985331877380045022
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_SftMetadata",
       "type": "Metadata",
-      "typeTag": 7640396538560339667
+      "typeTag": 14606240850061279456
     },
     {
       "name": "_SftRoyalty",
       "type": "Royalty",
-      "typeTag": 16586850674820846406
+      "typeTag": 15605079096527761999
     },
     {
       "name": "_SftNextSlotId",
@@ -1174,22 +1174,22 @@
     {
       "name": "_SftMintPermission",
       "type": "Address",
-      "typeTag": 6985331877380045022
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_SftUpdatePermission",
       "type": "Address",
-      "typeTag": 6985331877380045022
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_SftFreezePermission",
       "type": "Address",
-      "typeTag": 6985331877380045022
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_Slot",
       "type": "SlotData",
-      "typeTag": 383744842715771362
+      "typeTag": 16053204672031418177
     },
     {
       "name": "_SlotExists",
@@ -1204,7 +1204,7 @@
     {
       "name": "_Token",
       "type": "Token",
-      "typeTag": 15544724241338340387
+      "typeTag": 15244655057074605074
     },
     {
       "name": "_TokenSlotId",

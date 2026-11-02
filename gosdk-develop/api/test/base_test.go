@@ -1,4 +1,4 @@
-package test
+package test_test
 
 import (
 	"encoding/hex"
@@ -159,12 +159,13 @@ func TestPersistedValueUnknownVariant(t *testing.T) {
 func TestDeserializeAccessRecordNoLen_InlinePersistedValue(t *testing.T) {
 	pd, err := provider.LoadProviderFromFile("../../provider/IDL/system.idl.json")
 	assert.NoError(t, err)
+	claimTag := resourceTagByName(t, pd, "_ResourceAccountClaim")
 
 	ser := postcard.NewSerializer()
 	ser.SerializeFixedBytes(make([]byte, api.RsHashLen)) // ResourceID
 	ser.SerializeBool(false)                             // FirstSnapshot: None
 	ser.SerializeU32(0)                                  // LastWritten variant: Inline
-	ser.SerializeU64(14785269867199075517)               // type_tag: system _ResourceAccountClaim (bool)
+	ser.SerializeU64(claimTag)                           // type_tag: system _ResourceAccountClaim (bool)
 	ser.SerializeFixedBytes([]byte{1})                   // bool true, NO length prefix
 
 	rec, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.AccessRecord, error) {
@@ -172,13 +173,14 @@ func TestDeserializeAccessRecordNoLen_InlinePersistedValue(t *testing.T) {
 	}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"system": pd}})
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(0), rec.LastWritten.Variant)
-	assert.Equal(t, uint64(14785269867199075517), rec.LastWritten.TypeTag)
+	assert.Equal(t, claimTag, rec.LastWritten.TypeTag)
 	assert.Equal(t, []byte{1}, rec.LastWritten.InlineData)
 }
 
 func TestDeserializeAccessRecordNoLen_BuiltinTypeFallback(t *testing.T) {
 	pd, err := provider.LoadProviderFromFile("../../provider/IDL/system.idl.json")
 	assert.NoError(t, err)
+	addressTag := typeTagByName(t, pd, "Address")
 
 	// The genesis transaction persists a bare Address value under the Address
 	// builtin tag (types section), not under a resource tag.
@@ -191,7 +193,7 @@ func TestDeserializeAccessRecordNoLen_BuiltinTypeFallback(t *testing.T) {
 	ser.SerializeFixedBytes(make([]byte, api.RsHashLen)) // ResourceID
 	ser.SerializeBool(false)                             // FirstSnapshot: None
 	ser.SerializeU32(0)                                  // LastWritten variant: Inline
-	ser.SerializeU64(17438174819379414968)               // type_tag: Address builtin
+	ser.SerializeU64(addressTag)                         // type_tag: Address builtin
 	ser.SerializeFixedBytes(addressBytes)                // Address value, NO length prefix
 
 	rec, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.AccessRecord, error) {
@@ -199,7 +201,7 @@ func TestDeserializeAccessRecordNoLen_BuiltinTypeFallback(t *testing.T) {
 	}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"system": pd}})
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(0), rec.LastWritten.Variant)
-	assert.Equal(t, uint64(17438174819379414968), rec.LastWritten.TypeTag)
+	assert.Equal(t, addressTag, rec.LastWritten.TypeTag)
 	assert.Equal(t, addressBytes, rec.LastWritten.InlineData)
 }
 
@@ -207,6 +209,7 @@ func TestDeserializeEventEntry(t *testing.T) {
 	t.Run("with resolver, has length prefix", func(t *testing.T) {
 		pd, err := provider.LoadProviderFromFile("../../provider/IDL/demo.idl.json")
 		assert.NoError(t, err)
+		creditAppliedTag := eventTagByName(t, pd, "EventCreditApplied")
 
 		pool := make([]byte, 20)
 		for i := range pool {
@@ -220,14 +223,14 @@ func TestDeserializeEventEntry(t *testing.T) {
 		body := append(append(pool, recipient...), 42) // EventCreditApplied payload: pool + recipient + amount
 
 		ser := postcard.NewSerializer()
-		ser.SerializeU64(14232600292727055113) // type_tag: EventCreditApplied (demo event)
-		ser.SerializeBytes(body)              // body: Vec<u8>, WITH length prefix
+		ser.SerializeU64(creditAppliedTag) // type_tag: EventCreditApplied (demo event)
+		ser.SerializeBytes(body)           // body: Vec<u8>, WITH length prefix
 
 		entry, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.TypeTagWithData, error) {
 			return api.DeserializeEventEntry(d)
 		}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"demo": pd}})
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(14232600292727055113), entry.TypeTag)
+		assert.Equal(t, creditAppliedTag, entry.TypeTag)
 		assert.Equal(t, body, entry.Value)
 	})
 }
@@ -247,6 +250,7 @@ func TestDeserializeEventEntryNoLen(t *testing.T) {
 	t.Run("with resolver, no length prefix", func(t *testing.T) {
 		pd, err := provider.LoadProviderFromFile("../../provider/IDL/demo.idl.json")
 		assert.NoError(t, err)
+		creditAppliedTag := eventTagByName(t, pd, "EventCreditApplied")
 
 		pool := make([]byte, 20)
 		for i := range pool {
@@ -258,16 +262,16 @@ func TestDeserializeEventEntryNoLen(t *testing.T) {
 		}
 
 		ser := postcard.NewSerializer()
-		ser.SerializeU64(14232600292727055113) // type_tag: EventCreditApplied (demo event)
-		ser.SerializeFixedBytes(pool)         // pool (Address, 20B)
-		ser.SerializeFixedBytes(recipient)    // recipient (Address, 20B)
-		ser.SerializeFixedBytes([]byte{42})   // amount (u64 = 42, varint), NO length prefix
+		ser.SerializeU64(creditAppliedTag)  // type_tag: EventCreditApplied (demo event)
+		ser.SerializeFixedBytes(pool)       // pool (Address, 20B)
+		ser.SerializeFixedBytes(recipient)  // recipient (Address, 20B)
+		ser.SerializeFixedBytes([]byte{42}) // amount (u64 = 42, varint), NO length prefix
 
 		entry, err := postcard.DeserializePostcardWithResolver(ser.Bytes(), func(d *postcard.Deserializer) (api.TypeTagWithData, error) {
 			return api.DeserializeEventEntryNoLen(d)
 		}, false, &provider.IDLTypeResolver{Providers: map[string]*provider.Provider{"demo": pd}})
 		assert.NoError(t, err)
-		assert.Equal(t, uint64(14232600292727055113), entry.TypeTag)
+		assert.Equal(t, creditAppliedTag, entry.TypeTag)
 
 		want := append(append(pool, recipient...), 42)
 		assert.Equal(t, want, entry.Value)

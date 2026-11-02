@@ -137,7 +137,13 @@
       "name": "SettleStakingEpoch"
     },
     {
-      "args": [],
+      "args": [
+        {
+          "name": "rules_height",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
       "discriminator": 59552,
       "handler": "commit_validator_set",
       "kind": "entry",
@@ -149,9 +155,443 @@
       "handler": "commit_block_seed",
       "kind": "entry",
       "name": "CommitBlockSeed"
+    },
+    {
+      "args": [
+        {
+          "name": "params",
+          "role": "input",
+          "type": "vec<tuple<u16,bytes>>"
+        }
+      ],
+      "discriminator": 34076,
+      "handler": "bootstrap_chain_params",
+      "kind": "entry",
+      "name": "BootstrapChainParams"
+    },
+    {
+      "args": [
+        {
+          "name": "signer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "feature_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "kind",
+          "role": "input",
+          "type": "ProposalKind"
+        }
+      ],
+      "discriminator": 50539,
+      "handler": "propose",
+      "kind": "entry",
+      "name": "Propose"
+    },
+    {
+      "args": [
+        {
+          "name": "signer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "params",
+          "role": "input",
+          "type": "vec<tuple<u16,bytes>>"
+        },
+        {
+          "name": "kind",
+          "role": "input",
+          "type": "ProposalKind"
+        }
+      ],
+      "discriminator": 54058,
+      "handler": "propose_params",
+      "kind": "entry",
+      "name": "ProposeParams"
+    },
+    {
+      "args": [
+        {
+          "name": "signer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "feature_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 56775,
+      "handler": "vote",
+      "kind": "entry",
+      "name": "Vote"
+    },
+    {
+      "args": [
+        {
+          "name": "signer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "feature_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 46921,
+      "handler": "cancel",
+      "kind": "entry",
+      "name": "Cancel"
+    },
+    {
+      "args": [
+        {
+          "name": "feature_id",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 45954,
+      "handler": "close_vote",
+      "kind": "entry",
+      "name": "CloseVote"
+    },
+    {
+      "args": [],
+      "discriminator": 17384,
+      "handler": "upgrade_status",
+      "kind": "view",
+      "name": "UpgradeStatus",
+      "returns": {
+        "type": "UpgradeStatus"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "start",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "limit",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 57418,
+      "handler": "proposal_history",
+      "kind": "view",
+      "name": "ProposalHistory",
+      "returns": {
+        "type": "vec<ProposalHistoryItem>"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 30595,
+      "handler": "available_methods",
+      "kind": "view",
+      "name": "AvailableMethods",
+      "returns": {
+        "type": "vec<AppMethods>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "feature_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "proposed_height",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 12558,
+      "handler": "proposal_outcome",
+      "kind": "view",
+      "name": "ProposalOutcome",
+      "returns": {
+        "type": "option<ProposalOutcome>"
+      }
     }
   ],
   "types": [
+    {
+      "kind": "enum",
+      "name": "ProposalKind",
+      "typeTag": 1402225824386926607,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Normal"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Urgent"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "feature_id",
+          "type": "u32"
+        },
+        {
+          "name": "kind",
+          "type": "ProposalKind"
+        },
+        {
+          "name": "params",
+          "type": "vec<tuple<u16,bytes>>"
+        },
+        {
+          "name": "proposed_height",
+          "type": "u64"
+        },
+        {
+          "name": "vote_end_time",
+          "type": "u64"
+        },
+        {
+          "name": "fast_pass",
+          "type": "bool"
+        },
+        {
+          "name": "proposer_validator",
+          "type": "ValidatorId"
+        }
+      ],
+      "kind": "struct",
+      "name": "Proposal",
+      "typeTag": 7597941116962734961
+    },
+    {
+      "fields": [
+        {
+          "name": "activated_height",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "FeatureRecord",
+      "typeTag": 7604164637852620690
+    },
+    {
+      "kind": "enum",
+      "name": "ProposalResult",
+      "typeTag": 13530239686553251584,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Passed"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Expired"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Cancelled"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "result",
+          "type": "ProposalResult"
+        },
+        {
+          "name": "height",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "ProposalOutcome",
+      "typeTag": 18173885799688015607
+    },
+    {
+      "fields": [
+        {
+          "name": "feature_id",
+          "type": "u32"
+        },
+        {
+          "name": "proposed_height",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "ProposalKey",
+      "typeTag": 9879718488824214520
+    },
+    {
+      "fields": [
+        {
+          "name": "occupied",
+          "type": "bool"
+        },
+        {
+          "name": "feature_id",
+          "type": "u32"
+        },
+        {
+          "name": "released_height",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "KindSlot",
+      "typeTag": 7385424433979822081
+    },
+    {
+      "fields": [
+        {
+          "name": "feature_id",
+          "type": "u32"
+        },
+        {
+          "name": "activated_height",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "ActiveFeature",
+      "typeTag": 14856808012947254905
+    },
+    {
+      "fields": [
+        {
+          "name": "proposal",
+          "type": "Proposal"
+        },
+        {
+          "name": "votes",
+          "type": "u32"
+        },
+        {
+          "name": "eligible",
+          "type": "u32"
+        },
+        {
+          "name": "fast_threshold",
+          "type": "u32"
+        },
+        {
+          "name": "pass_threshold",
+          "type": "u32"
+        }
+      ],
+      "kind": "struct",
+      "name": "ProposalStatus",
+      "typeTag": 3740167392104146899
+    },
+    {
+      "fields": [
+        {
+          "name": "seq",
+          "type": "u64"
+        },
+        {
+          "name": "feature_id",
+          "type": "u32"
+        },
+        {
+          "name": "proposed_height",
+          "type": "u64"
+        },
+        {
+          "name": "outcome",
+          "type": "ProposalOutcome"
+        }
+      ],
+      "kind": "struct",
+      "name": "ProposalHistoryItem",
+      "typeTag": 17096457384972719636
+    },
+    {
+      "fields": [
+        {
+          "name": "active",
+          "type": "vec<ActiveFeature>"
+        },
+        {
+          "name": "proposals",
+          "type": "vec<ProposalStatus>"
+        },
+        {
+          "name": "params",
+          "type": "vec<tuple<u16,bytes>>"
+        },
+        {
+          "name": "history_len",
+          "type": "u64"
+        },
+        {
+          "name": "history",
+          "type": "vec<ProposalHistoryItem>"
+        }
+      ],
+      "kind": "struct",
+      "name": "UpgradeStatus",
+      "typeTag": 17509548403608076983
+    },
+    {
+      "fields": [
+        {
+          "name": "app_id",
+          "type": "u8"
+        },
+        {
+          "name": "app",
+          "type": "String"
+        },
+        {
+          "name": "methods",
+          "type": "vec<AvailableMethod>"
+        }
+      ],
+      "kind": "struct",
+      "name": "AppMethods",
+      "typeTag": 9634447721182190540
+    },
+    {
+      "fields": [
+        {
+          "name": "name",
+          "type": "String"
+        },
+        {
+          "name": "discriminator",
+          "type": "u16"
+        },
+        {
+          "name": "view",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "AvailableMethod",
+      "typeTag": 7468602417860735491
+    },
     {
       "fields": [
         {
@@ -214,6 +654,11 @@
     },
     {
       "kind": "builtin",
+      "name": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "kind": "builtin",
       "name": "ValidatorId",
       "typeTag": 14542707920151212342
     },
@@ -229,6 +674,11 @@
     },
     {
       "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
       "name": "u32",
       "typeTag": 5560783464435099345
     },
@@ -236,6 +686,11 @@
       "kind": "builtin",
       "name": "u64",
       "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "u8",
+      "typeTag": 631772817358541784
     }
   ],
   "resources": [
@@ -250,6 +705,56 @@
       "typeTag": 12016729314829497160
     },
     {
+      "name": "_ActiveFeatures",
+      "type": "vec<u64>",
+      "typeTag": 1809461121837908103
+    },
+    {
+      "name": "_FeatureRecord",
+      "type": "FeatureRecord",
+      "typeTag": 7604164637852620690
+    },
+    {
+      "name": "_ChainParams",
+      "type": "bytes",
+      "typeTag": 10405529814227927951
+    },
+    {
+      "name": "_Proposal",
+      "type": "Proposal",
+      "typeTag": 7597941116962734961
+    },
+    {
+      "name": "_ProposalByKind",
+      "type": "KindSlot",
+      "typeTag": 7385424433979822081
+    },
+    {
+      "name": "_Vote",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_VoteCount",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_ProposalHistory",
+      "type": "ProposalOutcome",
+      "typeTag": 18173885799688015607
+    },
+    {
+      "name": "_ProposalHistoryLen",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_ProposalHistoryEntry",
+      "type": "ProposalKey",
+      "typeTag": 9879718488824214520
+    },
+    {
       "name": "_ConsensusValidatorIdentity",
       "type": "ConsensusValidatorIdentity",
       "typeTag": 10024551326690382556
@@ -257,17 +762,17 @@
     {
       "name": "_ConsensusValidatorByAccount",
       "type": "ValidatorId",
-      "typeTag": 2421475251556737200
+      "typeTag": 14542707920151212342
     },
     {
       "name": "_ConsensusValidatorByPubkey",
       "type": "ValidatorId",
-      "typeTag": 2421475251556737200
+      "typeTag": 14542707920151212342
     },
     {
       "name": "_ConsensusValidatorByBls",
       "type": "ValidatorId",
-      "typeTag": 2421475251556737200
+      "typeTag": 14542707920151212342
     },
     {
       "name": "_AppWake",
@@ -285,6 +790,16 @@
       "name": "BLOCK_SEED_RES_HINT",
       "type": "usize",
       "value": 1
+    },
+    {
+      "name": "STATUS_HISTORY",
+      "type": "u64",
+      "value": 32
+    },
+    {
+      "name": "MAX_HISTORY_PAGE",
+      "type": "u32",
+      "value": 256
     }
   ],
   "errors": [
@@ -327,6 +842,76 @@
       "code": 103,
       "message": "App wake rejected",
       "name": "WakeRejected"
+    },
+    {
+      "code": 104,
+      "message": "Signer is not a validator consensus account",
+      "name": "UpgradeNotValidator"
+    },
+    {
+      "code": 105,
+      "message": "Validator is not eligible to vote on upgrades",
+      "name": "UpgradeNotEligible"
+    },
+    {
+      "code": 106,
+      "message": "Invalid feature id {0}",
+      "name": "UpgradeInvalidFeatureId"
+    },
+    {
+      "code": 107,
+      "message": "Feature {0} is already active",
+      "name": "UpgradeFeatureActive"
+    },
+    {
+      "code": 108,
+      "message": "Feature {0} already has a proposal in voting",
+      "name": "UpgradeProposalExists"
+    },
+    {
+      "code": 109,
+      "message": "Another proposal of this kind is in voting",
+      "name": "UpgradeKindBusy"
+    },
+    {
+      "code": 110,
+      "message": "A proposal just ended in this block; propose again from the next block",
+      "name": "UpgradeResubmitNextBlock"
+    },
+    {
+      "code": 111,
+      "message": "Invalid chain params: {0}",
+      "name": "UpgradeInvalidParams"
+    },
+    {
+      "code": 112,
+      "message": "No proposal in voting for feature {0}",
+      "name": "UpgradeProposalNotFound"
+    },
+    {
+      "code": 113,
+      "message": "Voting period has ended",
+      "name": "UpgradeVotingClosed"
+    },
+    {
+      "code": 114,
+      "message": "Validator has already voted",
+      "name": "UpgradeAlreadyVoted"
+    },
+    {
+      "code": 115,
+      "message": "Only the proposer can cancel the proposal",
+      "name": "UpgradeNotProposer"
+    },
+    {
+      "code": 116,
+      "message": "Only the trailing system transaction can close a vote",
+      "name": "UpgradeSystemTxOnly"
+    },
+    {
+      "code": 117,
+      "message": "Upgrade state is corrupt: {0}",
+      "name": "UpgradeStateCorrupt"
     }
   ]
 }

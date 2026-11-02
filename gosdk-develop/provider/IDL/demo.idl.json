@@ -8,6 +8,38 @@
     {
       "args": [
         {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "account",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "score",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 9531,
+      "handler": "set_score",
+      "kind": "entry",
+      "name": "SetScore",
+      "signer_lookups": {
+        "admin": {
+          "path": {
+            "arg": "pool",
+            "type": "Address"
+          },
+          "res": 237
+        }
+      }
+    },
+    {
+      "args": [
+        {
           "name": "operator",
           "role": "signer",
           "type": "Signer"
@@ -440,6 +472,43 @@
     {
       "args": [
         {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "tier",
+          "role": "input",
+          "type": "u32"
+        }
+      ],
+      "discriminator": 30615,
+      "handler": "tier_cap_detail",
+      "kind": "view",
+      "name": "TierCapDetail",
+      "returns": {
+        "type": "TierCap"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "pool",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 54498,
+      "handler": "label_changes_of",
+      "kind": "view",
+      "name": "LabelChangesOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
           "name": "order_id",
           "role": "input",
           "type": "String"
@@ -647,6 +716,21 @@
     {
       "fields": [
         {
+          "name": "cap",
+          "type": "u64"
+        },
+        {
+          "name": "set_by",
+          "type": "Address"
+        }
+      ],
+      "kind": "struct",
+      "name": "TierCap",
+      "typeTag": 3534747969634751777
+    },
+    {
+      "fields": [
+        {
           "name": "seed",
           "type": "u64"
         },
@@ -793,6 +877,16 @@
   ],
   "resources": [
     {
+      "name": "_TierCapV2",
+      "type": "TierCap",
+      "typeTag": 3534747969634751777
+    },
+    {
+      "name": "_LabelChanges",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
       "name": "_Order",
       "type": "OrderState",
       "typeTag": 6116235401568728262
@@ -815,7 +909,7 @@
     {
       "name": "_Admin",
       "type": "Address",
-      "typeTag": 3694179416476927173
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_Label",
@@ -840,7 +934,7 @@
     {
       "name": "_SponsorPool",
       "type": "Address",
-      "typeTag": 10947913201253101891
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_PoolSponsor",
@@ -866,6 +960,27 @@
     }
   ],
   "events": [
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "pool",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "board",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "text",
+          "type": "String"
+        }
+      ],
+      "name": "LabelChanged",
+      "typeTag": 9371027370753667669
+    },
     {
       "fields": [
         {

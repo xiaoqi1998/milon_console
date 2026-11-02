@@ -154,7 +154,13 @@ provider.IDL{
 				Name: "SettleStakingEpoch",
 			},
 			provider.Instruction{
-				Args: nil,
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "rules_height",
+						Role: "input",
+						Type: "u64",
+					},
+				},
 				Discriminator: 59552,
 				Handler: "commit_validator_set",
 				Kind: "entry",
@@ -167,8 +173,442 @@ provider.IDL{
 				Kind: "entry",
 				Name: "CommitBlockSeed",
 			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "params",
+						Role: "input",
+						Type: "vec<tuple<u16,bytes>>",
+					},
+				},
+				Discriminator: 34076,
+				Handler: "bootstrap_chain_params",
+				Kind: "entry",
+				Name: "BootstrapChainParams",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "signer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "feature_id",
+						Role: "input",
+						Type: "u32",
+					},
+					provider.Arg{
+						Name: "kind",
+						Role: "input",
+						Type: "ProposalKind",
+					},
+				},
+				Discriminator: 50539,
+				Handler: "propose",
+				Kind: "entry",
+				Name: "Propose",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "signer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "params",
+						Role: "input",
+						Type: "vec<tuple<u16,bytes>>",
+					},
+					provider.Arg{
+						Name: "kind",
+						Role: "input",
+						Type: "ProposalKind",
+					},
+				},
+				Discriminator: 54058,
+				Handler: "propose_params",
+				Kind: "entry",
+				Name: "ProposeParams",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "signer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "feature_id",
+						Role: "input",
+						Type: "u32",
+					},
+				},
+				Discriminator: 56775,
+				Handler: "vote",
+				Kind: "entry",
+				Name: "Vote",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "signer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "feature_id",
+						Role: "input",
+						Type: "u32",
+					},
+				},
+				Discriminator: 46921,
+				Handler: "cancel",
+				Kind: "entry",
+				Name: "Cancel",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "feature_id",
+						Role: "input",
+						Type: "u32",
+					},
+				},
+				Discriminator: 45954,
+				Handler: "close_vote",
+				Kind: "entry",
+				Name: "CloseVote",
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 17384,
+				Handler: "upgrade_status",
+				Kind: "view",
+				Name: "UpgradeStatus",
+				Returns: provider.ReturnValue{
+					Type: "UpgradeStatus",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "start",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "limit",
+						Role: "input",
+						Type: "u32",
+					},
+				},
+				Discriminator: 57418,
+				Handler: "proposal_history",
+				Kind: "view",
+				Name: "ProposalHistory",
+				Returns: provider.ReturnValue{
+					Type: "vec<ProposalHistoryItem>",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 30595,
+				Handler: "available_methods",
+				Kind: "view",
+				Name: "AvailableMethods",
+				Returns: provider.ReturnValue{
+					Type: "vec<AppMethods>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "feature_id",
+						Role: "input",
+						Type: "u32",
+					},
+					provider.Arg{
+						Name: "proposed_height",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 12558,
+				Handler: "proposal_outcome",
+				Kind: "view",
+				Name: "ProposalOutcome",
+				Returns: provider.ReturnValue{
+					Type: "option<ProposalOutcome>",
+				},
+			},
 		},
 		Types: []provider.IDLType{
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Normal",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Urgent",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "ProposalKind",
+				TypeTag: 1402225824386926607,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "feature_id",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "kind",
+						Type: "ProposalKind",
+					},
+					provider.StructField{
+						Name: "params",
+						Type: "vec<tuple<u16,bytes>>",
+					},
+					provider.StructField{
+						Name: "proposed_height",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "vote_end_time",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "fast_pass",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "proposer_validator",
+						Type: "ValidatorId",
+					},
+				},
+				Kind: "struct",
+				Name: "Proposal",
+				TypeTag: 7597941116962734961,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "activated_height",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "FeatureRecord",
+				TypeTag: 7604164637852620690,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Passed",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Expired",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Cancelled",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "ProposalResult",
+				TypeTag: 13530239686553251584,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "result",
+						Type: "ProposalResult",
+					},
+					provider.StructField{
+						Name: "height",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "ProposalOutcome",
+				TypeTag: 18173885799688015607,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "feature_id",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "proposed_height",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "ProposalKey",
+				TypeTag: 9879718488824214520,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "occupied",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "feature_id",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "released_height",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "KindSlot",
+				TypeTag: 7385424433979822081,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "feature_id",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "activated_height",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "ActiveFeature",
+				TypeTag: 14856808012947254905,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "proposal",
+						Type: "Proposal",
+					},
+					provider.StructField{
+						Name: "votes",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "eligible",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "fast_threshold",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "pass_threshold",
+						Type: "u32",
+					},
+				},
+				Kind: "struct",
+				Name: "ProposalStatus",
+				TypeTag: 3740167392104146899,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "seq",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "feature_id",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "proposed_height",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "outcome",
+						Type: "ProposalOutcome",
+					},
+				},
+				Kind: "struct",
+				Name: "ProposalHistoryItem",
+				TypeTag: 17096457384972719636,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "active",
+						Type: "vec<ActiveFeature>",
+					},
+					provider.StructField{
+						Name: "proposals",
+						Type: "vec<ProposalStatus>",
+					},
+					provider.StructField{
+						Name: "params",
+						Type: "vec<tuple<u16,bytes>>",
+					},
+					provider.StructField{
+						Name: "history_len",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "history",
+						Type: "vec<ProposalHistoryItem>",
+					},
+				},
+				Kind: "struct",
+				Name: "UpgradeStatus",
+				TypeTag: 17509548403608076983,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "app_id",
+						Type: "u8",
+					},
+					provider.StructField{
+						Name: "app",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "methods",
+						Type: "vec<AvailableMethod>",
+					},
+				},
+				Kind: "struct",
+				Name: "AppMethods",
+				TypeTag: 9634447721182190540,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "name",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "discriminator",
+						Type: "u16",
+					},
+					provider.StructField{
+						Name: "view",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "AvailableMethod",
+				TypeTag: 7468602417860735491,
+			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
@@ -231,6 +671,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "String",
+				TypeTag: 8566531010829758022,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "ValidatorId",
 				TypeTag: 14542707920151212342,
 			},
@@ -246,6 +691,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "u16",
+				TypeTag: 5558799945458185151,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "u32",
 				TypeTag: 5560783464435099345,
 			},
@@ -253,6 +703,11 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "u64",
 				TypeTag: 5563585020063213298,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u8",
+				TypeTag: 631772817358541784,
 			},
 		},
 		Resources: []provider.Resource{
@@ -267,6 +722,56 @@ provider.IDL{
 				TypeTag: 12016729314829497160,
 			},
 			provider.Resource{
+				Name: "_ActiveFeatures",
+				Type: "vec<u64>",
+				TypeTag: 1809461121837908103,
+			},
+			provider.Resource{
+				Name: "_FeatureRecord",
+				Type: "FeatureRecord",
+				TypeTag: 7604164637852620690,
+			},
+			provider.Resource{
+				Name: "_ChainParams",
+				Type: "bytes",
+				TypeTag: 10405529814227927951,
+			},
+			provider.Resource{
+				Name: "_Proposal",
+				Type: "Proposal",
+				TypeTag: 7597941116962734961,
+			},
+			provider.Resource{
+				Name: "_ProposalByKind",
+				Type: "KindSlot",
+				TypeTag: 7385424433979822081,
+			},
+			provider.Resource{
+				Name: "_Vote",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_VoteCount",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_ProposalHistory",
+				Type: "ProposalOutcome",
+				TypeTag: 18173885799688015607,
+			},
+			provider.Resource{
+				Name: "_ProposalHistoryLen",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_ProposalHistoryEntry",
+				Type: "ProposalKey",
+				TypeTag: 9879718488824214520,
+			},
+			provider.Resource{
 				Name: "_ConsensusValidatorIdentity",
 				Type: "ConsensusValidatorIdentity",
 				TypeTag: 10024551326690382556,
@@ -274,17 +779,17 @@ provider.IDL{
 			provider.Resource{
 				Name: "_ConsensusValidatorByAccount",
 				Type: "ValidatorId",
-				TypeTag: 2421475251556737200,
+				TypeTag: 14542707920151212342,
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByPubkey",
 				Type: "ValidatorId",
-				TypeTag: 2421475251556737200,
+				TypeTag: 14542707920151212342,
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByBls",
 				Type: "ValidatorId",
-				TypeTag: 2421475251556737200,
+				TypeTag: 14542707920151212342,
 			},
 			provider.Resource{
 				Name: "_AppWake",
@@ -338,12 +843,92 @@ provider.IDL{
 				Message: "App wake rejected",
 				Name: "WakeRejected",
 			},
+			provider.ErrorDef{
+				Code: 104,
+				Message: "Signer is not a validator consensus account",
+				Name: "UpgradeNotValidator",
+			},
+			provider.ErrorDef{
+				Code: 105,
+				Message: "Validator is not eligible to vote on upgrades",
+				Name: "UpgradeNotEligible",
+			},
+			provider.ErrorDef{
+				Code: 106,
+				Message: "Invalid feature id {0}",
+				Name: "UpgradeInvalidFeatureId",
+			},
+			provider.ErrorDef{
+				Code: 107,
+				Message: "Feature {0} is already active",
+				Name: "UpgradeFeatureActive",
+			},
+			provider.ErrorDef{
+				Code: 108,
+				Message: "Feature {0} already has a proposal in voting",
+				Name: "UpgradeProposalExists",
+			},
+			provider.ErrorDef{
+				Code: 109,
+				Message: "Another proposal of this kind is in voting",
+				Name: "UpgradeKindBusy",
+			},
+			provider.ErrorDef{
+				Code: 110,
+				Message: "A proposal just ended in this block; propose again from the next block",
+				Name: "UpgradeResubmitNextBlock",
+			},
+			provider.ErrorDef{
+				Code: 111,
+				Message: "Invalid chain params: {0}",
+				Name: "UpgradeInvalidParams",
+			},
+			provider.ErrorDef{
+				Code: 112,
+				Message: "No proposal in voting for feature {0}",
+				Name: "UpgradeProposalNotFound",
+			},
+			provider.ErrorDef{
+				Code: 113,
+				Message: "Voting period has ended",
+				Name: "UpgradeVotingClosed",
+			},
+			provider.ErrorDef{
+				Code: 114,
+				Message: "Validator has already voted",
+				Name: "UpgradeAlreadyVoted",
+			},
+			provider.ErrorDef{
+				Code: 115,
+				Message: "Only the proposer can cancel the proposal",
+				Name: "UpgradeNotProposer",
+			},
+			provider.ErrorDef{
+				Code: 116,
+				Message: "Only the trailing system transaction can close a vote",
+				Name: "UpgradeSystemTxOnly",
+			},
+			provider.ErrorDef{
+				Code: 117,
+				Message: "Upgrade state is corrupt: {0}",
+				Name: "UpgradeStateCorrupt",
+			},
 		},
 		Constants: []provider.Constant{
 			provider.Constant{
 				Name: "BLOCK_SEED_RES_HINT",
 				Type: "usize",
 				Value: 1,
+			},
+			provider.Constant{
+				Name: "STATUS_HISTORY",
+				Type: "u64",
+				Value: 32,
+			},
+			provider.Constant{
+				Name: "MAX_HISTORY_PAGE",
+				Type: "u32",
+				Value: 256,
 			},
 		},
 	},
@@ -882,17 +1467,17 @@ provider.IDL{
 			provider.Resource{
 				Name: "_Account",
 				Type: "Account",
-				TypeTag: 8001620250894669925,
+				TypeTag: 4728916202331225981,
 			},
 			provider.Resource{
 				Name: "_AccountSigner",
 				Type: "AccountSigner",
-				TypeTag: 7240099799980548627,
+				TypeTag: 18411492065370272939,
 			},
 			provider.Resource{
 				Name: "_VoteProgress",
 				Type: "Bitmap64",
-				TypeTag: 8890526009784221754,
+				TypeTag: 6259351211094536142,
 			},
 			provider.Resource{
 				Name: "_VoteOccupancy",
@@ -1822,6 +2407,58 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "token",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "issuer",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "issuer_key_id",
+						Role: "input",
+						Type: "u8",
+					},
+					provider.Arg{
+						Name: "credential_schema",
+						Role: "input",
+						Type: "String",
+					},
+					provider.Arg{
+						Name: "credential_hash",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "valid_until_ms",
+						Role: "input",
+						Type: "option<u64>",
+					},
+					provider.Arg{
+						Name: "issuer_signature",
+						Role: "input",
+						Type: "Signature",
+					},
+				},
+				Discriminator: 39942,
+				Handler: "disclose_token_vc_attestation",
+				Kind: "entry",
+				Name: "DiscloseTokenVcAttestation",
+				SignerLookups: provider.SignerLookups{
+					"owner": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "token",
+							Type: "Address",
+						},
+						Res: 241,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "claimer",
 						Role: "signer",
 						Type: "Signer",
@@ -2334,7 +2971,15 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.StructField{
+						Name: "name",
+						Type: "String",
+					},
+					provider.StructField{
 						Name: "total_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "initial_period_seconds",
 						Type: "u64",
 					},
 					provider.StructField{
@@ -2347,10 +2992,6 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "periods",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "amount_per_period",
 						Type: "u64",
 					},
 				},
@@ -2421,6 +3062,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "Signature",
+				TypeTag: 9480777115032900864,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "String",
 				TypeTag: 8566531010829758022,
 			},
@@ -2449,12 +3095,12 @@ provider.IDL{
 			provider.Resource{
 				Name: "_Owner",
 				Type: "Address",
-				TypeTag: 8792131286149488520,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_Freezer",
 				Type: "Address",
-				TypeTag: 8792131286149488520,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_Metadata",
@@ -2489,7 +3135,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_Compliance",
 				Type: "Compliance",
-				TypeTag: 10948379151966397787,
+				TypeTag: 11316838900449406443,
 			},
 			provider.Resource{
 				Name: "_FaucetLastClaim",
@@ -2514,7 +3160,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_GiftClaimIndex",
 				Type: "Address",
-				TypeTag: 12935543434248877639,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_GiftSettlement",
@@ -2529,7 +3175,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_GiftCleanupNext",
 				Type: "Address",
-				TypeTag: 12935543434248877639,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_GiftClaimApp",
@@ -2895,11 +3541,6 @@ provider.IDL{
 				Name: "GAS_SPONSOR_MINT",
 				Type: "u64",
 				Value: "1_000_000 * 1_000_000",
-			},
-			provider.Constant{
-				Name: "FAUCET_CHAIN_ID_MIN",
-				Type: "u64",
-				Value: 9.00000001e+08,
 			},
 			provider.Constant{
 				Name: "MAX_GIFT_CLAIMS",
@@ -7168,17 +7809,17 @@ provider.IDL{
 			provider.Resource{
 				Name: "_SftOwner",
 				Type: "Address",
-				TypeTag: 6985331877380045022,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_SftMetadata",
 				Type: "Metadata",
-				TypeTag: 7640396538560339667,
+				TypeTag: 14606240850061279456,
 			},
 			provider.Resource{
 				Name: "_SftRoyalty",
 				Type: "Royalty",
-				TypeTag: 16586850674820846406,
+				TypeTag: 15605079096527761999,
 			},
 			provider.Resource{
 				Name: "_SftNextSlotId",
@@ -7193,22 +7834,22 @@ provider.IDL{
 			provider.Resource{
 				Name: "_SftMintPermission",
 				Type: "Address",
-				TypeTag: 6985331877380045022,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_SftUpdatePermission",
 				Type: "Address",
-				TypeTag: 6985331877380045022,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_SftFreezePermission",
 				Type: "Address",
-				TypeTag: 6985331877380045022,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_Slot",
 				Type: "SlotData",
-				TypeTag: 383744842715771362,
+				TypeTag: 16053204672031418177,
 			},
 			provider.Resource{
 				Name: "_SlotExists",
@@ -7223,7 +7864,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_Token",
 				Type: "Token",
-				TypeTag: 15544724241338340387,
+				TypeTag: 15244655057074605074,
 			},
 			provider.Resource{
 				Name: "_TokenSlotId",
@@ -9026,7 +9667,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_MarketAuthority",
 				Type: "Address",
-				TypeTag: 3104220516395023708,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_MarketStatus",
@@ -9096,7 +9737,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_MarketSeedOwner",
 				Type: "Address",
-				TypeTag: 3104220516395023708,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_AmmConfig",
@@ -10323,27 +10964,27 @@ provider.IDL{
 			provider.Resource{
 				Name: "_ValidatorRecord",
 				Type: "ValidatorProfile",
-				TypeTag: 13990765903286555017,
+				TypeTag: 13667524927300449050,
 			},
 			provider.Resource{
 				Name: "_ValidatorByController",
 				Type: "ValidatorId",
-				TypeTag: 14289492322595072753,
+				TypeTag: 14542707920151212342,
 			},
 			provider.Resource{
 				Name: "_CandidatePool",
 				Type: "CandidatePool",
-				TypeTag: 3848641516347396045,
+				TypeTag: 16438948254081357680,
 			},
 			provider.Resource{
 				Name: "_AvailabilityDeclaration",
 				Type: "AvailabilityDeclaration",
-				TypeTag: 7195201208835251183,
+				TypeTag: 9892382822654520502,
 			},
 			provider.Resource{
 				Name: "_DeclaredByEpoch",
 				Type: "CandidatePool",
-				TypeTag: 3848641516347396045,
+				TypeTag: 16438948254081357680,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -10423,6 +11064,75 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "circuit_id",
+						Role: "input",
+						Type: "u32",
+					},
+					provider.Arg{
+						Name: "verifying_key",
+						Role: "input",
+						Type: "bytes",
+					},
+					provider.Arg{
+						Name: "constraint_hash",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "max_public_inputs",
+						Role: "input",
+						Type: "u16",
+					},
+					provider.Arg{
+						Name: "supported_algs",
+						Role: "input",
+						Type: "vec<String>",
+					},
+					provider.Arg{
+						Name: "authentication_enabled",
+						Role: "input",
+						Type: "bool",
+					},
+				},
+				Discriminator: 18924,
+				Handler: "install_zk_circuit",
+				Kind: "entry",
+				Name: "InstallZkCircuit",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "provider_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "jwks",
+						Role: "input",
+						Type: "vec<String>",
+					},
+					provider.Arg{
+						Name: "validator_account",
+						Role: "signer",
+						Type: "Signer",
+					},
+				},
+				Discriminator: 50524,
+				Handler: "update_jwk_report",
+				Kind: "entry",
+				Name: "UpdateJwkReport",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 17484,
+				Handler: "prune_inactive_jwk_reports",
+				Kind: "entry",
+				Name: "PruneInactiveJwkReports",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "provider_id",
 						Role: "input",
 						Type: "B256",
@@ -10442,6 +11152,20 @@ provider.IDL{
 				Handler: "authenticate",
 				Kind: "entry",
 				Name: "Authenticate",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "auth",
+						Role: "input",
+						Type: "Groth16Auth",
+					},
+				},
+				Discriminator: 7424,
+				Handler: "authenticate_zk",
+				Kind: "entry",
+				Name: "AuthenticateZk",
 				Sponsor: true,
 			},
 			provider.Instruction{
@@ -10471,6 +11195,24 @@ provider.IDL{
 				Handler: "bind",
 				Kind: "entry",
 				Name: "Bind",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "auth",
+						Role: "input",
+						Type: "Groth16Auth",
+					},
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+				},
+				Discriminator: 3098,
+				Handler: "bind_zk",
+				Kind: "entry",
+				Name: "BindZk",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -10669,6 +11411,58 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "ValidatorId",
+					},
+					provider.Arg{
+						Name: "provider_id",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 44193,
+				Handler: "get_jwk_report",
+				Kind: "view",
+				Name: "GetJwkReport",
+				Returns: provider.ReturnValue{
+					Type: "option<ValidatorJwkReport>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "provider_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "issuer",
+						Role: "input",
+						Type: "String",
+					},
+					provider.Arg{
+						Name: "kid",
+						Role: "input",
+						Type: "String",
+					},
+					provider.Arg{
+						Name: "algorithm",
+						Role: "input",
+						Type: "String",
+					},
+				},
+				Discriminator: 65396,
+				Handler: "get_selected_jwk",
+				Kind: "view",
+				Name: "GetSelectedJwk",
+				Returns: provider.ReturnValue{
+					Type: "option<String>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "provider_id",
 						Role: "input",
 						Type: "B256",
@@ -10715,6 +11509,63 @@ provider.IDL{
 			},
 		},
 		Types: []provider.IDLType{
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "ProofEncoding",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "VerifyingKeyEncoding",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "PublicInputCount",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "UnsupportedEphemeralKey",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "CircuitIdMismatch",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "InvalidEnvelope",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "CircuitNotRegistered",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "CircuitDisabled",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "AlgorithmNotSupported",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "PublicInputSchemaMismatch",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "Groth16Error",
+				TypeTag: 9192889819722184151,
+			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
 					provider.EnumVariant{
@@ -11028,6 +11879,126 @@ provider.IDL{
 				TypeTag: 15624622551745873749,
 			},
 			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "validator",
+						Type: "ValidatorId",
+					},
+					provider.StructField{
+						Name: "keys",
+						Type: "vec<String>",
+					},
+				},
+				Kind: "struct",
+				Name: "ValidatorJwkReport",
+				TypeTag: 9801215955308508226,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "reports",
+						Type: "vec<ValidatorJwkReport>",
+					},
+				},
+				Kind: "struct",
+				Name: "KeylessJwkReports",
+				TypeTag: 5913680928839638407,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "circuit_id",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "verifying_key",
+						Type: "bytes",
+					},
+					provider.StructField{
+						Name: "constraint_hash",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "max_public_inputs",
+						Type: "u16",
+					},
+					provider.StructField{
+						Name: "supported_algs",
+						Type: "vec<String>",
+					},
+					provider.StructField{
+						Name: "enabled",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "authentication_enabled",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "KeylessZkCircuit",
+				TypeTag: 2044003146433446322,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "InvalidJwk",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "InvalidEphemeralKey",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "TooLarge",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "InvalidEnvelope",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "PublicStatementError",
+				TypeTag: 7938151067451673625,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Jwt",
+						Kind: "tuple",
+						Fields: []provider.StructField{
+							provider.StructField{
+								Name: "0",
+								Type: "Error",
+							},
+						},
+					},
+					provider.EnumVariant{
+						Name: "Mismatch",
+						Kind: "tuple",
+						Fields: []provider.StructField{
+							provider.StructField{
+								Name: "0",
+								Type: "str",
+							},
+						},
+					},
+					provider.EnumVariant{
+						Name: "AmbiguousJson",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "ZkStatementError",
+				TypeTag: 9974183095189200918,
+			},
+			provider.IDLType{
 				Kind: "builtin",
 				Name: "Address",
 				TypeTag: 17438174819379414968,
@@ -11049,6 +12020,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "ValidatorId",
+				TypeTag: 14542707920151212342,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "bool",
 				TypeTag: 14785269867199075517,
 			},
@@ -11056,6 +12032,16 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "bytes",
 				TypeTag: 10405529814227927951,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u16",
+				TypeTag: 5558799945458185151,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u32",
+				TypeTag: 5560783464435099345,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -11109,6 +12095,16 @@ provider.IDL{
 				Type: "ProviderIndex",
 				TypeTag: 15624622551745873749,
 			},
+			provider.Resource{
+				Name: "_KeylessJwkReports",
+				Type: "KeylessJwkReports",
+				TypeTag: 5913680928839638407,
+			},
+			provider.Resource{
+				Name: "_KeylessZkCircuit",
+				Type: "KeylessZkCircuit",
+				TypeTag: 2044003146433446322,
+			},
 		},
 		Errors: []provider.ErrorDef{
 			provider.ErrorDef{
@@ -11148,356 +12144,426 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 2055,
+				Message: "JWT subject exceeds the Keyless hash profile limit",
+				Name: "JwtSubjectTooLong",
+			},
+			provider.ErrorDef{
+				Code: 2056,
 				Message: "JWT missing required field: exp",
 				Name: "JwtMissingExp",
 			},
 			provider.ErrorDef{
-				Code: 2056,
+				Code: 2057,
 				Message: "JWT missing required field: iat",
 				Name: "JwtMissingIat",
 			},
 			provider.ErrorDef{
-				Code: 2057,
+				Code: 2058,
 				Message: "JWT missing required field: nonce",
 				Name: "JwtMissingNonce",
 			},
 			provider.ErrorDef{
-				Code: 2058,
+				Code: 2059,
 				Message: "JWT missing required field: kid in header",
 				Name: "JwtMissingKid",
 			},
 			provider.ErrorDef{
-				Code: 2059,
+				Code: 2060,
 				Message: "JWT expired: exp={0} ms",
 				Name: "JwtExpired",
 			},
 			provider.ErrorDef{
-				Code: 2060,
+				Code: 2061,
 				Message: "JWT issued in the future: iat={0} ms",
 				Name: "JwtIssuedInFuture",
 			},
 			provider.ErrorDef{
-				Code: 2061,
+				Code: 2062,
 				Message: "JWT is too old: age={0} ms",
 				Name: "JwtTooOld",
 			},
 			provider.ErrorDef{
-				Code: 2062,
+				Code: 2063,
 				Message: "JWT issuer does not match provider: expected={0}, got={1}",
 				Name: "JwtIssuerMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2063,
+				Code: 2064,
 				Message: "JWT audience is not allowed by provider",
 				Name: "JwtAudienceNotAllowed",
 			},
 			provider.ErrorDef{
-				Code: 2064,
+				Code: 2065,
 				Message: "multi-audience JWT requires a matching azp",
 				Name: "JwtAzpInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2065,
+				Code: 2066,
 				Message: "JWT algorithm not supported: {0}",
 				Name: "JwtAlgorithmUnsupported",
 			},
 			provider.ErrorDef{
-				Code: 2066,
+				Code: 2067,
 				Message: "JWT signature verification failed",
 				Name: "JwtSignatureInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2067,
+				Code: 2068,
 				Message: "nonce must start with 'milon-keyless-v1.'",
 				Name: "NoncePrefixInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2068,
+				Code: 2069,
 				Message: "nonce binary envelope is malformed",
 				Name: "NonceFormatInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2069,
+				Code: 2070,
 				Message: "nonce commitment must be 64 hex characters (32 bytes)",
 				Name: "NonceCommitmentLength",
 			},
 			provider.ErrorDef{
-				Code: 2070,
+				Code: 2071,
 				Message: "nonce commitment hex decode failed",
 				Name: "NonceCommitmentHex",
 			},
 			provider.ErrorDef{
-				Code: 2071,
+				Code: 2072,
 				Message: "nonce expiry parse failed",
 				Name: "NonceExpiryParse",
 			},
 			provider.ErrorDef{
-				Code: 2072,
+				Code: 2073,
 				Message: "nonce chain ID mismatch: expected={0}, got={1}",
 				Name: "NonceChainIdMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2073,
+				Code: 2074,
 				Message: "nonce provider ID mismatch",
 				Name: "NonceProviderMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2074,
+				Code: 2075,
 				Message: "nonce commitment mismatch (ephemeral_pk does not match JWT nonce)",
 				Name: "NonceCommitmentMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2075,
+				Code: 2076,
 				Message: "nonce expired: expiry={0} ms",
 				Name: "NonceExpired",
 			},
 			provider.ErrorDef{
-				Code: 2076,
+				Code: 2077,
 				Message: "JWK not found: issuer={0}, kid={1}",
 				Name: "JwkNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2077,
+				Code: 2078,
 				Message: "JWK parse failed",
 				Name: "JwkParse",
 			},
 			provider.ErrorDef{
-				Code: 2078,
+				Code: 2079,
 				Message: "JWK key type mismatch: expected {0}, got {1}",
 				Name: "JwkKeyTypeMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2079,
+				Code: 2080,
 				Message: "JWK missing required field: {0}",
 				Name: "JwkMissingField",
 			},
 			provider.ErrorDef{
-				Code: 2080,
+				Code: 2081,
 				Message: "JWK base64 decode failed",
 				Name: "JwkBase64Decode",
 			},
 			provider.ErrorDef{
-				Code: 2081,
+				Code: 2082,
 				Message: "JWK invalid RSA key",
 				Name: "JwkInvalidRsaKey",
 			},
 			provider.ErrorDef{
-				Code: 2082,
+				Code: 2083,
 				Message: "JWK invalid EC key",
 				Name: "JwkInvalidEcKey",
 			},
 			provider.ErrorDef{
-				Code: 2083,
+				Code: 2084,
 				Message: "JWK curve mismatch: alg={0}, crv={1}",
 				Name: "JwkCurveMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2084,
+				Code: 2085,
 				Message: "ephemeral signature invalid",
 				Name: "EphemeralSignatureInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2085,
+				Code: 2086,
 				Message: "timestamp skew too large: {0} ms exceeds limit",
 				Name: "TimestampSkewTooLarge",
 			},
 			provider.ErrorDef{
-				Code: 2086,
+				Code: 2087,
 				Message: "session expire out of range: {0}",
 				Name: "SessionExpireOutOfRange",
 			},
 			provider.ErrorDef{
-				Code: 2087,
+				Code: 2088,
 				Message: "mock verifier rejects non-empty proof bytes (ZK phase not enabled)",
 				Name: "MockProofNotEmpty",
 			},
 			provider.ErrorDef{
-				Code: 2088,
+				Code: 2089,
 				Message: "session pubkey must be a real signature key",
 				Name: "InvalidSessionPubkey",
 			},
 			provider.ErrorDef{
-				Code: 2089,
+				Code: 2090,
 				Message: "session is revoked: {0:?}",
 				Name: "SessionRevoked",
 			},
 			provider.ErrorDef{
-				Code: 2090,
+				Code: 2091,
 				Message: "public sponsorship already used for session: {0:?}",
 				Name: "SessionSponsorshipAlreadyUsed",
 			},
 			provider.ErrorDef{
-				Code: 2091,
+				Code: 2092,
 				Message: "keyless provider not registered: {0:?}",
 				Name: "ProviderNotRegistered",
 			},
 			provider.ErrorDef{
-				Code: 2092,
+				Code: 2093,
 				Message: "keyless provider already registered: {0:?}",
 				Name: "ProviderAlreadyRegistered",
 			},
 			provider.ErrorDef{
-				Code: 2093,
+				Code: 2094,
 				Message: "keyless provider is disabled or not active: {0:?}",
 				Name: "ProviderDisabled",
 			},
 			provider.ErrorDef{
-				Code: 2094,
+				Code: 2095,
 				Message: "issuer URL must start with https://",
 				Name: "IssuerUrlInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2095,
+				Code: 2096,
 				Message: "issuer name must be non-empty and at most 64 bytes",
 				Name: "IssuerNameInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2096,
+				Code: 2097,
 				Message: "duplicate jwk entries in key set",
 				Name: "DuplicateJwk",
 			},
 			provider.ErrorDef{
-				Code: 2097,
+				Code: 2098,
 				Message: "session not found: {0:?}",
 				Name: "SessionNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2098,
+				Code: 2099,
 				Message: "keyless identity already bound: {0:?}",
 				Name: "AlreadyBound",
 			},
 			provider.ErrorDef{
-				Code: 2099,
+				Code: 2100,
 				Message: "keyless binding not found: {0:?}",
 				Name: "BindingNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2100,
+				Code: 2101,
 				Message: "keyless binding owner mismatch: binding={0:?}, signer={1:?}",
 				Name: "BindingOwnerMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2101,
+				Code: 2102,
 				Message: "binding signer slot no longer matches keyless identity: {0:?}",
 				Name: "BindingSignerMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2102,
+				Code: 2103,
 				Message: "keyless signer slot not found in owner account",
 				Name: "KeylessSlotNotFound",
 			},
 			provider.ErrorDef{
-				Code: 2103,
+				Code: 2104,
 				Message: "JWT base64url encoding is not canonical",
 				Name: "JwtBase64NonCanonical",
 			},
 			provider.ErrorDef{
-				Code: 2104,
+				Code: 2105,
 				Message: "JWK snapshot unavailable for provider: {0:?}",
 				Name: "JwkSnapshotUnavailable",
 			},
 			provider.ErrorDef{
-				Code: 2105,
+				Code: 2106,
 				Message: "Transparent AccountError",
 				Name: "AccountError",
 			},
 			provider.ErrorDef{
-				Code: 2106,
+				Code: 2107,
 				Message: "Transparent TokenError",
 				Name: "TokenError",
 			},
 			provider.ErrorDef{
-				Code: 2107,
+				Code: 2108,
 				Message: "JWT algorithm is supported but not allowed by provider: {0}",
 				Name: "JwtAlgorithmNotAllowed",
 			},
 			provider.ErrorDef{
-				Code: 2108,
+				Code: 2109,
 				Message: "JWK algorithm mismatch: expected={0}, got={1}",
 				Name: "JwkAlgorithmMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2109,
+				Code: 2110,
 				Message: "JWK use must be 'sig', got={0}",
 				Name: "JwkUseInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2110,
+				Code: 2111,
 				Message: "JWK key_ops must contain 'verify'",
 				Name: "JwkKeyOpsInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2111,
+				Code: 2112,
 				Message: "provider allowed algorithms contain duplicates",
 				Name: "DuplicateAlgorithm",
 			},
 			provider.ErrorDef{
-				Code: 2112,
+				Code: 2113,
 				Message: "keyless bootstrap is only valid in genesis block 0",
 				Name: "GenesisOnly",
 			},
 			provider.ErrorDef{
-				Code: 2113,
+				Code: 2114,
 				Message: "keyless registry is already bootstrapped",
 				Name: "AlreadyBootstrapped",
 			},
 			provider.ErrorDef{
-				Code: 2114,
+				Code: 2115,
 				Message: "keyless provider kind or ID namespace is invalid",
 				Name: "ProviderKindInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2115,
+				Code: 2116,
 				Message: "provider session version overflow",
 				Name: "SessionVersionOverflow",
 			},
 			provider.ErrorDef{
-				Code: 2116,
+				Code: 2117,
 				Message: "provider key revision overflow",
 				Name: "KeyRevisionOverflow",
 			},
 			provider.ErrorDef{
-				Code: 2117,
+				Code: 2118,
 				Message: "audience must contain 1..=256 UTF-8 bytes",
 				Name: "AudienceInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2118,
+				Code: 2119,
 				Message: "audience hash collision",
 				Name: "AudienceHashCollision",
 			},
 			provider.ErrorDef{
-				Code: 2119,
+				Code: 2120,
 				Message: "JWT audience array is empty or contains duplicates",
 				Name: "JwtAudienceInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2120,
+				Code: 2121,
 				Message: "provider owner does not match transaction signer",
 				Name: "ProviderOwnerMismatch",
 			},
 			provider.ErrorDef{
-				Code: 2121,
-				Message: "built-in OIDC provider metadata is immutable",
+				Code: 2122,
+				Message: "ZK circuit ID is invalid",
+				Name: "ZkCircuitIdInvalid",
+			},
+			provider.ErrorDef{
+				Code: 2123,
+				Message: "ZK circuit is already registered: {0}",
+				Name: "ZkCircuitAlreadyRegistered",
+			},
+			provider.ErrorDef{
+				Code: 2124,
+				Message: "ZK circuit verifying key is invalid",
+				Name: "ZkCircuitInvalid",
+			},
+			provider.ErrorDef{
+				Code: 2125,
+				Message: "ZK circuit is not enabled for authentication",
+				Name: "ZkAuthenticationDisabled",
+			},
+			provider.ErrorDef{
+				Code: 2126,
+				Message: "ZK proof verification failed",
+				Name: "ZkProofInvalid",
+			},
+			provider.ErrorDef{
+				Code: 2127,
+				Message: "built-in provider metadata is immutable",
 				Name: "BuiltinProviderImmutable",
 			},
 			provider.ErrorDef{
-				Code: 2122,
+				Code: 2128,
 				Message: "custom provider ID is in a reserved namespace",
 				Name: "ReservedProviderId",
 			},
 			provider.ErrorDef{
-				Code: 2123,
+				Code: 2129,
 				Message: "static provider must contain 1..=8 keys",
 				Name: "StaticKeyCountInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2124,
+				Code: 2130,
 				Message: "static provider kid must be unique and contain 1..=128 bytes",
 				Name: "StaticKeyIdInvalid",
 			},
+			provider.ErrorDef{
+				Code: 2131,
+				Message: "consensus validator identity is missing or does not match signer",
+				Name: "ConsensusIdentityMissing",
+			},
+			provider.ErrorDef{
+				Code: 2132,
+				Message: "validator is not in the current validator set: {0:?}",
+				Name: "ValidatorNotActive",
+			},
+			provider.ErrorDef{
+				Code: 2133,
+				Message: "current validator set is unavailable",
+				Name: "ValidatorSetUnavailable",
+			},
+			provider.ErrorDef{
+				Code: 2134,
+				Message: "dynamic JWK set is invalid or exceeds protocol limits",
+				Name: "DynamicJwkSetInvalid",
+			},
+			provider.ErrorDef{
+				Code: 2135,
+				Message: "JWK vote has no unique highest candidate",
+				Name: "JwkVoteTie",
+			},
+			provider.ErrorDef{
+				Code: 2136,
+				Message: "JWK base64url member is not canonical",
+				Name: "JwkThumbprintNonCanonical",
+			},
 		},
 		Constants: []provider.Constant{
+			provider.Constant{
+				Name: "MAX_SIGNING_HEADER_BYTES",
+				Type: "usize",
+				Value: 1024,
+			},
+			provider.Constant{
+				Name: "MAX_SIGNING_PAYLOAD_BYTES",
+				Type: "usize",
+				Value: 4096,
+			},
 			provider.Constant{
 				Name: "KEYLESS_SPONSOR_SEED",
 				Type: "u64",
@@ -11549,6 +12615,11 @@ provider.IDL{
 				Value: 600000,
 			},
 			provider.Constant{
+				Name: "MAX_ZK_VERIFYING_KEY_BYTES",
+				Type: "usize",
+				Value: "64 * 1024",
+			},
+			provider.Constant{
 				Name: "DEFAULT_MAX_SESSION_TTL_MS",
 				Type: "u64",
 				Value: 8.64e+07,
@@ -11567,6 +12638,86 @@ provider.IDL{
 				Name: "BIND_DELAY_FLOOR_MS",
 				Type: "u64",
 				Value: 3.6e+06,
+			},
+			provider.Constant{
+				Name: "SHA256_DIGEST_INFO_PREFIX",
+				Type: "array<u8;19>",
+				Value: "[0x30 , 0x31 , 0x30 , 0x0D , 0x06 , 0x09 , 0x60 , 0x86 , 0x48 , 0x01 , 0x65 , 0x03 , 0x04 , 0x02 , 0x01 , 0x05 , 0x00 , 0x04 , 0x20 ,]",
+			},
+			provider.Constant{
+				Name: "RSA2048_MODULUS_BYTES",
+				Type: "usize",
+				Value: 256,
+			},
+			provider.Constant{
+				Name: "RSA2048_SIGNATURE_BYTES",
+				Type: "usize",
+				Value: "RSA2048_MODULUS_BYTES",
+			},
+			provider.Constant{
+				Name: "RSA2048_LIMBS",
+				Type: "usize",
+				Value: "RSA2048_MODULUS_BYTES / 4",
+			},
+			provider.Constant{
+				Name: "RSA2048_PRODUCT_LIMBS",
+				Type: "usize",
+				Value: "RSA2048_LIMBS * 2",
+			},
+			provider.Constant{
+				Name: "RSA_MAX_EXPONENT_BYTES",
+				Type: "usize",
+				Value: 4,
+			},
+			provider.Constant{
+				Name: "STAGED_JWT_RS256_CIRCUIT_ID",
+				Type: "u32",
+				Value: 7,
+			},
+			provider.Constant{
+				Name: "STAGED_JWT_ES256_CIRCUIT_ID",
+				Type: "u32",
+				Value: 8,
+			},
+			provider.Constant{
+				Name: "TRUSTED_PREPARED_RS256_CIRCUIT_ID",
+				Type: "u32",
+				Value: 9,
+			},
+			provider.Constant{
+				Name: "TRUSTED_PREPARED_ES256_CIRCUIT_ID",
+				Type: "u32",
+				Value: 10,
+			},
+			provider.Constant{
+				Name: "STAGED_JWT_PUBLIC_INPUTS",
+				Type: "u16",
+				Value: 21,
+			},
+			provider.Constant{
+				Name: "TRUSTED_PREPARED_PUBLIC_INPUTS",
+				Type: "u16",
+				Value: 21,
+			},
+			provider.Constant{
+				Name: "MAX_GROTH16_PROOF_BYTES",
+				Type: "usize",
+				Value: 256,
+			},
+			provider.Constant{
+				Name: "MAX_ZK_ISSUER_BYTES",
+				Type: "usize",
+				Value: 512,
+			},
+			provider.Constant{
+				Name: "MAX_ZK_KID_BYTES",
+				Type: "usize",
+				Value: 256,
+			},
+			provider.Constant{
+				Name: "MAX_ZK_THUMBPRINT_BYTES",
+				Type: "usize",
+				Value: 128,
 			},
 		},
 	},
@@ -12806,6 +13957,38 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "pool",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "account",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "score",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 9531,
+				Handler: "set_score",
+				Kind: "entry",
+				Name: "SetScore",
+				SignerLookups: provider.SignerLookups{
+					"admin": provider.SignerLookup{
+						Path: provider.LookupPath{
+							Arg: "pool",
+							Type: "Address",
+						},
+						Res: 237,
+					},
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "operator",
 						Role: "signer",
 						Type: "Signer",
@@ -13238,6 +14421,43 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "pool",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "tier",
+						Role: "input",
+						Type: "u32",
+					},
+				},
+				Discriminator: 30615,
+				Handler: "tier_cap_detail",
+				Kind: "view",
+				Name: "TierCapDetail",
+				Returns: provider.ReturnValue{
+					Type: "TierCap",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "pool",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 54498,
+				Handler: "label_changes_of",
+				Kind: "view",
+				Name: "LabelChangesOf",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "order_id",
 						Role: "input",
 						Type: "String",
@@ -13445,6 +14665,21 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
+						Name: "cap",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "set_by",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "TierCap",
+				TypeTag: 3534747969634751777,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
 						Name: "seed",
 						Type: "u64",
 					},
@@ -13591,6 +14826,16 @@ provider.IDL{
 		},
 		Resources: []provider.Resource{
 			provider.Resource{
+				Name: "_TierCapV2",
+				Type: "TierCap",
+				TypeTag: 3534747969634751777,
+			},
+			provider.Resource{
+				Name: "_LabelChanges",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
 				Name: "_Order",
 				Type: "OrderState",
 				TypeTag: 6116235401568728262,
@@ -13613,7 +14858,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_Admin",
 				Type: "Address",
-				TypeTag: 3694179416476927173,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_Label",
@@ -13638,7 +14883,7 @@ provider.IDL{
 			provider.Resource{
 				Name: "_SponsorPool",
 				Type: "Address",
-				TypeTag: 10947913201253101891,
+				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
 				Name: "_PoolSponsor",
@@ -13657,6 +14902,25 @@ provider.IDL{
 			},
 		},
 		Events: []provider.Event{
+			provider.Event{
+				Name: "LabelChanged",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "board",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "text",
+						Type: "String",
+					},
+				},
+				TypeTag: 9371027370753667669,
+			},
 			provider.Event{
 				Name: "EventCreditApplied",
 				Fields: []provider.EventField{
@@ -13743,6 +15007,331 @@ provider.IDL{
 			},
 		},
 	},
+}
+
+// SystemProposalKind matches the IDL enum ProposalKind.
+type SystemProposalKind struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts SystemProposalKind into the provider wire value (map[string]any).
+func (v SystemProposalKind) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum ProposalKind: empty variant")
+	}
+	switch v.Variant {
+	case "Normal":
+		return map[string]any{"variant": "Normal"}, nil
+	case "Urgent":
+		return map[string]any{"variant": "Urgent"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// SystemProposal matches the IDL struct Proposal.
+type SystemProposal struct {
+	FeatureId uint32
+	Kind SystemProposalKind
+	Params [][]any
+	ProposedHeight uint64
+	VoteEndTime uint64
+	FastPass bool
+	ProposerValidator any
+}
+
+// ToValue converts SystemProposal into the provider wire value (map[string]any).
+func (v SystemProposal) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 7)
+	// feature_id: u32
+	out["feature_id"] = v.FeatureId
+	// kind: ProposalKind
+	v0, err := toSystemProposalKindValue(v.Kind)
+	if err != nil {
+		return nil, err
+	}
+	out["kind"] = v0
+	// params: vec<tuple<u16,bytes>>
+	v1 := make([]any, len(v.Params))
+	for v2, v3 := range v.Params {
+		v4 := make([]any, 1)
+		v4[0] = v3[0]
+		v1[v2] = v4
+	}
+	out["params"] = v1
+	// proposed_height: u64
+	out["proposed_height"] = v.ProposedHeight
+	// vote_end_time: u64
+	out["vote_end_time"] = v.VoteEndTime
+	// fast_pass: bool
+	out["fast_pass"] = v.FastPass
+	// proposer_validator: ValidatorId
+	out["proposer_validator"] = v.ProposerValidator
+	return out, nil
+}
+
+// SystemFeatureRecord matches the IDL struct FeatureRecord.
+type SystemFeatureRecord struct {
+	ActivatedHeight uint64
+}
+
+// ToValue converts SystemFeatureRecord into the provider wire value (map[string]any).
+func (v SystemFeatureRecord) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 1)
+	// activated_height: u64
+	out["activated_height"] = v.ActivatedHeight
+	return out, nil
+}
+
+// SystemProposalResult matches the IDL enum ProposalResult.
+type SystemProposalResult struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts SystemProposalResult into the provider wire value (map[string]any).
+func (v SystemProposalResult) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum ProposalResult: empty variant")
+	}
+	switch v.Variant {
+	case "Passed":
+		return map[string]any{"variant": "Passed"}, nil
+	case "Expired":
+		return map[string]any{"variant": "Expired"}, nil
+	case "Cancelled":
+		return map[string]any{"variant": "Cancelled"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// SystemProposalOutcome matches the IDL struct ProposalOutcome.
+type SystemProposalOutcome struct {
+	Result SystemProposalResult
+	Height uint64
+}
+
+// ToValue converts SystemProposalOutcome into the provider wire value (map[string]any).
+func (v SystemProposalOutcome) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// result: ProposalResult
+	v0, err := toSystemProposalResultValue(v.Result)
+	if err != nil {
+		return nil, err
+	}
+	out["result"] = v0
+	// height: u64
+	out["height"] = v.Height
+	return out, nil
+}
+
+// SystemProposalKey matches the IDL struct ProposalKey.
+type SystemProposalKey struct {
+	FeatureId uint32
+	ProposedHeight uint64
+}
+
+// ToValue converts SystemProposalKey into the provider wire value (map[string]any).
+func (v SystemProposalKey) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// feature_id: u32
+	out["feature_id"] = v.FeatureId
+	// proposed_height: u64
+	out["proposed_height"] = v.ProposedHeight
+	return out, nil
+}
+
+// SystemKindSlot matches the IDL struct KindSlot.
+type SystemKindSlot struct {
+	Occupied bool
+	FeatureId uint32
+	ReleasedHeight uint64
+}
+
+// ToValue converts SystemKindSlot into the provider wire value (map[string]any).
+func (v SystemKindSlot) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// occupied: bool
+	out["occupied"] = v.Occupied
+	// feature_id: u32
+	out["feature_id"] = v.FeatureId
+	// released_height: u64
+	out["released_height"] = v.ReleasedHeight
+	return out, nil
+}
+
+// SystemActiveFeature matches the IDL struct ActiveFeature.
+type SystemActiveFeature struct {
+	FeatureId uint32
+	ActivatedHeight uint64
+}
+
+// ToValue converts SystemActiveFeature into the provider wire value (map[string]any).
+func (v SystemActiveFeature) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// feature_id: u32
+	out["feature_id"] = v.FeatureId
+	// activated_height: u64
+	out["activated_height"] = v.ActivatedHeight
+	return out, nil
+}
+
+// SystemProposalStatus matches the IDL struct ProposalStatus.
+type SystemProposalStatus struct {
+	Proposal SystemProposal
+	Votes uint32
+	Eligible uint32
+	FastThreshold uint32
+	PassThreshold uint32
+}
+
+// ToValue converts SystemProposalStatus into the provider wire value (map[string]any).
+func (v SystemProposalStatus) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 5)
+	// proposal: Proposal
+	v0, err := toSystemProposalValue(v.Proposal)
+	if err != nil {
+		return nil, err
+	}
+	out["proposal"] = v0
+	// votes: u32
+	out["votes"] = v.Votes
+	// eligible: u32
+	out["eligible"] = v.Eligible
+	// fast_threshold: u32
+	out["fast_threshold"] = v.FastThreshold
+	// pass_threshold: u32
+	out["pass_threshold"] = v.PassThreshold
+	return out, nil
+}
+
+// SystemProposalHistoryItem matches the IDL struct ProposalHistoryItem.
+type SystemProposalHistoryItem struct {
+	Seq uint64
+	FeatureId uint32
+	ProposedHeight uint64
+	Outcome SystemProposalOutcome
+}
+
+// ToValue converts SystemProposalHistoryItem into the provider wire value (map[string]any).
+func (v SystemProposalHistoryItem) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// seq: u64
+	out["seq"] = v.Seq
+	// feature_id: u32
+	out["feature_id"] = v.FeatureId
+	// proposed_height: u64
+	out["proposed_height"] = v.ProposedHeight
+	// outcome: ProposalOutcome
+	v0, err := toSystemProposalOutcomeValue(v.Outcome)
+	if err != nil {
+		return nil, err
+	}
+	out["outcome"] = v0
+	return out, nil
+}
+
+// SystemUpgradeStatus matches the IDL struct UpgradeStatus.
+type SystemUpgradeStatus struct {
+	Active []SystemActiveFeature
+	Proposals []SystemProposalStatus
+	Params [][]any
+	HistoryLen uint64
+	History []SystemProposalHistoryItem
+}
+
+// ToValue converts SystemUpgradeStatus into the provider wire value (map[string]any).
+func (v SystemUpgradeStatus) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 5)
+	// active: vec<ActiveFeature>
+	v0 := make([]any, len(v.Active))
+	for v1, v2 := range v.Active {
+		v3, err := toSystemActiveFeatureValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v0[v1] = v3
+	}
+	out["active"] = v0
+	// proposals: vec<ProposalStatus>
+	v4 := make([]any, len(v.Proposals))
+	for v5, v6 := range v.Proposals {
+		v7, err := toSystemProposalStatusValue(v6)
+		if err != nil {
+			return nil, err
+		}
+		v4[v5] = v7
+	}
+	out["proposals"] = v4
+	// params: vec<tuple<u16,bytes>>
+	v8 := make([]any, len(v.Params))
+	for v9, v10 := range v.Params {
+		v11 := make([]any, 1)
+		v11[0] = v10[0]
+		v8[v9] = v11
+	}
+	out["params"] = v8
+	// history_len: u64
+	out["history_len"] = v.HistoryLen
+	// history: vec<ProposalHistoryItem>
+	v12 := make([]any, len(v.History))
+	for v13, v14 := range v.History {
+		v15, err := toSystemProposalHistoryItemValue(v14)
+		if err != nil {
+			return nil, err
+		}
+		v12[v13] = v15
+	}
+	out["history"] = v12
+	return out, nil
+}
+
+// SystemAppMethods matches the IDL struct AppMethods.
+type SystemAppMethods struct {
+	AppId uint8
+	App string
+	Methods []SystemAvailableMethod
+}
+
+// ToValue converts SystemAppMethods into the provider wire value (map[string]any).
+func (v SystemAppMethods) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// app_id: u8
+	out["app_id"] = v.AppId
+	// app: String
+	out["app"] = v.App
+	// methods: vec<AvailableMethod>
+	v0 := make([]any, len(v.Methods))
+	for v1, v2 := range v.Methods {
+		v3, err := toSystemAvailableMethodValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v0[v1] = v3
+	}
+	out["methods"] = v0
+	return out, nil
+}
+
+// SystemAvailableMethod matches the IDL struct AvailableMethod.
+type SystemAvailableMethod struct {
+	Name string
+	Discriminator uint16
+	View bool
+}
+
+// ToValue converts SystemAvailableMethod into the provider wire value (map[string]any).
+func (v SystemAvailableMethod) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// name: String
+	out["name"] = v.Name
+	// discriminator: u16
+	out["discriminator"] = v.Discriminator
+	// view: bool
+	out["view"] = v.View
+	return out, nil
 }
 
 // SystemConsensusValidatorIdentity matches the IDL struct ConsensusValidatorIdentity.
@@ -14173,28 +15762,31 @@ func (v TokenGiftCleanupQueueState) ToValue() (map[string]any, error) {
 // TokenVestingRecipient matches the IDL struct VestingRecipient.
 type TokenVestingRecipient struct {
 	Recipient *crypto.Address
+	Name string
 	TotalAmount uint64
+	InitialPeriodSeconds uint64
 	InitialAmount uint64
 	PeriodSeconds uint64
 	Periods uint64
-	AmountPerPeriod uint64
 }
 
 // ToValue converts TokenVestingRecipient into the provider wire value (map[string]any).
 func (v TokenVestingRecipient) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 6)
+	out := make(map[string]any, 7)
 	// recipient: Address
 	out["recipient"] = v.Recipient
+	// name: String
+	out["name"] = v.Name
 	// total_amount: u64
 	out["total_amount"] = v.TotalAmount
+	// initial_period_seconds: u64
+	out["initial_period_seconds"] = v.InitialPeriodSeconds
 	// initial_amount: u64
 	out["initial_amount"] = v.InitialAmount
 	// period_seconds: u64
 	out["period_seconds"] = v.PeriodSeconds
 	// periods: u64
 	out["periods"] = v.Periods
-	// amount_per_period: u64
-	out["amount_per_period"] = v.AmountPerPeriod
 	return out, nil
 }
 
@@ -16471,6 +18063,43 @@ func (v ValidatorPoolRewardConfig) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
+// KeylessGroth16Error matches the IDL enum Groth16Error.
+type KeylessGroth16Error struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts KeylessGroth16Error into the provider wire value (map[string]any).
+func (v KeylessGroth16Error) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum Groth16Error: empty variant")
+	}
+	switch v.Variant {
+	case "ProofEncoding":
+		return map[string]any{"variant": "ProofEncoding"}, nil
+	case "VerifyingKeyEncoding":
+		return map[string]any{"variant": "VerifyingKeyEncoding"}, nil
+	case "PublicInputCount":
+		return map[string]any{"variant": "PublicInputCount"}, nil
+	case "UnsupportedEphemeralKey":
+		return map[string]any{"variant": "UnsupportedEphemeralKey"}, nil
+	case "CircuitIdMismatch":
+		return map[string]any{"variant": "CircuitIdMismatch"}, nil
+	case "InvalidEnvelope":
+		return map[string]any{"variant": "InvalidEnvelope"}, nil
+	case "CircuitNotRegistered":
+		return map[string]any{"variant": "CircuitNotRegistered"}, nil
+	case "CircuitDisabled":
+		return map[string]any{"variant": "CircuitDisabled"}, nil
+	case "AlgorithmNotSupported":
+		return map[string]any{"variant": "AlgorithmNotSupported"}, nil
+	case "PublicInputSchemaMismatch":
+		return map[string]any{"variant": "PublicInputSchemaMismatch"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
 // KeylessStringOrArray matches the IDL enum StringOrArray.
 type KeylessStringOrArray struct {
 	Variant string // Active variant name
@@ -16839,6 +18468,140 @@ func (v KeylessProviderIndex) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
+// KeylessValidatorJwkReport matches the IDL struct ValidatorJwkReport.
+type KeylessValidatorJwkReport struct {
+	Validator any
+	Keys []string
+}
+
+// ToValue converts KeylessValidatorJwkReport into the provider wire value (map[string]any).
+func (v KeylessValidatorJwkReport) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// validator: ValidatorId
+	out["validator"] = v.Validator
+	// keys: vec<String>
+	v0 := make([]any, len(v.Keys))
+	for v1, v2 := range v.Keys {
+		v0[v1] = v2
+	}
+	out["keys"] = v0
+	return out, nil
+}
+
+// KeylessKeylessJwkReports matches the IDL struct KeylessJwkReports.
+type KeylessKeylessJwkReports struct {
+	Reports []KeylessValidatorJwkReport
+}
+
+// ToValue converts KeylessKeylessJwkReports into the provider wire value (map[string]any).
+func (v KeylessKeylessJwkReports) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 1)
+	// reports: vec<ValidatorJwkReport>
+	v0 := make([]any, len(v.Reports))
+	for v1, v2 := range v.Reports {
+		v3, err := toKeylessValidatorJwkReportValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v0[v1] = v3
+	}
+	out["reports"] = v0
+	return out, nil
+}
+
+// KeylessKeylessZkCircuit matches the IDL struct KeylessZkCircuit.
+type KeylessKeylessZkCircuit struct {
+	CircuitId uint32
+	VerifyingKey []byte
+	ConstraintHash [32]byte
+	MaxPublicInputs uint16
+	SupportedAlgs []string
+	Enabled bool
+	AuthenticationEnabled bool
+}
+
+// ToValue converts KeylessKeylessZkCircuit into the provider wire value (map[string]any).
+func (v KeylessKeylessZkCircuit) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 7)
+	// circuit_id: u32
+	out["circuit_id"] = v.CircuitId
+	// verifying_key: bytes
+	out["verifying_key"] = v.VerifyingKey
+	// constraint_hash: B256
+	out["constraint_hash"] = v.ConstraintHash
+	// max_public_inputs: u16
+	out["max_public_inputs"] = v.MaxPublicInputs
+	// supported_algs: vec<String>
+	v0 := make([]any, len(v.SupportedAlgs))
+	for v1, v2 := range v.SupportedAlgs {
+		v0[v1] = v2
+	}
+	out["supported_algs"] = v0
+	// enabled: bool
+	out["enabled"] = v.Enabled
+	// authentication_enabled: bool
+	out["authentication_enabled"] = v.AuthenticationEnabled
+	return out, nil
+}
+
+// KeylessPublicStatementError matches the IDL enum PublicStatementError.
+type KeylessPublicStatementError struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts KeylessPublicStatementError into the provider wire value (map[string]any).
+func (v KeylessPublicStatementError) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum PublicStatementError: empty variant")
+	}
+	switch v.Variant {
+	case "InvalidJwk":
+		return map[string]any{"variant": "InvalidJwk"}, nil
+	case "InvalidEphemeralKey":
+		return map[string]any{"variant": "InvalidEphemeralKey"}, nil
+	case "TooLarge":
+		return map[string]any{"variant": "TooLarge"}, nil
+	case "InvalidEnvelope":
+		return map[string]any{"variant": "InvalidEnvelope"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// KeylessZkStatementError matches the IDL enum ZkStatementError.
+type KeylessZkStatementError struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts KeylessZkStatementError into the provider wire value (map[string]any).
+func (v KeylessZkStatementError) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum ZkStatementError: empty variant")
+	}
+	switch v.Variant {
+	case "Jwt":
+		if len(v.Fields) != 1 {
+			return nil, fmt.Errorf("enum ZkStatementError: variant Jwt expects %d fields", len(v.Fields))
+		}
+		var v0 any
+		v0 = v.Fields[0]
+		return map[string]any{"variant": "Jwt", "fields": []any{v0}}, nil
+	case "Mismatch":
+		if len(v.Fields) != 1 {
+			return nil, fmt.Errorf("enum ZkStatementError: variant Mismatch expects %d fields", len(v.Fields))
+		}
+		var v0 any
+		v0 = v.Fields[0]
+		return map[string]any{"variant": "Mismatch", "fields": []any{v0}}, nil
+	case "AmbiguousJson":
+		return map[string]any{"variant": "AmbiguousJson"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
 // SocialObjectType matches the IDL enum ObjectType.
 type SocialObjectType struct {
 	Variant string // Active variant name
@@ -17003,6 +18766,22 @@ func (v SocialGiftAllocation) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
+// DemoTierCap matches the IDL struct TierCap.
+type DemoTierCap struct {
+	Cap uint64
+	SetBy *crypto.Address
+}
+
+// ToValue converts DemoTierCap into the provider wire value (map[string]any).
+func (v DemoTierCap) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// cap: u64
+	out["cap"] = v.Cap
+	// set_by: Address
+	out["set_by"] = v.SetBy
+	return out, nil
+}
+
 // DemoOrderState matches the IDL struct OrderState.
 type DemoOrderState struct {
 	Seed uint64
@@ -17100,6 +18879,477 @@ func (v DemoDemoMode) ToValue() (map[string]any, error) {
 		return map[string]any{"variant": "Three", "fields": []any{v0, v1}}, nil
 	}
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// fromSystemProposalKind converts a decoded IDL value into SystemProposalKind.
+func fromSystemProposalKind(v any) (out SystemProposalKind, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum ProposalKind: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromSystemProposal converts a decoded IDL value into SystemProposal.
+func fromSystemProposal(v any) (out SystemProposal, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// feature_id: u32
+	{
+		v0, err := toUint32(m["feature_id"])
+		if err != nil {
+			return out, err
+		}
+		out.FeatureId = v0
+	}
+	// kind: ProposalKind
+	{
+		v1, err := fromSystemProposalKind(m["kind"])
+		if err != nil {
+			return out, err
+		}
+		out.Kind = v1
+	}
+	// params: vec<tuple<u16,bytes>>
+	{
+		v2, err := toSlice(m["params"])
+		if err != nil {
+			return out, err
+		}
+		out.Params = make([][]any, len(v2))
+		for v3, v4 := range v2 {
+			v5, err := toSlice(v4)
+			if err != nil {
+				return out, err
+			}
+			out.Params[v3] = v5
+		}
+	}
+	// proposed_height: u64
+	{
+		v6, err := toUint64(m["proposed_height"])
+		if err != nil {
+			return out, err
+		}
+		out.ProposedHeight = v6
+	}
+	// vote_end_time: u64
+	{
+		v7, err := toUint64(m["vote_end_time"])
+		if err != nil {
+			return out, err
+		}
+		out.VoteEndTime = v7
+	}
+	// fast_pass: bool
+	{
+		v8, err := toBool(m["fast_pass"])
+		if err != nil {
+			return out, err
+		}
+		out.FastPass = v8
+	}
+	// proposer_validator: ValidatorId
+	{
+		out.ProposerValidator = m["proposer_validator"]
+	}
+	return out, nil
+}
+
+// fromSystemFeatureRecord converts a decoded IDL value into SystemFeatureRecord.
+func fromSystemFeatureRecord(v any) (out SystemFeatureRecord, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// activated_height: u64
+	{
+		v0, err := toUint64(m["activated_height"])
+		if err != nil {
+			return out, err
+		}
+		out.ActivatedHeight = v0
+	}
+	return out, nil
+}
+
+// fromSystemProposalResult converts a decoded IDL value into SystemProposalResult.
+func fromSystemProposalResult(v any) (out SystemProposalResult, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum ProposalResult: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromSystemProposalOutcome converts a decoded IDL value into SystemProposalOutcome.
+func fromSystemProposalOutcome(v any) (out SystemProposalOutcome, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// result: ProposalResult
+	{
+		v0, err := fromSystemProposalResult(m["result"])
+		if err != nil {
+			return out, err
+		}
+		out.Result = v0
+	}
+	// height: u64
+	{
+		v1, err := toUint64(m["height"])
+		if err != nil {
+			return out, err
+		}
+		out.Height = v1
+	}
+	return out, nil
+}
+
+// fromSystemProposalKey converts a decoded IDL value into SystemProposalKey.
+func fromSystemProposalKey(v any) (out SystemProposalKey, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// feature_id: u32
+	{
+		v0, err := toUint32(m["feature_id"])
+		if err != nil {
+			return out, err
+		}
+		out.FeatureId = v0
+	}
+	// proposed_height: u64
+	{
+		v1, err := toUint64(m["proposed_height"])
+		if err != nil {
+			return out, err
+		}
+		out.ProposedHeight = v1
+	}
+	return out, nil
+}
+
+// fromSystemKindSlot converts a decoded IDL value into SystemKindSlot.
+func fromSystemKindSlot(v any) (out SystemKindSlot, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// occupied: bool
+	{
+		v0, err := toBool(m["occupied"])
+		if err != nil {
+			return out, err
+		}
+		out.Occupied = v0
+	}
+	// feature_id: u32
+	{
+		v1, err := toUint32(m["feature_id"])
+		if err != nil {
+			return out, err
+		}
+		out.FeatureId = v1
+	}
+	// released_height: u64
+	{
+		v2, err := toUint64(m["released_height"])
+		if err != nil {
+			return out, err
+		}
+		out.ReleasedHeight = v2
+	}
+	return out, nil
+}
+
+// fromSystemActiveFeature converts a decoded IDL value into SystemActiveFeature.
+func fromSystemActiveFeature(v any) (out SystemActiveFeature, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// feature_id: u32
+	{
+		v0, err := toUint32(m["feature_id"])
+		if err != nil {
+			return out, err
+		}
+		out.FeatureId = v0
+	}
+	// activated_height: u64
+	{
+		v1, err := toUint64(m["activated_height"])
+		if err != nil {
+			return out, err
+		}
+		out.ActivatedHeight = v1
+	}
+	return out, nil
+}
+
+// fromSystemProposalStatus converts a decoded IDL value into SystemProposalStatus.
+func fromSystemProposalStatus(v any) (out SystemProposalStatus, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// proposal: Proposal
+	{
+		v0, err := fromSystemProposal(m["proposal"])
+		if err != nil {
+			return out, err
+		}
+		out.Proposal = v0
+	}
+	// votes: u32
+	{
+		v1, err := toUint32(m["votes"])
+		if err != nil {
+			return out, err
+		}
+		out.Votes = v1
+	}
+	// eligible: u32
+	{
+		v2, err := toUint32(m["eligible"])
+		if err != nil {
+			return out, err
+		}
+		out.Eligible = v2
+	}
+	// fast_threshold: u32
+	{
+		v3, err := toUint32(m["fast_threshold"])
+		if err != nil {
+			return out, err
+		}
+		out.FastThreshold = v3
+	}
+	// pass_threshold: u32
+	{
+		v4, err := toUint32(m["pass_threshold"])
+		if err != nil {
+			return out, err
+		}
+		out.PassThreshold = v4
+	}
+	return out, nil
+}
+
+// fromSystemProposalHistoryItem converts a decoded IDL value into SystemProposalHistoryItem.
+func fromSystemProposalHistoryItem(v any) (out SystemProposalHistoryItem, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// seq: u64
+	{
+		v0, err := toUint64(m["seq"])
+		if err != nil {
+			return out, err
+		}
+		out.Seq = v0
+	}
+	// feature_id: u32
+	{
+		v1, err := toUint32(m["feature_id"])
+		if err != nil {
+			return out, err
+		}
+		out.FeatureId = v1
+	}
+	// proposed_height: u64
+	{
+		v2, err := toUint64(m["proposed_height"])
+		if err != nil {
+			return out, err
+		}
+		out.ProposedHeight = v2
+	}
+	// outcome: ProposalOutcome
+	{
+		v3, err := fromSystemProposalOutcome(m["outcome"])
+		if err != nil {
+			return out, err
+		}
+		out.Outcome = v3
+	}
+	return out, nil
+}
+
+// fromSystemUpgradeStatus converts a decoded IDL value into SystemUpgradeStatus.
+func fromSystemUpgradeStatus(v any) (out SystemUpgradeStatus, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// active: vec<ActiveFeature>
+	{
+		v0, err := toSlice(m["active"])
+		if err != nil {
+			return out, err
+		}
+		out.Active = make([]SystemActiveFeature, len(v0))
+		for v1, v2 := range v0 {
+			v3, err := fromSystemActiveFeature(v2)
+			if err != nil {
+				return out, err
+			}
+			out.Active[v1] = v3
+		}
+	}
+	// proposals: vec<ProposalStatus>
+	{
+		v4, err := toSlice(m["proposals"])
+		if err != nil {
+			return out, err
+		}
+		out.Proposals = make([]SystemProposalStatus, len(v4))
+		for v5, v6 := range v4 {
+			v7, err := fromSystemProposalStatus(v6)
+			if err != nil {
+				return out, err
+			}
+			out.Proposals[v5] = v7
+		}
+	}
+	// params: vec<tuple<u16,bytes>>
+	{
+		v8, err := toSlice(m["params"])
+		if err != nil {
+			return out, err
+		}
+		out.Params = make([][]any, len(v8))
+		for v9, v10 := range v8 {
+			v11, err := toSlice(v10)
+			if err != nil {
+				return out, err
+			}
+			out.Params[v9] = v11
+		}
+	}
+	// history_len: u64
+	{
+		v12, err := toUint64(m["history_len"])
+		if err != nil {
+			return out, err
+		}
+		out.HistoryLen = v12
+	}
+	// history: vec<ProposalHistoryItem>
+	{
+		v13, err := toSlice(m["history"])
+		if err != nil {
+			return out, err
+		}
+		out.History = make([]SystemProposalHistoryItem, len(v13))
+		for v14, v15 := range v13 {
+			v16, err := fromSystemProposalHistoryItem(v15)
+			if err != nil {
+				return out, err
+			}
+			out.History[v14] = v16
+		}
+	}
+	return out, nil
+}
+
+// fromSystemAppMethods converts a decoded IDL value into SystemAppMethods.
+func fromSystemAppMethods(v any) (out SystemAppMethods, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// app_id: u8
+	{
+		v0, err := toUint8(m["app_id"])
+		if err != nil {
+			return out, err
+		}
+		out.AppId = v0
+	}
+	// app: String
+	{
+		v1, err := toString(m["app"])
+		if err != nil {
+			return out, err
+		}
+		out.App = v1
+	}
+	// methods: vec<AvailableMethod>
+	{
+		v2, err := toSlice(m["methods"])
+		if err != nil {
+			return out, err
+		}
+		out.Methods = make([]SystemAvailableMethod, len(v2))
+		for v3, v4 := range v2 {
+			v5, err := fromSystemAvailableMethod(v4)
+			if err != nil {
+				return out, err
+			}
+			out.Methods[v3] = v5
+		}
+	}
+	return out, nil
+}
+
+// fromSystemAvailableMethod converts a decoded IDL value into SystemAvailableMethod.
+func fromSystemAvailableMethod(v any) (out SystemAvailableMethod, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// name: String
+	{
+		v0, err := toString(m["name"])
+		if err != nil {
+			return out, err
+		}
+		out.Name = v0
+	}
+	// discriminator: u16
+	{
+		v1, err := toUint16(m["discriminator"])
+		if err != nil {
+			return out, err
+		}
+		out.Discriminator = v1
+	}
+	// view: bool
+	{
+		v2, err := toBool(m["view"])
+		if err != nil {
+			return out, err
+		}
+		out.View = v2
+	}
+	return out, nil
 }
 
 // fromSystemConsensusValidatorIdentity converts a decoded IDL value into SystemConsensusValidatorIdentity.
@@ -17769,45 +20019,53 @@ func fromTokenVestingRecipient(v any) (out TokenVestingRecipient, err error) {
 		}
 		out.Recipient = v0
 	}
-	// total_amount: u64
+	// name: String
 	{
-		v1, err := toUint64(m["total_amount"])
+		v1, err := toString(m["name"])
 		if err != nil {
 			return out, err
 		}
-		out.TotalAmount = v1
+		out.Name = v1
+	}
+	// total_amount: u64
+	{
+		v2, err := toUint64(m["total_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.TotalAmount = v2
+	}
+	// initial_period_seconds: u64
+	{
+		v3, err := toUint64(m["initial_period_seconds"])
+		if err != nil {
+			return out, err
+		}
+		out.InitialPeriodSeconds = v3
 	}
 	// initial_amount: u64
 	{
-		v2, err := toUint64(m["initial_amount"])
+		v4, err := toUint64(m["initial_amount"])
 		if err != nil {
 			return out, err
 		}
-		out.InitialAmount = v2
+		out.InitialAmount = v4
 	}
 	// period_seconds: u64
 	{
-		v3, err := toUint64(m["period_seconds"])
+		v5, err := toUint64(m["period_seconds"])
 		if err != nil {
 			return out, err
 		}
-		out.PeriodSeconds = v3
+		out.PeriodSeconds = v5
 	}
 	// periods: u64
 	{
-		v4, err := toUint64(m["periods"])
+		v6, err := toUint64(m["periods"])
 		if err != nil {
 			return out, err
 		}
-		out.Periods = v4
-	}
-	// amount_per_period: u64
-	{
-		v5, err := toUint64(m["amount_per_period"])
-		if err != nil {
-			return out, err
-		}
-		out.AmountPerPeriod = v5
+		out.Periods = v6
 	}
 	return out, nil
 }
@@ -21247,6 +23505,25 @@ func fromValidatorPoolRewardConfig(v any) (out ValidatorPoolRewardConfig, err er
 	return out, nil
 }
 
+// fromKeylessGroth16Error converts a decoded IDL value into KeylessGroth16Error.
+func fromKeylessGroth16Error(v any) (out KeylessGroth16Error, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum Groth16Error: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
 // fromKeylessStringOrArray converts a decoded IDL value into KeylessStringOrArray.
 func fromKeylessStringOrArray(v any) (out KeylessStringOrArray, err error) {
 	m, err := toRecord(v)
@@ -21778,6 +24055,178 @@ func fromKeylessProviderIndex(v any) (out KeylessProviderIndex, err error) {
 	return out, nil
 }
 
+// fromKeylessValidatorJwkReport converts a decoded IDL value into KeylessValidatorJwkReport.
+func fromKeylessValidatorJwkReport(v any) (out KeylessValidatorJwkReport, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// validator: ValidatorId
+	{
+		out.Validator = m["validator"]
+	}
+	// keys: vec<String>
+	{
+		v0, err := toSlice(m["keys"])
+		if err != nil {
+			return out, err
+		}
+		out.Keys = make([]string, len(v0))
+		for v1, v2 := range v0 {
+			v3, err := toString(v2)
+			if err != nil {
+				return out, err
+			}
+			out.Keys[v1] = v3
+		}
+	}
+	return out, nil
+}
+
+// fromKeylessKeylessJwkReports converts a decoded IDL value into KeylessKeylessJwkReports.
+func fromKeylessKeylessJwkReports(v any) (out KeylessKeylessJwkReports, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// reports: vec<ValidatorJwkReport>
+	{
+		v0, err := toSlice(m["reports"])
+		if err != nil {
+			return out, err
+		}
+		out.Reports = make([]KeylessValidatorJwkReport, len(v0))
+		for v1, v2 := range v0 {
+			v3, err := fromKeylessValidatorJwkReport(v2)
+			if err != nil {
+				return out, err
+			}
+			out.Reports[v1] = v3
+		}
+	}
+	return out, nil
+}
+
+// fromKeylessKeylessZkCircuit converts a decoded IDL value into KeylessKeylessZkCircuit.
+func fromKeylessKeylessZkCircuit(v any) (out KeylessKeylessZkCircuit, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// circuit_id: u32
+	{
+		v0, err := toUint32(m["circuit_id"])
+		if err != nil {
+			return out, err
+		}
+		out.CircuitId = v0
+	}
+	// verifying_key: bytes
+	{
+		v1, err := toBytes(m["verifying_key"])
+		if err != nil {
+			return out, err
+		}
+		out.VerifyingKey = v1
+	}
+	// constraint_hash: B256
+	{
+		v2, err := toFixed32(m["constraint_hash"])
+		if err != nil {
+			return out, err
+		}
+		out.ConstraintHash = v2
+	}
+	// max_public_inputs: u16
+	{
+		v3, err := toUint16(m["max_public_inputs"])
+		if err != nil {
+			return out, err
+		}
+		out.MaxPublicInputs = v3
+	}
+	// supported_algs: vec<String>
+	{
+		v4, err := toSlice(m["supported_algs"])
+		if err != nil {
+			return out, err
+		}
+		out.SupportedAlgs = make([]string, len(v4))
+		for v5, v6 := range v4 {
+			v7, err := toString(v6)
+			if err != nil {
+				return out, err
+			}
+			out.SupportedAlgs[v5] = v7
+		}
+	}
+	// enabled: bool
+	{
+		v8, err := toBool(m["enabled"])
+		if err != nil {
+			return out, err
+		}
+		out.Enabled = v8
+	}
+	// authentication_enabled: bool
+	{
+		v9, err := toBool(m["authentication_enabled"])
+		if err != nil {
+			return out, err
+		}
+		out.AuthenticationEnabled = v9
+	}
+	return out, nil
+}
+
+// fromKeylessPublicStatementError converts a decoded IDL value into KeylessPublicStatementError.
+func fromKeylessPublicStatementError(v any) (out KeylessPublicStatementError, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum PublicStatementError: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromKeylessZkStatementError converts a decoded IDL value into KeylessZkStatementError.
+func fromKeylessZkStatementError(v any) (out KeylessZkStatementError, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum ZkStatementError: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	switch out.Variant {
+	case "Jwt":
+		if f, ok := m["fields"].([]any); ok {
+			out.Fields = f
+		}
+	case "Mismatch":
+		if f, ok := m["fields"].([]any); ok {
+			out.Fields = f
+		}
+	}
+	return out, nil
+}
+
 // fromSocialObjectType converts a decoded IDL value into SocialObjectType.
 func fromSocialObjectType(v any) (out SocialObjectType, err error) {
 	m, err := toRecord(v)
@@ -21977,6 +24426,31 @@ func fromSocialGiftAllocation(v any) (out SocialGiftAllocation, err error) {
 	return out, nil
 }
 
+// fromDemoTierCap converts a decoded IDL value into DemoTierCap.
+func fromDemoTierCap(v any) (out DemoTierCap, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// cap: u64
+	{
+		v0, err := toUint64(m["cap"])
+		if err != nil {
+			return out, err
+		}
+		out.Cap = v0
+	}
+	// set_by: Address
+	{
+		v1, err := toAddress(m["set_by"])
+		if err != nil {
+			return out, err
+		}
+		out.SetBy = v1
+	}
+	return out, nil
+}
+
 // fromDemoOrderState converts a decoded IDL value into DemoOrderState.
 func fromDemoOrderState(v any) (out DemoOrderState, err error) {
 	m, err := toRecord(v)
@@ -22119,6 +24593,201 @@ func fromDemoDemoMode(v any) (out DemoDemoMode, err error) {
 		}
 	}
 	return out, nil
+}
+
+// toSystemProposalKindValue converts any into SystemProposalKind for provider serialization.
+func toSystemProposalKindValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemProposalKind:
+		return x.ToValue()
+	case *SystemProposalKind:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemProposalKind")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemProposalKind, got %T", v)
+	}
+}
+
+// toSystemProposalValue converts any into SystemProposal for provider serialization.
+func toSystemProposalValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemProposal:
+		return x.ToValue()
+	case *SystemProposal:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemProposal")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemProposal, got %T", v)
+	}
+}
+
+// toSystemFeatureRecordValue converts any into SystemFeatureRecord for provider serialization.
+func toSystemFeatureRecordValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemFeatureRecord:
+		return x.ToValue()
+	case *SystemFeatureRecord:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemFeatureRecord")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemFeatureRecord, got %T", v)
+	}
+}
+
+// toSystemProposalResultValue converts any into SystemProposalResult for provider serialization.
+func toSystemProposalResultValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemProposalResult:
+		return x.ToValue()
+	case *SystemProposalResult:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemProposalResult")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemProposalResult, got %T", v)
+	}
+}
+
+// toSystemProposalOutcomeValue converts any into SystemProposalOutcome for provider serialization.
+func toSystemProposalOutcomeValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemProposalOutcome:
+		return x.ToValue()
+	case *SystemProposalOutcome:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemProposalOutcome")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemProposalOutcome, got %T", v)
+	}
+}
+
+// toSystemProposalKeyValue converts any into SystemProposalKey for provider serialization.
+func toSystemProposalKeyValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemProposalKey:
+		return x.ToValue()
+	case *SystemProposalKey:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemProposalKey")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemProposalKey, got %T", v)
+	}
+}
+
+// toSystemKindSlotValue converts any into SystemKindSlot for provider serialization.
+func toSystemKindSlotValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemKindSlot:
+		return x.ToValue()
+	case *SystemKindSlot:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemKindSlot")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemKindSlot, got %T", v)
+	}
+}
+
+// toSystemActiveFeatureValue converts any into SystemActiveFeature for provider serialization.
+func toSystemActiveFeatureValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemActiveFeature:
+		return x.ToValue()
+	case *SystemActiveFeature:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemActiveFeature")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemActiveFeature, got %T", v)
+	}
+}
+
+// toSystemProposalStatusValue converts any into SystemProposalStatus for provider serialization.
+func toSystemProposalStatusValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemProposalStatus:
+		return x.ToValue()
+	case *SystemProposalStatus:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemProposalStatus")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemProposalStatus, got %T", v)
+	}
+}
+
+// toSystemProposalHistoryItemValue converts any into SystemProposalHistoryItem for provider serialization.
+func toSystemProposalHistoryItemValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemProposalHistoryItem:
+		return x.ToValue()
+	case *SystemProposalHistoryItem:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemProposalHistoryItem")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemProposalHistoryItem, got %T", v)
+	}
+}
+
+// toSystemUpgradeStatusValue converts any into SystemUpgradeStatus for provider serialization.
+func toSystemUpgradeStatusValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemUpgradeStatus:
+		return x.ToValue()
+	case *SystemUpgradeStatus:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemUpgradeStatus")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemUpgradeStatus, got %T", v)
+	}
+}
+
+// toSystemAppMethodsValue converts any into SystemAppMethods for provider serialization.
+func toSystemAppMethodsValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemAppMethods:
+		return x.ToValue()
+	case *SystemAppMethods:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemAppMethods")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemAppMethods, got %T", v)
+	}
+}
+
+// toSystemAvailableMethodValue converts any into SystemAvailableMethod for provider serialization.
+func toSystemAvailableMethodValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemAvailableMethod:
+		return x.ToValue()
+	case *SystemAvailableMethod:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemAvailableMethod")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemAvailableMethod, got %T", v)
+	}
 }
 
 // toSystemConsensusValidatorIdentityValue converts any into SystemConsensusValidatorIdentity for provider serialization.
@@ -23741,6 +26410,21 @@ func toValidatorPoolRewardConfigValue(v any) (map[string]any, error) {
 	}
 }
 
+// toKeylessGroth16ErrorValue converts any into KeylessGroth16Error for provider serialization.
+func toKeylessGroth16ErrorValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessGroth16Error:
+		return x.ToValue()
+	case *KeylessGroth16Error:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessGroth16Error")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessGroth16Error, got %T", v)
+	}
+}
+
 // toKeylessStringOrArrayValue converts any into KeylessStringOrArray for provider serialization.
 func toKeylessStringOrArrayValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -23951,6 +26635,81 @@ func toKeylessProviderIndexValue(v any) (map[string]any, error) {
 	}
 }
 
+// toKeylessValidatorJwkReportValue converts any into KeylessValidatorJwkReport for provider serialization.
+func toKeylessValidatorJwkReportValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessValidatorJwkReport:
+		return x.ToValue()
+	case *KeylessValidatorJwkReport:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessValidatorJwkReport")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessValidatorJwkReport, got %T", v)
+	}
+}
+
+// toKeylessKeylessJwkReportsValue converts any into KeylessKeylessJwkReports for provider serialization.
+func toKeylessKeylessJwkReportsValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessKeylessJwkReports:
+		return x.ToValue()
+	case *KeylessKeylessJwkReports:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessKeylessJwkReports")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessKeylessJwkReports, got %T", v)
+	}
+}
+
+// toKeylessKeylessZkCircuitValue converts any into KeylessKeylessZkCircuit for provider serialization.
+func toKeylessKeylessZkCircuitValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessKeylessZkCircuit:
+		return x.ToValue()
+	case *KeylessKeylessZkCircuit:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessKeylessZkCircuit")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessKeylessZkCircuit, got %T", v)
+	}
+}
+
+// toKeylessPublicStatementErrorValue converts any into KeylessPublicStatementError for provider serialization.
+func toKeylessPublicStatementErrorValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessPublicStatementError:
+		return x.ToValue()
+	case *KeylessPublicStatementError:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessPublicStatementError")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessPublicStatementError, got %T", v)
+	}
+}
+
+// toKeylessZkStatementErrorValue converts any into KeylessZkStatementError for provider serialization.
+func toKeylessZkStatementErrorValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessZkStatementError:
+		return x.ToValue()
+	case *KeylessZkStatementError:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessZkStatementError")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessZkStatementError, got %T", v)
+	}
+}
+
 // toSocialObjectTypeValue converts any into SocialObjectType for provider serialization.
 func toSocialObjectTypeValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -24056,6 +26815,21 @@ func toSocialGiftAllocationValue(v any) (map[string]any, error) {
 	}
 }
 
+// toDemoTierCapValue converts any into DemoTierCap for provider serialization.
+func toDemoTierCapValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case DemoTierCap:
+		return x.ToValue()
+	case *DemoTierCap:
+		if x == nil {
+			return nil, fmt.Errorf("nil DemoTierCap")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected DemoTierCap, got %T", v)
+	}
+}
+
 // toDemoOrderStateValue converts any into DemoOrderState for provider serialization.
 func toDemoOrderStateValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -24127,6 +26901,16 @@ type SystemApp struct {
 	SettleStakingEpoch *SystemSettleStakingEpochIx
 	CommitValidatorSet *SystemCommitValidatorSetIx
 	CommitBlockSeed *SystemCommitBlockSeedIx
+	BootstrapChainParams *SystemBootstrapChainParamsIx
+	Propose *SystemProposeIx
+	ProposeParams *SystemProposeParamsIx
+	Vote *SystemVoteIx
+	Cancel *SystemCancelIx
+	CloseVote *SystemCloseVoteIx
+	UpgradeStatus *SystemUpgradeStatusIx
+	ProposalHistory *SystemProposalHistoryIx
+	AvailableMethods *SystemAvailableMethodsIx
+	ProposalOutcome *SystemProposalOutcomeIx
 }
 
 var System = &SystemApp{
@@ -24138,6 +26922,16 @@ var System = &SystemApp{
 	SettleStakingEpoch: &SystemSettleStakingEpochIx{},
 	CommitValidatorSet: &SystemCommitValidatorSetIx{},
 	CommitBlockSeed: &SystemCommitBlockSeedIx{},
+	BootstrapChainParams: &SystemBootstrapChainParamsIx{},
+	Propose: &SystemProposeIx{},
+	ProposeParams: &SystemProposeParamsIx{},
+	Vote: &SystemVoteIx{},
+	Cancel: &SystemCancelIx{},
+	CloseVote: &SystemCloseVoteIx{},
+	UpgradeStatus: &SystemUpgradeStatusIx{},
+	ProposalHistory: &SystemProposalHistoryIx{},
+	AvailableMethods: &SystemAvailableMethodsIx{},
+	ProposalOutcome: &SystemProposalOutcomeIx{},
 }
 
 func (a *SystemApp) bind(pd *provider.Provider) {
@@ -24150,6 +26944,16 @@ func (a *SystemApp) bind(pd *provider.Provider) {
 	a.SettleStakingEpoch.pd = pd
 	a.CommitValidatorSet.pd = pd
 	a.CommitBlockSeed.pd = pd
+	a.BootstrapChainParams.pd = pd
+	a.Propose.pd = pd
+	a.ProposeParams.pd = pd
+	a.Vote.pd = pd
+	a.Cancel.pd = pd
+	a.CloseVote.pd = pd
+	a.UpgradeStatus.pd = pd
+	a.ProposalHistory.pd = pd
+	a.AvailableMethods.pd = pd
+	a.ProposalOutcome.pd = pd
 }
 
 type SystemNoopIx struct {
@@ -24393,12 +27197,14 @@ type SystemCommitValidatorSetIx struct {
 }
 
 type SystemCommitValidatorSetArgs struct {
+	rules_height uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of CommitValidatorSet.
-func (ix *SystemCommitValidatorSetIx) Args() *SystemCommitValidatorSetArgs {
+func (ix *SystemCommitValidatorSetIx) Args(rules_height uint64) *SystemCommitValidatorSetArgs {
 	return &SystemCommitValidatorSetArgs{
+		rules_height: rules_height,
 		pd: ix.pd,
 	}
 }
@@ -24409,6 +27215,8 @@ func (a *SystemCommitValidatorSetArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
+	// rules_height: u64
+	args["rules_height"] = a.rules_height
 	wire, err := a.pd.Encode("CommitValidatorSet", args)
 	if err != nil {
 		return nil, err
@@ -24442,6 +27250,470 @@ func (a *SystemCommitBlockSeedArgs) Encode() (api.PackedInstruction, error) {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
+}
+
+type SystemBootstrapChainParamsIx struct {
+	pd *provider.Provider
+}
+
+type SystemBootstrapChainParamsArgs struct {
+	params [][]any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of BootstrapChainParams.
+func (ix *SystemBootstrapChainParamsIx) Args(params [][]any) *SystemBootstrapChainParamsArgs {
+	return &SystemBootstrapChainParamsArgs{
+		params: params,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemBootstrapChainParamsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// params: vec<tuple<u16,bytes>>
+	v0 := make([]any, len(a.params))
+	for v1, v2 := range a.params {
+		v3 := make([]any, 1)
+		v3[0] = v2[0]
+		v0[v1] = v3
+	}
+	args["params"] = v0
+	wire, err := a.pd.Encode("BootstrapChainParams", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SystemProposeIx struct {
+	pd *provider.Provider
+}
+
+type SystemProposeArgs struct {
+	signer *crypto.Address
+	feature_id uint32
+	kind SystemProposalKind
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Propose.
+func (ix *SystemProposeIx) Args(signer *crypto.Address, feature_id uint32, kind SystemProposalKind) *SystemProposeArgs {
+	return &SystemProposeArgs{
+		signer: signer,
+		feature_id: feature_id,
+		kind: kind,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemProposeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// signer: Signer
+	args["signer"] = a.signer
+	// feature_id: u32
+	args["feature_id"] = a.feature_id
+	// kind: ProposalKind
+	v0, err := toSystemProposalKindValue(a.kind)
+	if err != nil {
+		return nil, err
+	}
+	args["kind"] = v0
+	wire, err := a.pd.Encode("Propose", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SystemProposeParamsIx struct {
+	pd *provider.Provider
+}
+
+type SystemProposeParamsArgs struct {
+	signer *crypto.Address
+	params [][]any
+	kind SystemProposalKind
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ProposeParams.
+func (ix *SystemProposeParamsIx) Args(signer *crypto.Address, params [][]any, kind SystemProposalKind) *SystemProposeParamsArgs {
+	return &SystemProposeParamsArgs{
+		signer: signer,
+		params: params,
+		kind: kind,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemProposeParamsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// signer: Signer
+	args["signer"] = a.signer
+	// params: vec<tuple<u16,bytes>>
+	v0 := make([]any, len(a.params))
+	for v1, v2 := range a.params {
+		v3 := make([]any, 1)
+		v3[0] = v2[0]
+		v0[v1] = v3
+	}
+	args["params"] = v0
+	// kind: ProposalKind
+	v4, err := toSystemProposalKindValue(a.kind)
+	if err != nil {
+		return nil, err
+	}
+	args["kind"] = v4
+	wire, err := a.pd.Encode("ProposeParams", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SystemVoteIx struct {
+	pd *provider.Provider
+}
+
+type SystemVoteArgs struct {
+	signer *crypto.Address
+	feature_id uint32
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Vote.
+func (ix *SystemVoteIx) Args(signer *crypto.Address, feature_id uint32) *SystemVoteArgs {
+	return &SystemVoteArgs{
+		signer: signer,
+		feature_id: feature_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemVoteArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// signer: Signer
+	args["signer"] = a.signer
+	// feature_id: u32
+	args["feature_id"] = a.feature_id
+	wire, err := a.pd.Encode("Vote", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SystemCancelIx struct {
+	pd *provider.Provider
+}
+
+type SystemCancelArgs struct {
+	signer *crypto.Address
+	feature_id uint32
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Cancel.
+func (ix *SystemCancelIx) Args(signer *crypto.Address, feature_id uint32) *SystemCancelArgs {
+	return &SystemCancelArgs{
+		signer: signer,
+		feature_id: feature_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemCancelArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// signer: Signer
+	args["signer"] = a.signer
+	// feature_id: u32
+	args["feature_id"] = a.feature_id
+	wire, err := a.pd.Encode("Cancel", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SystemCloseVoteIx struct {
+	pd *provider.Provider
+}
+
+type SystemCloseVoteArgs struct {
+	feature_id uint32
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CloseVote.
+func (ix *SystemCloseVoteIx) Args(feature_id uint32) *SystemCloseVoteArgs {
+	return &SystemCloseVoteArgs{
+		feature_id: feature_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemCloseVoteArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// feature_id: u32
+	args["feature_id"] = a.feature_id
+	wire, err := a.pd.Encode("CloseVote", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SystemUpgradeStatusIx struct {
+	pd *provider.Provider
+}
+
+type SystemUpgradeStatusArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of UpgradeStatus.
+func (ix *SystemUpgradeStatusIx) Args() *SystemUpgradeStatusArgs {
+	return &SystemUpgradeStatusArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemUpgradeStatusArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("UpgradeStatus", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of UpgradeStatus into SystemUpgradeStatus.
+func (ix *SystemUpgradeStatusIx) DecodeView(body []byte) (out SystemUpgradeStatus, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("UpgradeStatus", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view UpgradeStatus failed: %s", failure)
+	}
+	v0, err := fromSystemUpgradeStatus(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SystemProposalHistoryIx struct {
+	pd *provider.Provider
+}
+
+type SystemProposalHistoryArgs struct {
+	start uint64
+	limit uint32
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ProposalHistory.
+func (ix *SystemProposalHistoryIx) Args(start uint64, limit uint32) *SystemProposalHistoryArgs {
+	return &SystemProposalHistoryArgs{
+		start: start,
+		limit: limit,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemProposalHistoryArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// start: u64
+	args["start"] = a.start
+	// limit: u32
+	args["limit"] = a.limit
+	wire, err := a.pd.Encode("ProposalHistory", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ProposalHistory into []SystemProposalHistoryItem.
+func (ix *SystemProposalHistoryIx) DecodeView(body []byte) (out []SystemProposalHistoryItem, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("ProposalHistory", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ProposalHistory failed: %s", failure)
+	}
+	v0, err := toSlice(v)
+	if err != nil {
+		return out, err
+	}
+	out = make([]SystemProposalHistoryItem, len(v0))
+	for v1, v2 := range v0 {
+		v3, err := fromSystemProposalHistoryItem(v2)
+		if err != nil {
+			return out, err
+		}
+		out[v1] = v3
+	}
+	return out, nil
+}
+
+type SystemAvailableMethodsIx struct {
+	pd *provider.Provider
+}
+
+type SystemAvailableMethodsArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AvailableMethods.
+func (ix *SystemAvailableMethodsIx) Args() *SystemAvailableMethodsArgs {
+	return &SystemAvailableMethodsArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemAvailableMethodsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("AvailableMethods", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of AvailableMethods into []SystemAppMethods.
+func (ix *SystemAvailableMethodsIx) DecodeView(body []byte) (out []SystemAppMethods, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("AvailableMethods", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view AvailableMethods failed: %s", failure)
+	}
+	v0, err := toSlice(v)
+	if err != nil {
+		return out, err
+	}
+	out = make([]SystemAppMethods, len(v0))
+	for v1, v2 := range v0 {
+		v3, err := fromSystemAppMethods(v2)
+		if err != nil {
+			return out, err
+		}
+		out[v1] = v3
+	}
+	return out, nil
+}
+
+type SystemProposalOutcomeIx struct {
+	pd *provider.Provider
+}
+
+type SystemProposalOutcomeArgs struct {
+	feature_id uint32
+	proposed_height uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ProposalOutcome.
+func (ix *SystemProposalOutcomeIx) Args(feature_id uint32, proposed_height uint64) *SystemProposalOutcomeArgs {
+	return &SystemProposalOutcomeArgs{
+		feature_id: feature_id,
+		proposed_height: proposed_height,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SystemProposalOutcomeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// feature_id: u32
+	args["feature_id"] = a.feature_id
+	// proposed_height: u64
+	args["proposed_height"] = a.proposed_height
+	wire, err := a.pd.Encode("ProposalOutcome", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ProposalOutcome into *SystemProposalOutcome.
+func (ix *SystemProposalOutcomeIx) DecodeView(body []byte) (out *SystemProposalOutcome, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("ProposalOutcome", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view ProposalOutcome failed: %s", failure)
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 SystemProposalOutcome
+		v1, err := fromSystemProposalOutcome(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
+	}
+	return out, nil
 }
 
 // AccountApp exposes type-safe instruction builders for IDL app "account".
@@ -25342,6 +28614,7 @@ type TokenApp struct {
 	AddComplianceRequirement *TokenAddComplianceRequirementIx
 	RemoveComplianceRequirement *TokenRemoveComplianceRequirementIx
 	ClearComplianceRequirements *TokenClearComplianceRequirementsIx
+	DiscloseTokenVcAttestation *TokenDiscloseTokenVcAttestationIx
 	ClaimFaucet *TokenClaimFaucetIx
 	CreateEqualGift *TokenCreateEqualGiftIx
 	CreateLuckyGift *TokenCreateLuckyGiftIx
@@ -25387,6 +28660,7 @@ var Token = &TokenApp{
 	AddComplianceRequirement: &TokenAddComplianceRequirementIx{},
 	RemoveComplianceRequirement: &TokenRemoveComplianceRequirementIx{},
 	ClearComplianceRequirements: &TokenClearComplianceRequirementsIx{},
+	DiscloseTokenVcAttestation: &TokenDiscloseTokenVcAttestationIx{},
 	ClaimFaucet: &TokenClaimFaucetIx{},
 	CreateEqualGift: &TokenCreateEqualGiftIx{},
 	CreateLuckyGift: &TokenCreateLuckyGiftIx{},
@@ -25433,6 +28707,7 @@ func (a *TokenApp) bind(pd *provider.Provider) {
 	a.AddComplianceRequirement.pd = pd
 	a.RemoveComplianceRequirement.pd = pd
 	a.ClearComplianceRequirements.pd = pd
+	a.DiscloseTokenVcAttestation.pd = pd
 	a.ClaimFaucet.pd = pd
 	a.CreateEqualGift.pd = pd
 	a.CreateLuckyGift.pd = pd
@@ -26604,6 +29879,66 @@ func (a *TokenClearComplianceRequirementsArgs) Encode() (api.PackedInstruction, 
 	// token: Address
 	args["token"] = a.token
 	wire, err := a.pd.Encode("ClearComplianceRequirements", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type TokenDiscloseTokenVcAttestationIx struct {
+	pd *provider.Provider
+}
+
+type TokenDiscloseTokenVcAttestationArgs struct {
+	token *crypto.Address
+	issuer *crypto.Address
+	issuer_key_id uint8
+	credential_schema string
+	credential_hash [32]byte
+	valid_until_ms *uint64
+	issuer_signature *crypto.Signature
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of DiscloseTokenVcAttestation.
+func (ix *TokenDiscloseTokenVcAttestationIx) Args(token *crypto.Address, issuer *crypto.Address, issuer_key_id uint8, credential_schema string, credential_hash [32]byte, valid_until_ms *uint64, issuer_signature *crypto.Signature) *TokenDiscloseTokenVcAttestationArgs {
+	return &TokenDiscloseTokenVcAttestationArgs{
+		token: token,
+		issuer: issuer,
+		issuer_key_id: issuer_key_id,
+		credential_schema: credential_schema,
+		credential_hash: credential_hash,
+		valid_until_ms: valid_until_ms,
+		issuer_signature: issuer_signature,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenDiscloseTokenVcAttestationArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// token: Address
+	args["token"] = a.token
+	// issuer: Address
+	args["issuer"] = a.issuer
+	// issuer_key_id: u8
+	args["issuer_key_id"] = a.issuer_key_id
+	// credential_schema: String
+	args["credential_schema"] = a.credential_schema
+	// credential_hash: B256
+	args["credential_hash"] = a.credential_hash
+	// valid_until_ms: option<u64>
+	if a.valid_until_ms == nil {
+		args["valid_until_ms"] = nil
+	} else {
+		args["valid_until_ms"] = *a.valid_until_ms
+	}
+	// issuer_signature: Signature
+	args["issuer_signature"] = a.issuer_signature
+	wire, err := a.pd.Encode("DiscloseTokenVcAttestation", args)
 	if err != nil {
 		return nil, err
 	}
@@ -34967,8 +38302,13 @@ func (ix *ValidatorCandidateValidatorPoolsIx) DecodeView(body []byte) (out Valid
 type KeylessApp struct {
 	Pd *provider.Provider
 	BootstrapKeyless *KeylessBootstrapKeylessIx
+	InstallZkCircuit *KeylessInstallZkCircuitIx
+	UpdateJwkReport *KeylessUpdateJwkReportIx
+	PruneInactiveJwkReports *KeylessPruneInactiveJwkReportsIx
 	Authenticate *KeylessAuthenticateIx
+	AuthenticateZk *KeylessAuthenticateZkIx
 	Bind *KeylessBindIx
+	BindZk *KeylessBindZkIx
 	Unbind *KeylessUnbindIx
 	RevokeSession *KeylessRevokeSessionIx
 	RegisterAudience *KeylessRegisterAudienceIx
@@ -34979,6 +38319,8 @@ type KeylessApp struct {
 	ListProviders *KeylessListProvidersIx
 	GetProvider *KeylessGetProviderIx
 	GetProviderStatus *KeylessGetProviderStatusIx
+	GetJwkReport *KeylessGetJwkReportIx
+	GetSelectedJwk *KeylessGetSelectedJwkIx
 	GetAudience *KeylessGetAudienceIx
 	GetParams *KeylessGetParamsIx
 	IsKeylessAccount *KeylessIsKeylessAccountIx
@@ -34986,8 +38328,13 @@ type KeylessApp struct {
 
 var Keyless = &KeylessApp{
 	BootstrapKeyless: &KeylessBootstrapKeylessIx{},
+	InstallZkCircuit: &KeylessInstallZkCircuitIx{},
+	UpdateJwkReport: &KeylessUpdateJwkReportIx{},
+	PruneInactiveJwkReports: &KeylessPruneInactiveJwkReportsIx{},
 	Authenticate: &KeylessAuthenticateIx{},
+	AuthenticateZk: &KeylessAuthenticateZkIx{},
 	Bind: &KeylessBindIx{},
+	BindZk: &KeylessBindZkIx{},
 	Unbind: &KeylessUnbindIx{},
 	RevokeSession: &KeylessRevokeSessionIx{},
 	RegisterAudience: &KeylessRegisterAudienceIx{},
@@ -34998,6 +38345,8 @@ var Keyless = &KeylessApp{
 	ListProviders: &KeylessListProvidersIx{},
 	GetProvider: &KeylessGetProviderIx{},
 	GetProviderStatus: &KeylessGetProviderStatusIx{},
+	GetJwkReport: &KeylessGetJwkReportIx{},
+	GetSelectedJwk: &KeylessGetSelectedJwkIx{},
 	GetAudience: &KeylessGetAudienceIx{},
 	GetParams: &KeylessGetParamsIx{},
 	IsKeylessAccount: &KeylessIsKeylessAccountIx{},
@@ -35006,8 +38355,13 @@ var Keyless = &KeylessApp{
 func (a *KeylessApp) bind(pd *provider.Provider) {
 	a.Pd = pd
 	a.BootstrapKeyless.pd = pd
+	a.InstallZkCircuit.pd = pd
+	a.UpdateJwkReport.pd = pd
+	a.PruneInactiveJwkReports.pd = pd
 	a.Authenticate.pd = pd
+	a.AuthenticateZk.pd = pd
 	a.Bind.pd = pd
+	a.BindZk.pd = pd
 	a.Unbind.pd = pd
 	a.RevokeSession.pd = pd
 	a.RegisterAudience.pd = pd
@@ -35018,6 +38372,8 @@ func (a *KeylessApp) bind(pd *provider.Provider) {
 	a.ListProviders.pd = pd
 	a.GetProvider.pd = pd
 	a.GetProviderStatus.pd = pd
+	a.GetJwkReport.pd = pd
+	a.GetSelectedJwk.pd = pd
 	a.GetAudience.pd = pd
 	a.GetParams.pd = pd
 	a.IsKeylessAccount.pd = pd
@@ -35045,6 +38401,134 @@ func (a *KeylessBootstrapKeylessArgs) Encode() (api.PackedInstruction, error) {
 	}
 	args := provider.Args{}
 	wire, err := a.pd.Encode("BootstrapKeyless", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type KeylessInstallZkCircuitIx struct {
+	pd *provider.Provider
+}
+
+type KeylessInstallZkCircuitArgs struct {
+	circuit_id uint32
+	verifying_key []byte
+	constraint_hash [32]byte
+	max_public_inputs uint16
+	supported_algs []string
+	authentication_enabled bool
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of InstallZkCircuit.
+func (ix *KeylessInstallZkCircuitIx) Args(circuit_id uint32, verifying_key []byte, constraint_hash [32]byte, max_public_inputs uint16, supported_algs []string, authentication_enabled bool) *KeylessInstallZkCircuitArgs {
+	return &KeylessInstallZkCircuitArgs{
+		circuit_id: circuit_id,
+		verifying_key: verifying_key,
+		constraint_hash: constraint_hash,
+		max_public_inputs: max_public_inputs,
+		supported_algs: supported_algs,
+		authentication_enabled: authentication_enabled,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessInstallZkCircuitArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// circuit_id: u32
+	args["circuit_id"] = a.circuit_id
+	// verifying_key: bytes
+	args["verifying_key"] = a.verifying_key
+	// constraint_hash: B256
+	args["constraint_hash"] = a.constraint_hash
+	// max_public_inputs: u16
+	args["max_public_inputs"] = a.max_public_inputs
+	// supported_algs: vec<String>
+	v0 := make([]any, len(a.supported_algs))
+	for v1, v2 := range a.supported_algs {
+		v0[v1] = v2
+	}
+	args["supported_algs"] = v0
+	// authentication_enabled: bool
+	args["authentication_enabled"] = a.authentication_enabled
+	wire, err := a.pd.Encode("InstallZkCircuit", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type KeylessUpdateJwkReportIx struct {
+	pd *provider.Provider
+}
+
+type KeylessUpdateJwkReportArgs struct {
+	provider_id [32]byte
+	jwks []string
+	validator_account *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of UpdateJwkReport.
+func (ix *KeylessUpdateJwkReportIx) Args(provider_id [32]byte, jwks []string, validator_account *crypto.Address) *KeylessUpdateJwkReportArgs {
+	return &KeylessUpdateJwkReportArgs{
+		provider_id: provider_id,
+		jwks: jwks,
+		validator_account: validator_account,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessUpdateJwkReportArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
+	// jwks: vec<String>
+	v0 := make([]any, len(a.jwks))
+	for v1, v2 := range a.jwks {
+		v0[v1] = v2
+	}
+	args["jwks"] = v0
+	// validator_account: Signer
+	args["validator_account"] = a.validator_account
+	wire, err := a.pd.Encode("UpdateJwkReport", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type KeylessPruneInactiveJwkReportsIx struct {
+	pd *provider.Provider
+}
+
+type KeylessPruneInactiveJwkReportsArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of PruneInactiveJwkReports.
+func (ix *KeylessPruneInactiveJwkReportsIx) Args() *KeylessPruneInactiveJwkReportsArgs {
+	return &KeylessPruneInactiveJwkReportsArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessPruneInactiveJwkReportsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("PruneInactiveJwkReports", args)
 	if err != nil {
 		return nil, err
 	}
@@ -35091,6 +38575,38 @@ func (a *KeylessAuthenticateArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type KeylessAuthenticateZkIx struct {
+	pd *provider.Provider
+}
+
+type KeylessAuthenticateZkArgs struct {
+	auth any
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AuthenticateZk.
+func (ix *KeylessAuthenticateZkIx) Args(auth any) *KeylessAuthenticateZkArgs {
+	return &KeylessAuthenticateZkArgs{
+		auth: auth,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessAuthenticateZkArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// auth: Groth16Auth
+	args["auth"] = a.auth
+	wire, err := a.pd.Encode("AuthenticateZk", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type KeylessBindIx struct {
 	pd *provider.Provider
 }
@@ -35129,6 +38645,42 @@ func (a *KeylessBindArgs) Encode() (api.PackedInstruction, error) {
 	// owner: Signer
 	args["owner"] = a.owner
 	wire, err := a.pd.Encode("Bind", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type KeylessBindZkIx struct {
+	pd *provider.Provider
+}
+
+type KeylessBindZkArgs struct {
+	auth any
+	owner *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of BindZk.
+func (ix *KeylessBindZkIx) Args(auth any, owner *crypto.Address) *KeylessBindZkArgs {
+	return &KeylessBindZkArgs{
+		auth: auth,
+		owner: owner,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessBindZkArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// auth: Groth16Auth
+	args["auth"] = a.auth
+	// owner: Signer
+	args["owner"] = a.owner
+	wire, err := a.pd.Encode("BindZk", args)
 	if err != nil {
 		return nil, err
 	}
@@ -35634,6 +39186,138 @@ func (ix *KeylessGetProviderStatusIx) DecodeView(body []byte) (out *KeylessKeyle
 	} else {
 		var v0 KeylessKeylessProviderStatus
 		v1, err := fromKeylessKeylessProviderStatus(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
+	}
+	return out, nil
+}
+
+type KeylessGetJwkReportIx struct {
+	pd *provider.Provider
+}
+
+type KeylessGetJwkReportArgs struct {
+	validator any
+	provider_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of GetJwkReport.
+func (ix *KeylessGetJwkReportIx) Args(validator any, provider_id [32]byte) *KeylessGetJwkReportArgs {
+	return &KeylessGetJwkReportArgs{
+		validator: validator,
+		provider_id: provider_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessGetJwkReportArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// validator: ValidatorId
+	args["validator"] = a.validator
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
+	wire, err := a.pd.Encode("GetJwkReport", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of GetJwkReport into *KeylessValidatorJwkReport.
+func (ix *KeylessGetJwkReportIx) DecodeView(body []byte) (out *KeylessValidatorJwkReport, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("GetJwkReport", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetJwkReport failed: %s", failure)
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 KeylessValidatorJwkReport
+		v1, err := fromKeylessValidatorJwkReport(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
+	}
+	return out, nil
+}
+
+type KeylessGetSelectedJwkIx struct {
+	pd *provider.Provider
+}
+
+type KeylessGetSelectedJwkArgs struct {
+	provider_id [32]byte
+	issuer string
+	kid string
+	algorithm string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of GetSelectedJwk.
+func (ix *KeylessGetSelectedJwkIx) Args(provider_id [32]byte, issuer string, kid string, algorithm string) *KeylessGetSelectedJwkArgs {
+	return &KeylessGetSelectedJwkArgs{
+		provider_id: provider_id,
+		issuer: issuer,
+		kid: kid,
+		algorithm: algorithm,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessGetSelectedJwkArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
+	// issuer: String
+	args["issuer"] = a.issuer
+	// kid: String
+	args["kid"] = a.kid
+	// algorithm: String
+	args["algorithm"] = a.algorithm
+	wire, err := a.pd.Encode("GetSelectedJwk", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of GetSelectedJwk into *string.
+func (ix *KeylessGetSelectedJwkIx) DecodeView(body []byte) (out *string, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("GetSelectedJwk", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view GetSelectedJwk failed: %s", failure)
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 string
+		v1, err := toString(v)
 		if err != nil {
 			return out, err
 		}
@@ -37493,6 +41177,7 @@ func (ix *SocialGiftCommunityIx) DecodeView(body []byte) (out uint32, err error)
 // DemoApp exposes type-safe instruction builders for IDL app "demo".
 type DemoApp struct {
 	Pd *provider.Provider
+	SetScore *DemoSetScoreIx
 	OpenOrder *DemoOpenOrderIx
 	RejectOrderInbound *DemoRejectOrderInboundIx
 	ForwardOrderInbound *DemoForwardOrderInboundIx
@@ -37511,6 +41196,8 @@ type DemoApp struct {
 	ClaimSponsoredScore *DemoClaimSponsoredScoreIx
 	ScheduleWake *DemoScheduleWakeIx
 	RunScheduledWake *DemoRunScheduledWakeIx
+	TierCapDetail *DemoTierCapDetailIx
+	LabelChangesOf *DemoLabelChangesOfIx
 	OrderVault *DemoOrderVaultIx
 	OrderLastInbound *DemoOrderLastInboundIx
 	OrderBalance *DemoOrderBalanceIx
@@ -37525,6 +41212,7 @@ type DemoApp struct {
 }
 
 var Demo = &DemoApp{
+	SetScore: &DemoSetScoreIx{},
 	OpenOrder: &DemoOpenOrderIx{},
 	RejectOrderInbound: &DemoRejectOrderInboundIx{},
 	ForwardOrderInbound: &DemoForwardOrderInboundIx{},
@@ -37543,6 +41231,8 @@ var Demo = &DemoApp{
 	ClaimSponsoredScore: &DemoClaimSponsoredScoreIx{},
 	ScheduleWake: &DemoScheduleWakeIx{},
 	RunScheduledWake: &DemoRunScheduledWakeIx{},
+	TierCapDetail: &DemoTierCapDetailIx{},
+	LabelChangesOf: &DemoLabelChangesOfIx{},
 	OrderVault: &DemoOrderVaultIx{},
 	OrderLastInbound: &DemoOrderLastInboundIx{},
 	OrderBalance: &DemoOrderBalanceIx{},
@@ -37558,6 +41248,7 @@ var Demo = &DemoApp{
 
 func (a *DemoApp) bind(pd *provider.Provider) {
 	a.Pd = pd
+	a.SetScore.pd = pd
 	a.OpenOrder.pd = pd
 	a.RejectOrderInbound.pd = pd
 	a.ForwardOrderInbound.pd = pd
@@ -37576,6 +41267,8 @@ func (a *DemoApp) bind(pd *provider.Provider) {
 	a.ClaimSponsoredScore.pd = pd
 	a.ScheduleWake.pd = pd
 	a.RunScheduledWake.pd = pd
+	a.TierCapDetail.pd = pd
+	a.LabelChangesOf.pd = pd
 	a.OrderVault.pd = pd
 	a.OrderLastInbound.pd = pd
 	a.OrderBalance.pd = pd
@@ -37587,6 +41280,46 @@ func (a *DemoApp) bind(pd *provider.Provider) {
 	a.SpecialTypes.pd = pd
 	a.SponsorPoolOf.pd = pd
 	a.ScheduledWakeCount.pd = pd
+}
+
+type DemoSetScoreIx struct {
+	pd *provider.Provider
+}
+
+type DemoSetScoreArgs struct {
+	pool *crypto.Address
+	account *crypto.Address
+	score uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SetScore.
+func (ix *DemoSetScoreIx) Args(pool *crypto.Address, account *crypto.Address, score uint64) *DemoSetScoreArgs {
+	return &DemoSetScoreArgs{
+		pool: pool,
+		account: account,
+		score: score,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoSetScoreArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool: Address
+	args["pool"] = a.pool
+	// account: Address
+	args["account"] = a.account
+	// score: u64
+	args["score"] = a.score
+	wire, err := a.pd.Encode("SetScore", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
 }
 
 type DemoOpenOrderIx struct {
@@ -38287,6 +42020,114 @@ func (a *DemoRunScheduledWakeArgs) Encode() (api.PackedInstruction, error) {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
+}
+
+type DemoTierCapDetailIx struct {
+	pd *provider.Provider
+}
+
+type DemoTierCapDetailArgs struct {
+	pool *crypto.Address
+	tier uint32
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TierCapDetail.
+func (ix *DemoTierCapDetailIx) Args(pool *crypto.Address, tier uint32) *DemoTierCapDetailArgs {
+	return &DemoTierCapDetailArgs{
+		pool: pool,
+		tier: tier,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoTierCapDetailArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool: Address
+	args["pool"] = a.pool
+	// tier: u32
+	args["tier"] = a.tier
+	wire, err := a.pd.Encode("TierCapDetail", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of TierCapDetail into DemoTierCap.
+func (ix *DemoTierCapDetailIx) DecodeView(body []byte) (out DemoTierCap, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("TierCapDetail", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view TierCapDetail failed: %s", failure)
+	}
+	v0, err := fromDemoTierCap(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type DemoLabelChangesOfIx struct {
+	pd *provider.Provider
+}
+
+type DemoLabelChangesOfArgs struct {
+	pool *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of LabelChangesOf.
+func (ix *DemoLabelChangesOfIx) Args(pool *crypto.Address) *DemoLabelChangesOfArgs {
+	return &DemoLabelChangesOfArgs{
+		pool: pool,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *DemoLabelChangesOfArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// pool: Address
+	args["pool"] = a.pool
+	wire, err := a.pd.Encode("LabelChangesOf", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of LabelChangesOf into uint64.
+func (ix *DemoLabelChangesOfIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewData("LabelChangesOf", body)
+	if err != nil {
+		return out, err
+	}
+	if failure, ok := v.(*api.ApiFailure); ok {
+		return out, fmt.Errorf("view LabelChangesOf failed: %s", failure)
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
 }
 
 type DemoOrderVaultIx struct {

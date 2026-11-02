@@ -45,6 +45,7 @@ const (
 	MethodTypeGetResourcePathByHash      MethodType = 155
 	MethodTypeBatchGetResourcePathByHash MethodType = 160
 	MethodTypeGetAccessValue             MethodType = 165
+	MethodTypeBatchGetAccessValue        MethodType = 166
 )
 
 func NewRpcRequest(method MethodType, requestId RequestID, body []byte) *RpcRequest {

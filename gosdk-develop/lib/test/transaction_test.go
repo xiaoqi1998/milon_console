@@ -460,6 +460,42 @@ func TestTransaction_SerializeRoundTrip(t *testing.T) {
 	assert.Equal(t, tx.TxSigs, deserialized.TxSigs)
 }
 
+func TestTransaction_FormatByte(t *testing.T) {
+	tx := newTestTx([]api.PackedInstruction{{1, 2, 3}}, nil, lib.TransactionStamp(1234567890))
+	txHash := tx.TxHash()
+
+	data, err := tx.ToBytes()
+	assert.NoError(t, err)
+	assert.Equal(t, lib.TxTypeBase, data[0])
+
+	decode := func(b []byte) (*lib.Transaction, error) {
+		return postcard.DeserializePostcard(b, func(d *postcard.Deserializer) (*lib.Transaction, error) {
+			var transaction lib.Transaction
+			if err := transaction.UnmarshalPostcard(d); err != nil {
+				return &transaction, err
+			}
+			return &transaction, nil
+		}, false)
+	}
+
+	t.Run("round trip keeps the hash", func(t *testing.T) {
+		decoded, err := decode(data)
+		assert.NoError(t, err)
+		assert.Equal(t, txHash, decoded.TxHash())
+	})
+
+	t.Run("unknown format byte should fail", func(t *testing.T) {
+		_, err := decode(append([]byte{0x01}, data[1:]...))
+		assert.ErrorContains(t, err, "unknown transaction format byte")
+	})
+
+	t.Run("body without format byte should fail", func(t *testing.T) {
+		// The hash is computed over the body only, so the format byte stays outside.
+		_, err := decode(data[1:])
+		assert.Error(t, err)
+	})
+}
+
 func TestTransaction_UnifiedPayerGasOnly(t *testing.T) {
 	sk := crypto.AsClassicalSecretKey(crypto.NewClassicalSecretKey())
 	pubKey := sk.Ed25519Public()

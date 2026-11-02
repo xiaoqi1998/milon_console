@@ -9,6 +9,13 @@ import (
 
 /*
 	rust
+
+		// Wire encoding is `[format byte][body]` (MIP-33 tx_type): the format byte
+		// is TxHistoryType::Base and is written outside the postcard body, so the
+		// persisted bytes, the get_tx_by_hash/get_tx_by_id responses and the
+		// inclusion proof `history` field all start with it. The block Merkle leaf
+		// is hashed over these bytes, so verify proofs on the raw bytes instead of
+		// decoding and re-encoding.
 		pub struct TxHistory {
 			pub stamp: u64,
 			pub payer: Option<u8>,
@@ -49,7 +56,12 @@ const (
 	TxStatePending uint8 = iota
 	TxStateSuccess
 	TxStateFailed
+	TxStatePreFail
 )
+
+// TxHistoryTypeBase is the only TxHistory format byte known so far (rust
+// TxHistoryType::Base); new format values are only appended, never reused.
+const TxHistoryTypeBase uint8 = 0x00
 
 type TxHistory struct {
 	Stamp        uint64
@@ -68,7 +80,7 @@ type TxHistorySignature struct {
 type TxReceipt struct {
 	TxID       TxId
 	TxHash     TxHash
-	State      uint8 //TxStatePending + TxStateSuccess + TxStateFailed
+	State      uint8 //TxStatePending + TxStateSuccess + TxStateFailed + TxStatePreFail
 	Access     []AccessRecord
 	Events     []TypeTagWithData
 	Error      *uint16
@@ -76,6 +88,11 @@ type TxReceipt struct {
 }
 
 func (h *TxHistory) MarshalPostcard(serializer *postcard.Serializer) error {
+	// 0. Format byte (TxHistoryType::Base)
+	if err := serializer.SerializeU8(TxHistoryTypeBase); err != nil {
+		return fmt.Errorf("failed to serialize format byte: %w", err)
+	}
+
 	// 1. Stamp (u64)
 	if err := serializer.SerializeU64(h.Stamp); err != nil {
 		return fmt.Errorf("failed to serialize Stamp: %w", err)
@@ -176,6 +193,15 @@ func (r *TxReceipt) MarshalPostcard(serializer *postcard.Serializer) error {
 }
 
 func (h *TxHistory) UnmarshalPostcard(deserializer *postcard.Deserializer) error {
+	// 0. Format byte (TxHistoryType::Base)
+	formatByte, err := deserializer.DeserializeU8()
+	if err != nil {
+		return fmt.Errorf("failed to deserialize format byte: %w", err)
+	}
+	if formatByte != TxHistoryTypeBase {
+		return fmt.Errorf("unknown transaction history format byte %#04x", formatByte)
+	}
+
 	// 1. Stamp (u64)
 	stamp, err := deserializer.DeserializeU64()
 	if err != nil {

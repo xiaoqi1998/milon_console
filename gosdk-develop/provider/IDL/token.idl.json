@@ -700,6 +700,58 @@
     {
       "args": [
         {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "issuer_key_id",
+          "role": "input",
+          "type": "u8"
+        },
+        {
+          "name": "credential_schema",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "credential_hash",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "valid_until_ms",
+          "role": "input",
+          "type": "option<u64>"
+        },
+        {
+          "name": "issuer_signature",
+          "role": "input",
+          "type": "Signature"
+        }
+      ],
+      "discriminator": 39942,
+      "handler": "disclose_token_vc_attestation",
+      "kind": "entry",
+      "name": "DiscloseTokenVcAttestation",
+      "signer_lookups": {
+        "owner": {
+          "path": {
+            "arg": "token",
+            "type": "Address"
+          },
+          "res": 241
+        }
+      }
+    },
+    {
+      "args": [
+        {
           "name": "claimer",
           "role": "signer",
           "type": "Signer"
@@ -1212,7 +1264,15 @@
           "type": "Address"
         },
         {
+          "name": "name",
+          "type": "String"
+        },
+        {
           "name": "total_amount",
+          "type": "u64"
+        },
+        {
+          "name": "initial_period_seconds",
           "type": "u64"
         },
         {
@@ -1225,10 +1285,6 @@
         },
         {
           "name": "periods",
-          "type": "u64"
-        },
-        {
-          "name": "amount_per_period",
           "type": "u64"
         }
       ],
@@ -1299,6 +1355,11 @@
     },
     {
       "kind": "builtin",
+      "name": "Signature",
+      "typeTag": 9480777115032900864
+    },
+    {
+      "kind": "builtin",
       "name": "String",
       "typeTag": 8566531010829758022
     },
@@ -1327,12 +1388,12 @@
     {
       "name": "_Owner",
       "type": "Address",
-      "typeTag": 8792131286149488520
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_Freezer",
       "type": "Address",
-      "typeTag": 8792131286149488520
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_Metadata",
@@ -1367,7 +1428,7 @@
     {
       "name": "_Compliance",
       "type": "Compliance",
-      "typeTag": 10948379151966397787
+      "typeTag": 11316838900449406443
     },
     {
       "name": "_FaucetLastClaim",
@@ -1392,7 +1453,7 @@
     {
       "name": "_GiftClaimIndex",
       "type": "Address",
-      "typeTag": 12935543434248877639
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_GiftSettlement",
@@ -1407,7 +1468,7 @@
     {
       "name": "_GiftCleanupNext",
       "type": "Address",
-      "typeTag": 12935543434248877639
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_GiftClaimApp",
@@ -1450,11 +1511,6 @@
       "name": "GAS_SPONSOR_MINT",
       "type": "u64",
       "value": "1_000_000 * 1_000_000"
-    },
-    {
-      "name": "FAUCET_CHAIN_ID_MIN",
-      "type": "u64",
-      "value": 900000001
     },
     {
       "name": "MAX_GIFT_CLAIMS",

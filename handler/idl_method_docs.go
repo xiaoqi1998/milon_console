@@ -5,9 +5,28 @@ package handler
 // 限制条目括注的错误码均来自对应 IDL 的 errors 段。
 // 覆盖率由 idl_docs_test.go 保证：IDL 增删方法时测试会指出需要增删的条目。
 var idlMethodDocs = map[string]string{
-	// ==================== system 模块（协议/共识引导，8 个 entry）====================
+	// ==================== system 模块（协议/共识引导 + 升级治理，14 entry + 4 view）====================
 
-	"system.Noop": "【功能】空操作指令，无参数、无任何链上效果，常用于测试交易链路或触发账户资源的懒创建。\n【限制】无。",
+	"system.Noop":                 "【功能】空操作指令，无参数、无任何链上效果，常用于测试交易链路或触发账户资源的懒创建。\n【限制】无。",
+	"system.BootstrapChainParams": "【功能】引导阶段直接写入链参数键值对（键为 u16 编号、值为 opaque bytes），不经过提案投票流程。\n【限制】仅链引导（genesis）阶段调用。",
+
+	"system.Propose": "【功能】发起特性升级提案（投票通过后于后续高度激活，Urgent 走快速阈值）。\n【限制】提案人须为活跃验证人（UpgradeNotValidator 104）；feature_id 须具备提案资格（UpgradeNotEligible 105）且未激活（UpgradeFeatureActive 107）；同 feature_id 提案已存在报 UpgradeProposalExists（108）；该 kind 的提案槽被占报 UpgradeKindBusy（109）；须系统交易通道（UpgradeSystemTxOnly 116）。",
+
+	"system.ProposeParams": "【功能】发起链参数修改提案（params 键值对经投票通过后生效）。\n【限制】同 system.Propose；参数非法报 UpgradeInvalidParams（111）。",
+
+	"system.Vote": "【功能】验证人对指定提案投赞成票。\n【限制】仅验证人可投（UpgradeNotValidator 104）；提案不存在报 UpgradeProposalNotFound（112）；投票期已结束报 UpgradeVotingClosed（113）；重复投票报 UpgradeAlreadyVoted（114）。",
+
+	"system.Cancel": "【功能】提案发起人撤销提案。\n【限制】仅提案发起人可撤销（UpgradeNotProposer 115）；提案不存在报 UpgradeProposalNotFound（112）。",
+
+	"system.CloseVote": "【功能】关闭投票期并结算提案：达标进入激活队列，未达标标记过期。\n【限制】提案不存在报 UpgradeProposalNotFound（112）。",
+
+	"system.UpgradeStatus": "【功能】查询升级治理全量状态：已激活特性、进行中提案（票数/合格人数/阈值）、当前链参数与提案历史。\n【返回】UpgradeStatus：{active:[{feature_id, activated_height}], proposals:[{proposal, votes, eligible, fast_threshold, pass_threshold}], params, history_len, history}。",
+
+	"system.ProposalHistory": "【功能】分页查询已结算提案的历史记录。\n【返回】vec<ProposalHistoryItem>：{seq, feature_id, proposed_height, outcome:{result: Passed|Expired|Cancelled, height}}。",
+
+	"system.AvailableMethods": "【功能】查询全部 app 当前可调用的指令清单（名称/discriminator/是否 view），用于链端能力发现。\n【返回】vec<AppMethods>：{app_id, app, methods:[{name, discriminator, view}]}。",
+
+	"system.ProposalOutcome": "【功能】查询某提案（feature_id + 发起高度）的结算结局。\n【返回】option<ProposalOutcome>：{result: Passed|Expired|Cancelled, height}，无记录返回 null。",
 
 	"system.BootstrapEpochClock": "【功能】初始化协议 epoch 时钟（计时起点 + 最短纪元时长），是 staking 纪元结算（system.SettleStakingEpoch 及池周期调度）的前置条件。\n【限制】一次性初始化，重复调用会失败（EpochClockFailure）；仅在链引导阶段调用。",
 
@@ -44,9 +63,9 @@ var idlMethodDocs = map[string]string{
 
 	"account.SetSignerWeight": "【功能】修改指定槽位 signer 的权重。\n【限制】槽位须已有 signer（259）；权重 1..=255；总权重不得超过 255（263）。",
 
-	"account.VoteInit": "【功能】登记一个投票意图（MIP-25 意图重放）：提交 intent_hash 与提案内容（待重放的编码指令 + 授权位图），设置过期时间，等待账户 signer 们投票。\n【限制】提案编码后 ≤1024 字节（VoteProposalTooLarge 283）；提案须与 intent_hash 匹配（282）；过期时间必须晚于当前时间（276）且 TTL ≤24 小时（VoteTtlExceeded 281）；活跃意图数量有上限（VoteIndexFull 280）。",
+	"account.VoteInit": "【功能】登记一个投票意图（MIP-25 意图重放）：提交 intent_hash 与提案内容（待重放的编码指令 + 授权位图），设置过期时间，等待账户 signer 们投票。\n【限制】提案编码后 ≤1024 字节（VoteProposalTooLarge 282）；提案须与 intent_hash 匹配（281）；过期时间必须晚于当前时间（276）且 TTL ≤24 小时（VoteTtlExceeded 280）；活跃意图数量有上限（VoteIndexFull 279）。",
 
-	"account.Vote": "【功能】对已登记的投票意图投出一票（按投票者权重累加），达到阈值后意图可被重放执行。\n【限制】意图须存在且未过期（VoteExpired 277）；未达阈值时重放会被拒（VoteNotReady 278）。",
+	"account.Vote": "【功能】对已登记的投票意图投出一票（按投票者权重累加），达到阈值后意图可被重放执行。\n【限制】意图须存在且未过期（VoteExpired 276）；未达阈值时重放会被拒（VoteNotReady 277）。",
 
 	"account.GetAccount": "【功能】查询账户核心状态（多签位图、权重、阈值等）。\n【返回】Account：{bitmap（signer 位图）、weight（总权重）、threshold（阈值）、last_modified_block}。注意：账户首笔交易前资源不存在，报 AccountNotFound（256）。",
 
@@ -59,7 +78,7 @@ var idlMethodDocs = map[string]string{
 	"account.ListActiveVotes":   "【功能】列出账户当前全部活跃投票意图。\n【返回】[[VoteMeta, 已投票位图, 是否达标], ...] 数组。",
 	"account.SweepExpiredVotes": "【功能】一次性清理自己名下已过期的投票意向，腾出投票索引位。\n【限制】仅可清理已过期意向（VoteExpired 276）；清扫手续费不足报 VoteSweepFeeInsufficient 285；清扫唤醒被拒报 VoteWakeRejected 286。",
 
-	// ==================== token 模块（app_id=2，30 entry + 12 view）====================
+	// ==================== token 模块（app_id=2，31 entry + 12 view）====================
 
 	"token.Create": "【功能】创建新代币资源：登记名称/符号/精度/图标等元数据并设定 owner（管理权限）。发币方调用；token 地址由专用密钥对派生，且该密钥必须参与交易签名。\n【限制】token 地址已被占用报 TokenAlreadyExists（516）；token 私钥必须签名，否则报 AddressNotSignatured（519）。",
 
@@ -77,7 +96,7 @@ var idlMethodDocs = map[string]string{
 
 	"token.Burn": "【功能】销毁签名者自己持有的代币（减少总量）。\n【限制】holder 必须签名；可用余额不足报 InsufficientBalance（513）；冻结部分不可销毁。",
 
-	"token.Transfer": "【功能】从签名者向目标地址转账代币（最常用的用户操作）。\n【限制】from 必须签名；余额不足报 InsufficientBalance（513）；合规代币的接收方不满足凭证要求会报 VcRequired（521）/VcPolicyRequired（522）。",
+	"token.Transfer": "【功能】从签名者向目标地址转账代币（最常用的用户操作）。\n【限制】from 必须签名；余额不足报 InsufficientBalance（513）；合规代币的接收方不满足凭证要求会报 VcRequired（520）/VcPolicyRequired（521）。",
 
 	"token.TransferBatch": "【功能】从签名者一次性向多个地址转账。\n【限制】from 必须签名；to 与 amount 等长；余额须覆盖转账总额（513）。",
 
@@ -105,7 +124,7 @@ var idlMethodDocs = map[string]string{
 
 	"token.ClearComplianceRequirements": "【功能】清空全部合规凭证要求，代币恢复为无合规限制。\n【限制】仅 owner 生效。",
 
-	"token.ClaimFaucet": "【功能】从水龙头领取原生 MIL 代币（新账户获取 gas 费用）。本指令 gas 由链上赞助池代付（sponsor）。\n【限制】每次领取 10^10 最小单位（6 位精度下 10,000 token）；每地址 24 小时冷却，冷却期内任何尝试（含失败）都会触发/续期冷却（FaucetCooldownActive 524），脚本领水务必单次尝试；低链 ID 下水龙头禁用（FaucetDisabled 523）。",
+	"token.ClaimFaucet": "【功能】从水龙头领取原生 MIL 代币（新账户获取 gas 费用）。本指令 gas 由链上赞助池代付（sponsor）。\n【限制】每次领取 10^10 最小单位（6 位精度下 10,000 token）；每地址 24 小时冷却，冷却期内任何尝试（含失败）都会触发/续期冷却（FaucetCooldownActive 523），脚本领水务必单次尝试；低链 ID 下水龙头禁用（FaucetDisabled 522）。",
 
 	"token.BalanceOf": "【功能】查询某地址在某代币上的余额。\n【返回】u64，最小单位。",
 
@@ -135,7 +154,8 @@ var idlMethodDocs = map[string]string{
 
 	"token.VestingInfo": "【功能】查询 Vesting 全量状态。\n【返回】VestingState：{vesting_id, creator, token, start_at_ms, recipients（含各自 total/initial/periods/amount_per_period）, claimed_amounts, total_amount, remaining_amount, gas_budget}；不存在报 538。",
 
-	"token.VestingClaimable": "【功能】查询指定领款人在某 Vesting 中当前可领取的数量。\n【返回】u64（最小单位）；Vesting 不存在报 538。",
+	"token.VestingClaimable":           "【功能】查询指定领款人在某 Vesting 中当前可领取的数量。\n【返回】u64（最小单位）；Vesting 不存在报 538。",
+	"token.DiscloseTokenVcAttestation": "【功能】公开披露代币的 VC 认证材料：发行方对凭证（模式/哈希/有效期）的签名上链，供第三方核验代币合规背书。\n【限制】issuer_signature 须为发行方私钥对凭证内容的签名；issuer_key_id 为发行方密钥序号；valid_until_ms 可空表示长期有效。",
 
 	// ==================== staking 模块（app_id=3，17 entry + 11 view，Pool 模型）====================
 
@@ -223,53 +243,53 @@ var idlMethodDocs = map[string]string{
 
 	// ==================== identity 模块（app_id=4，19 entry + 25 view）====================
 
-	"identity.Create": "【功能】为地址创建 DID（去中心化身份）文档：主体类型（个人/组织）、密钥列表、服务端点、头像。identity 全部后续操作的前置。\n【限制】同一 subject 只能创建一次（DidAlreadyExists 1024）；后续要注册组织必须以 subject_type=\"Organization\" 创建（OrganizationDidRequired 1053）；密钥/服务数量与长度有上限校验（1040/1044/1046-1050）；avatar_uri 长度 1-512 字节（1045）。",
+	"identity.Create": "【功能】为地址创建 DID（去中心化身份）文档：主体类型（个人/组织）、密钥列表、服务端点、头像。identity 全部后续操作的前置。\n【限制】同一 subject 只能创建一次（DidAlreadyExists 1024）；后续要注册组织必须以 subject_type=\"Organization\" 创建（OrganizationDidRequired 1052）；密钥/服务数量与长度有上限校验（1040/1044/1046-1050）；avatar_uri 长度 1-512 字节（1045）。",
 
-	"identity.CreateWithAlias": "【功能】创建 DID 并同时绑定全局唯一别名（等价 Create + SetAlias 一步完成）。\n【限制】同 Create；别名须为「alias-数字」格式（NameInvalidFormat 1036）、各段长度校验（1035/1037/1038）、不可与已绑定名冲突（NameAlreadyBound 1028）。",
+	"identity.CreateWithAlias": "【功能】创建 DID 并同时绑定全局唯一别名（等价 Create + SetAlias 一步完成）。\n【限制】同 Create；别名须为「alias-数字」格式（NameInvalidFormat 1035）、各段长度校验（1035/1037/1038）、不可与已绑定名冲突（NameAlreadyBound 1028）。",
 
 	"identity.AddKey": "【功能】向 DID 文档添加一把新公钥。\n【返回】u8 新密钥 id。\n【限制】DID 须已创建且未停用（1025/1026）；密钥数量有上限（1040）；label 非空且不超长（1044）。",
 
-	"identity.UpdateKey": "【功能】替换 DID 文档中指定 id 的密钥（换公钥/改标签）。\n【限制】密钥须存在（DidKeyNotFound 1041）。",
+	"identity.UpdateKey": "【功能】替换 DID 文档中指定 id 的密钥（换公钥/改标签）。\n【限制】密钥须存在（DidKeyNotFound 1040）。",
 
-	"identity.RemoveKey": "【功能】从 DID 文档移除指定 id 的密钥。\n【限制】不能移除最后一把密钥（CannotRemoveLastKey 1042）；密钥须存在（1041）。",
+	"identity.RemoveKey": "【功能】从 DID 文档移除指定 id 的密钥。\n【限制】不能移除最后一把密钥（CannotRemoveLastKey 1041）；密钥须存在（1041）。",
 
-	"identity.AddService": "【功能】为 DID 添加服务端点（官网/API 入口等）。\n【返回】u8 新服务 id。\n【限制】服务数量有上限（TooManyServices 1046）；endpoint 必须为合法绝对 URI 且 scheme 合法（1048-1050）。",
+	"identity.AddService": "【功能】为 DID 添加服务端点（官网/API 入口等）。\n【返回】u8 新服务 id。\n【限制】服务数量有上限（TooManyServices 1045）；endpoint 必须为合法绝对 URI 且 scheme 合法（1048-1050）。",
 
-	"identity.UpdateService": "【功能】更新指定 id 的服务条目。\n【限制】服务须存在（ServiceNotFound 1051）；endpoint 校验同 AddService。",
+	"identity.UpdateService": "【功能】更新指定 id 的服务条目。\n【限制】服务须存在（ServiceNotFound 1050）；endpoint 校验同 AddService。",
 
 	"identity.RemoveService": "【功能】移除指定 id 的服务条目。\n【限制】服务须存在（1051）。",
 
-	"identity.SetAvatarUri": "【功能】设置/更新 DID 头像 URI。\n【限制】长度必须 1-512 字节（InvalidAvatarUri 1045）。",
+	"identity.SetAvatarUri": "【功能】设置/更新 DID 头像 URI。\n【限制】长度必须 1-512 字节（InvalidAvatarUri 1044）。",
 
 	"identity.Deactivate": "【功能】停用该 DID（停用后 identity 的写操作均被拒绝）。\n【限制】DID 须已创建（1025）；已停用再操作报 DidDeactivated（1026）。",
 
 	"identity.SetAlias": "【功能】为已有 DID 设置/更换全局唯一别名。\n【限制】别名不可被占用（NameAlreadyBound 1028）；格式与长度校验同 CreateWithAlias（1035-1039）。",
 
-	"identity.RegisterOrganization": "【功能】为组织型 DID 注册能力声明：角色（VC 签发方 VcIssuer / KYC 服务方 KycProvider）与接受的凭证 schema 列表。组织 KYC 链路第二步（前置：subject_type=Organization 的 DID，见 ORG_KYC_GUIDE）。\n【限制】必须先创建组织型 DID（OrganizationDidRequired 1053）；不可重复注册（1032）；声明任一角色必须至少带一个 credential_schema（IssuerCredentialSchemaRequired 1060）；角色/schema 数量与重复校验（1055-1059）。",
+	"identity.RegisterOrganization": "【功能】为组织型 DID 注册能力声明：角色（VC 签发方 VcIssuer / KYC 服务方 KycProvider）与接受的凭证 schema 列表。组织 KYC 链路第二步（前置：subject_type=Organization 的 DID，见 ORG_KYC_GUIDE）。\n【限制】必须先创建组织型 DID（OrganizationDidRequired 1052）；不可重复注册（1032）；声明任一角色必须至少带一个 credential_schema（IssuerCredentialSchemaRequired 1059）；角色/schema 数量与重复校验（1055-1059）。",
 
-	"identity.UpdateOrganizationCapabilities": "【功能】更新已注册组织的角色与凭证 schema 列表。\n【限制】组织须已注册（OrganizationNotFound 1031）；已停用不可更新（1054）；roles/schemas 校验同 RegisterOrganization。",
+	"identity.UpdateOrganizationCapabilities": "【功能】更新已注册组织的角色与凭证 schema 列表。\n【限制】组织须已注册（OrganizationNotFound 1030）；已停用不可更新（1054）；roles/schemas 校验同 RegisterOrganization。",
 
-	"identity.DeactivateOrganization": "【功能】永久停用组织注册（不可恢复）。\n【限制】组织须已注册（1031）；已停用再操作报 OrganizationDeactivated（1054）。",
+	"identity.DeactivateOrganization": "【功能】永久停用组织注册（不可恢复）。\n【限制】组织须已注册（1031）；已停用再操作报 OrganizationDeactivated（1053）。",
 
-	"identity.DiscloseVcAttestation": "【功能】凭证持有人将 issuer 签发的可验证凭证（VC）披露上链：登记 issuer、schema、凭证哈希与 issuer 签名（issuer 只提供签名、不作为交易签名者）。组织 KYC 链路第三步。\n【限制】subject 须有 DID；issuer 的 DID 须存在且未停用（IssuerDidNotActive 1034）；issuer_signature 由链上验签（InvalidVcIssuerSignature 1070）；同一 (subject, issuer, schema) 不可重复披露不同内容（1072）；已撤销凭证不可再披露（1073）。",
+	"identity.DiscloseVcAttestation": "【功能】凭证持有人将 issuer 签发的可验证凭证（VC）披露上链：登记 issuer、schema、凭证哈希与 issuer 签名（issuer 只提供签名、不作为交易签名者）。组织 KYC 链路第三步。\n【限制】subject 须有 DID；issuer 的 DID 须存在且未停用（IssuerDidNotActive 1033）；issuer_signature 由链上验签（InvalidVcIssuerSignature 1069）；同一 (subject, issuer, schema) 不可重复披露不同内容（1072）；已撤销凭证不可再披露（1073）。",
 
-	"identity.RemoveVcDisclosure": "【功能】subject 撤下一条自己已披露的 VC（不影响 issuer 侧凭证状态）。\n【限制】该披露须存在（VcAttestationNotFound 1033）。",
+	"identity.RemoveVcDisclosure": "【功能】subject 撤下一条自己已披露的 VC（不影响 issuer 侧凭证状态）。\n【限制】该披露须存在（VcAttestationNotFound 1032）。",
 
-	"identity.RevokeVcAttestation": "【功能】issuer 永久撤销其签发给某 subject 的 VC（状态变为 Revoked，不可恢复）。\n【限制】仅原 issuer 可撤销（issuer 为签名者）；凭证须存在（1033）；撤销后再披露报 VcAttestationRevoked（1073）。",
+	"identity.RevokeVcAttestation": "【功能】issuer 永久撤销其签发给某 subject 的 VC（状态变为 Revoked，不可恢复）。\n【限制】仅原 issuer 可撤销（issuer 为签名者）；凭证须存在（1032）；撤销后再披露报 VcAttestationRevoked（1072）。",
 
-	"identity.FreezeVcAttestation": "【功能】issuer 临时冻结其签发给某 subject 的 VC（状态变为 Frozen，可解冻恢复——与 Revoke 的永久不可恢复区别）。\n【限制】仅原 issuer（issuer 为签名者）；凭证须存在（1033）；已冻结再冻结报 VcAttestationAlreadyFrozen（1074）；已撤销的凭证不可冻结。",
+	"identity.FreezeVcAttestation": "【功能】issuer 临时冻结其签发给某 subject 的 VC（状态变为 Frozen，可解冻恢复——与 Revoke 的永久不可恢复区别）。\n【限制】仅原 issuer（issuer 为签名者）；凭证须存在（1032）；已冻结再冻结报 VcAttestationAlreadyFrozen（1073）；已撤销的凭证不可冻结。",
 
-	"identity.UnfreezeVcAttestation": "【功能】issuer 解除已冻结 VC 的冻结（状态恢复 Active）。\n【限制】仅原 issuer（issuer 为签名者）；凭证须存在（1033）；未处于冻结状态报 VcAttestationNotFrozen（1075）。",
+	"identity.UnfreezeVcAttestation": "【功能】issuer 解除已冻结 VC 的冻结（状态恢复 Active）。\n【限制】仅原 issuer（issuer 为签名者）；凭证须存在（1032）；未处于冻结状态报 VcAttestationNotFrozen（1074）。",
 
 	"identity.VcAttestationCore": "【功能】查询某 (subject, schema, issuer) 组合下 VC 凭证的不可变核心内容。\n【返回】VcAttestationCore：{credential_schema, credential_hash, valid_until_ms}；不存在报 1033。",
 
 	"identity.VcAttestationLifecycle": "【功能】查询 VC 的生命周期状态（是否被撤销/冻结、最近变更时间）。\n【返回】VcAttestationLifecycle：{status: \"Active\"|\"Revoked\"|\"Frozen\", updated_at_ms}。",
 
-	"identity.AcceptedVcIssuerIndexMeta": "【功能】查询 subject 某 schema 下「已接受 VC 签发方索引」的元信息。\n【返回】String；索引不存在报 VcAcceptanceIndexNotFound（1068）。",
+	"identity.AcceptedVcIssuerIndexMeta": "【功能】查询 subject 某 schema 下「已接受 VC 签发方索引」的元信息。\n【返回】String；索引不存在报 VcAcceptanceIndexNotFound（1067）。",
 
-	"identity.AcceptedVcIssuers": "【功能】列出 subject 某 schema 下已接受凭证的签发方及凭证哈希。\n【返回】[{issuer, credential_hash}]；数量有上限（TooManyAcceptedVcIssuers 1065）。",
+	"identity.AcceptedVcIssuers": "【功能】列出 subject 某 schema 下已接受凭证的签发方及凭证哈希。\n【返回】[{issuer, credential_hash}]；数量有上限（TooManyAcceptedVcIssuers 1064）。",
 
-	"identity.DisclosedVcSchemas": "【功能】列出 subject 已披露 VC 的全部 schema。\n【返回】字符串 JSON 数组；种类数有上限（TooManyDisclosedVcSchemas 1066）。",
+	"identity.DisclosedVcSchemas": "【功能】列出 subject 已披露 VC 的全部 schema。\n【返回】字符串 JSON 数组；种类数有上限（TooManyDisclosedVcSchemas 1065）。",
 
 	"identity.DisclosedVcs": "【功能】分页列出 subject 已披露 VC 的摘要。\n【返回】[{credential_schema, issuer, credential_hash, valid_until_ms, status, is_valid}]。",
 
@@ -399,9 +419,9 @@ var idlMethodDocs = map[string]string{
 
 	"dex.CreateMarket": "【功能】创建订单簿交易市场（base/quote 代币对），调用者成为市场 authority（管理员）。maker/taker 费率由链上常量固定为 0.3%/0.5%。\n【返回】Address 新市场地址（由链上种子派生）。\n【限制】base≠quote（SameTokenPair 1536）；所有数值参数非 0（ZeroMarketParameter 1537）；同代币对不可重复建市场（MarketAlreadyExists 1541）。",
 
-	"dex.InitializeMarketDid": "【功能】为市场初始化 DID 文档（市场身份/资质展示）。\n【限制】须市场 authority 签名（MarketAuthorityMismatch 1546）；市场须存在（MarketNotFound 1542）；subject_type 必须为 Organization（MarketDidMustBeOrganization 1562）。",
+	"dex.InitializeMarketDid": "【功能】为市场初始化 DID 文档（市场身份/资质展示）。\n【限制】须市场 authority 签名（MarketAuthorityMismatch 1546）；市场须存在（MarketNotFound 1542）；subject_type 必须为 Organization（MarketDidMustBeOrganization 1558）。",
 
-	"dex.DiscloseMarketVcAttestation": "【功能】为市场披露一条 VC 凭证：登记签发方、schema、凭证哈希与签发方签名，供合规展示。\n【限制】须市场 authority 签名；签发方身份须可解析（IdentityFailure 1561）。",
+	"dex.DiscloseMarketVcAttestation": "【功能】为市场披露一条 VC 凭证：登记签发方、schema、凭证哈希与签发方签名，供合规展示。\n【限制】须市场 authority 签名；签发方身份须可解析（IdentityFailure 1557）。",
 
 	"dex.PlaceLimitOrder": "【功能】下限价单：先尝试吃单成交，未成交部分按限价挂入订单簿并锁定资金。\n【返回】PlaceOrderResult：{order_id, status, filled_lots, remaining_lots, fill_count, rested（是否纯挂单）}。\n【限制】市场须为 Active 状态（MarketNotActive 1543）；price_tick 须在 [min_tick, max_tick] 内；资金不足报 TokenFailure（1555）。",
 
@@ -434,23 +454,23 @@ var idlMethodDocs = map[string]string{
 	"dex.SwapExactIn":       "【功能】混合换币（精确输入）：先吃订单簿（至多 max_book_makers 档成交），余量走 AMM 分段成交（至多 max_amm_segments 段），输入 input_token 的 amount_in，带 min_amount_out / worst_tick 保护。\n【返回】HybridSwapResult：{amount_in_used, amount_out, refund, clob_fills, amm_segments}。\n【限制】input_token 须属于该市场（InvalidSwapInputToken 1571）；保护/限额参数不合法报 InvalidSwapParameter 1570；输出低于 min_amount_out 报 MinSwapOutputNotMet 1573；算术溢出报 SwapOverflow 1572。",
 	"dex.AmmSwapEnabled":    "【功能】查询市场 AMM 池是否处于可交易状态。\n【返回】bool。",
 
-	// ==================== keyless 模块（app_id=8，8 entry + 8 view）====================
+	// ==================== keyless 模块（app_id=8，13 entry + 10 view）====================
 
 	"keyless.BootstrapKeyless": "【功能】初始化 keyless 注册表：注册内置 Google/Apple OIDC provider 与默认参数（无参数，args 传 {}）。\n【限制】仅 genesis 块 0 可调（GenesisOnly 2113）；只能初始化一次（AlreadyBootstrapped 2114）。",
 
-	"keyless.Authenticate": "【功能】用 OIDC id_token（JWT）+ 临时公钥完成无密钥认证，建立链上会话（后续以会话公钥签名操作）。gas 由赞助池代付（sponsor）。\n【限制】JWT 校验严格：须三段式 JWS（2049）、未过期（2059）且签发时间不过旧（≤10 分钟，JwtTooOld 2061）、issuer/audience 与 provider 匹配（2062-2064）、签名验证通过（2066）；nonce 须以 milon-keyless-v1. 开头且内嵌 ephemeral_pk 的 commitment（2067-2075）；公共赞助每会话仅一次（2090）；provider 须已注册并启用（2091/2093）。",
+	"keyless.Authenticate": "【功能】用 OIDC id_token（JWT）+ 临时公钥完成无密钥认证，建立链上会话（后续以会话公钥签名操作）。gas 由赞助池代付（sponsor）。\n【限制】JWT 校验严格：须三段式 JWS（2049）、未过期（2060）且签发时间不过旧（≤10 分钟，JwtTooOld 2062）、issuer/audience 与 provider 匹配（2063-2065）、签名验证通过（2067）；nonce 须以 milon-keyless-v1. 开头且内嵌 ephemeral_pk 的 commitment（2068-2076）；公共赞助每会话仅一次（2091）；provider 须已注册并启用（2092/2094）。",
 
-	"keyless.Bind": "【功能】把 keyless 身份（JWT 认证通过后派生的地址）绑定到链上账户的一个 signer 槽位，使账户可无私钥托管。\n【限制】该身份不可已被绑定（AlreadyBound 2098）；绑定有激活延迟（默认 1 天、下限 1 小时，active_at_ms = bound_at_ms + 延迟）；JWT 校验同 Authenticate；owner 须签名。",
+	"keyless.Bind": "【功能】把 keyless 身份（JWT 认证通过后派生的地址）绑定到链上账户的一个 signer 槽位，使账户可无私钥托管。\n【限制】该身份不可已被绑定（AlreadyBound 2099）；绑定有激活延迟（默认 1 天、下限 1 小时，active_at_ms = bound_at_ms + 延迟）；JWT 校验同 Authenticate；owner 须签名。",
 
-	"keyless.Unbind": "【功能】解除 keyless 身份与账户的绑定。\n【限制】绑定须存在（BindingNotFound 2099）；仅绑定 owner 可解绑（BindingOwnerMismatch 2100）。",
+	"keyless.Unbind": "【功能】解除 keyless 身份与账户的绑定。\n【限制】绑定须存在（BindingNotFound 2100）；仅绑定 owner 可解绑（BindingOwnerMismatch 2101）。",
 
-	"keyless.RevokeSession": "【功能】撤销一个活跃会话（会话公钥立即失效）。\n【限制】会话须存在且属该 owner（SessionNotFound 2097）；已撤销报 SessionRevoked（2089）。",
+	"keyless.RevokeSession": "【功能】撤销一个活跃会话（会话公钥立即失效）。\n【限制】会话须存在且属该 owner（SessionNotFound 2098）；已撤销报 SessionRevoked（2090）。",
 
-	"keyless.RegisterAudience": "【功能】为 provider 注册允许的 audience（OIDC client ID），之后该 audience 的 JWT 才能通过校验。\n【限制】provider 须已注册（ProviderNotRegistered 2091）；audience 长度 1..=256 字节（AudienceInvalid 2118）；内置 provider 元数据不可修改（BuiltinProviderImmutable 2122）。",
+	"keyless.RegisterAudience": "【功能】为 provider 注册允许的 audience（OIDC client ID），之后该 audience 的 JWT 才能通过校验。\n【限制】provider 须已注册（ProviderNotRegistered 2092）；audience 长度 1..=256 字节（AudienceInvalid 2118）；内置 provider 元数据不可修改（BuiltinProviderImmutable 2127）。",
 
-	"keyless.CreateStaticProvider": "【功能】注册自定义「静态 JWK」验证 provider（自带公钥集，不依赖内置 OIDC）。provider_id 由 (issuer, salt) 派生。\n【限制】issuer 必须 https:// 开头（IssuerUrlInvalid 2094）；名称非空且 ≤64 字节（2095）；密钥 1..=8 把（StaticKeyCountInvalid 2124）；kid 唯一且 1..=128 字节（2125）；不可用保留命名空间（ReservedProviderId 2123）；重复注册报 ProviderAlreadyRegistered（2092）。",
+	"keyless.CreateStaticProvider": "【功能】注册自定义「静态 JWK」验证 provider（自带公钥集，不依赖内置 OIDC）。provider_id 由 (issuer, salt) 派生。\n【限制】issuer 必须 https:// 开头（IssuerUrlInvalid 2095）；名称非空且 ≤64 字节（2096）；密钥 1..=8 把（StaticKeyCountInvalid 2129）；kid 唯一且 1..=128 字节（2130）；不可用保留命名空间（ReservedProviderId 2128）；重复注册报 ProviderAlreadyRegistered（2093）。",
 
-	"keyless.UpdateStaticProviderKeys": "【功能】轮换自定义 provider 的验证密钥集；invalidate_sessions=true 可使全部旧会话立即失效。\n【限制】仅静态 provider 可改（BuiltinProviderImmutable 2122）；仅 provider owner（ProviderOwnerMismatch 2121）。",
+	"keyless.UpdateStaticProviderKeys": "【功能】轮换自定义 provider 的验证密钥集；invalidate_sessions=true 可使全部旧会话立即失效。\n【限制】仅静态 provider 可改（BuiltinProviderImmutable 2127）；仅 provider owner（ProviderOwnerMismatch 2121）。",
 
 	"keyless.GetSessions": "【功能】查询某账户的全部活跃会话。\n【返回】[{session_id, provider_id, audience_hash, session_version, session_pubkey, expires_at_ms, created_at_ms}]。",
 
@@ -467,6 +487,19 @@ var idlMethodDocs = map[string]string{
 	"keyless.GetParams": "【功能】查询 keyless 全局参数（无参数）。\n【返回】KeylessParams：{max_session_ttl_ms（默认 1 天）, bind_activation_delay_ms（默认 1 天）}。",
 
 	"keyless.IsKeylessAccount": "【功能】判断某地址是否已绑定 keyless 身份。\n【返回】bool。",
+	"keyless.InstallZkCircuit": "【功能】注册 Groth16 ZK 验证电路：验证密钥、约束哈希、公共输入数上限、支持的 JWT 算法集，并可同时开放 ZK 无密钥认证。\n【限制】电路 ID 非法报 ZkCircuitIdInvalid（2122）；重复注册报 ZkCircuitAlreadyRegistered（2123）；电路参数非法报 ZkCircuitInvalid（2124）。",
+
+	"keyless.UpdateJwkReport": "【功能】验证人上报某 provider 的 JWKS 快照（动态 JWK 共识：多验证人报告一致后被选中）。\n【限制】validator_account 须为活跃验证人（ValidatorNotActive 2132）；验证人集合不可用报 ValidatorSetUnavailable（2133）；JWKS 格式非法报 DynamicJwkSetInvalid（2134）；thumbprint 非规范报 JwkThumbprintNonCanonical（2136）。",
+
+	"keyless.PruneInactiveJwkReports": "【功能】清理不再活跃的验证人留下的 JWK 报告（无参数维护指令）。\n【限制】仅系统/维护流程调用。",
+
+	"keyless.AuthenticateZk": "【功能】用 Groth16 ZK 证明完成无密钥认证：JWT 语义由链下证明承载，链上仅验证证明本身（可 sponsor 代付 gas）。\n【限制】ZK 认证未开放报 ZkAuthenticationDisabled（2125）；证明无效报 ZkProofInvalid（2126）；证明编码/公共输入数等问题以 Groth16Error 变体返回。",
+
+	"keyless.BindZk": "【功能】ZK 认证通过后，把 keyless 身份绑定到 owner 账户的 signer 槽位（Bind 的 ZK 证明版）。\n【限制】ZK 校验同 AuthenticateZk；该身份不可已被绑定（AlreadyBound 2099）；owner 须签名；绑定激活延迟与 Bind 一致。",
+
+	"keyless.GetJwkReport": "【功能】查询某验证人对某 provider 的 JWK 报告。\n【返回】option<ValidatorJwkReport>：{validator, keys:[JWK JSON]}，无报告返回 null。",
+
+	"keyless.GetSelectedJwk": "【功能】查询共识当前选中的某 provider/issuer/kid/algorithm 的 JWK。\n【返回】option<String>（JWK JSON），未选中返回 null。",
 
 	// ==================== lucky_box 模块（app_id=9，4 entry + 2 view）====================
 
@@ -502,7 +535,7 @@ var idlMethodDocs = map[string]string{
 
 	"social.RetireReference": "【功能】将对象引用记录下线（retired 标记，记录保留）。\n【限制】仅发布者；引用须存在（ReferenceNotFound 2574）；已下线再操作报 ReferenceRetired（2575）；修订号耗尽报 2577。",
 
-	"social.CreateCommunity": "【功能】创建社区，链上分配自增 community_id。\n【返回】u32 community_id。\n【限制】每 creator 最多 8 个社区（CommunityCreationLimitReached 2593）；URI 须合法（2563）。",
+	"social.CreateCommunity": "【功能】创建社区，链上分配自增 community_id。\n【返回】u32 community_id。\n【限制】每 creator 最多 8 个社区（CommunityCreationLimitReached 2592）；URI 须合法（2563）。",
 
 	"social.UpdateCommunityUri": "【功能】社区 owner 更新社区元数据 URI。\n【限制】仅 owner（CommunityOwnerRequired 2581）；社区须存在（2578）且未停用（2580）。",
 
@@ -516,7 +549,7 @@ var idlMethodDocs = map[string]string{
 
 	"social.RevokeCommunityAdmin": "【功能】owner 撤销某地址的社区管理员权限。\n【限制】仅 owner；目标须是管理员（CommunityAdminNotFound 2585）。",
 
-	"social.JoinCommunity": "【功能】直接加入社区（仅 Open 模式；Approval 模式须走申请审批）。\n【限制】模式须为 Open（InvalidJoinMode 2586）；成员数不超 10000（CommunityMemberLimitReached 2594）；不可重复加入（MembershipAlreadyActive 2587）。",
+	"social.JoinCommunity": "【功能】直接加入社区（仅 Open 模式；Approval 模式须走申请审批）。\n【限制】模式须为 Open（InvalidJoinMode 2586）；成员数不超 10000（CommunityMemberLimitReached 2593）；不可重复加入（MembershipAlreadyActive 2587）。",
 
 	"social.RequestJoinCommunity": "【功能】在 Approval 模式社区提交加入申请。\n【限制】模式须为 Approval（2586）；不可重复申请（JoinRequestAlreadyPending 2589）；不可已是成员（2587）。",
 
@@ -526,7 +559,7 @@ var idlMethodDocs = map[string]string{
 
 	"social.RejectJoinRequest": "【功能】管理员拒绝某用户的加入申请。\n【限制】同 ApproveJoinRequest：管理员权限 + pending 申请存在。",
 
-	"social.LeaveCommunity": "【功能】成员主动退出社区。\n【限制】须是活跃成员（MembershipNotActive 2588）；owner 不能退出（CannotLeaveCommunityOwner 2596，须先转让）。",
+	"social.LeaveCommunity": "【功能】成员主动退出社区。\n【限制】须是活跃成员（MembershipNotActive 2588）；owner 不能退出（CannotLeaveCommunityOwner 2597，须先转让）。",
 
 	"social.RemoveCommunityMember": "【功能】管理员移除某成员。\n【限制】须管理员（2582）；目标须是成员（2588）；不能移除 owner（CannotRemoveCommunityOwner 2583）。",
 
@@ -550,7 +583,7 @@ var idlMethodDocs = map[string]string{
 	"social.CanClaimCommunityGift": "【功能】判断某地址当前能否领取某社区红包。\n【返回】bool。",
 	"social.GiftCommunity":         "【功能】查询社区红包所属的社区 ID。\n【返回】u32。",
 
-	// ==================== demo 模块（app_id=255，18 entry + 11 view）====================
+	// ==================== demo 模块（app_id=254，19 entry + 13 view）====================
 
 	"demo.OpenOrder": "【功能】演示订单支付流第一步：operator 开一个演示订单（收款托管户头）。\n【限制】order_id 不可重复（OrderAlreadyExists 65029）。",
 
@@ -566,13 +599,13 @@ var idlMethodDocs = map[string]string{
 
 	"demo.SponsorPoolOf": "【功能】按池编号查询赞助池地址。\n【返回】Address。",
 
-	"demo.InitPool": "【功能】初始化一个演示池（标签/积分载体），由 pool 资源账户签名。\n【限制】不可重复初始化（PoolAlreadyExists 65281）。",
+	"demo.InitPool": "【功能】初始化一个演示池（标签/积分载体），由 pool 资源账户签名。\n【限制】不可重复初始化（PoolAlreadyExists 65025）。",
 
 	"demo.InitDex": "【功能】同 InitPool，以 dex 为主题的演示初始化。\n【限制】不可重复初始化（65281）。",
 
-	"demo.SetLabel": "【功能】修改池的标签。\n【限制】池须存在（PoolNotFound 65280）。",
+	"demo.SetLabel": "【功能】修改池的标签。\n【限制】池须存在（PoolNotFound 65024）。",
 
-	"demo.BatchCredit": "【功能】给一批接收者在池内加积分（触发 EventCreditApplied 事件）。\n【限制】池须存在（65280）；接收者须已在池内登记（RecipientNotFound 65282）。",
+	"demo.BatchCredit": "【功能】给一批接收者在池内加积分（触发 EventCreditApplied 事件）。\n【限制】池须存在（65280）；接收者须已在池内登记（RecipientNotFound 65026）。",
 
 	"demo.LabelOf": "【功能】查询池标签。\n【返回】Label：{text}。",
 
@@ -598,11 +631,41 @@ var idlMethodDocs = map[string]string{
 	"demo.OrderVault":          "【功能】查询演示订单托管户头地址。\n【返回】Address。",
 	"demo.OrderLastInbound":    "【功能】查询演示订单最新一笔入账明细。\n【返回】LastInbound：{token, from, amount}。",
 	"demo.ScheduledWakeCount":  "【功能】查询当前已登记待执行的定时唤醒数量。\n【返回】u64。",
+	"demo.SetScore":            "【功能】由池管理侧直接设置某账户在池中的积分值（管理类指令，区别于 Draw 等玩法产出）。\n【限制】池须存在（PoolNotFound 65024）；参数非法报 InvalidParameters（65027）。",
+
+	"demo.TierCapDetail": "【功能】查询池中某积分等级的上限与设置人。\n【返回】TierCap：{cap, set_by}。",
+
+	"demo.LabelChangesOf": "【功能】查询池累计的标签变更次数。\n【返回】u64。",
 }
 
 // IDL 参数中文文档映射。键为 "app.Method:arg"，值为一行说明（含义 + 输入格式 + 约束）。
 var idlArgDocs = map[string]string{
 	// ==================== system ====================
+	"system.CommitValidatorSet:rules_height": "规则集生效高度，十进制数字",
+
+	"system.BootstrapChainParams:params": "链参数键值对，JSON 数组，每项 [键编号(u16), hex 字节串]",
+
+	"system.Propose:signer":     "提案发起人地址（活跃验证人），须其私钥参与交易签名",
+	"system.Propose:feature_id": "特性编号，十进制数字",
+	"system.Propose:kind":       "提案种类：Normal（常规）或 Urgent（加急，走快速阈值）",
+
+	"system.ProposeParams:signer": "提案发起人地址（活跃验证人），须其私钥参与交易签名",
+	"system.ProposeParams:params": "链参数键值对，格式同 BootstrapChainParams",
+	"system.ProposeParams:kind":   "提案种类：Normal 或 Urgent",
+
+	"system.Vote:signer":     "投票验证人地址，须其私钥参与交易签名",
+	"system.Vote:feature_id": "要投票的特性编号，十进制数字",
+
+	"system.Cancel:signer":     "提案发起人地址，须其私钥参与交易签名",
+	"system.Cancel:feature_id": "要撤销的特性编号，十进制数字",
+
+	"system.CloseVote:feature_id": "要关闭投票的特性编号，十进制数字",
+
+	"system.ProposalHistory:start": "起始序号（seq，含），十进制数字",
+	"system.ProposalHistory:limit": "返回条数上限，十进制数字",
+
+	"system.ProposalOutcome:feature_id":      "特性编号，十进制数字",
+	"system.ProposalOutcome:proposed_height": "提案发起时的区块高度，十进制数字",
 
 	"system.BootstrapEpochClock:start_timestamp_ms": "epoch 计时起点，Unix 毫秒时间戳（十进制数字）",
 	"system.BootstrapEpochClock:min_duration_ms":    "epoch 最短时长，毫秒（十进制数字）",
@@ -783,6 +846,13 @@ var idlArgDocs = map[string]string{
 	"token.VestingClaimable:vesting_id": "Vesting 地址，base58 字符串",
 	"token.VestingClaimable:recipient":  "领款人地址，base58 字符串",
 
+	"token.DiscloseTokenVcAttestation:token":             "代币地址，base58 字符串",
+	"token.DiscloseTokenVcAttestation:issuer":            "VC 发行方地址，base58 字符串",
+	"token.DiscloseTokenVcAttestation:issuer_key_id":     "发行方密钥序号，十进制数字（0..=255）",
+	"token.DiscloseTokenVcAttestation:credential_schema": "凭证模式描述，UTF-8 字符串",
+	"token.DiscloseTokenVcAttestation:credential_hash":   "凭证哈希，64 位 hex 字符串（可带 0x）",
+	"token.DiscloseTokenVcAttestation:valid_until_ms":    "凭证有效期截止，Unix 毫秒时间戳（十进制数字）；缺省表示长期有效",
+	"token.DiscloseTokenVcAttestation:issuer_signature":  "发行方签名，hex 字符串（可带 0x）",
 	// ==================== staking ====================
 
 	"staking.CreatePool:owner":                                    "池主地址，须其私钥参与交易签名",
@@ -1216,6 +1286,28 @@ var idlArgDocs = map[string]string{
 	"keyless.GetAudience:audience":                         "要查询的 OIDC client ID 字符串",
 	"keyless.IsKeylessAccount:owner":                       "账户地址，base58 字符串",
 
+	"keyless.InstallZkCircuit:circuit_id":             "ZK 电路编号，十进制数字",
+	"keyless.InstallZkCircuit:verifying_key":          "Groth16 验证密钥，hex 字符串（可带 0x）",
+	"keyless.InstallZkCircuit:constraint_hash":        "电路约束哈希，64 位 hex 字符串（可带 0x）",
+	"keyless.InstallZkCircuit:max_public_inputs":      "公共输入数上限，十进制数字（0..=65535）",
+	"keyless.InstallZkCircuit:supported_algs":         "支持的 JWT 签名算法名 JSON 数组，如 [\"ES256\"]",
+	"keyless.InstallZkCircuit:authentication_enabled": "是否同时开放 ZK 无密钥认证，bool",
+
+	"keyless.UpdateJwkReport:provider_id":       "provider 标识，64 位 hex 字符串",
+	"keyless.UpdateJwkReport:jwks":              "JWK 集合，JSON 字符串数组（每项为一个 JWK JSON）",
+	"keyless.UpdateJwkReport:validator_account": "验证人账户地址，须其私钥参与交易签名",
+
+	"keyless.AuthenticateZk:auth": "Groth16 ZK 认证材料对象（证明/电路 ID/公共输入，结构随链端电路定义）",
+	"keyless.BindZk:auth":         "Groth16 ZK 认证材料对象，同 AuthenticateZk",
+	"keyless.BindZk:owner":        "绑定目标账户地址，须其私钥参与交易签名",
+
+	"keyless.GetJwkReport:validator":   "验证人 ID（ValidatorId），32 字节 hex 或 base58 字符串",
+	"keyless.GetJwkReport:provider_id": "provider 标识，64 位 hex 字符串",
+
+	"keyless.GetSelectedJwk:provider_id": "provider 标识，64 位 hex 字符串",
+	"keyless.GetSelectedJwk:issuer":      "JWT 签发方 URL",
+	"keyless.GetSelectedJwk:kid":         "密钥 ID（JWK kid）",
+	"keyless.GetSelectedJwk:algorithm":   "签名算法名，如 ES256",
 	// ==================== lucky_box ====================
 
 	"lucky_box.CreateEqual:creator":      "创建者地址，须其私钥参与交易签名（资金从其账户托管）",
@@ -1395,4 +1487,10 @@ var idlArgDocs = map[string]string{
 	"demo.ScheduleWake:caller":              "登记人地址，须其私钥参与交易签名",
 	"demo.ScheduleWake:due_ms":              "多少毫秒后到期，十进制数字",
 	"demo.OrderVault:order_id":              "订单编号，字符串",
+	"demo.SetScore:pool":                    "池地址，base58 字符串",
+	"demo.SetScore:account":                 "目标账户地址，base58 字符串",
+	"demo.SetScore:score":                   "设置的积分值，十进制数字",
+	"demo.TierCapDetail:pool":               "池地址，base58 字符串",
+	"demo.TierCapDetail:tier":               "等级编号，十进制数字",
+	"demo.LabelChangesOf:pool":              "池地址，base58 字符串",
 	"demo.OrderLastInbound:order_id":        "订单编号，字符串"}

@@ -37,7 +37,11 @@ func PrintFramedHistory(client *Client, idx int, fh *FramedHistory, pathMap map[
 		api.TxStatePending: "Pending",
 		api.TxStateSuccess: "Success",
 		api.TxStateFailed:  "Failed",
+		api.TxStatePreFail: "PreFail",
 	}[fh.State]
+	if stateName == "" {
+		stateName = "Unknown"
+	}
 
 	fmt.Fprintf(&sb, "tx[%d] tx_hash=%s tx_id=%d:%d state=%d(%s) gas=%d\n", idx, fh.TxHashBase58(), blockID, indexInBlock, fh.State, stateName, fh.GasCharged)
 

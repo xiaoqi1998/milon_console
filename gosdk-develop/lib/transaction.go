@@ -18,6 +18,11 @@ var (
 type TransactionStamp uint64
 type RequestID uint64
 
+// TxTypeBase is the only transaction format byte known so far (rust
+// TxType::Base). The submitted wire is `[format byte][postcard body]` (MIP-33),
+// while the tx hash and the signed message stay format-byte free.
+const TxTypeBase uint8 = 0x00
+
 func SetChainId(id uint64) {
 	ChainIdMutex.Lock()
 	defer ChainIdMutex.Unlock()
@@ -203,7 +208,7 @@ func (tx *Transaction) ValidateWireWith(sponsorIx []uint8) error {
 	return nil
 }
 
-// ToBytes serialize to byte array
+// ToBytes serialize to byte array, prefixed with the transaction format byte
 func (tx *Transaction) ToBytes() ([]byte, error) {
 	est := 64 + len(tx.Instructions)*100 + len(tx.TxSigs)*800
 	serializer := postcard.NewSerializerWithCap(est)
@@ -214,7 +219,12 @@ func (tx *Transaction) ToBytes() ([]byte, error) {
 }
 
 func (tx *Transaction) MarshalPostcard(serializer *postcard.Serializer) error {
-	err := serializer.SerializeU64(uint64(tx.Stamp))
+	err := serializer.SerializeU8(TxTypeBase)
+	if err != nil {
+		return fmt.Errorf("failed to serialize format byte: %w", err)
+	}
+
+	err = serializer.SerializeU64(uint64(tx.Stamp))
 	if err != nil {
 		return fmt.Errorf("failed to serialize Stamp: %w", err)
 	}
@@ -250,6 +260,14 @@ func (tx *Transaction) MarshalPostcard(serializer *postcard.Serializer) error {
 }
 
 func (tx *Transaction) UnmarshalPostcard(deserializer *postcard.Deserializer) error {
+	formatByte, err := deserializer.DeserializeU8()
+	if err != nil {
+		return fmt.Errorf("failed to deserialize format byte: %w", err)
+	}
+	if formatByte != TxTypeBase {
+		return fmt.Errorf("unknown transaction format byte %#04x", formatByte)
+	}
+
 	stamp, err := deserializer.DeserializeU64()
 	if err != nil {
 		return fmt.Errorf("failed to deserialize Stamp: %w", err)

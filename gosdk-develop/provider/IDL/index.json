@@ -183,6 +183,16 @@
       "name": "InvalidTransactionSignature"
     },
     {
+      "code": 26,
+      "message": "unknown transaction type",
+      "name": "UnknownTxType"
+    },
+    {
+      "code": 27,
+      "message": "unknown transaction history type",
+      "name": "UnknownTxHistoryType"
+    },
+    {
       "code": 64,
       "message": "未绑定上下文, 请先调用bind_context绑定上下文",
       "name": "ContextNotBound"

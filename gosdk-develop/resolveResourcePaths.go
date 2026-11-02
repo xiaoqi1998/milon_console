@@ -10,7 +10,7 @@ import (
 // The SDK uses JSON RPC and encodes the request body as a decimal byte array (~4x larger than binary);
 // a big block can have thousands of resources, so without sharding the body risks being too large/timing out.
 // Any failed batch returns an error for the upper layer to break the stream and retry (never silently skipped, ensuring complete paths for the whole block).
-const resolvePathBatchSize = 500
+const resolvePathBatchSize = 128
 
 // ResolveResourcePaths queries resource paths per block in batches, fetching the path of every resource in the block via batched RPC;
 // on RPC failure it returns an error so the caller aborts processing the block, avoiding a whole block's missing paths being silently skipped.

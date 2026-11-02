@@ -40,7 +40,8 @@ type RpcClientImpl interface {
 	GetResource(rsHash api.RsHash, opts ...RequestOption) (*GetResourceResult, error)
 	GetResourcePathByHash(rsHash api.RsHash, opts ...RequestOption) (*GetResourcePathByHashResult, error)
 	BatchGetResourcePathByHash(rsHashList []api.RsHash, opts ...RequestOption) (*BatchGetResourcePathByHashResult, error)
-	GetAccessValue(blobHashList []api.BlobHash, opts ...RequestOption) (*GetAccessValueResult, error)
+	GetAccessValue(blobHash api.BlobHash, opts ...RequestOption) (*GetAccessValueResult, error)
+	BatchGetAccessValue(blobHashList []api.BlobHash, opts ...RequestOption) (*BatchGetAccessValueResult, error)
 
 	WaitForTransaction(txHashOrTxIdRelaxed any, opts ...WaitOption) (*GetTxByHashResult, error)
 }
@@ -291,8 +292,11 @@ func (client *Client) GetResourcePathByHash(rsHash api.RsHash, opts ...RequestOp
 func (client *Client) BatchGetResourcePathByHash(rsHashList []api.RsHash, opts ...RequestOption) (*BatchGetResourcePathByHashResult, error) {
 	return client.RpcClient.BatchGetResourcePathByHash(rsHashList, opts...)
 }
-func (client *Client) GetAccessValue(blobHashList []api.BlobHash, opts ...RequestOption) (*GetAccessValueResult, error) {
-	return client.RpcClient.GetAccessValue(blobHashList, opts...)
+func (client *Client) GetAccessValue(blobHash api.BlobHash, opts ...RequestOption) (*GetAccessValueResult, error) {
+	return client.RpcClient.GetAccessValue(blobHash, opts...)
+}
+func (client *Client) BatchGetAccessValue(blobHashList []api.BlobHash, opts ...RequestOption) (*BatchGetAccessValueResult, error) {
+	return client.RpcClient.BatchGetAccessValue(blobHashList, opts...)
 }
 
 func (client *Client) WaitForTransaction(txHashOrTxIdRelaxed any, opts ...WaitOption) (*GetTxByHashResult, error) {

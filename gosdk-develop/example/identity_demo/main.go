@@ -14,7 +14,7 @@ func main() {
 	example(milon.DevNet)
 }
 
-// account 组合了一个签名密钥对及其派生地址。
+// account combines a signing key pair with its derived address.
 type account struct {
 	sk   *crypto.ClassicalSecretKey
 	pk   *crypto.PublicKey
@@ -36,14 +36,14 @@ func strPtr(s string) *string { return &s }
 func example(networkConfig milon.Network) {
 	client := milon.NewClient(networkConfig)
 
-	// alice：DID 文档演示使用的个人 DID（最后会被停用）。
+	// alice: the personal DID used by the DID document demo (deactivated at the end).
 	alice := newAccount()
-	// kycOrg：在实体注册表中注册的机构 DID，并在合规演示中签发 VC。
-	// 整个运行期间保持活跃。
+	// kycOrg: an organization DID registered in the entity registry and issuing
+	// VCs in the compliance demo. It stays active for the whole run.
 	kycOrg := newAccount()
-	// tempOrg：用于演示不可逆的 deactivate_organization 的机构。
+	// tempOrg: an organization used to demo the irreversible deactivate_organization.
 	tempOrg := newAccount()
-	// bob：合规演示中 VC 的 subject。
+	// bob: the subject of the VC in the compliance demo.
 	bob := newAccount()
 
 	fmt.Printf("alice  = %v\nkycOrg = %v\ntempOrg = %v\nbob    = %v\n", alice.addr, kycOrg.addr, tempOrg.addr, bob.addr)
@@ -67,9 +67,9 @@ func example(networkConfig milon.Network) {
 	fmt.Printf("\nidentity demo finished: did / entity_registry / compliance all covered.\n")
 }
 
-// submit 构建一笔由 signer 签名的单指令交易（同时授权该指令和 gas 支付），
-// 提交后等待回执不再处于 pending 状态。
-// 链上执行失败时会 panic 并携带错误码。
+// submit builds a single-instruction transaction signed by signer (authorizing both
+// the instruction and the gas payment), submits it, and waits until the receipt is no
+// longer pending. It panics with the error code when on-chain execution fails.
 func submit(client *milon.Client, signer *account, what string, encode func() (api.PackedInstruction, error)) {
 	wire, err := encode()
 	if err != nil {
@@ -93,10 +93,10 @@ func submit(client *milon.Client, signer *account, what string, encode func() (a
 	fmt.Printf("  [tx] %s ok, hash: %s, gas charged: %d\n", what, tx.TxHash(), result.BodyTxHistory.Receipt.GasCharged)
 }
 
-// expectOnChainError 提交一条预期失败的指令，打印错误而不 panic，
-// 以便 demo 继续执行。节点在提交时对交易进行模拟，
-// 因此确定性失败（例如 DidDeactivated）会被 SubmitTx 本身拒绝；
-// 非确定性失败则体现在回执状态中。
+// expectOnChainError submits an instruction that is expected to fail and prints the
+// error instead of panicking so the demo can continue. Nodes simulate the transaction
+// at submission time, so deterministic failures (e.g. DidDeactivated) are rejected by
+// SubmitTx itself; non-deterministic failures surface in the receipt status.
 func expectOnChainError(client *milon.Client, signer *account, what string, encode func() (api.PackedInstruction, error)) {
 	wire, err := encode()
 	if err != nil {
@@ -127,7 +127,7 @@ func expectOnChainError(client *milon.Client, signer *account, what string, enco
 	fmt.Printf("  [tx] %s rejected as expected, on-chain error code = %d\n", what, code)
 }
 
-// view 执行只读 view 指令并解码其响应。
+// view executes a read-only view instruction and decodes its response.
 func view[T any](client *milon.Client, what string, encode func() (api.PackedInstruction, error), decode func([]byte) (T, error)) T {
 	wire, err := encode()
 	if err != nil {
@@ -145,8 +145,9 @@ func view[T any](client *milon.Client, what string, encode func() (api.PackedIns
 	return out
 }
 
-// expectViewFail 断言某个 view 会失败，例如因为资源不存在。
-// 链上失败会被序列化到响应体中，在解码时暴露出来。
+// expectViewFail asserts that a view fails, for example because the resource does not
+// exist. On-chain failures are serialized into the response body and surface at decode
+// time.
 func expectViewFail[T any](client *milon.Client, what string, encode func() (api.PackedInstruction, error), decode func([]byte) (T, error)) {
 	wire, err := encode()
 	if err != nil {

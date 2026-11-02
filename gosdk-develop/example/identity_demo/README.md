@@ -1,13 +1,14 @@
 # identity_demo —— Milon 链上身份三合约（did / entity_registry / compliance）
 
-本目录演示 identity 应用（`app_id = 4`）的三个子合约，并给出可直接运行的 Go SDK 示例：
+本目录演示 identity 应用（`app_id = 4`）的三个子合约，并给出可直接运行的 Go SDK 示例。
 
 | 文件 | 内容 |
 | --- | --- |
 | [did_demo.go](./did_demo.go) | 个人 DID 全生命周期（create / key / service / avatar / alias / deactivate） |
 | [registry_demo.go](./registry_demo.go) | 机构入驻开放目录、更新能力声明、永久退出 |
-| [compliance_demo.go](./compliance_demo.go) | 最小链上 VC 结果：disclose / remove / revoke 与有效性查询 |
+| [compliance_demo.go](./compliance_demo.go) | 最小链上 VC 结果：disclose / remove / freeze / unfreeze / revoke 与有效性查询 |
 | [main.go](./main.go) | 编排：4 个测试账户 + 通用 helper（submit / view / 失败断言） |
+| [main_test.go](./main_test.go) | 串起整条流程的集成测试 |
 
 运行（需要能访问 DevNet）：
 
@@ -46,16 +47,17 @@ identity 应用把"链上身份"拆成三个职责单一的模块：
    │   2. entity_registry     │  │        3. compliance            │
    │  机构自声明 VcIssuer /    │  │  issuer 链下对凭证摘要签名        │
    │  KycProvider + 可签发     │  │  subject 上链 disclose 结果      │
-   │  schema 清单             │  │  issuer 可 revoke（终态）        │
+   │  schema 清单             │  │  issuer 可 freeze / revoke       │
    │  credential_id 确定性索引 │  │  subject 可 remove（仅摘展示）    │
    └──────────────────────────┘  └─────────────────────────────────┘
 ```
 
-三条最容易踩的规则（"没看懂"通常卡在这三点）：
+四条最容易踩的规则（"没看懂"通常卡在这四点）：
 
 1. **`disclose` 只要求 issuer 有活跃 DID，不要求它在 registry 注册。** registry 注册是"公开资质声明"，不是 VC 的前置条件。
 2. **`remove_vc_disclosure` 只影响"展示索引"。** 移除后 `has_valid_vc_from_issuer` 仍然为 `true`——底层 attestation 没有被删除。
-3. **只有 issuer 能 `revoke`（终态，不可复活）；subject 只能 `remove`。** remove 是"我不想展示"，revoke 是"我（签发方）宣布作废"。
+3. **只有 issuer 能 `freeze` / `unfreeze` / `revoke`；subject 只能 `remove`。** remove 是"我不想展示"，freeze 是"暂时停用"，revoke 是"（签发方）宣布作废"。
+4. **`freeze` 可逆、`revoke` 不可逆。** 冻结后 `has_valid_vc_from_issuer` 为 `false`，解冻恢复到 `Active`（且未过期）后重新为 `true`；`revoke` 之后永远无效。
 
 ---
 
@@ -96,15 +98,15 @@ DID 由地址本身定义（`did:milon` 地址型 DID），`controller` 就是 s
 - `create` / `create_with_alias` 时必须携带 1-16 个 key，自动编号 `0..n`；
 - `add_key` 自动分配**最小空闲 id**（删掉的 id 会被下一次添加复用）；
 - `update_key` 保持 id 不变，替换 public_key / label；
-- `remove_key` 不能删除最后一个 key（`CannotRemoveLastKey`）；
-- `label`：去首尾空白后非空、≤64 字节。
+- `remove_key` 不能删除最后一个 key（`CannotRemoveLastKey 1041`）；
+- `label`：去首尾空白后非空、≤64 字节（`InvalidKeyLabel 1043`）。
 
 **service**（上限 32 个）：
 
-- `label`：字符集 `[a-zA-Z0-9-_.]`、≤64 字节；
-- `service_endpoint`：必须是绝对 URL、scheme 只允许 `https` / `wss`、≤512 字节。
+- `label`：字符集 `[a-zA-Z0-9-_.]`、≤64 字节（`InvalidServiceLabel 1046`）；
+- `service_endpoint`：必须是绝对 URL、scheme 只允许 `https` / `wss`、≤512 字节（`ServiceEndpointNotAbsolute 1048` / `ServiceEndpointInvalidScheme 1049`）。
 
-**avatar**：1-512 字节，`create` 时必填（不能为空）。
+**avatar**：1-512 字节，`create` 时必填（不能为空，`InvalidAvatarUri 1044`）。
 
 ### 2.4 entry / view 一览
 
@@ -112,17 +114,17 @@ entry（11 个，全部要求 subject 本人签名）：
 
 | entry | 说明 |
 | --- | --- |
-| `create` | 创建 DID 文档（无 alias） |
-| `create_with_alias` | 创建 DID 文档并绑定名称（一步完成，避免先建后绑的空窗） |
-| `add_key` | 添加 key，返回自动分配的 id |
-| `update_key(id)` | 更新指定 key，id 不变 |
-| `remove_key(id)` | 删除指定 key（不能删最后一个） |
-| `add_service` | 添加 service，返回自动分配的 id |
-| `update_service(id)` | 更新指定 service |
-| `remove_service(id)` | 删除指定 service |
-| `set_avatar_uri` | 更新头像 URI |
-| `set_alias` | 设置/更换名称，旧绑定自动释放 |
-| `deactivate` | 停用 DID（**不可逆**） |
+| `create(subject, doc)` | 创建 DID 文档（无 alias） |
+| `create_with_alias(subject, doc, name)` | 创建 DID 文档并绑定名称（一步完成，避免先建后绑的空窗） |
+| `add_key(subject, input) -> id` | 添加 key，返回自动分配的 id |
+| `update_key(subject, id, input)` | 更新指定 key，id 不变 |
+| `remove_key(subject, id)` | 删除指定 key（不能删最后一个） |
+| `add_service(subject, input) -> id` | 添加 service，返回自动分配的 id |
+| `update_service(subject, id, input)` | 更新指定 service |
+| `remove_service(subject, id)` | 删除指定 service |
+| `set_avatar_uri(subject, uri)` | 更新头像 URI |
+| `set_alias(subject, name)` | 设置/更换名称，旧绑定自动释放 |
+| `deactivate(subject)` | 停用 DID（**不可逆**） |
 
 view（13 个）：
 
@@ -146,7 +148,7 @@ view（13 个）：
 
 - 重复 `create` → `DidAlreadyExists (1024)`；
 - `deactivate` 不可逆；之后**所有写操作**（含 set_alias / add_key 等）报 `DidDeactivated (1026)`，读取不受影响；
-- 针对不存在 DID 的写操作报 `DidNotFound (1025)`；但 `has_active_did` 语义下（如 issuer 检查）返回 false → 对应 `IssuerDidNotActive`。
+- 针对不存在 DID 的写操作报 `DidNotFound (1025)`；但内部"是否有活跃 DID"的判断（如 compliance 检查 issuer）返回 false → 对应 `IssuerDidNotActive (1033)`。
 
 ---
 
@@ -157,14 +159,14 @@ view（13 个）：
 `register_organization` 要求同时满足：
 
 1. 有**活跃**（未停用）的 DID（否则 `DidNotFound 1025`）；
-2. DID 的 `subject_type = Organization`（个人 DID 会被拒：`OrganizationDidRequired 1053`）；
-3. 该地址从未注册过（重复注册 → `OrganizationAlreadyExists 1032`）。
+2. DID 的 `subject_type = Organization`（个人 DID 会被拒：`OrganizationDidRequired 1052`）；
+3. 该地址从未注册过（重复注册 → `OrganizationAlreadyExists 1031`）。
 
 ### 3.2 角色与凭证 schema
 
-- `roles`：1-4 个，不能重复；`EntityRole = VcIssuer | KycProvider`；
-- 只要声明了 `VcIssuer` 或 `KycProvider`，**必须至少声明 1 个 credential schema**（`IssuerCredentialSchemaRequired 1060`）——避免"宣称能签发但不知道签什么"的空声明；
-- credential schema：非空、≤96 字符、安全字符集 `[a-zA-Z0-9-_.:/#?=&%]`、每机构 ≤16 个、不能重复；
+- `roles`：1-4 个，不能重复；`EntityRole = VcIssuer | KycProvider`（`InvalidOrganizationRoleCount 1054` / `DuplicateOrganizationRole 1055`）；
+- 只要声明了 `VcIssuer` 或 `KycProvider`，**必须至少声明 1 个 credential schema**（`IssuerCredentialSchemaRequired 1059`）——避免"宣称能签发但不知道签什么"的空声明；
+- credential schema：非空、≤96 字符、安全字符集 `[a-zA-Z0-9-_.:/#?=&%]`、每机构 ≤16 个、不能重复（`TooManyCredentialSchemas 1056` / `InvalidCredentialSchema 1057` / `DuplicateCredentialSchema 1058`）；
 - `update_organization_capabilities` 为**全量覆盖**：roles 和 schemas 会一起被替换。
 
 ### 3.3 credential_id（确定性 ID）
@@ -179,7 +181,8 @@ credential_id = base58( hash32("milon.identity.credential-id.v1",
 - 16 字节摘要做 Base58，得到短 ID；
 - 客户端**不需要**自己复算：`credential_id(issuer, schema)` view 直接查；
 - `credential_definition(credential_id)` view 反查 `{ issuer, credential_schema }`；
-- 注册 / 更新声明时，链上会为每个 schema 写入对应的 `CredentialDefinition`（重复写入幂等）。
+- 注册 / 更新声明时，链上会为每个 schema 写入对应的 `CredentialDefinition`（重复写入幂等）；
+- compliance 的 `freeze_*` / `unfreeze_*` 用 `credential_id` 定位 attestation。
 
 ### 3.4 entry / view 一览
 
@@ -188,7 +191,7 @@ entry（3 个，均要求机构主体本人签名）：
 | entry | 说明 |
 | --- | --- |
 | `register_organization(subject, roles, credential_schemas)` | 入驻目录并发布能力声明 |
-| `update_organization_capabilities(subject, roles, credential_schemas)` | 全量更新声明（停用后调用报 1054） |
+| `update_organization_capabilities(subject, roles, credential_schemas)` | 全量更新声明（停用后调用报 `OrganizationDeactivated 1053`） |
 | `deactivate_organization(subject)` | 永久退出目录（**不可逆**） |
 
 view（5 个）：
@@ -204,7 +207,7 @@ view（5 个）：
 ### 3.5 重要语义
 
 - 链上**不审核**机构资质，注册即公开声明；
-- `deactivate_organization` 不可逆：之后能力更新报 `OrganizationDeactivated (1054)`，但 capabilities 数据仍可读取；
+- `deactivate_organization` 不可逆：之后能力更新报 `OrganizationDeactivated (1053)`，但 capabilities 数据仍可读取；
 - 机构注册状态**不影响** compliance 的 disclose（见第 4 节）。
 
 ---
@@ -218,7 +221,7 @@ view（5 个）：
 | 资源 | 内容 |
 | --- | --- |
 | `VcAttestationCore` | `credential_schema` + `credential_hash (32B)` + `valid_until_ms (可选)` |
-| `VcAttestationLifecycle` | `status (Active / Revoked)` + `updated_at_ms` |
+| `VcAttestationLifecycle` | `status (Active / Frozen / Revoked)` + `updated_at_ms` |
 
 外加两条展示索引：
 
@@ -227,11 +230,13 @@ view（5 个）：
 | `AcceptedVcIssuerIndexMeta` + `AcceptedVcIssuers` | subject 公开的 schema → issuer 列表（含每个 issuer 的 credential_hash） |
 | `DisclosedVcSchemas` | subject 公开过的 schema 列表 |
 
+`disclosed_vcs` view 在上述资源基础上派生出分页摘要（`status` + `is_valid`）。
+
 **VC 全文（姓名、生日、证件号……）永远不上链**，链上只有 32 字节摘要（`credential_hash`）。全文留在链下由双方自行保管，需要时链下出示、链上比对摘要即可。
 
 ### 4.2 disclose 的签名摘要（重点）
 
-issuer 链下用自己 DID 文档里的 key（`issuer_key_id` 指定）对**固定 32 字节摘要**签名。SDK 必须逐字节复现（`example/identity_demo/compliance_demo.go` 中的 `vcAttestationSigningDigest` 即 Go 实现）：
+issuer 链下用自己 DID 文档里的 key（`issuer_key_id` 指定）对**固定 32 字节摘要**签名。SDK 必须逐字节复现（[compliance_demo.go](./compliance_demo.go) 中的 `vcAttestationSigningDigest` 即 Go 实现）：
 
 ```
 digest = hash32( domain = "milon.identity.vc-attestation.v1",
@@ -258,22 +263,26 @@ digest = hash32( domain = "milon.identity.vc-attestation.v1",
 ### 4.3 disclose 的约束与幂等
 
 - subject 必须有活跃 DID（否则 `DidNotFound 1025`）；
-- issuer 必须有活跃 DID（否则 `IssuerDidNotActive 1034`）；**不要求** registry 注册；
-- `valid_until_ms` 若已经是过去时间 → `VcAttestationNotCurrentlyValid 1067`；
-- 签名校验：key 不存在 → `VcIssuerKeyNotFound 1071`；验签失败 → `InvalidVcIssuerSignature 1070`；
+- issuer 必须有活跃 DID（否则 `IssuerDidNotActive 1033`）；**不要求** registry 注册；
+- `valid_until_ms` 若已经是过去时间 → `VcAttestationNotCurrentlyValid 1066`；
+- 签名校验：key 不存在 → `VcIssuerKeyNotFound 1070`；验签失败 → `InvalidVcIssuerSignature 1069`；
 - 同一 `(subject, schema, issuer)` 已存在且内容完全一致 → **幂等成功**，且**不刷新时间戳**；
-- 内容有任一不同（hash / expiry）→ `VcAttestationAlreadyExists 1072`；
-- 已 revoke → `VcAttestationRevoked 1073`（不可复活）；
-- 上限：每 `(subject, schema)` 最多 32 个 issuer（`TooManyAcceptedVcIssuers 1065`）；每 subject 最多 64 个 schema（`TooManyDisclosedVcSchemas 1066`）。
+- 内容有任一不同（hash / expiry）→ `VcAttestationAlreadyExists 1071`；
+- 已 revoke → `VcAttestationRevoked 1072`（不可复活）；
+- 上限：每 `(subject, schema)` 最多 32 个 issuer（`TooManyAcceptedVcIssuers 1064`）；每 subject 最多 64 个 schema（`TooManyDisclosedVcSchemas 1065`）。
 
-### 4.4 remove 与 revoke 对比（最容易混淆）
+### 4.4 remove / freeze / revoke 对比（最容易混淆）
 
 | 操作 | 签名者 | 效果 | 底层 attestation | `has_valid_vc_from_issuer` |
 | --- | --- | --- | --- | --- |
-| `remove_vc_disclosure` | subject | 从展示索引摘除该 issuer（schema 无 issuer 时同时摘除 schema） | **保留**（status 仍 Active） | 仍为 `true` |
+| `remove_vc_disclosure` | subject | 从展示索引摘除该 issuer（schema 无 issuer 时同时摘除 schema） | **保留**（status 不变） | 不变（通常仍为 `true`） |
+| `freeze_vc_attestation` | issuer | status → `Frozen`（可逆） | 保留但不可用 | `false` |
+| `unfreeze_vc_attestation` | issuer | status `Frozen` → `Active` | 恢复可用（仍受过期时间约束） | 恢复 `true` |
 | `revoke_vc_attestation` | issuer | status → `Revoked`（终态） | 保留但不可用 | `false` |
 
-一句话：**remove 是"我不展示"，revoke 是"签发方宣布作废"。**
+一句话：**remove 是"我不展示"，freeze 是"暂时停用"，revoke 是"签发方宣布作废"。**
+
+补充：`freeze` / `unfreeze` 只改生命周期状态，不动 subject 构建的展示索引，因此 subject 无需重新 disclose。
 
 ### 4.5 有效性判定（`has_valid_vc_from_issuer` / `disclosed_vcs.is_valid`）
 
@@ -283,16 +292,21 @@ valid = status == Active
      && issuer 的 DID 存在且未停用
 ```
 
-注意最后一条：**issuer 停了 DID，它签发的所有 VC 立即失效**。
+注意两点：
+
+- `Frozen` / `Revoked` 直接判为无效（第一项不成立）；
+- **issuer 停了 DID，它签发的所有 VC 立即失效**。
 
 ### 4.6 entry / view 一览
 
-entry（3 个）：
+entry（5 个）：
 
 | entry | 签名者 | 说明 |
 | --- | --- | --- |
 | `disclose_vc_attestation(subject, issuer, issuer_key_id, schema, hash, valid_until, sig)` | subject | 公开 issuer 已链下签发的 VC 摘要 |
 | `remove_vc_disclosure(subject, issuer, schema)` | subject | 从展示索引摘除（不删声明） |
+| `freeze_vc_attestation(issuer, subject, credential_id)` | issuer | 冻结该 subject 的这份 attestation（可解冻） |
+| `unfreeze_vc_attestation(issuer, subject, credential_id)` | issuer | 解冻，status 恢复 `Active` |
 | `revoke_vc_attestation(issuer, subject, schema)` | issuer | 作废其签发的 VC（终态） |
 
 view（7 个）：
@@ -307,35 +321,36 @@ view（7 个）：
 | `disclosed_vcs(subject, offset, limit)` | 分页摘要 `[{..., status, is_valid}]` |
 | `has_valid_vc_from_issuer(subject, issuer, schema)` | `bool` |
 
-### 4.7 identity 应用错误码全表（1024-1073）
+### 4.7 identity 应用错误码全表（1024-1074）
 
 | 码 | 名称 | 码 | 名称 |
 | --- | --- | --- | --- |
-| 1024 | DidAlreadyExists | 1049 | ServiceEndpointNotAbsolute |
-| 1025 | DidNotFound | 1050 | ServiceEndpointInvalidScheme |
-| 1026 | DidDeactivated | 1051 | ServiceNotFound |
-| 1027 | InvalidDid | 1052 | DidServiceResourceMismatch |
-| 1028 | NameAlreadyBound | 1053 | OrganizationDidRequired |
-| 1029 | NameNotFound | 1054 | OrganizationDeactivated |
-| 1030 | AddressNotSignatured | 1055 | InvalidOrganizationRoleCount |
-| 1031 | OrganizationNotFound | 1056 | DuplicateOrganizationRole |
-| 1032 | OrganizationAlreadyExists | 1057 | TooManyCredentialSchemas |
-| 1033 | VcAttestationNotFound | 1058 | InvalidCredentialSchema |
-| 1034 | IssuerDidNotActive | 1059 | DuplicateCredentialSchema |
-| 1035 | NameInvalidLength | 1060 | IssuerCredentialSchemaRequired |
-| 1036 | NameInvalidFormat | 1061 | CredentialIdCollision |
-| 1037 | NameAliasInvalidLength | 1062 | InvalidCredentialId |
-| 1038 | NameSuffixInvalid | 1063 | CredentialDefinitionNotFound |
-| 1039 | NameHashCollision | 1064 | CredentialSchemaMismatch |
-| 1040 | InvalidKeyCount | 1065 | TooManyAcceptedVcIssuers |
-| 1041 | DidKeyNotFound | 1066 | TooManyDisclosedVcSchemas |
-| 1042 | CannotRemoveLastKey | 1067 | VcAttestationNotCurrentlyValid |
-| 1043 | DidKeyResourceMismatch | 1068 | VcAcceptanceIndexNotFound |
-| 1044 | InvalidKeyLabel | 1069 | VcIssuerNotAccepted |
-| 1045 | InvalidAvatarUri | 1070 | InvalidVcIssuerSignature |
-| 1046 | TooManyServices | 1071 | VcIssuerKeyNotFound |
-| 1047 | InvalidServiceLabel | 1072 | VcAttestationAlreadyExists |
-| 1048 | ServiceEndpointInvalidLength | 1073 | VcAttestationRevoked |
+| 1024 | DidAlreadyExists | 1050 | ServiceNotFound |
+| 1025 | DidNotFound | 1051 | DidServiceResourceMismatch |
+| 1026 | DidDeactivated | 1052 | OrganizationDidRequired |
+| 1027 | InvalidDid | 1053 | OrganizationDeactivated |
+| 1028 | NameAlreadyBound | 1054 | InvalidOrganizationRoleCount |
+| 1029 | NameNotFound | 1055 | DuplicateOrganizationRole |
+| 1030 | OrganizationNotFound | 1056 | TooManyCredentialSchemas |
+| 1031 | OrganizationAlreadyExists | 1057 | InvalidCredentialSchema |
+| 1032 | VcAttestationNotFound | 1058 | DuplicateCredentialSchema |
+| 1033 | IssuerDidNotActive | 1059 | IssuerCredentialSchemaRequired |
+| 1034 | NameInvalidLength | 1060 | CredentialIdCollision |
+| 1035 | NameInvalidFormat | 1061 | InvalidCredentialId |
+| 1036 | NameAliasInvalidLength | 1062 | CredentialDefinitionNotFound |
+| 1037 | NameSuffixInvalid | 1063 | CredentialSchemaMismatch |
+| 1038 | NameHashCollision | 1064 | TooManyAcceptedVcIssuers |
+| 1039 | InvalidKeyCount | 1065 | TooManyDisclosedVcSchemas |
+| 1040 | DidKeyNotFound | 1066 | VcAttestationNotCurrentlyValid |
+| 1041 | CannotRemoveLastKey | 1067 | VcAcceptanceIndexNotFound |
+| 1042 | DidKeyResourceMismatch | 1068 | VcIssuerNotAccepted |
+| 1043 | InvalidKeyLabel | 1069 | InvalidVcIssuerSignature |
+| 1044 | InvalidAvatarUri | 1070 | VcIssuerKeyNotFound |
+| 1045 | TooManyServices | 1071 | VcAttestationAlreadyExists |
+| 1046 | InvalidServiceLabel | 1072 | VcAttestationRevoked |
+| 1047 | ServiceEndpointInvalidLength | 1073 | VcAttestationAlreadyFrozen |
+| 1048 | ServiceEndpointNotAbsolute | 1074 | VcAttestationNotFrozen |
+| 1049 | ServiceEndpointInvalidScheme | | |
 
 链上失败时，Go SDK 的 `helper.CheckTxSuccess` 会 panic 并打印 error code；本 demo 中对"预期失败"的场景（如停用后写操作、重复 disclose）改用 `expectOnChainError` 打印错误码而不中断。
 
@@ -358,15 +373,15 @@ view（7 个）：
 
 **did_demo（alice）**：`create_with_alias` → 全套 view → `add_key` / `update_key` / `remove_key`（含 id 复用）→ `add_service` / `update_service` / `remove_service` → `set_avatar_uri` → `set_alias`（旧绑定释放）→ `deactivate`（+ 停用后写操作失败演示）。名字的 suffix（1000-9999）由账户地址派生，避免重复运行时名称已被占用。
 
-**registry_demo（kycOrg / tempOrg）**：创建 Organization DID → `register_organization`（+ 重复注册报 1032 演示）→ `organization_capabilities` / `organization_status` / `organization_updated_at` / `credential_id` / `credential_definition` → `update_organization_capabilities`；tempOrg 演示 `deactivate_organization` 永久退出与停用后的失败（1054）。
+**registry_demo（kycOrg / tempOrg）**：创建 Organization DID → `register_organization`（+ 重复注册报 1031 演示）→ `organization_capabilities` / `organization_status` / `organization_updated_at` / `credential_id` / `credential_definition` → `update_organization_capabilities`；tempOrg 演示 `deactivate_organization` 永久退出与停用后的失败（1053）。
 
-**compliance_demo（kycOrg / bob）**：bob 建 DID → 构造 mock VC 文档并取 blake3 摘要 → **Go 侧复现签名摘要** + issuer 链下签名 → `disclose_vc_attestation` → 全套 view（含 `disclosed_vcs` 分页、`has_valid_vc_from_issuer`）→ 重复 disclose 幂等（时间戳不变）→ `remove_vc_disclosure`（展示清空但 `has_valid` 仍为 true）→ 重新 disclose → `revoke_vc_attestation`（`has_valid` 变 false）→ revoke 后 disclose 失败（1073）。
+**compliance_demo（kycOrg / bob）**：bob 建 DID → 构造 mock VC 文档并取 blake3 摘要 → **Go 侧复现签名摘要** + issuer 链下签名 → `disclose_vc_attestation` → 全套 view（含 `disclosed_vcs` 分页、`has_valid_vc_from_issuer`）→ 重复 disclose 幂等（时间戳不变）→ `remove_vc_disclosure`（展示清空但 `has_valid` 仍为 true）→ 重新 disclose → `freeze_vc_attestation`（`has_valid` 变 false、展示索引不变）→ `unfreeze_vc_attestation`（`has_valid` 恢复 true）→ `revoke_vc_attestation`（`has_valid` 变 false）→ revoke 后 disclose 失败（1072）。
 
 ### 5.3 方法覆盖情况
 
-- `did`：11 个 entry + 13 个 view 全覆盖；
+- `did`：11 个 entry + 13 个 view 全覆盖（`create` 与 `create_with_alias` 二者择一，demo 用后者）；
 - `entity_registry`：3 个 entry + 5 个 view 全覆盖；
-- `compliance`：3 个 entry + 7 个 view 全覆盖。
+- `compliance`：5 个 entry + 7 个 view 全覆盖。
 
 ---
 
@@ -376,13 +391,16 @@ view（7 个）：
    registry 是"公开资质声明"，不是准入名单。VC 的信任链条是"issuer DID key 的签名"，registry 只是给 dApp 提供一个可枚举、可展示的资质来源；链上不承担审核职责。
 
 2. **`remove_vc_disclosure` 之后为什么 `has_valid_vc_from_issuer` 还是 true？**
-   remove 只操作 subject 的"展示索引"；`VcAttestationCore/Lifecycle` 是 issuer 的声明，只有 issuer 能通过 revoke 改变其状态。
+   remove 只操作 subject 的"展示索引"；`VcAttestationCore/Lifecycle` 是 issuer 的声明，只有 issuer 能通过 freeze / revoke 改变其状态。
 
-3. **为什么链上只存 `credential_hash`？**
+3. **`freeze` 和 `revoke` 有什么差别？**
+   freeze 可逆（`unfreeze` 回到 `Active`），只让 VC 暂时不可用；revoke 是终态，任何方式都无法恢复，且 revoke 后不能再 disclose。
+
+4. **为什么链上只存 `credential_hash`？**
    隐私与成本：VC 全文可能含个人敏感信息，上链不可撤回；32 字节摘要足以在链下出示全文时做完整性/一致性比对。
 
-4. **为什么我传的 alias 和查出来的不一样？**
+5. **为什么我传的 alias 和查出来的不一样？**
    写入前会做归一化（去空白 + 小写）。`alice-1001` 与 `Alice-1001` 是同一个名称。
 
-5. **`add_key` 返回的 id 不一定是递增的？**
+6. **`add_key` 返回的 id 不一定是递增的？**
    对，分配的是**最小空闲 id**：删除 id 2 后再次添加会复用 2。id 是稳定的资源索引，不表示顺序。

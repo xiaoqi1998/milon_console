@@ -7,17 +7,18 @@ import (
 	"github.com/milon-labs/milon-go-sdk/gen"
 )
 
-// demoEntityRegistry 走完开放机构目录流程：kycOrg 以 VcIssuer 角色和
-// 两个凭证 schema 入驻、更新能力声明，tempOrg 自我停用以展示不可逆状态。
-// 覆盖 entity_registry 的全部 entry 和全部 view。
+// demoEntityRegistry walks the open organization directory flow: kycOrg onboards with
+// the VcIssuer role and two credential schemas, then updates its capabilities, while
+// tempOrg deactivates itself to show the irreversible state.
+// It covers every entity_registry entry and every entity_registry view.
 func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 	fmt.Printf("\n================ 7.Entity registry: register_organization ================\n")
 
-	// 注册要求拥有一个 subject_type 为 Organization 的活跃 DID
+	// registration requires an active DID whose subject_type is Organization
 	orgDoc := gen.IdentityDidDocumentInput{
 		SubjectType: gen.IdentityDidSubjectType{Variant: "Organization"},
 		Keys: []gen.IdentityDidKeyInput{
-			// key 0 用于在合规演示中签名 VC attestation
+			// key 0 is used to sign the VC attestation in the compliance demo
 			{PublicKey: kycOrg.pk, Label: strPtr("issuer-key")},
 		},
 		AvatarUri: "https://kyc.example.org/logo.png",
@@ -36,7 +37,7 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 		gen.Identity.CreateWithAlias.Args(kycOrg.addr, orgDoc, gen.IdentityDidName{Alias: "Kyc", Suffix: didNameSuffix(kycOrg.addr, 0)}).Encode,
 	)
 
-	// VcIssuer / KycProvider 角色要求至少声明一个凭证 schema
+	// the VcIssuer / KycProvider roles require at least one declared credential schema
 	submit(
 		client,
 		kycOrg,
@@ -60,7 +61,7 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 
 	view(client, "OrganizationUpdatedAt", gen.Identity.OrganizationUpdatedAt.Args(kycOrg.addr).Encode, gen.Identity.OrganizationUpdatedAt.DecodeView)
 
-	// credential_id 是确定性的：chain id + issuer 地址 + schema
+	// credential_id is deterministic: chain id + issuer address + schema
 	credentialID := view(client, "CredentialId(KycLevel2)", gen.Identity.CredentialId.Args(kycOrg.addr, "KycLevel2").Encode, gen.Identity.CredentialId.DecodeView)
 	if credentialID == "" {
 		panic("credential id must not be empty")
@@ -71,7 +72,7 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 		panic(fmt.Sprintf("unexpected credential definition: %+v", credentialDefinition))
 	}
 
-	// 机构只能注册一次
+	// an organization can only be registered once
 	expectOnChainError(
 		client,
 		kycOrg, "RegisterOrganization (already registered)",
@@ -84,7 +85,7 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 
 	fmt.Printf("\n================ 8.Entity registry: update_organization_capabilities ================\n")
 
-	// update 会完全替换 roles 和 credential schema
+	// update fully replaces the roles and the credential schemas
 	submit(
 		client,
 		kycOrg,
@@ -145,7 +146,7 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 		panic(fmt.Sprintf("unexpected tempOrg status: %+v", tempStatus))
 	}
 
-	// 已停用的机构无法再更新其能力声明
+	// a deactivated organization can no longer update its capabilities
 	expectOnChainError(
 		client,
 		tempOrg,

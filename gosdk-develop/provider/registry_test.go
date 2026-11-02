@@ -18,6 +18,18 @@ func loadProviders(t *testing.T, names ...string) map[string]*Provider {
 	return providers
 }
 
+// typeTagOf returns the type_tag a raw type declares in the IDL types section,
+// so tests never hardcode a tag that a later IDL revision corrects.
+func typeTagOf(t *testing.T, pd *Provider, name string) uint64 {
+	for _, idlType := range pd.IDL.Types {
+		if idlType.Name == name {
+			return idlType.TypeTag
+		}
+	}
+	t.Fatalf("type %s not found in IDL", name)
+	return 0
+}
+
 // varintU64 encodes value as LEB128 varint bytes, matching the postcard
 // serializer wire format; used to build event data with a type_tag prefix.
 func varintU64(value uint64) []byte {
@@ -177,11 +189,12 @@ func TestIDLRegistry_DecodeViewDatas_Errors(t *testing.T) {
 }
 
 func TestIDLRegistry_DecodeEventDataByTag(t *testing.T) {
-	reg, err := NewIDLRegistry(loadProviders(t, "demo"))
+	pd := loadProviders(t, "demo")["demo"]
+	reg, err := NewIDLRegistry(map[string]*Provider{"demo": pd})
 	assert.NoError(t, err)
 
 	// demo EventCreditApplied: pool(Address) + recipient(Address) + amount(u64)
-	const typeTag = 14232600292727055113
+	typeTag := eventTagOf(t, pd, "EventCreditApplied")
 
 	var pool [20]byte
 	var recipient [20]byte
@@ -195,7 +208,7 @@ func TestIDLRegistry_DecodeEventDataByTag(t *testing.T) {
 	decoded, err := reg.DecodeEventDataByTag(typeTag, data)
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint8(254), decoded["app_id"])
+	assert.Equal(t, pd.IDL.Metadata.AppID, decoded["app_id"])
 	assert.Equal(t, "demo", decoded["app_name"])
 	assert.Equal(t, "EventCreditApplied", decoded["event_name"])
 
@@ -218,7 +231,7 @@ func TestIDLRegistry_DecodeEventDataByTag(t *testing.T) {
 
 	decodedPrefixed, err := reg.DecodeEventDataByTag(typeTag, prefixed)
 	assert.NoError(t, err)
-	assert.Equal(t, uint8(254), decodedPrefixed["app_id"])
+	assert.Equal(t, pd.IDL.Metadata.AppID, decodedPrefixed["app_id"])
 	assert.Equal(t, "demo", decodedPrefixed["app_name"])
 	assert.Equal(t, "EventCreditApplied", decodedPrefixed["event_name"])
 
@@ -245,30 +258,43 @@ func TestIDLRegistry_DecodeEventDataByTag_Errors(t *testing.T) {
 }
 
 func TestIDLRegistry_DecodeResourceDataByTag(t *testing.T) {
-	reg, err := NewIDLRegistry(loadProviders(t, "demo"))
+	pd := loadProviders(t, "demo")["demo"]
+	reg, err := NewIDLRegistry(map[string]*Provider{"demo": pd})
 	assert.NoError(t, err)
 
-	// 标量资源与内建类型共用 typeTag(demo._OrderSeed 是首个 u64 资源,
-	// tag 5563585020063213298 即内建 u64;SDK 升级后 _NextOrderSeed 也由
-	// u16 改为 u64)。按先声明者赢的规则,该 tag 解析到 _OrderSeed。
-	decoded, err := reg.DecodeResourceDataByTag(5563585020063213298, []byte{7})
+	// demo _NextOrderSeed is a plain u64; since MIP-33 every u64-typed resource
+	// shares one builtin tag, so the registry resolves it to the first resource
+	// declared with that tag. The expectation is read from the IDL.
+	nextOrderSeedTag := resourceTagOf(t, pd, "_NextOrderSeed")
+	firstU64Resource, ok := pd.GetResourceByTypeTag(nextOrderSeedTag)
+	assert.True(t, ok)
+
+	decoded, err := reg.DecodeResourceDataByTag(nextOrderSeedTag, []byte{7})
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint8(254), decoded["app_id"])
+	assert.Equal(t, pd.IDL.Metadata.AppID, decoded["app_id"])
 	assert.Equal(t, "demo", decoded["app_name"])
-	assert.Equal(t, "_OrderSeed", decoded["resource_name"])
+	assert.Equal(t, firstU64Resource.Name, decoded["resource_name"])
 	assert.Equal(t, "u64", decoded["resource_type"])
 	assert.Equal(t, uint64(7), decoded["data"])
 
 	// The genesis transaction persists a bare Address value under the Address
-	// builtin tag (types section), which is not declared as a resource; the
-	// types index must serve as fallback.
+	// builtin tag (types section); an app that declares no Address-typed
+	// resource must fall back to the types index.
+	systemPd := loadProviders(t, "system")["system"]
+	systemReg, err := NewIDLRegistry(map[string]*Provider{"system": systemPd})
+	assert.NoError(t, err)
+
+	addressTag := typeTagOf(t, systemPd, "Address")
+	_, isResource := systemPd.GetResourceByTypeTag(addressTag)
+	assert.False(t, isResource)
+
 	addressBytes := make([]byte, 20)
 	for i := range addressBytes {
 		addressBytes[i] = byte(i + 1)
 	}
 
-	decodedAddress, err := reg.DecodeResourceDataByTag(17438174819379414968, addressBytes)
+	decodedAddress, err := systemReg.DecodeResourceDataByTag(addressTag, addressBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, "Address", decodedAddress["resource_name"])
 	assert.Equal(t, "Address", decodedAddress["resource_type"])
@@ -279,7 +305,8 @@ func TestIDLRegistry_DecodeResourceDataByTag(t *testing.T) {
 }
 
 func TestIDLRegistry_DecodeResourceDataByTag_Errors(t *testing.T) {
-	reg, err := NewIDLRegistry(loadProviders(t, "token"))
+	pd := loadProviders(t, "token")["token"]
+	reg, err := NewIDLRegistry(map[string]*Provider{"token": pd})
 	assert.NoError(t, err)
 
 	_, err = reg.DecodeResourceDataByTag(999999999, []byte{1, 2, 3})
@@ -287,7 +314,7 @@ func TestIDLRegistry_DecodeResourceDataByTag_Errors(t *testing.T) {
 	assert.Contains(t, err.Error(), "unknown resource type tag")
 
 	// token _Owner decodes a 20-byte Address; the extra byte must be rejected
-	_, err = reg.DecodeResourceDataByTag(8792131286149488520, make([]byte, 21))
+	_, err = reg.DecodeResourceDataByTag(resourceTagOf(t, pd, "_Owner"), make([]byte, 21))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "trailing bytes")
 }

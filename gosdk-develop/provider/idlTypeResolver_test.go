@@ -7,6 +7,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// eventTagOf returns the type_tag an event declares in the IDL, so tests never
+// hardcode a tag that a later IDL revision corrects.
+func eventTagOf(t *testing.T, pd *Provider, name string) uint64 {
+	for _, event := range pd.IDL.Events {
+		if event.Name == name {
+			return event.TypeTag
+		}
+	}
+	t.Fatalf("event %s not found in IDL", name)
+	return 0
+}
+
+// resourceTagOf returns the type_tag a resource declares in the IDL.
+func resourceTagOf(t *testing.T, pd *Provider, name string) uint64 {
+	resource, ok := pd.GetResourceByName(name)
+	if !ok {
+		t.Fatalf("resource %s not found in IDL", name)
+	}
+	return resource.TypeTag
+}
+
 func TestIDLTypeResolver_DecodeResource(t *testing.T) {
 	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
 	assert.NoError(t, err)
@@ -16,7 +37,8 @@ func TestIDLTypeResolver_DecodeResource(t *testing.T) {
 	// token::_Metadata resource: type Metadata (name(String) + symbol(String)
 	// + decimals(u8) + icon(String) + uri(String)); the resource typeTag is
 	// independent from the Metadata struct typeTag.
-	resource, ok := pd.GetResourceByTypeTag(12540935430733747277)
+	metadataTag := resourceTagOf(t, pd, "_Metadata")
+	resource, ok := pd.GetResourceByTypeTag(metadataTag)
 	assert.True(t, ok)
 	assert.Equal(t, "_Metadata", resource.Name)
 	assert.Equal(t, "Metadata", resource.Type)
@@ -32,7 +54,7 @@ func TestIDLTypeResolver_DecodeResource(t *testing.T) {
 	// extra bytes after the resource value
 	full := append(append([]byte{}, payload...), 0xAA, 0xBB)
 
-	valueBytes, remaining, err := resolver.DecodeResource(resource.TypeTag, full)
+	valueBytes, remaining, err := resolver.DecodeResource(metadataTag, full)
 	assert.NoError(t, err)
 	assert.Equal(t, payload, valueBytes)
 	assert.Equal(t, []byte{0xAA, 0xBB}, remaining)
@@ -66,10 +88,40 @@ func TestIDLTypeResolver_DecodeResource_BuiltinTypeFallback(t *testing.T) {
 	// extra bytes after the value must stay unconsumed
 	full := append(append([]byte{}, addressBytes...), 0xAA)
 
-	valueBytes, remaining, err := resolver.DecodeResource(17438174819379414968, full)
+	valueBytes, remaining, err := resolver.DecodeResource(typeTagOf(t, pd, "Address"), full)
 	assert.NoError(t, err)
 	assert.Equal(t, addressBytes, valueBytes)
 	assert.Equal(t, []byte{0xAA}, remaining)
+}
+
+// Regression: ValidatorId([u8; 32]) and PoolId([u8; 32]) are
+// #[serde(transparent)] newtypes over a fixed 32-byte array. Treating them as
+// u64 varints consumes 30 bytes too few, so the next byte of the access record
+// (the Option flag of first_snapshot) is read as a boolean and decoding fails
+// with "invalid postcard boolean".
+func TestIDLTypeResolver_DecodeResource_ValidatorIdFixedBytes(t *testing.T) {
+	pd, err := LoadProviderFromFile("./IDL/validator.idl.json")
+	assert.NoError(t, err)
+
+	resolver := &IDLTypeResolver{Providers: map[string]*Provider{"validator": pd}}
+
+	validatorTag := resourceTagOf(t, pd, "_ValidatorByController")
+	resource, ok := pd.GetResourceByTypeTag(validatorTag)
+	assert.True(t, ok)
+	assert.Equal(t, "ValidatorId", resource.Type)
+
+	validatorID := make([]byte, 32)
+	for i := range validatorID {
+		validatorID[i] = byte(i + 1)
+	}
+	// 0x2f follows the value in the failing history payload and is not a valid
+	// postcard boolean, so a short read is detected immediately.
+	full := append(append([]byte{}, validatorID...), 0x2f)
+
+	valueBytes, remaining, err := resolver.DecodeResource(validatorTag, full)
+	assert.NoError(t, err)
+	assert.Equal(t, validatorID, valueBytes)
+	assert.Equal(t, []byte{0x2f}, remaining)
 }
 
 func TestIDLTypeResolver_ResourceWinsOverType(t *testing.T) {
@@ -107,14 +159,14 @@ func TestIDLTypeResolver_MultipleProviders(t *testing.T) {
 	assert.NoError(t, serializer.SerializeStr("D"))
 	resourceBytes := serializer.Bytes()
 
-	valueBytes, remaining, err := resolver.DecodeResource(12540935430733747277, resourceBytes)
+	valueBytes, remaining, err := resolver.DecodeResource(resourceTagOf(t, tokenPd, "_Metadata"), resourceBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, resourceBytes, valueBytes)
 	assert.Len(t, remaining, 0)
 
 	// event from demo: pool(20) + recipient(20) + amount varint(42 -> 1 byte)
 	eventData := append(append([]byte{}, make([]byte, 40)...), 42)
-	eventBytes, remaining, err := resolver.DecodeEvent(14232600292727055113, eventData)
+	eventBytes, remaining, err := resolver.DecodeEvent(eventTagOf(t, demoPd, "EventCreditApplied"), eventData)
 	assert.NoError(t, err)
 	assert.Len(t, eventBytes, 41)
 	assert.Len(t, remaining, 0)
@@ -154,7 +206,7 @@ func TestIDLTypeResolver_DecodeEvent(t *testing.T) {
 	assert.NoError(t, serializer.SerializeU64(7))
 	payload := serializer.Bytes()
 
-	eventBytes, remaining, err := resolver.DecodeEvent(14232600292727055113, append(append([]byte{}, payload...), 0xEE))
+	eventBytes, remaining, err := resolver.DecodeEvent(eventTagOf(t, pd, "EventCreditApplied"), append(append([]byte{}, payload...), 0xEE))
 	assert.NoError(t, err)
 	assert.Equal(t, payload, eventBytes)
 	assert.Equal(t, []byte{0xEE}, remaining)

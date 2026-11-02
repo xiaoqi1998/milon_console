@@ -10,6 +10,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// eventTagByName reads an event type_tag from the loaded IDL, so the test never
+// hardcodes a value that the IDL later corrected.
+func eventTagByName(t *testing.T, pd *provider.Provider, name string) uint64 {
+	for _, event := range pd.IDL.Events {
+		if event.Name == name {
+			return event.TypeTag
+		}
+	}
+	t.Fatalf("event %s not found in IDL", name)
+	return 0
+}
+
+// resourceTagByName reads a resource type_tag from the loaded IDL.
+func resourceTagByName(t *testing.T, pd *provider.Provider, name string) uint64 {
+	resource, ok := pd.GetResourceByName(name)
+	if !ok {
+		t.Fatalf("resource %s not found in IDL", name)
+	}
+	return resource.TypeTag
+}
+
+// typeTagByName reads a raw type type_tag from the IDL types section.
+func typeTagByName(t *testing.T, pd *provider.Provider, name string) uint64 {
+	for _, idlType := range pd.IDL.Types {
+		if idlType.Name == name {
+			return idlType.TypeTag
+		}
+	}
+	t.Fatalf("type %s not found in IDL", name)
+	return 0
+}
+
 func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 	// 1. Load real provider from IDL
 	pd, err := provider.LoadProviderFromFile("../../provider/IDL/demo.idl.json")
@@ -18,7 +50,11 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 	accountPD, err := provider.LoadProviderFromFile("../../provider/IDL/account.idl.json")
 	assert.NoError(t, err)
 
-	// 2. Build event data for EventCreditApplied (typeTag: 14232600292727055113)
+	creditAppliedTag := eventTagByName(t, pd, "EventCreditApplied")
+	scoreTag := resourceTagByName(t, pd, "_Score")
+	accountTag := resourceTagByName(t, accountPD, "_Account")
+
+	// 2. Build event data for EventCreditApplied
 	// Fields: pool(Address, 20B), recipient(Address, 20B), amount(u64)
 	pool := make([]byte, 20)
 	for i := 0; i < 20; i++ {
@@ -67,23 +103,23 @@ func TestTxHistory_WithRealProvider_EventCreditApplied(t *testing.T) {
 				{
 					ResourceID: api.RsHash{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19},
 					LastWritten: api.PersistedValue{
-						Variant:    0,                    // Inline(AnySerializeOwned), no length prefix
-						TypeTag:    5563585020063213298, // demo _Score/_TierCap (u64)
-						InlineData: amountBytes,          // varint-encoded u64 (42)
+						Variant:    0,           // Inline(AnySerializeOwned), no length prefix
+						TypeTag:    scoreTag,    // demo _Score (u64)
+						InlineData: amountBytes, // varint-encoded u64 (42)
 					},
 				},
 				{
 					ResourceID: api.RsHash{3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
 					LastWritten: api.PersistedValue{
-						Variant: 0,                     // Inline(AnySerializeOwned), no length prefix
-						TypeTag: 8001620250894669925, // account _Account resource
+						Variant: 0,          // Inline(AnySerializeOwned), no length prefix
+						TypeTag: accountTag, // account _Account resource
 						// bitmap=7 (u64 varint), weight=6 (u8), threshold=4 (u8), last_modified_block=183 (u64 varint)
 						InlineData: []byte{7, 6, 4, 0xB7, 0x01},
 					},
 				},
 			},
 			Events: []api.TypeTagWithData{
-				{TypeTag: 14232600292727055113, Value: eventValue},
+				{TypeTag: creditAppliedTag, Value: eventValue},
 			},
 			Error:      nil,
 			GasCharged: 888,
@@ -173,6 +209,64 @@ func TestTxHistory_WithError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, &code, deserialized.Receipt.Error)
 	assert.Equal(t, original.Receipt, deserialized.Receipt)
+}
+
+// newEmptyTxHistory builds a minimal valid history used by the format byte tests.
+func newEmptyTxHistory() api.TxHistory {
+	return api.TxHistory{
+		Stamp:        100,
+		Payer:        nil,
+		Signatures:   []api.TxHistorySignature{},
+		Instructions: []api.PackedInstruction{},
+		Receipt: api.TxReceipt{
+			TxID:       api.TxId{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+			TxHash:     api.TxHash{},
+			State:      api.TxStatePreFail,
+			Access:     []api.AccessRecord{},
+			Events:     []api.TypeTagWithData{},
+			Error:      nil,
+			GasCharged: 0,
+		},
+	}
+}
+
+// The chain encodes a persisted history as [format byte][postcard body] (MIP-33).
+func TestTxHistory_FormatByte(t *testing.T) {
+	assert.Equal(t, uint8(0), api.TxStatePending)
+	assert.Equal(t, uint8(1), api.TxStateSuccess)
+	assert.Equal(t, uint8(2), api.TxStateFailed)
+	assert.Equal(t, uint8(3), api.TxStatePreFail)
+
+	original := newEmptyTxHistory()
+	data, err := postcard.SerializePostcard(&original)
+	assert.NoError(t, err)
+	assert.Equal(t, api.TxHistoryTypeBase, data[0])
+
+	decode := func(b []byte) (api.TxHistory, error) {
+		return postcard.DeserializePostcard(b, func(d *postcard.Deserializer) (api.TxHistory, error) {
+			var h api.TxHistory
+			if err := h.UnmarshalPostcard(d); err != nil {
+				return h, err
+			}
+			return h, nil
+		}, false)
+	}
+
+	t.Run("round trip", func(t *testing.T) {
+		decoded, err := decode(data)
+		assert.NoError(t, err)
+		assert.Equal(t, original.Receipt, decoded.Receipt)
+	})
+
+	t.Run("unknown format byte should fail", func(t *testing.T) {
+		_, err := decode(append([]byte{0x01}, data[1:]...))
+		assert.ErrorContains(t, err, "unknown transaction history format byte")
+	})
+
+	t.Run("body without format byte should fail", func(t *testing.T) {
+		_, err := decode(data[1:])
+		assert.Error(t, err)
+	})
 }
 
 func TestTxHistory_DeserializeErrors(t *testing.T) {

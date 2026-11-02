@@ -1507,7 +1507,7 @@
     {
       "name": "_MarketAuthority",
       "type": "Address",
-      "typeTag": 3104220516395023708
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_MarketStatus",
@@ -1577,7 +1577,7 @@
     {
       "name": "_MarketSeedOwner",
       "type": "Address",
-      "typeTag": 3104220516395023708
+      "typeTag": 17438174819379414968
     },
     {
       "name": "_AmmConfig",

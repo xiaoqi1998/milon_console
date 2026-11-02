@@ -63,8 +63,13 @@ type GetResourcePathByHashResult struct {
 }
 
 type GetAccessValueResult struct {
+	HTTPResponseBody   []byte
+	BodyGetAccessValue *api.GetAccessValueInfo
+}
+
+type BatchGetAccessValueResult struct {
 	HTTPResponseBody    []byte
-	BodyGetAccessValues []*api.GetAccessValueInfo
+	BodyGetAccessValues []*api.BatchGetAccessValueItem
 }
 
 type BatchGetResourcePathByHashResult struct {
@@ -691,7 +696,32 @@ func (c *rpcClientV1) BatchGetResourcePathByHash(rsHashList []api.RsHash, opts .
 		BodyBatchResourcePathList: bodyBatchResourcePathList,
 	}, nil
 }
-func (c *rpcClientV1) GetAccessValue(blobHashList []api.BlobHash, opts ...RequestOption) (*GetAccessValueResult, error) {
+
+// GetAccessValue fetches one raw access value (RPC method 165). The request
+// body is a bare BlobHash and the response body is the single tuple
+// (BlobHash, Option<Vec<u8>>).
+func (c *rpcClientV1) GetAccessValue(blobHash api.BlobHash, opts ...RequestOption) (*GetAccessValueResult, error) {
+	o := applyRequestOptions(opts)
+
+	apiResponse, err := c.callJsonRPC(o.ctx, lib.MethodTypeGetAccessValue, blobHash[:], o.requestID)
+	if err != nil {
+		return nil, err
+	}
+
+	accessValue, err := decodePostcardBody[api.GetAccessValueInfo](apiResponse.Body, "GetAccessValue", c.typeResolver)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GetAccessValueResult{
+		HTTPResponseBody:   apiResponse.Body,
+		BodyGetAccessValue: accessValue,
+	}, nil
+}
+
+// BatchGetAccessValue fetches raw access values (RPC method 166). Each response
+// item is a Result, so a per-item failure does not abort the whole batch.
+func (c *rpcClientV1) BatchGetAccessValue(blobHashList []api.BlobHash, opts ...RequestOption) (*BatchGetAccessValueResult, error) {
 	o := applyRequestOptions(opts)
 
 	serializer := postcard.NewSerializer()
@@ -702,24 +732,24 @@ func (c *rpcClientV1) GetAccessValue(blobHashList []api.BlobHash, opts ...Reques
 		return nil, fmt.Errorf("failed to serialize blobHashList: %w", err)
 	}
 
-	apiResponse, err := c.callJsonRPC(o.ctx, lib.MethodTypeGetAccessValue, serializer.Bytes(), o.requestID)
+	apiResponse, err := c.callJsonRPC(o.ctx, lib.MethodTypeBatchGetAccessValue, serializer.Bytes(), o.requestID)
 	if err != nil {
 		return nil, err
 	}
 
 	deserializer := postcard.NewDeserializer(apiResponse.Body)
-	accessValues, err := postcard.DeserializeSeq(deserializer, func(d *postcard.Deserializer) (*api.GetAccessValueInfo, error) {
-		var info api.GetAccessValueInfo
-		if err = info.UnmarshalPostcard(d); err != nil {
-			return nil, fmt.Errorf("failed to deserialize GetAccessValueInfo: %w", err)
+	accessValues, err := postcard.DeserializeSeq(deserializer, func(d *postcard.Deserializer) (*api.BatchGetAccessValueItem, error) {
+		var item api.BatchGetAccessValueItem
+		if err := item.UnmarshalPostcard(d); err != nil {
+			return nil, fmt.Errorf("failed to deserialize BatchGetAccessValueItem: %w", err)
 		}
-		return &info, nil
+		return &item, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize GetAccessValue sequence: %w", err)
+		return nil, fmt.Errorf("failed to deserialize BatchGetAccessValue sequence: %w", err)
 	}
 
-	return &GetAccessValueResult{
+	return &BatchGetAccessValueResult{
 		HTTPResponseBody:    apiResponse.Body,
 		BodyGetAccessValues: accessValues,
 	}, nil

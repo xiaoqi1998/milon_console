@@ -148,6 +148,58 @@ func TestProviderTokenEncodeAndDecode(t *testing.T) {
 	}
 }
 
+// Regression: ValidatorId([u8; 32]) and PoolId([u8; 32]) are
+// #[serde(transparent)] newtypes over a fixed 32-byte array, so the wire form
+// is 32 raw bytes and not a u64 varint.
+func TestProviderValidatorIdPoolIdWireFormat(t *testing.T) {
+	pd, err := LoadProviderFromFile("./IDL/validator.idl.json")
+	assert.NoError(t, err)
+
+	value := make([]byte, 32)
+	for i := range value {
+		value[i] = byte(i + 1)
+	}
+	var want [32]byte
+	copy(want[:], value)
+
+	controller, err := crypto.NewAddressFromRelaxed("0101010101010101010101010101010101010101")
+	assert.NoError(t, err)
+
+	t.Run("encode writes 32 fixed bytes", func(t *testing.T) {
+		wire, err := pd.Encode("DeclareValidatorAvailability", Args{
+			"controller": controller,
+			"validator":  value,
+		})
+		assert.NoError(t, err)
+		// [app_id(1)] + [discriminator(2)] + [controller(20)] + [validator(32)]
+		assert.Len(t, wire, 55)
+		assert.Equal(t, value, wire[23:])
+
+		decoded, err := pd.Decode("DeclareValidatorAvailability", wire)
+		assert.NoError(t, err)
+		assert.Equal(t, want, decoded["validator"])
+	})
+
+	t.Run("decode returns the 32 byte array", func(t *testing.T) {
+		for _, name := range []string{"ValidatorId", "PoolId"} {
+			decoded, err := pd.DecodeDataByIDLTypeName(name, value)
+			assert.NoError(t, err)
+			assert.Equal(t, want, decoded)
+		}
+	})
+
+	t.Run("a varint payload is rejected", func(t *testing.T) {
+		// u64(183) occupies 2 varint bytes; a fixed 32-byte read must not accept it
+		_, err := pd.DecodeDataByIDLTypeName("ValidatorId", []byte{0xB7, 0x01})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "insufficient data for ValidatorId")
+
+		_, err = pd.DecodeDataByIDLTypeName("PoolId", []byte{0xB7, 0x01})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "insufficient data for PoolId")
+	})
+}
+
 func TestDecode_Errors(t *testing.T) {
 	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
 	assert.NoError(t, err)

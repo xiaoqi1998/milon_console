@@ -42,6 +42,9 @@ func displayInstructions(client *milon.Client, instructions []api.PackedInstruct
 	}
 }
 
+// displayAccessRecords prints one access record per resource. The receipt keeps
+// them sorted by resource ID hash ascending, so a consumer looking for a
+// specific resource must match ResourceID rather than a fixed index.
 func displayAccessRecords(client *milon.Client, records []api.AccessRecord) {
 	fmt.Printf("\nAccess Records (len=%d):\n", len(records))
 	for i, record := range records {
@@ -142,33 +145,37 @@ func displayPersistedValue(client *milon.Client, label string, pv *api.Persisted
 	}
 }
 
+// displayExternalData fetches and prints the blob an External PersistedValue
+// points at. A blob the node no longer has (Data == nil) is reported instead of
+// being treated as an error.
 func displayExternalData(client *milon.Client, label string, blobHash api.BlobHash) {
-	getAccessValueResult, err := client.GetAccessValue([]api.BlobHash{blobHash})
+	getAccessValueResult, err := client.GetAccessValue(blobHash)
 	if err != nil {
 		panic("failed to get " + label + " access value: " + err.Error())
 	}
 
-	fmt.Printf("\t\t\t now client.GetAccessValue: %+v \n\n", getAccessValueResult)
-	for j, value := range getAccessValueResult.BodyGetAccessValues {
-		fmt.Printf("\t\t\t\t [%d] BlobHash: %+v\n", j, value.BlobHash)
-		fmt.Printf("\t\t\t\t [%d] Data: %+v\n", j, value.Data)
-
-		if value.Data == nil {
-			continue
-		}
-
-		pd, idlType := findIDLTypeByTag(client, value.Data.TypeTag)
-		if pd == nil || idlType == nil {
-			continue
-		}
-
-		decodedValue, err := pd.DecodeDataByIDLTypeName(idlType.Name, value.Data.Value)
-		if err != nil {
-			panic("failed to decode " + label + " access value data: " + err.Error())
-		}
-
-		fmt.Printf("\t\t\t\t [%d] Value Decoded (%s): %+v\n", j, idlType.Name, decodedValue)
+	accessValue := getAccessValueResult.BodyGetAccessValue
+	if accessValue == nil || accessValue.Data == nil {
+		fmt.Printf("\t\t\t no access value stored for BlobHash=%x\n", blobHash)
+		return
 	}
+
+	fmt.Printf("\t\t\t AccessValue(BlobHash=%x, type_tag=%d, data_len=%d)\n",
+		accessValue.BlobHash[:], accessValue.Data.TypeTag, len(accessValue.Data.Value))
+	fmt.Printf("\t\t\t Data: %x\n", accessValue.Data.Value)
+
+	pd, idlType := findIDLTypeByTag(client, accessValue.Data.TypeTag)
+	if pd == nil || idlType == nil {
+		fmt.Printf("\t\t\t Warning: unknown type_tag %d, skipping decode\n", accessValue.Data.TypeTag)
+		return
+	}
+
+	decodedValue, err := pd.DecodeDataByIDLTypeName(idlType.Name, accessValue.Data.Value)
+	if err != nil {
+		panic("failed to decode " + label + " access value data: " + err.Error())
+	}
+
+	fmt.Printf("\t\t\t Value Decoded (%s): %+v\n\n", idlType.Name, decodedValue)
 }
 
 func displayEvents(client *milon.Client, events []api.TypeTagWithData) {

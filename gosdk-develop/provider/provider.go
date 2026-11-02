@@ -378,6 +378,10 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 		return serializeFixedBytesValue(serializer, value, 20, "B160")
 	case "B256":
 		return serializeFixedBytesValue(serializer, value, 32, "B256")
+	case "ValidatorId", "PoolId":
+		// Rust newtypes ValidatorId([u8; 32]) and PoolId([u8; 32]) are
+		// #[serde(transparent)] over a fixed 32-byte array, not over u64.
+		return serializeFixedBytesValue(serializer, value, 32, argName)
 	default:
 		return fmt.Errorf("unsupported IDL type: %s", argName)
 	}
@@ -806,6 +810,9 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		return deserializeFixedBytesValue(body, offset, 20, "B160")
 	case "B256":
 		return deserializeFixedBytesValue(body, offset, 32, "B256")
+	case "ValidatorId", "PoolId":
+		// #[serde(transparent)] newtypes over [u8; 32]: fixed 32 bytes on wire.
+		return deserializeFixedBytesValue(body, offset, 32, idlTypeName)
 	default:
 		return nil, fmt.Errorf("unsupported IDL type: %s", idlTypeName)
 	}

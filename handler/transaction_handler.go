@@ -682,25 +682,23 @@ func fetchResourceValue(mc *milon.Client, rsHash api.RsHash, requestId lib.Reque
 }
 
 // fetchAccessValue reads the off-chain blob value referenced by an
-// external-written resource via GetAccessValue.
+// external-written resource via the single-key GetAccessValue RPC (method 165).
 func fetchAccessValue(mc *milon.Client, blobHash [32]byte, requestId lib.RequestID) *remoteValueResponse {
 	bh := api.BlobHash(blobHash)
-	result, err := mc.GetAccessValue([]api.BlobHash{bh}, milon.WithRequestID(requestId))
+	result, err := mc.GetAccessValue(bh, milon.WithRequestID(requestId))
 	if err != nil {
 		return &remoteValueResponse{DecodeError: err.Error()}
 	}
-	for _, item := range result.BodyGetAccessValues {
-		if item.Data == nil {
-			continue
-		}
-		resp := &remoteValueResponse{
-			TypeTag: item.Data.TypeTag,
-			DataHex: hex.EncodeToString(item.Data.Value),
-		}
-		resp.Decoded, resp.IDLType, resp.DecodeError = decodeTypedValue(mc, item.Data.TypeTag, item.Data.Value)
-		return resp
+	accessValue := result.BodyGetAccessValue
+	if accessValue == nil || accessValue.Data == nil {
+		return &remoteValueResponse{DecodeError: "no access value returned for blob"}
 	}
-	return &remoteValueResponse{DecodeError: "no access value returned for blob"}
+	resp := &remoteValueResponse{
+		TypeTag: accessValue.Data.TypeTag,
+		DataHex: hex.EncodeToString(accessValue.Data.Value),
+	}
+	resp.Decoded, resp.IDLType, resp.DecodeError = decodeTypedValue(mc, accessValue.Data.TypeTag, accessValue.Data.Value)
+	return resp
 }
 
 // parsePersistedValue decodes a snapshot (inline value by its typeTag, or

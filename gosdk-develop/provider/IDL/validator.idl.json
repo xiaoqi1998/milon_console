@@ -425,27 +425,27 @@
     {
       "name": "_ValidatorRecord",
       "type": "ValidatorProfile",
-      "typeTag": 13990765903286555017
+      "typeTag": 13667524927300449050
     },
     {
       "name": "_ValidatorByController",
       "type": "ValidatorId",
-      "typeTag": 14289492322595072753
+      "typeTag": 14542707920151212342
     },
     {
       "name": "_CandidatePool",
       "type": "CandidatePool",
-      "typeTag": 3848641516347396045
+      "typeTag": 16438948254081357680
     },
     {
       "name": "_AvailabilityDeclaration",
       "type": "AvailabilityDeclaration",
-      "typeTag": 7195201208835251183
+      "typeTag": 9892382822654520502
     },
     {
       "name": "_DeclaredByEpoch",
       "type": "CandidatePool",
-      "typeTag": 3848641516347396045
+      "typeTag": 16438948254081357680
     }
   ],
   "constants": [

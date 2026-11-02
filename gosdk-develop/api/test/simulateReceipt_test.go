@@ -14,7 +14,10 @@ func TestSimulateReceipt_WithRealProvider_EventCreditApplied(t *testing.T) {
 	pd, err := provider.LoadProviderFromFile("../../provider/IDL/demo.idl.json")
 	assert.NoError(t, err)
 
-	// 2. Build event data for EventCreditApplied (typeTag: 14232600292727055113)
+	creditAppliedTag := eventTagByName(t, pd, "EventCreditApplied")
+	scoreTag := resourceTagByName(t, pd, "_Score")
+
+	// 2. Build event data for EventCreditApplied
 	// Fields: pool(Address, 20B), recipient(Address, 20B), amount(u64)
 	pool := make([]byte, 20)
 	for i := 0; i < 20; i++ {
@@ -53,14 +56,14 @@ func TestSimulateReceipt_WithRealProvider_EventCreditApplied(t *testing.T) {
 			{
 				ResourceID: api.RsHash{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19},
 				LastWritten: api.PersistedValue{
-					Variant:    0,                   // Inline(FramedDynamicValue), length-prefixed body
-					TypeTag:    5563585020063213298, // u64
-					InlineData: amountBytes,         // varint-encoded u64 (42)
+					Variant:    0,           // Inline(FramedDynamicValue), length-prefixed body
+					TypeTag:    scoreTag,    // u64
+					InlineData: amountBytes, // varint-encoded u64 (42)
 				},
 			},
 		},
 		Events: []api.TypeTagWithData{
-			{TypeTag: 14232600292727055113, Value: eventValue},
+			{TypeTag: creditAppliedTag, Value: eventValue},
 		},
 		Error:      nil,
 		GasCharged: 22,

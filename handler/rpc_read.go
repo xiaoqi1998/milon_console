@@ -47,9 +47,15 @@ type getResourceResponse struct {
 	Value   string `json:"value"`
 }
 
+type apiFailureResponse struct {
+	Message string  `json:"message"`
+	Code    *uint16 `json:"code,omitempty"`
+}
+
 type getAccessValueResponse struct {
 	BlobHash string                   `json:"blobHash"`
 	Data     *typeTagWithDataResponse `json:"data,omitempty"`
+	Failure  *apiFailureResponse      `json:"failure,omitempty"`
 }
 
 type getAccessValueRequest struct {
@@ -157,23 +163,34 @@ func (h *RpcHandler) GetAccessValue(c *gin.Context) {
 	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.GetAccessValue(blobHashList, milon.WithRequestID(requestId))
+	result, err := mc.BatchGetAccessValue(blobHashList, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "GetAccessValue", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to get access value: "+err.Error(), nil))
 		return
 	}
 
+	// Per-item Result: a failed item carries Failure instead of Data, and an
+	// unknown blob is Ok with a nil Data (not a failure). Response order matches
+	// the request order, so the blob hash comes back from blobHashList.
 	list := make([]getAccessValueResponse, 0, len(result.BodyGetAccessValues))
-	for _, item := range result.BodyGetAccessValues {
+	for i, item := range result.BodyGetAccessValues {
 		resp := getAccessValueResponse{
-			BlobHash: hex.EncodeToString(item.BlobHash[:]),
+			BlobHash: hex.EncodeToString(blobHashList[i][:]),
 		}
-		if item.Data != nil {
+		if item.Value != nil && item.Value.Data != nil {
 			resp.Data = &typeTagWithDataResponse{
-				TypeTag: item.Data.TypeTag,
-				Value:   hex.EncodeToString(item.Data.Value),
+				TypeTag: item.Value.Data.TypeTag,
+				Value:   hex.EncodeToString(item.Value.Data.Value),
 			}
+		}
+		if item.Failure != nil {
+			failure := &apiFailureResponse{Message: item.Failure.Message}
+			if item.Failure.Code != nil {
+				code := *item.Failure.Code
+				failure.Code = &code
+			}
+			resp.Failure = failure
 		}
 		list = append(list, resp)
 	}

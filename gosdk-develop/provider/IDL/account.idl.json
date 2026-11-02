@@ -533,17 +533,17 @@
     {
       "name": "_Account",
       "type": "Account",
-      "typeTag": 8001620250894669925
+      "typeTag": 4728916202331225981
     },
     {
       "name": "_AccountSigner",
       "type": "AccountSigner",
-      "typeTag": 7240099799980548627
+      "typeTag": 18411492065370272939
     },
     {
       "name": "_VoteProgress",
       "type": "Bitmap64",
-      "typeTag": 8890526009784221754
+      "typeTag": 6259351211094536142
     },
     {
       "name": "_VoteOccupancy",

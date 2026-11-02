@@ -15,6 +15,75 @@
     {
       "args": [
         {
+          "name": "circuit_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "verifying_key",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "constraint_hash",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "max_public_inputs",
+          "role": "input",
+          "type": "u16"
+        },
+        {
+          "name": "supported_algs",
+          "role": "input",
+          "type": "vec<String>"
+        },
+        {
+          "name": "authentication_enabled",
+          "role": "input",
+          "type": "bool"
+        }
+      ],
+      "discriminator": 18924,
+      "handler": "install_zk_circuit",
+      "kind": "entry",
+      "name": "InstallZkCircuit"
+    },
+    {
+      "args": [
+        {
+          "name": "provider_id",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "jwks",
+          "role": "input",
+          "type": "vec<String>"
+        },
+        {
+          "name": "validator_account",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 50524,
+      "handler": "update_jwk_report",
+      "kind": "entry",
+      "name": "UpdateJwkReport",
+      "sponsor": true
+    },
+    {
+      "args": [],
+      "discriminator": 17484,
+      "handler": "prune_inactive_jwk_reports",
+      "kind": "entry",
+      "name": "PruneInactiveJwkReports"
+    },
+    {
+      "args": [
+        {
           "name": "provider_id",
           "role": "input",
           "type": "B256"
@@ -34,6 +103,20 @@
       "handler": "authenticate",
       "kind": "entry",
       "name": "Authenticate",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "auth",
+          "role": "input",
+          "type": "Groth16Auth"
+        }
+      ],
+      "discriminator": 7424,
+      "handler": "authenticate_zk",
+      "kind": "entry",
+      "name": "AuthenticateZk",
       "sponsor": true
     },
     {
@@ -63,6 +146,24 @@
       "handler": "bind",
       "kind": "entry",
       "name": "Bind"
+    },
+    {
+      "args": [
+        {
+          "name": "auth",
+          "role": "input",
+          "type": "Groth16Auth"
+        },
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        }
+      ],
+      "discriminator": 3098,
+      "handler": "bind_zk",
+      "kind": "entry",
+      "name": "BindZk"
     },
     {
       "args": [
@@ -261,6 +362,58 @@
     {
       "args": [
         {
+          "name": "validator",
+          "role": "input",
+          "type": "ValidatorId"
+        },
+        {
+          "name": "provider_id",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 44193,
+      "handler": "get_jwk_report",
+      "kind": "view",
+      "name": "GetJwkReport",
+      "returns": {
+        "type": "option<ValidatorJwkReport>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "provider_id",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "kid",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "algorithm",
+          "role": "input",
+          "type": "String"
+        }
+      ],
+      "discriminator": 65396,
+      "handler": "get_selected_jwk",
+      "kind": "view",
+      "name": "GetSelectedJwk",
+      "returns": {
+        "type": "option<String>"
+      }
+    },
+    {
+      "args": [
+        {
           "name": "provider_id",
           "role": "input",
           "type": "B256"
@@ -307,6 +460,63 @@
     }
   ],
   "types": [
+    {
+      "kind": "enum",
+      "name": "Groth16Error",
+      "typeTag": 9192889819722184151,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "ProofEncoding"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "VerifyingKeyEncoding"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "PublicInputCount"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "UnsupportedEphemeralKey"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "CircuitIdMismatch"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "InvalidEnvelope"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "CircuitNotRegistered"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "CircuitDisabled"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "AlgorithmNotSupported"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "PublicInputSchemaMismatch"
+        }
+      ]
+    },
     {
       "kind": "enum",
       "name": "StringOrArray",
@@ -620,6 +830,126 @@
       "typeTag": 15624622551745873749
     },
     {
+      "fields": [
+        {
+          "name": "validator",
+          "type": "ValidatorId"
+        },
+        {
+          "name": "keys",
+          "type": "vec<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "ValidatorJwkReport",
+      "typeTag": 9801215955308508226
+    },
+    {
+      "fields": [
+        {
+          "name": "reports",
+          "type": "vec<ValidatorJwkReport>"
+        }
+      ],
+      "kind": "struct",
+      "name": "KeylessJwkReports",
+      "typeTag": 5913680928839638407
+    },
+    {
+      "fields": [
+        {
+          "name": "circuit_id",
+          "type": "u32"
+        },
+        {
+          "name": "verifying_key",
+          "type": "bytes"
+        },
+        {
+          "name": "constraint_hash",
+          "type": "B256"
+        },
+        {
+          "name": "max_public_inputs",
+          "type": "u16"
+        },
+        {
+          "name": "supported_algs",
+          "type": "vec<String>"
+        },
+        {
+          "name": "enabled",
+          "type": "bool"
+        },
+        {
+          "name": "authentication_enabled",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "KeylessZkCircuit",
+      "typeTag": 2044003146433446322
+    },
+    {
+      "kind": "enum",
+      "name": "PublicStatementError",
+      "typeTag": 7938151067451673625,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "InvalidJwk"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "InvalidEphemeralKey"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "TooLarge"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "InvalidEnvelope"
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "ZkStatementError",
+      "typeTag": 9974183095189200918,
+      "variants": [
+        {
+          "fields": [
+            {
+              "name": "0",
+              "type": "Error"
+            }
+          ],
+          "kind": "tuple",
+          "name": "Jwt"
+        },
+        {
+          "fields": [
+            {
+              "name": "0",
+              "type": "str"
+            }
+          ],
+          "kind": "tuple",
+          "name": "Mismatch"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "AmbiguousJson"
+        }
+      ]
+    },
+    {
       "kind": "builtin",
       "name": "Address",
       "typeTag": 17438174819379414968
@@ -641,6 +971,11 @@
     },
     {
       "kind": "builtin",
+      "name": "ValidatorId",
+      "typeTag": 14542707920151212342
+    },
+    {
+      "kind": "builtin",
       "name": "bool",
       "typeTag": 14785269867199075517
     },
@@ -648,6 +983,16 @@
       "kind": "builtin",
       "name": "bytes",
       "typeTag": 10405529814227927951
+    },
+    {
+      "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
     },
     {
       "kind": "builtin",
@@ -700,9 +1045,29 @@
       "name": "_ProviderIndex",
       "type": "ProviderIndex",
       "typeTag": 15624622551745873749
+    },
+    {
+      "name": "_KeylessJwkReports",
+      "type": "KeylessJwkReports",
+      "typeTag": 5913680928839638407
+    },
+    {
+      "name": "_KeylessZkCircuit",
+      "type": "KeylessZkCircuit",
+      "typeTag": 2044003146433446322
     }
   ],
   "constants": [
+    {
+      "name": "MAX_SIGNING_HEADER_BYTES",
+      "type": "usize",
+      "value": 1024
+    },
+    {
+      "name": "MAX_SIGNING_PAYLOAD_BYTES",
+      "type": "usize",
+      "value": 4096
+    },
     {
       "name": "KEYLESS_SPONSOR_SEED",
       "type": "u64",
@@ -754,6 +1119,11 @@
       "value": 600000
     },
     {
+      "name": "MAX_ZK_VERIFYING_KEY_BYTES",
+      "type": "usize",
+      "value": "64 * 1024"
+    },
+    {
       "name": "DEFAULT_MAX_SESSION_TTL_MS",
       "type": "u64",
       "value": 86400000
@@ -772,6 +1142,86 @@
       "name": "BIND_DELAY_FLOOR_MS",
       "type": "u64",
       "value": 3600000
+    },
+    {
+      "name": "SHA256_DIGEST_INFO_PREFIX",
+      "type": "array<u8;19>",
+      "value": "[0x30 , 0x31 , 0x30 , 0x0D , 0x06 , 0x09 , 0x60 , 0x86 , 0x48 , 0x01 , 0x65 , 0x03 , 0x04 , 0x02 , 0x01 , 0x05 , 0x00 , 0x04 , 0x20 ,]"
+    },
+    {
+      "name": "RSA2048_MODULUS_BYTES",
+      "type": "usize",
+      "value": 256
+    },
+    {
+      "name": "RSA2048_SIGNATURE_BYTES",
+      "type": "usize",
+      "value": "RSA2048_MODULUS_BYTES"
+    },
+    {
+      "name": "RSA2048_LIMBS",
+      "type": "usize",
+      "value": "RSA2048_MODULUS_BYTES / 4"
+    },
+    {
+      "name": "RSA2048_PRODUCT_LIMBS",
+      "type": "usize",
+      "value": "RSA2048_LIMBS * 2"
+    },
+    {
+      "name": "RSA_MAX_EXPONENT_BYTES",
+      "type": "usize",
+      "value": 4
+    },
+    {
+      "name": "STAGED_JWT_RS256_CIRCUIT_ID",
+      "type": "u32",
+      "value": 7
+    },
+    {
+      "name": "STAGED_JWT_ES256_CIRCUIT_ID",
+      "type": "u32",
+      "value": 8
+    },
+    {
+      "name": "TRUSTED_PREPARED_RS256_CIRCUIT_ID",
+      "type": "u32",
+      "value": 9
+    },
+    {
+      "name": "TRUSTED_PREPARED_ES256_CIRCUIT_ID",
+      "type": "u32",
+      "value": 10
+    },
+    {
+      "name": "STAGED_JWT_PUBLIC_INPUTS",
+      "type": "u16",
+      "value": 21
+    },
+    {
+      "name": "TRUSTED_PREPARED_PUBLIC_INPUTS",
+      "type": "u16",
+      "value": 21
+    },
+    {
+      "name": "MAX_GROTH16_PROOF_BYTES",
+      "type": "usize",
+      "value": 256
+    },
+    {
+      "name": "MAX_ZK_ISSUER_BYTES",
+      "type": "usize",
+      "value": 512
+    },
+    {
+      "name": "MAX_ZK_KID_BYTES",
+      "type": "usize",
+      "value": 256
+    },
+    {
+      "name": "MAX_ZK_THUMBPRINT_BYTES",
+      "type": "usize",
+      "value": 128
     }
   ],
   "errors": [
@@ -812,355 +1262,415 @@
     },
     {
       "code": 2055,
+      "message": "JWT subject exceeds the Keyless hash profile limit",
+      "name": "JwtSubjectTooLong"
+    },
+    {
+      "code": 2056,
       "message": "JWT missing required field: exp",
       "name": "JwtMissingExp"
     },
     {
-      "code": 2056,
+      "code": 2057,
       "message": "JWT missing required field: iat",
       "name": "JwtMissingIat"
     },
     {
-      "code": 2057,
+      "code": 2058,
       "message": "JWT missing required field: nonce",
       "name": "JwtMissingNonce"
     },
     {
-      "code": 2058,
+      "code": 2059,
       "message": "JWT missing required field: kid in header",
       "name": "JwtMissingKid"
     },
     {
-      "code": 2059,
+      "code": 2060,
       "message": "JWT expired: exp={0} ms",
       "name": "JwtExpired"
     },
     {
-      "code": 2060,
+      "code": 2061,
       "message": "JWT issued in the future: iat={0} ms",
       "name": "JwtIssuedInFuture"
     },
     {
-      "code": 2061,
+      "code": 2062,
       "message": "JWT is too old: age={0} ms",
       "name": "JwtTooOld"
     },
     {
-      "code": 2062,
+      "code": 2063,
       "message": "JWT issuer does not match provider: expected={0}, got={1}",
       "name": "JwtIssuerMismatch"
     },
     {
-      "code": 2063,
+      "code": 2064,
       "message": "JWT audience is not allowed by provider",
       "name": "JwtAudienceNotAllowed"
     },
     {
-      "code": 2064,
+      "code": 2065,
       "message": "multi-audience JWT requires a matching azp",
       "name": "JwtAzpInvalid"
     },
     {
-      "code": 2065,
+      "code": 2066,
       "message": "JWT algorithm not supported: {0}",
       "name": "JwtAlgorithmUnsupported"
     },
     {
-      "code": 2066,
+      "code": 2067,
       "message": "JWT signature verification failed",
       "name": "JwtSignatureInvalid"
     },
     {
-      "code": 2067,
+      "code": 2068,
       "message": "nonce must start with 'milon-keyless-v1.'",
       "name": "NoncePrefixInvalid"
     },
     {
-      "code": 2068,
+      "code": 2069,
       "message": "nonce binary envelope is malformed",
       "name": "NonceFormatInvalid"
     },
     {
-      "code": 2069,
+      "code": 2070,
       "message": "nonce commitment must be 64 hex characters (32 bytes)",
       "name": "NonceCommitmentLength"
     },
     {
-      "code": 2070,
+      "code": 2071,
       "message": "nonce commitment hex decode failed",
       "name": "NonceCommitmentHex"
     },
     {
-      "code": 2071,
+      "code": 2072,
       "message": "nonce expiry parse failed",
       "name": "NonceExpiryParse"
     },
     {
-      "code": 2072,
+      "code": 2073,
       "message": "nonce chain ID mismatch: expected={0}, got={1}",
       "name": "NonceChainIdMismatch"
     },
     {
-      "code": 2073,
+      "code": 2074,
       "message": "nonce provider ID mismatch",
       "name": "NonceProviderMismatch"
     },
     {
-      "code": 2074,
+      "code": 2075,
       "message": "nonce commitment mismatch (ephemeral_pk does not match JWT nonce)",
       "name": "NonceCommitmentMismatch"
     },
     {
-      "code": 2075,
+      "code": 2076,
       "message": "nonce expired: expiry={0} ms",
       "name": "NonceExpired"
     },
     {
-      "code": 2076,
+      "code": 2077,
       "message": "JWK not found: issuer={0}, kid={1}",
       "name": "JwkNotFound"
     },
     {
-      "code": 2077,
+      "code": 2078,
       "message": "JWK parse failed",
       "name": "JwkParse"
     },
     {
-      "code": 2078,
+      "code": 2079,
       "message": "JWK key type mismatch: expected {0}, got {1}",
       "name": "JwkKeyTypeMismatch"
     },
     {
-      "code": 2079,
+      "code": 2080,
       "message": "JWK missing required field: {0}",
       "name": "JwkMissingField"
     },
     {
-      "code": 2080,
+      "code": 2081,
       "message": "JWK base64 decode failed",
       "name": "JwkBase64Decode"
     },
     {
-      "code": 2081,
+      "code": 2082,
       "message": "JWK invalid RSA key",
       "name": "JwkInvalidRsaKey"
     },
     {
-      "code": 2082,
+      "code": 2083,
       "message": "JWK invalid EC key",
       "name": "JwkInvalidEcKey"
     },
     {
-      "code": 2083,
+      "code": 2084,
       "message": "JWK curve mismatch: alg={0}, crv={1}",
       "name": "JwkCurveMismatch"
     },
     {
-      "code": 2084,
+      "code": 2085,
       "message": "ephemeral signature invalid",
       "name": "EphemeralSignatureInvalid"
     },
     {
-      "code": 2085,
+      "code": 2086,
       "message": "timestamp skew too large: {0} ms exceeds limit",
       "name": "TimestampSkewTooLarge"
     },
     {
-      "code": 2086,
+      "code": 2087,
       "message": "session expire out of range: {0}",
       "name": "SessionExpireOutOfRange"
     },
     {
-      "code": 2087,
+      "code": 2088,
       "message": "mock verifier rejects non-empty proof bytes (ZK phase not enabled)",
       "name": "MockProofNotEmpty"
     },
     {
-      "code": 2088,
+      "code": 2089,
       "message": "session pubkey must be a real signature key",
       "name": "InvalidSessionPubkey"
     },
     {
-      "code": 2089,
+      "code": 2090,
       "message": "session is revoked: {0:?}",
       "name": "SessionRevoked"
     },
     {
-      "code": 2090,
+      "code": 2091,
       "message": "public sponsorship already used for session: {0:?}",
       "name": "SessionSponsorshipAlreadyUsed"
     },
     {
-      "code": 2091,
+      "code": 2092,
       "message": "keyless provider not registered: {0:?}",
       "name": "ProviderNotRegistered"
     },
     {
-      "code": 2092,
+      "code": 2093,
       "message": "keyless provider already registered: {0:?}",
       "name": "ProviderAlreadyRegistered"
     },
     {
-      "code": 2093,
+      "code": 2094,
       "message": "keyless provider is disabled or not active: {0:?}",
       "name": "ProviderDisabled"
     },
     {
-      "code": 2094,
+      "code": 2095,
       "message": "issuer URL must start with https://",
       "name": "IssuerUrlInvalid"
     },
     {
-      "code": 2095,
+      "code": 2096,
       "message": "issuer name must be non-empty and at most 64 bytes",
       "name": "IssuerNameInvalid"
     },
     {
-      "code": 2096,
+      "code": 2097,
       "message": "duplicate jwk entries in key set",
       "name": "DuplicateJwk"
     },
     {
-      "code": 2097,
+      "code": 2098,
       "message": "session not found: {0:?}",
       "name": "SessionNotFound"
     },
     {
-      "code": 2098,
+      "code": 2099,
       "message": "keyless identity already bound: {0:?}",
       "name": "AlreadyBound"
     },
     {
-      "code": 2099,
+      "code": 2100,
       "message": "keyless binding not found: {0:?}",
       "name": "BindingNotFound"
     },
     {
-      "code": 2100,
+      "code": 2101,
       "message": "keyless binding owner mismatch: binding={0:?}, signer={1:?}",
       "name": "BindingOwnerMismatch"
     },
     {
-      "code": 2101,
+      "code": 2102,
       "message": "binding signer slot no longer matches keyless identity: {0:?}",
       "name": "BindingSignerMismatch"
     },
     {
-      "code": 2102,
+      "code": 2103,
       "message": "keyless signer slot not found in owner account",
       "name": "KeylessSlotNotFound"
     },
     {
-      "code": 2103,
+      "code": 2104,
       "message": "JWT base64url encoding is not canonical",
       "name": "JwtBase64NonCanonical"
     },
     {
-      "code": 2104,
+      "code": 2105,
       "message": "JWK snapshot unavailable for provider: {0:?}",
       "name": "JwkSnapshotUnavailable"
     },
     {
-      "code": 2105,
+      "code": 2106,
       "message": "Transparent AccountError",
       "name": "AccountError",
       "transparent": true
     },
     {
-      "code": 2106,
+      "code": 2107,
       "message": "Transparent TokenError",
       "name": "TokenError",
       "transparent": true
     },
     {
-      "code": 2107,
+      "code": 2108,
       "message": "JWT algorithm is supported but not allowed by provider: {0}",
       "name": "JwtAlgorithmNotAllowed"
     },
     {
-      "code": 2108,
+      "code": 2109,
       "message": "JWK algorithm mismatch: expected={0}, got={1}",
       "name": "JwkAlgorithmMismatch"
     },
     {
-      "code": 2109,
+      "code": 2110,
       "message": "JWK use must be 'sig', got={0}",
       "name": "JwkUseInvalid"
     },
     {
-      "code": 2110,
+      "code": 2111,
       "message": "JWK key_ops must contain 'verify'",
       "name": "JwkKeyOpsInvalid"
     },
     {
-      "code": 2111,
+      "code": 2112,
       "message": "provider allowed algorithms contain duplicates",
       "name": "DuplicateAlgorithm"
     },
     {
-      "code": 2112,
+      "code": 2113,
       "message": "keyless bootstrap is only valid in genesis block 0",
       "name": "GenesisOnly"
     },
     {
-      "code": 2113,
+      "code": 2114,
       "message": "keyless registry is already bootstrapped",
       "name": "AlreadyBootstrapped"
     },
     {
-      "code": 2114,
+      "code": 2115,
       "message": "keyless provider kind or ID namespace is invalid",
       "name": "ProviderKindInvalid"
     },
     {
-      "code": 2115,
+      "code": 2116,
       "message": "provider session version overflow",
       "name": "SessionVersionOverflow"
     },
     {
-      "code": 2116,
+      "code": 2117,
       "message": "provider key revision overflow",
       "name": "KeyRevisionOverflow"
     },
     {
-      "code": 2117,
+      "code": 2118,
       "message": "audience must contain 1..=256 UTF-8 bytes",
       "name": "AudienceInvalid"
     },
     {
-      "code": 2118,
+      "code": 2119,
       "message": "audience hash collision",
       "name": "AudienceHashCollision"
     },
     {
-      "code": 2119,
+      "code": 2120,
       "message": "JWT audience array is empty or contains duplicates",
       "name": "JwtAudienceInvalid"
     },
     {
-      "code": 2120,
+      "code": 2121,
       "message": "provider owner does not match transaction signer",
       "name": "ProviderOwnerMismatch"
     },
     {
-      "code": 2121,
-      "message": "built-in OIDC provider metadata is immutable",
+      "code": 2122,
+      "message": "ZK circuit ID is invalid",
+      "name": "ZkCircuitIdInvalid"
+    },
+    {
+      "code": 2123,
+      "message": "ZK circuit is already registered: {0}",
+      "name": "ZkCircuitAlreadyRegistered"
+    },
+    {
+      "code": 2124,
+      "message": "ZK circuit verifying key is invalid",
+      "name": "ZkCircuitInvalid"
+    },
+    {
+      "code": 2125,
+      "message": "ZK circuit is not enabled for authentication",
+      "name": "ZkAuthenticationDisabled"
+    },
+    {
+      "code": 2126,
+      "message": "ZK proof verification failed",
+      "name": "ZkProofInvalid"
+    },
+    {
+      "code": 2127,
+      "message": "built-in provider metadata is immutable",
       "name": "BuiltinProviderImmutable"
     },
     {
-      "code": 2122,
+      "code": 2128,
       "message": "custom provider ID is in a reserved namespace",
       "name": "ReservedProviderId"
     },
     {
-      "code": 2123,
+      "code": 2129,
       "message": "static provider must contain 1..=8 keys",
       "name": "StaticKeyCountInvalid"
     },
     {
-      "code": 2124,
+      "code": 2130,
       "message": "static provider kid must be unique and contain 1..=128 bytes",
       "name": "StaticKeyIdInvalid"
+    },
+    {
+      "code": 2131,
+      "message": "consensus validator identity is missing or does not match signer",
+      "name": "ConsensusIdentityMissing"
+    },
+    {
+      "code": 2132,
+      "message": "validator is not in the current validator set: {0:?}",
+      "name": "ValidatorNotActive"
+    },
+    {
+      "code": 2133,
+      "message": "current validator set is unavailable",
+      "name": "ValidatorSetUnavailable"
+    },
+    {
+      "code": 2134,
+      "message": "dynamic JWK set is invalid or exceeds protocol limits",
+      "name": "DynamicJwkSetInvalid"
+    },
+    {
+      "code": 2135,
+      "message": "JWK vote has no unique highest candidate",
+      "name": "JwkVoteTie"
+    },
+    {
+      "code": 2136,
+      "message": "JWK base64url member is not canonical",
+      "name": "JwkThumbprintNonCanonical"
     }
   ]
 }
