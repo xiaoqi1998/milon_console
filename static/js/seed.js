@@ -305,6 +305,10 @@ function seedPreviewNow() {
       if (box) box.classList.remove('is-error');
       seedRenderSummary(body.data.summary);
       seedRenderPlanTree(body.data.plan);
+      // 计划缓存给总览 VC/多签/代币卡补规格信息(seed_overview.js 加载时存在)
+      if (typeof seedOverviewState === 'object' && seedOverviewState) {
+        seedOverviewState.plan = body.data.plan;
+      }
     })
     .catch(function (e) { seedShowErrors('预览请求失败: ' + e, null); });
 }
@@ -358,6 +362,7 @@ function seedPoll() {
         } else {
           showToast('播种完成 ✓', 'success');
           seedRenderAddrTable(d.accounts || {});
+          if (typeof refreshSeedOverview === 'function') refreshSeedOverview();
         }
         return;
       }
@@ -420,6 +425,9 @@ function startSeedJob() {
         .then(function (res) {
           if (res.code === 202 && res.body.success) {
             seedBeginJob(res.body.data.jobId);
+            // 账号固定保护:记住本次成功启动的短语(总览回填 + 短语漂移警告的基准)
+            if (typeof seedRememberPhrase === 'function') seedRememberPhrase(cfg.seedPhrase);
+            if (typeof refreshSeedOverview === 'function') refreshSeedOverview();
             showToast('播种任务已启动', 'success');
           } else {
             // 409(已有任务在跑)等失败:服务端 409 的 data 为 nil,直接显示错误 message
@@ -454,6 +462,13 @@ function seedRestoreLast() {
 function initSeedView() {
   seedRenderChips();
   if (!seedRestoreLast()) seedFillForm(SEED_DEFAULT_CFG);
+  // 账号固定保护:优先回填上次成功播种的短语(同短语 = 同账号,避免 localStorage 旧旋钮把短语带偏)
+  if (typeof seedPreferredPhrase === 'function') {
+    var lastPhrase = seedPreferredPhrase();
+    if (lastPhrase && seedEl('seedPhrase') && seedEl('seedPhrase').value !== lastPhrase) {
+      seedEl('seedPhrase').value = lastPhrase;
+    }
+  }
   seedLoadTemplates();
   // 数字/短语输入 → 防抖预览
   ['seedAcctCount', 'seedMsCount', 'seedMsSigners', 'seedMsThreshold',

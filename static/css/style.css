@@ -3967,3 +3967,15 @@ body {
 
 /* 播种器 v2:应用外壳 .view overflow:hidden,v2 页内容超一屏——视图内自建滚动容器 */
 #view-seed { overflow-y: auto; }
+
+/* 播种总览:短语不一致警告条 + 账户表格 + 等宽字段 */
+.seed-warn { background: rgba(230, 168, 74, 0.10); border: 1px solid rgba(230, 168, 74, 0.45); color: #e6a84a; border-radius: 8px; padding: 8px 12px; font-size: 12px; line-height: 1.5; margin: 8px 0; word-break: break-all; }
+.seed-table { width: 100%; border-collapse: collapse; font-size: 11px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; }
+.seed-table th, .seed-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+.seed-table th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); background: var(--bg-tertiary); white-space: nowrap; }
+.seed-table td { word-break: break-all; }
+.seed-mono { font-family: var(--font-mono, monospace); font-size: 11px; }
+.seed-addr { margin-right: 6px; }
+.seed-key { margin-right: 6px; letter-spacing: 0.3px; }
+.seed-ov-card { margin-bottom: 12px; }
+.seed-table .btn-sm { padding: 2px 8px; font-size: 10px; margin-left: 4px; }

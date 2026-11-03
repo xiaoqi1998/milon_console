@@ -7,7 +7,7 @@
 <title>Milon Chain API 调试控制台 | 区块链接口测试与文档</title>
 <meta name="description" content="Milon Chain 区块链 API 调试控制台，提供合约读写、账户查询、交易查询、事件监听等 RESTful 接口的在线测试与 SDK 调用。" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='28' height='28' rx='4' fill='%23141416' stroke='%23e0a458' stroke-width='2'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='%23e0a458' font-family='monospace' font-weight='700'>∞</text></svg>" type="image/svg+xml" />
-<link rel="stylesheet" href="/static/css/style.css?v=20261020" />
+<link rel="stylesheet" href="/static/css/style.css?v=20261103" />
 </head>
 <body>
 <div id="app">
@@ -580,6 +580,35 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
             <p>确定性派生测试数据一键写入当前网络,同 seed 短语重建后地址不变。v2:模板 + 旋钮全参数化,计划预览不上链</p>
           </div>
         </div>
+        <div class="vc-card" id="seedOverviewBox">
+          <div class="vc-card-header">
+            <h3>当前数据集总览</h3>
+            <span class="vc-card-desc">账号/私钥/代币 owner/SFT 一屏速览;私钥由 seed 短语在浏览器本地派生,服务端不返回</span>
+          </div>
+          <div id="seedPhraseWarn" class="seed-warn" style="display:none"></div>
+          <div style="display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap">
+            <select id="seedDatasetSel" style="max-width:280px"></select>
+            <span id="seedDatasetInfo" class="vc-card-desc"></span>
+            <button class="btn btn-secondary btn-sm" id="seedOverviewRefresh">刷新总览</button>
+            <button class="btn btn-secondary btn-sm" id="seedOverviewCopy">复制全部(JSON)</button>
+          </div>
+          <div id="seedOverviewCards"></div>
+        </div>
+        <div class="vc-card" id="accountBookBox">
+          <div class="vc-card-header">
+            <h3>账号本(自定义测试账号)</h3>
+            <span class="vc-card-desc">自有的密钥库,与播种账号并列使用;仅给私钥的条目服务端自动补地址。服务端存 data/custom_accounts.json(已 gitignore)</span>
+          </div>
+          <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" id="accountBookAddBtn">添加一条</button>
+            <button class="btn btn-secondary btn-sm" id="accountBookImportBtn">导入(粘贴 JSON)</button>
+            <button class="btn btn-secondary btn-sm" id="accountBookSubmitBtn" style="display:none">提交导入</button>
+            <button class="btn btn-secondary btn-sm" id="accountBookExportBtn">导出(JSON)</button>
+            <button class="btn btn-secondary btn-sm" id="accountBookRefreshBtn">刷新</button>
+          </div>
+          <textarea id="accountBookImportArea" class="vc-result" style="display:none;min-height:120px" placeholder='粘贴 JSON:数组 / {accounts:[…]} / {owner,users,newUsers}(sft_1000_testdata.json 可直接粘贴)'></textarea>
+          <div id="accountBookCards"></div>
+        </div>
         <div class="vc-grid">
           <div class="vc-card">
             <div class="vc-card-header">
@@ -853,6 +882,8 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
 </div>
 <script src="/static/js/app.js?v=20261015a"></script>
 <script src="/static/js/saved-instructions.js?v=20261013"></script>
-<script src="/static/js/seed.js?v=20261019"></script>
+<script src="/static/js/seed.js?v=20261103"></script>
+<script src="/static/js/seed_overview.js?v=20261104"></script>
+<script src="/static/js/account_book.js?v=20261103"></script>
 </body>
 </html>

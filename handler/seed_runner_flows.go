@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
@@ -326,80 +325,23 @@ func (r *seedRunner) runVc() error {
 	return nil
 }
 
-// seedVcFlow 单个 (issuer, user) 的完整证书链路(与 vc_flow_handler 七步一致)。
+// seedVcFlow 单个 (issuer, user) 的完整证书链路——委托 IssueVcToAccount(与 /api/tool/vc-issue 共用幂等七步)。
 func (r *seedRunner) seedVcFlow(issuer, user *SeedPlanAccount, vi SeedVcIssuerSpec) error {
-	mc := r.mc
-	// [1] 双方领水(幂等)
-	if _, err := flowEnsureFaucet(mc, *issuer.ADR, issuer.SK, issuer.PUB); err != nil {
-		return fmt.Errorf("issuer faucet: %w", err)
-	}
-	if _, err := flowEnsureFaucet(mc, *user.ADR, user.SK, user.PUB); err != nil {
-		return fmt.Errorf("user faucet: %w", err)
-	}
-	// [2][3] issuer 建 Organization DID + 注册组织(幂等)
-	issuerOpts := &vcFlowDidOptions{Alias: issuer.Alias, Suffix: &issuer.AliasSuffix,
-		AvatarURI: issuer.AvatarURL, AliasOptional: true}
-	issuerDidStep, err := vcFlowEnsureDID(mc, *issuer.ADR, issuer.SK, issuer.PUB, "Organization", issuerOpts)
+	items, err := IssueVcToAccount(r.mc, issuer, user, vi.SchemaPrefix, vi.SchemaCount, r.logf)
 	if err != nil {
-		return fmt.Errorf("issuer did: %w", err)
+		return err
 	}
-	if strings.Contains(issuerDidStep.Detail, "alias occupied") {
-		r.logf("    ⚠ 别名 %s 已被占用,跳过绑定(DID 本体不受影响)", issuer.Alias)
-	}
-	schemas := make([]string, 0, vi.SchemaCount)
-	for i := 1; i <= vi.SchemaCount; i++ {
-		schemas = append(schemas, fmt.Sprintf("%s%d", vi.SchemaPrefix, i))
-	}
-	if _, err := vcFlowEnsureOrganization(mc, *issuer.ADR, issuer.SK, issuer.PUB, schemas); err != nil {
-		return fmt.Errorf("register organization: %w", err)
-	}
-	// [4] user 建 Personal DID(幂等)
-	userOpts := &vcFlowDidOptions{Alias: user.Alias, Suffix: &user.AliasSuffix,
-		AvatarURI: user.AvatarURL, AliasOptional: true}
-	userDidStep, err := vcFlowEnsureDID(mc, *user.ADR, user.SK, user.PUB, "Personal", userOpts)
-	if err != nil {
-		return fmt.Errorf("user did: %w", err)
-	}
-	if strings.Contains(userDidStep.Detail, "alias occupied") {
-		r.logf("    ⚠ 别名 %s 已被占用,跳过绑定(DID 本体不受影响)", user.Alias)
-	}
-	// [5] 链下签发 N 张
-	chainID, err := flowChainID(mc)
-	if err != nil {
-		return fmt.Errorf("chain id: %w", err)
-	}
-	creds, err := buildVcFlowCredentials(chainID, *issuer.ADR, *user.ADR,
-		issuer.SK, issuer.PUB, vi.SchemaPrefix, vi.SchemaCount, nil)
-	if err != nil {
-		return fmt.Errorf("build credentials: %w", err)
-	}
-	// [6] 逐张披露(幂等)
-	for _, cred := range creds {
-		if _, _, _, err := vcFlowDisclose(mc, *user.ADR, user.SK, user.PUB, *issuer.ADR, cred); err != nil {
-			return fmt.Errorf("disclose %s: %w", cred.Schema, err)
-		}
-	}
-	// [7] 回读验证:披露上链(OnChain)即链路完成;Valid=false 是冻结/撤销
-	// 等生命周期状态的正常反映,记录不失败(对齐 Python 版语义)。
-	items := vcFlowVerify(mc, *user.ADR, *issuer.ADR, creds)
-	allOnChain := len(items) > 0
 	invalid := []string{}
 	for _, it := range items {
-		if !it.OnChain {
-			allOnChain = false
-		}
 		if !it.Valid {
 			invalid = append(invalid, it.Schema)
 		}
 	}
-	if !allOnChain {
-		return fmt.Errorf("凭证披露丢失: %v", items)
-	}
 	if len(invalid) > 0 {
 		r.logf("  %s → %s: %d 张上链 ✓,%v 状态非有效(冻结/撤销,正常生命周期数据)",
-			vi.IssuerName, user.Name, len(creds), invalid)
+			vi.IssuerName, user.Name, len(items), invalid)
 	} else {
-		r.logf("  %s → %s: %d 张凭证 全部有效 ✓", vi.IssuerName, user.Name, len(creds))
+		r.logf("  %s → %s: %d 张凭证 全部有效 ✓", vi.IssuerName, user.Name, len(items))
 	}
 	return nil
 }

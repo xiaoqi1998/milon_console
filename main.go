@@ -156,6 +156,14 @@ func main() {
 		// Seed v2 (一键测试数据构造:模板+旋钮参数化, 异步任务)
 		api.GET("/tool/seed/templates", seedJobHandler.SeedTemplatesList)
 		api.POST("/tool/seed/plan", seedJobHandler.SeedPlanV2)
+		api.POST("/tool/seed/accounts", seedJobHandler.SeedAccounts)
+		api.GET("/tool/seed/dataset", seedJobHandler.SeedDataset)
+
+		// Account book (user-owned test accounts, standalone key store)
+		accountBookHandler := handler.NewAccountBookHandler()
+		api.GET("/tool/account-book", accountBookHandler.List)
+		api.POST("/tool/account-book", accountBookHandler.Upsert)
+		api.DELETE("/tool/account-book/:name", accountBookHandler.Remove)
 		// 旧接口(scale=full|small)兼容保留一个小版本
 		api.GET("/tool/seed/plan", seedJobHandler.SeedPlanPreview)
 		api.POST("/tool/seed", seedJobHandler.Seed)
@@ -163,6 +171,7 @@ func main() {
 
 		// VC flow (faucet + DID + credentials issuance + disclosure, end-to-end)
 		api.POST("/tool/vc-flow", vcFlowHandler.VcFlow)
+		api.POST("/tool/vc-issue", seedJobHandler.VcIssue)
 		api.POST("/tool/sft-flow", sftFlowHandler.SftFlow)
 		api.POST("/tool/transfer-mil", contractHandler.TransferMil)
 

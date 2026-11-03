@@ -2736,6 +2736,8 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 | --- | --- | --- |
 | `/api/tool/seed/templates` | `GET` | 内置模板列表（minimal/standard/full） |
 | `/api/tool/seed/plan` | `POST` | 计划预览，不上链；body 支持 `config` 直传 / `preset`+`overrides` 深合并 / `scale`（兼容） |
+| `/api/tool/seed/accounts` | `POST` | 派生账户总表（不上链）：名称/角色/曲线/地址/公钥，**不含私钥**——总览页私钥列由前端本地 sha256(短语:角色:名字) 得出 |
+| `/api/tool/seed/dataset` | `GET` | 断点状态文件只读视图：按 configHash 命名空间汇总各模块阶段产物（代币/SFT 地址等） |
 | `/api/tool/seed` | `POST` | 启动播种任务（异步，202 返回 `jobId`；**同刻仅一个**，重复返回 409） |
 | `/api/tool/seed/status/:id` | `GET` | 任务进度快照（模块阶段/日志 tail/完成后关键地址表） |
 
@@ -2793,6 +2795,31 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 | `logs` | 日志 tail（最多 120 行） |
 | `accounts` | completed 后的关键地址表（admin/用户/代币符号/SFT，仅展示，**私钥永不返回**） |
 
+#### 74. POST /api/tool/seed/accounts
+
+派生账户总表（控制台「当前数据集总览」的数据源，不上链）。请求体与 §72 同构：`config` 直传 / `preset`+`overrides` 深合并 / `scale` 兼容，配置校验同款（非法 → 400 带字段路径错误数组）。
+
+响应 `data`：`{seedPhrase, configHash, accounts: [{name, role, curve, subjectType?, alias?, address, publicKey}]}`。顺序确定：admin → users → issuers → multisig → tokens（含合规）→ sfts。地址/公钥走 SDK 派生，与执行器 `SeedBuildAccounts` 同一函数（逐字段一致，同请求确定性重复）；**响应不含私钥**——私钥 = `sha256(短语:角色:名字)`，由前端本地派生显示，服务端「永不返回私钥」不变量保持（`/status` 地址表、`accounts-config` 同款）。
+
+```bash
+curl -X POST http://localhost:8080/api/tool/seed/accounts -H 'Content-Type: application/json' \
+  -d '{"scale":"full"}'
+```
+
+#### 75. GET /api/tool/seed/dataset
+
+断点状态文件（`data/seed_state.json`）只读视图，供总览页展示「当前生效数据集」（哪个 configHash 有哪些模块完成到什么阶段、代币/SFT 链上地址等产物）。
+
+响应 `data`：`{datasets: [{configHash, modules: {模块: {阶段: 产物}}, stageCount}], updatedAt}`。
+
+- 命名空间按 `configHash` 升序；v1 遗留键（无前缀）归 `configHash: ""`
+- 文件缺失/损坏返回空 `datasets`（200，非报错，与 LoadSeedState 容错口径一致）
+- `updatedAt` 为状态文件 mtime（毫秒；缺失为 0）
+
+```bash
+curl http://localhost:8080/api/tool/seed/dataset
+```
+
 #### SeedConfig 字段表（与 `handler/seed_config.go` JSON tag 逐字对齐）
 
 | 路径 | 类型 | 缺省（standard） | 约束（校验错误带字段路径） |
@@ -2832,6 +2859,55 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 - v1 口径的计划预览，**兼容保留一个小版本**；映射：`full`→full 模板、`small`→minimal 模板（scale 取值仅此二，其他返回 400）。响应为单个 plan 对象（`scale` 字段回显原值 full/small，其余结构与 v2 plan 相同）。新集成请改用 `POST /api/tool/seed/plan`。
 
 > v1 Python CLI（`tools/seeder/seed.py`）自 2026-10-19 起标注 DEPRECATED，不再维护，仅作历史参考。
+
+---
+
+## 十五、账号本（自定义测试账号）
+
+用户自有的密钥库（如历史脚本产出的 `sft_1000_testdata.json` 那批账户），与播种派生账号并列在控制台「测试数据」页总览展示、复制使用。存储 `data/custom_accounts.json`（已 gitignore）；私钥为用户主动录入（与 `X-Milon-Accounts` 头 / `MILON_ACCOUNTS` 环境变量同性质），本组端点回显含私钥供复制；播种器与 `accounts-config` 的「永不返回私钥」不变量不受影响。条目以 `name` 为 ID，同名 upsert 覆盖；仅给私钥的条目按 `keyType`（缺省 secp256k1）走 SDK 派生补地址（与 `SeedEnsureAccount` 同口径；fndsa512 无法从种子派生，须自带 publicKey/address，导入时按原样保留）。
+
+#### 76. GET / POST / DELETE /api/tool/account-book
+
+| 方法 | 说明 |
+| --- | --- |
+| `GET` | 全量条目（按落盘顺序）；空库返回 `[]` |
+| `POST` | 批量/单条 upsert（name 为 ID，同名覆盖），返回全量。body 四种形态：平铺数组 / `{accounts:[…]}` / `{owner,users,newUsers}`（sft_1000_testdata.json 三段式可直接粘）/ 单对象 |
+| `DELETE /:name` | 删除单条，返回剩余全量；不存在返回 404 |
+
+条目字段：`{name(必填), address?, privateKey?, publicKey?, keyType?(缺省 secp256k1), note?}`。校验：name 缺失、私钥与地址均缺、私钥无法解析 → 400（错误信息带条目名）。
+
+```bash
+# 导入 sft_1000_testdata.json 三段式(owner/users/newUsers 一次进)
+curl -X POST http://localhost:8080/api/tool/account-book -H 'Content-Type: application/json' \
+  -d @sft_1000_testdata.json
+
+# 仅私钥条目:服务端自动补地址
+curl -X POST http://localhost:8080/api/tool/account-book -H 'Content-Type: application/json' \
+  -d '[{"name":"u1","privateKey":"<hex私钥>"}]'
+
+curl http://localhost:8080/api/tool/account-book
+curl -X DELETE http://localhost:8080/api/tool/account-book/u1
+```
+
+#### 77. POST /api/tool/vc-issue
+
+给派生账户发证书（控制台「测试数据」页账户卡行操作「发证书」的后端）。复用播种器 vc 模块的幂等七步链（双方领水 → 签发方 Organization DID + schema 注册 → 目标方 Personal DID（需要时自动建）→ 链下签发 → 逐张披露 → 回读验证），与播种器共用 `IssueVcToAccount`。幂等：重复发同一 schema 自动跳过（already）。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `config` | SeedConfig | 否 | 派生命名空间（总览当前旋钮）；缺省默认配置（standard） |
+| `seedPhrase` | string | 否 | config 缺省时的短语兜底 |
+| `issuerName` | string | 是 | 签发方账户名，须为 role=issuer（vcCert=false 的配置无签发方） |
+| `subjectName` | string | 是 | 目标账户名（须在派生命名空间内，检查 accounts.count/seedPhrase） |
+| `schemaPrefix` | string | 是 | 如 `SeedKyc` → 签发 SeedKyc1..count |
+| `count` | int | 否 | 1..10，缺省 1 |
+
+响应 `data`：`{issuer: {name, address}, subject: {name, address}, schemaPrefix, credentials: [{schema, onChain, valid}]}`。`valid=false` 是冻结/撤销的正常生命周期状态，不算失败。校验失败（未知账户名/越界 count/空 schemaPrefix）返回 400；链端失败返回 500。**响应不含私钥**——双方私钥由 seedPhrase 按 `sha256(短语:角色:名)` 派生，服务端只回地址与结果。
+
+```bash
+curl -X POST http://localhost:8080/api/tool/vc-issue -H 'Content-Type: application/json' \
+  -d '{"issuerName":"kycorg","subjectName":"test02","schemaPrefix":"SeedKyc","count":1}'
+```
 
 ---
 
@@ -3118,5 +3194,11 @@ ZCode / Claude 通用片段：
 | 60 | POST | `/api/write-safe` | 安全版合约写（先模拟阻上链再真签提交） |
 | 61 | GET | `/api/errors/:query` | 错误码翻译（API 码表+IDL 链上错误） |
 | 62 | GET | `/api/accounts-config` | 客户端配置账户脱敏回显（MCP 工具 account_config_list 同源，永不回私钥） |
+| 63 | POST | `/api/tool/seed/accounts` | 播种派生账户总表（不上链；不含私钥，前端本地 sha256 派生私钥列） |
+| 64 | GET | `/api/tool/seed/dataset` | 播种断点状态只读视图（configHash 命名空间汇总） |
+| 65 | GET | `/api/tool/account-book` | 账号本列表（自定义测试账号；用户主动录入的密钥库） |
+| 66 | POST | `/api/tool/account-book` | 账号本批量/单条 upsert（name 为 ID；仅私钥条目自动补地址） |
+| 67 | DELETE | `/api/tool/account-book/:name` | 账号本删除条目 |
+| 68 | POST | `/api/tool/vc-issue` | 给派生账户发证书（幂等七步复用；响应不含私钥） |
 
-**统计**：共 62 个端点，分布于 13 个功能组（网络管理 3、系统 4、账户 5、交易 8、合约 10、RPC 4、水龙头 2、工具 20、IDL 元数据 3、VC 全流程 1、SFT 全流程 1、DID 12、AI 辅助 8）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
+**统计**：共 68 个端点，分布于 14 个功能组（网络管理 3、系统 4、账户 5、交易 8、合约 10、RPC 4、水龙头 2、工具 20、IDL 元数据 3、VC 全流程 1、SFT 全流程 1、DID 12、AI 辅助 8、账号本 3；另有播种器 6 端点与发证书 1 端点见第十四/十五章）。此外提供 Web 控制台（`GET /`）与静态资源（`GET /static/*`）。
