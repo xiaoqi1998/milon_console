@@ -88,9 +88,6 @@ type txViewArgs struct {
 	View string `json:"view,omitempty" jsonschema:"可选：summary 只回状态/事件数/摘要（AI 推荐收尾用，省 token）；full=全量（缺省）"`
 }
 
-// writeSafeArgs 与 contractWriteArgs 相同（请求体同 /api/write）。
-type writeSafeArgs = contractWriteArgs
-
 // errorLookupArgs 镜像 Lookup 的路径参数。
 type errorLookupArgs struct {
 	Query string `json:"query" jsonschema:"必填：十进制错误码或名字子串（如 521 / Cooldown）"`
@@ -217,7 +214,7 @@ type contractMultiArgs struct {
 	OwnerAddress    string                     `json:"ownerAddress,omitempty" jsonschema:"split 专用：owner 地址，缺省取 payerAddress"`
 	Signers         []signerEntry              `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表（≥1 个，地址不可重复）"`
 	GasPayer        *signerEntry               `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
-	Wait            bool                       `json:"wait,omitempty" jsonschema:"可选：true 时同请求内等待确认（缺省 60s），响应带 confirmed/waitError——省一次 tx_track"`
+	Wait            *bool                      `json:"wait,omitempty" jsonschema:"可选：MCP 侧缺省 true（同请求等确认，响应带 confirmed——省一轮 tx_track）；不等待显式传 false"`
 	WaitTimeoutSecs int                        `json:"waitTimeoutSecs,omitempty" jsonschema:"可选：wait 等待超时秒数，缺省 60"`
 }
 
@@ -241,21 +238,123 @@ type contractWriteArgs struct {
 	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"multi_signer 专用：签名者列表"`
 	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户"`
 	KeyType         string             `json:"keyType,omitempty" jsonschema:"可选：各私钥的曲线 secp256k1(缺省)/ed25519/bls12381，仅在自动派生地址/签名模式时使用"`
-	Wait            bool               `json:"wait,omitempty" jsonschema:"可选：true 时同请求内等待确认（缺省 60s），响应带 confirmed/waitError——省一次 tx_track"`
+	// Safe 缺省 true（2026-11 刀5c 用户确认的防呆翻转）：先模拟再上链，
+	// 模拟失败不上链只耗一次模拟；显式 false 直接提交。
+	Safe            *bool             `json:"safe,omitempty" jsonschema:"可选：缺省 true 先模拟再上链（失败不上链，stage=simulate_failed）；显式 false 直接提交"`
+	Wait            *bool              `json:"wait,omitempty" jsonschema:"可选：MCP 侧缺省 true（同请求等确认，响应带 confirmed——省一轮 tx_track）；不等待显式传 false"`
 	WaitTimeoutSecs int                `json:"waitTimeoutSecs,omitempty" jsonschema:"可选：wait 等待超时秒数，缺省 60"`
 }
 
-// rawTransactionArgs 镜像 rawTransactionRequest（handler/transaction_handler.go:293，
-// POST /api/transactions/simulate、/submit（SubmitTransaction:348）、
-// /inspect（InspectTransaction:399）共用）。
-type rawTransactionArgs struct {
+// txRawArgs 三合一（2026-11 六刀刀5c）：action 路由 simulate/submit/inspect，
+// 参数镜像 rawTransactionRequest（handler/transaction_handler.go:293，三端点共用）。
+type txRawArgs struct {
+	Action              string `json:"action" jsonschema:"必填：三选一——simulate（干跑不耗 gas，无副作用）/ submit（真实上链）/ inspect（解析返回 txHash/ixHashes/payer/valid，不上链）"`
 	TransactionPostcard string `json:"transactionPostcard" jsonschema:"base64 编码的交易 postcard 原文"`
 }
 
-// rawViewArgs 镜像 rawViewRequest（handler/view_handler.go:48，
-// POST /api/view/single 与 /api/view/multi（ViewMulti:93）共用）。
-type rawViewArgs struct {
+// viewCallArgs 二合一：mode 路由 single/multi，参数镜像 rawViewRequest
+// （handler/view_handler.go:48，两端点共用）。
+type viewCallArgs struct {
+	Mode                string `json:"mode" jsonschema:"必填：二选一——single（单条 wire）/ multi（多条打包）"`
 	TransactionPostcard string `json:"transactionPostcard" jsonschema:"base64 编码的视图 postcard 原文（单条或多条 wire 打包）"`
+}
+
+// contractMultiActionArgs 二合一：action 路由 simulate/write，body 镜像
+// multiContractRequest（handler/contract.go:1132，两端点共用同一参数 struct）。
+type contractMultiActionArgs struct {
+	contractMultiArgs
+	Action string `json:"action" jsonschema:"必填：二选一——simulate（多指令原子 dry-run，不耗 gas）/ write（真实上链；wait 缺省 true 同请求等确认）"`
+}
+
+// txRawRoute / viewCallRoute / contractMultiRoute / contractWriteRoute。
+func txRawRoute(a txRawArgs) (RESTMapping, map[string]any, error) {
+	body := map[string]any{"transactionPostcard": a.TransactionPostcard}
+	switch strings.ToLower(strings.TrimSpace(a.Action)) {
+	case "simulate":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/transactions/simulate"}, body, nil
+	case "submit":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/transactions/submit"}, body, nil
+	case "inspect":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/transactions/inspect"}, body, nil
+	}
+	return RESTMapping{}, nil, fmt.Errorf("未知 action %q；可用：simulate / submit / inspect", a.Action)
+}
+
+func viewCallRoute(a viewCallArgs) (RESTMapping, map[string]any, error) {
+	body := map[string]any{"transactionPostcard": a.TransactionPostcard}
+	switch strings.ToLower(strings.TrimSpace(a.Mode)) {
+	case "single":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/view/single"}, body, nil
+	case "multi":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/view/multi"}, body, nil
+	}
+	return RESTMapping{}, nil, fmt.Errorf("未知 mode %q；可用：single / multi", a.Mode)
+}
+
+func contractMultiRoute(a contractMultiActionArgs) (RESTMapping, map[string]any, error) {
+	body := map[string]any{
+		"instructions":    a.Instructions,
+		"paymentMode":     a.PaymentMode,
+		"payerPrivateKey": a.PayerPrivateKey,
+		"payerAddress":    a.PayerAddress,
+		"signatureMode":   a.SignatureMode,
+		"ixAddress":       a.IxAddress,
+		"ixPrivateKey":    a.IxPrivateKey,
+		"ixSignatureMode": a.IxSignatureMode,
+		"ownerPrivateKey": a.OwnerPrivateKey,
+		"ownerAddress":    a.OwnerAddress,
+		"signers":         a.Signers,
+		"gasPayer":        a.GasPayer,
+		"wait":            a.Wait,
+	}
+	if a.WaitTimeoutSecs > 0 {
+		body["waitTimeoutSecs"] = a.WaitTimeoutSecs
+	}
+	m := RESTMapping{}
+	switch strings.ToLower(strings.TrimSpace(a.Action)) {
+	case "simulate":
+		// simulate 不等待：REST 端点不读 wait，不注入缺省
+		m.Method, m.PathTemplate = "POST", "/api/simulate/multi"
+		return m, mergeBody(body), nil
+	case "write":
+		m.Method, m.PathTemplate = "POST", "/api/write/multi"
+		m.DefaultArgs = map[string]any{"wait": true}
+		return m, mergeBody(body), nil
+	}
+	return RESTMapping{}, nil, fmt.Errorf("未知 action %q；可用：simulate / write", a.Action)
+}
+
+// contractWriteRoute：safe 缺省 true（防呆翻转）——nil/true 走 /api/write-safe
+// （先模拟再上链），显式 false 走 /api/write。body 剥路由键 safe。
+func contractWriteRoute(a contractWriteArgs) (RESTMapping, map[string]any, error) {
+	body := map[string]any{
+		"appName":          a.AppName,
+		"methodName":       a.MethodName,
+		"args":             a.Args,
+		"paymentMode":      a.PaymentMode,
+		"payerPrivateKey":  a.PayerPrivateKey,
+		"payerAddress":     a.PayerAddress,
+		"signatureMode":    a.SignatureMode,
+		"ixAddress":        a.IxAddress,
+		"ixPrivateKey":     a.IxPrivateKey,
+		"ixSignatureMode":  a.IxSignatureMode,
+		"ownerPrivateKey":  a.OwnerPrivateKey,
+		"ownerAddress":     a.OwnerAddress,
+		"signers":          a.Signers,
+		"gasPayer":         a.GasPayer,
+		"keyType":          a.KeyType,
+		"wait":             a.Wait,
+	}
+	if a.WaitTimeoutSecs > 0 {
+		body["waitTimeoutSecs"] = a.WaitTimeoutSecs
+	}
+	m := RESTMapping{DefaultArgs: map[string]any{"wait": true}}
+	if a.Safe == nil || *a.Safe {
+		m.Method, m.PathTemplate = "POST", "/api/write-safe"
+	} else {
+		m.Method, m.PathTemplate = "POST", "/api/write"
+	}
+	return m, mergeBody(body), nil
 }
 
 // ==================== Task 4：密钥与签名工具（5 个）====================
@@ -767,9 +866,9 @@ var envelopeOutputSchema = json.RawMessage(`{
 // 模拟 / 本地计算——对 agent 而言与 GET 同为只读。
 var postButReadOnly = map[string]bool{
 	"contract_read": true, "contract_read_multi": true,
-	"contract_simulate": true, "contract_simulate_multi": true,
-	"tx_simulate_raw": true, "tx_inspect_raw": true,
-	"view_single": true, "view_multi": true,
+	"contract_simulate": true,
+	// tx_raw 含 submit（写），按最危险 action 计不入；simulate/inspect 无副作用在描述注明
+	"view_call": true, // 2026-11 刀5c：view_single/view_multi 合并，纯只读
 	"util_derive_address": true, "util_derive_public_key": true,
 	"util_sign": true, "util_verify": true,
 	"vc_attestation": true,
@@ -1022,11 +1121,11 @@ func bearerAuth(token string, next http.Handler) http.Handler {
 	})
 }
 
-// RegisterTools 注册全部工具；基础 21 个 + 合约家族 7 个 + 原始交易 3 个 +
-// 视图 2 个 + 密钥/签名/VC 5 个 + DID 12 个 + 保存指令 6 个 + 高层 flow 6 个 +
-// 配置账户回显 1 个 + guide 快速手册 1 个（共 64 个，+account_config_list）。
-// 2026-10 瘦身：contract_write_multi_agent / contract_write_multisig 两个
-// MCP 壳并入 contract_write 的 paymentMode 显式传参（REST 端点保留）。
+// RegisterTools 注册全部工具（共 50 个，2026-11 六刀刀5 合并后）。
+// 2026-10 瘦身：multi_agent/multisig 两壳并入 contract_write 的 paymentMode。
+// 2026-11 刀5：DID 细粒度 8→1（did_update）、saved_instruction 6→4、
+// raw 3→1 + view 2→1 + simulate_multi/write_multi 2→1、write_safe 并入
+// contract_write（safe 缺省 true）。REST 端点全部保留，只删 MCP 壳。
 func RegisterTools(srv *mcp.Server, exec *Executor) {
 	// 第一站：快速手册（本地工具，不触后端）。常驻描述只有两行，重内容按主题页
 	// 渐进披露——AI 不确定用法/链特性/限制时一次调用取整页（guide.go）。
@@ -1082,25 +1181,27 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 
 	// 合约模拟（dry-run，不消耗 gas）
 	registerTool[contractSimulateArgs](srv, exec, "contract_simulate", "模拟执行合约写调用（dry-run，模拟签名，无需私钥）", RESTMapping{Method: "POST", PathTemplate: "/api/simulate"})
-	registerTool[contractMultiArgs](srv, exec, "contract_simulate_multi", "多指令打包模拟执行（单笔交易原子 dry-run）", RESTMapping{Method: "POST", PathTemplate: "/api/simulate/multi"})
 
 	// 合约写（真实上链）。multi-agent / multisig 两个专用端点不再单独开 MCP 壳
 	// （2026-10 瘦身）：二者只是 paymentMode 预填的便捷变体，MCP 侧统一走
 	// contract_write 显式传 paymentMode=unified_dual_sign / split；REST 端点保留。
-	registerTool[contractWriteArgs](srv, exec, "contract_write", "构建并提交合约写交易（按 paymentMode 签名，真实上链；wait 缺省 true 同请求等确认，省一轮 tx_track）", RESTMapping{Method: "POST", PathTemplate: "/api/write", DefaultArgs: map[string]any{"wait": true}})
-	registerTool[contractMultiArgs](srv, exec, "contract_write_multi", "多指令打包写交易（单笔交易原子上链；wait 缺省 true 同请求等确认）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi", DefaultArgs: map[string]any{"wait": true}})
-	registerTool[writeSafeArgs](srv, exec, "contract_write_safe",
-		"安全版合约写：先模拟（不消耗 gas）再真签提交——模拟失败返回 stage=simulate_failed 并阻止上链，模拟通过才走与 contract_write 完全相同的提交路径；请求参数与 contract_write 一致；wait 缺省 true 同请求等确认",
-		RESTMapping{Method: "POST", PathTemplate: "/api/write-safe", DefaultArgs: map[string]any{"wait": true}})
+	// 2026-11 刀5c：write_safe 并入 contract_write（safe 缺省 true 先模拟再上链，
+	// 显式 safe:false 直接提交）；simulate_multi+write_multi 合并为 contract_multi
+	registerRoutedTool[contractWriteArgs](srv, exec, "contract_write",
+		"构建并提交合约写交易（按 paymentMode 签名，真实上链）：safe 缺省 true 先模拟再上链（失败返回 stage=simulate_failed 不上链，防呆）——显式 safe:false 直接提交；wait 缺省 true 同请求等确认，省一轮 tx_track",
+		contractWriteRoute)
+	registerRoutedTool[contractMultiActionArgs](srv, exec, "contract_multi",
+		"多指令打包单笔交易（原子：要么全成要么全不入）：action=simulate 干跑不耗 gas / write 真实上链（wait 缺省 true 同请求等确认）",
+		contractMultiRoute)
 
 	// 原始 postcard 交易（simulate/submit/inspect 共用 rawTransactionRequest）
-	registerTool[rawTransactionArgs](srv, exec, "tx_simulate_raw", "模拟执行 postcard 原始交易（不消耗 gas）", RESTMapping{Method: "POST", PathTemplate: "/api/transactions/simulate"})
-	registerTool[rawTransactionArgs](srv, exec, "tx_submit_raw", "提交 postcard 原始交易上链", RESTMapping{Method: "POST", PathTemplate: "/api/transactions/submit"})
-	registerTool[rawTransactionArgs](srv, exec, "tx_inspect_raw", "解析 postcard 原始交易（返回 txHash/ixHashes/payer/valid，不上链）", RESTMapping{Method: "POST", PathTemplate: "/api/transactions/inspect"})
-
-	// 低层视图（预构建 postcard）
-	registerTool[rawViewArgs](srv, exec, "view_single", "低层视图调用（预构建 postcard wire）", RESTMapping{Method: "POST", PathTemplate: "/api/view/single"})
-	registerTool[rawViewArgs](srv, exec, "view_multi", "低层批量视图调用（预构建 postcard 多 wire 打包）", RESTMapping{Method: "POST", PathTemplate: "/api/view/multi"})
+	// 2026-11 刀5c：raw 三合一（simulate/submit/inspect）、view 二合一
+	registerRoutedTool[txRawArgs](srv, exec, "tx_raw",
+		"postcard 原始交易通道（action 三选一）：simulate 干跑不耗 gas · submit 真实上链 · inspect 解析（txHash/ixHashes/payer/valid，不上链）",
+		txRawRoute)
+	registerRoutedTool[viewCallArgs](srv, exec, "view_call",
+		"低层视图调用（预构建 postcard wire；mode：single 单条 / multi 多条打包）",
+		viewCallRoute)
 
 	// ---- Task 4：密钥与签名（5 个，全部 POST 纯 JSON body，无 query/path 参数）----
 

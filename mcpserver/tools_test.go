@@ -63,7 +63,7 @@ func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers ma
 // 的 want 列表补名。2026-10 变动：+guide=65；contract_write_multi_agent 与
 // contract_write_multisig 两个壳并入 contract_write 显式 paymentMode（-2）=63；
 // +account_config_list（配置账户脱敏回显）=64。
-const wantToolCount = 55
+const wantToolCount = 50
 
 func TestToolsListBasics(t *testing.T) {
 	srv := mcpHTTPServer(t, "")
@@ -82,11 +82,9 @@ func TestToolsListBasics(t *testing.T) {
 		"idl_metadata", "idl_apps", "idl_methods",
 		// Task 3：合约/视图/原始交易家族（13 个）
 		"contract_read", "contract_read_multi",
-		"contract_simulate", "contract_simulate_multi",
-		"contract_write", "contract_write_multi",
-		"contract_write_safe",
-		"tx_simulate_raw", "tx_submit_raw", "tx_inspect_raw",
-		"view_single", "view_multi",
+		"contract_simulate", "contract_multi",
+		"contract_write",
+		"tx_raw", "view_call",
 		// Task 4：密钥与签名（5 个）
 		"util_derive_address", "util_derive_public_key",
 		"util_sign", "util_verify", "vc_attestation",
@@ -252,44 +250,51 @@ func TestContractToolCallMapping(t *testing.T) {
 			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`,
 			"POST", "/api/simulate?",
 			`{"appName":"nft","methodName":"mint","args":{"to":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`},
-		// contract_simulate_multi ← multiContractRequest（handler/contract.go:1132，SimulateContractMulti:1186）
-		{"contract_simulate_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"unified_payer_all","payerAddress":"a1"}`,
+		// contract_multi（刀5c 二合一）：action=simulate 干跑
+		{"contract_multi",
+			`{"action":"simulate","instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"unified_payer_all","payerAddress":"a1"}`,
 			"POST", "/api/simulate/multi?",
 			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_payer_all","payerAddress":"a1"}`},
-		// contract_write ← writeContractRequest（handler/contract.go:789）
-		{"contract_write",
-			`{"appName":"nft","methodName":"mint","args":{},"paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1"}`,
-			"POST", "/api/write?",
-			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1","wait":true}`},
-		// contract_write_multi ← multiContractRequest（handler/contract.go:1132，WriteContractMulti:1346）
-		{"contract_write_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
+		// contract_multi：action=write 真实上链（wait 缺省注入）
+		{"contract_multi",
+			`{"action":"write","instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/write/multi?",
 			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}},"wait":true}`},
-		// tx_simulate_raw ← rawTransactionRequest（handler/transaction_handler.go:293）
-		{"tx_simulate_raw",
-			`{"transactionPostcard":"pc1"}`,
+		// contract_write（刀5c：safe 并入）——safe 缺省 true 走 /api/write-safe
+		{"contract_write",
+			`{"appName":"nft","methodName":"mint","args":{},"paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1"}`,
+			"POST", "/api/write-safe?",
+			`{"appName":"nft","args":{},"methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1","wait":true}`},
+		// 显式 safe:false 走 /api/write 直接提交
+		{"contract_write",
+			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","safe":false}`,
+			"POST", "/api/write?",
+			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","wait":true}`},
+		// 显式 wait:false 压住缺省注入（Wait *bool 三态）
+		{"contract_write",
+			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","safe":false,"wait":false}`,
+			"POST", "/api/write?",
+			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","wait":false}`},
+		// tx_raw（刀5c 三合一）：action 路由 simulate/submit/inspect
+		{"tx_raw",
+			`{"action":"simulate","transactionPostcard":"pc1"}`,
 			"POST", "/api/transactions/simulate?",
 			`{"transactionPostcard":"pc1"}`},
-		// tx_submit_raw ← rawTransactionRequest（handler/transaction_handler.go:293）
-		{"tx_submit_raw",
-			`{"transactionPostcard":"pc1"}`,
+		{"tx_raw",
+			`{"action":"submit","transactionPostcard":"pc1"}`,
 			"POST", "/api/transactions/submit?",
 			`{"transactionPostcard":"pc1"}`},
-		// tx_inspect_raw ← rawTransactionRequest（InspectTransaction，handler/transaction_handler.go:399）
-		{"tx_inspect_raw",
-			`{"transactionPostcard":"pc1"}`,
+		{"tx_raw",
+			`{"action":"inspect","transactionPostcard":"pc1"}`,
 			"POST", "/api/transactions/inspect?",
 			`{"transactionPostcard":"pc1"}`},
-		// view_single ← rawViewRequest（handler/view_handler.go:48）
-		{"view_single",
-			`{"transactionPostcard":"pc1"}`,
+		// view_call（刀5c 二合一）：mode 路由
+		{"view_call",
+			`{"mode":"single","transactionPostcard":"pc1"}`,
 			"POST", "/api/view/single?",
 			`{"transactionPostcard":"pc1"}`},
-		// view_multi ← rawViewRequest（ViewMulti，handler/view_handler.go:93）
-		{"view_multi",
-			`{"transactionPostcard":"pc1"}`,
+		{"view_call",
+			`{"mode":"multi","transactionPostcard":"pc1"}`,
 			"POST", "/api/view/multi?",
 			`{"transactionPostcard":"pc1"}`},
 		// ---- Task 4 顺手补：Task 3 审查遗留缺口——下述 omitempty 可选字段此前
@@ -300,19 +305,19 @@ func TestContractToolCallMapping(t *testing.T) {
 			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/simulate?",
 			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","ownerAddress":"a3","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
-		{"contract_simulate_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`,
+		{"contract_multi",
+			`{"action":"simulate","instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`,
 			"POST", "/api/simulate/multi?",
 			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`},
 		{"contract_write",
 			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}},"wait":true}`,
-			"POST", "/api/write?",
+			"POST", "/api/write-safe?",
 			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}},"wait":true}`},
 		// ---- Task 5 顺手补：Task 4 审查遗留——contractMultiArgs 的
 		// payerPrivateKey/signatureMode/ownerPrivateKey/ownerAddress 与
 		// contractWriteArgs 的 ixSignatureMode 仍无正向传值用例，补 2 例锁拼写。----
-		{"contract_write_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1","wait":true}`,
+		{"contract_multi",
+			`{"action":"write","instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1","wait":true}`,
 			"POST", "/api/write/multi?",
 			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1","wait":true}`},
 	}
@@ -634,16 +639,12 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		"contract_read":           {"appName", "methodName"},
 		"contract_read_multi":     {"instructions"},
 		"contract_simulate":       {"appName", "methodName", "paymentMode"},
-		"contract_simulate_multi": {"instructions", "paymentMode"},
+		"contract_multi":            {"action", "instructions", "paymentMode"},
+		"tx_raw":                    {"action", "transactionPostcard"},
+		"view_call":                 {"mode", "transactionPostcard"},
 		"contract_write":          {"appName", "methodName", "paymentMode"},
-		"contract_write_multi":    {"instructions", "paymentMode"},
 		// multi-agent/multisig 两个 MCP 壳已移除（2026-10 瘦身）：REST 端点保留，
 		// MCP 侧统一走 contract_write 显式 paymentMode
-		"tx_simulate_raw":            {"transactionPostcard"},
-		"tx_submit_raw":              {"transactionPostcard"},
-		"tx_inspect_raw":             {"transactionPostcard"},
-		"view_single":                {"transactionPostcard"},
-		"view_multi":                 {"transactionPostcard"},
 		// Task 4：util.go 四 handler 均空值 400；vc_attestation_handler.go
 		// issuerPrivateKey 空值 400（subject 二选一无法用 required 表达，保持可选）
 		"util_derive_address":    {"publicKey"},
@@ -677,7 +678,6 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		// Task 5：privateKey 放开 required——fromAddress 命中已配置操作账户时免传
 		// （transfer_mil_handler.go 显式校验），故必填集只剩 to/amount
 		"transfer_mil":         {"to", "amount"},
-		"contract_write_safe":  {"appName", "methodName", "paymentMode"},
 		"error_lookup":         {"query"},
 		// guide 为本地工具（guide.go）：topic 必填六选一，q 可选
 		"guide": {"topic"},
@@ -815,9 +815,9 @@ func TestToolInventory(t *testing.T) {
 	spot := map[string]string{
 		"network_list":           "网络",
 		"tx_get":                 "交易查询",
-		"tx_submit_raw":          "原始交易",
+		"tx_raw":                 "原始交易",
 		"contract_write":         "合约调用",
-		"view_multi":             "合约调用",
+		"view_call":              "合约调用",
 		"util_sign":              "密钥与签名",
 		"vc_attestation":         "VC 凭证",
 		"did_document":           "DID",
@@ -1156,3 +1156,4 @@ func TestVcAttestationStructuredOutput(t *testing.T) {
 		t.Errorf("structured.data 应为披露文档: %v", sc["data"])
 	}
 }
+

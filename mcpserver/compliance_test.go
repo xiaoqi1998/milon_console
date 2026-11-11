@@ -99,8 +99,8 @@ func TestToolDeclarationsModern(t *testing.T) {
 	// 只读抽样：GET 工具 + POST 但零状态副作用（dry-run/视图/本地计算）+ guide
 	readOnlyWant := []string{
 		"network_list", "account_info", "faucet_balance", "tx_get", "idl_methods",
-		"contract_read", "contract_read_multi", "contract_simulate", "contract_simulate_multi",
-		"tx_simulate_raw", "tx_inspect_raw", "view_single", "view_multi",
+		"contract_read", "contract_read_multi", "contract_simulate",
+		"view_call",
 		"util_derive_address", "util_sign", "util_verify", "vc_attestation",
 		"guide",
 	}
@@ -125,7 +125,7 @@ func TestToolDeclarationsModern(t *testing.T) {
 
 	// 写类抽样：readOnly=false 且为增量写（destructiveHint=false）
 	for _, n := range []string{
-		"contract_write", "contract_write_safe", "transfer_mil", "faucet_claim",
+		"contract_write", "contract_multi", "transfer_mil", "faucet_claim",
 		"did_update", "sft_flow", "vc_flow", "saved_instruction_upsert",
 	} {
 		ann := annOf(t, tools, n)
