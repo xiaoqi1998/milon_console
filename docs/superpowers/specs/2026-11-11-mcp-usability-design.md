@@ -55,10 +55,15 @@ AI 每省一跳 ≈ 省 10~30s（模型生成 + 工具往返）；下表为典�
 
 ## 刀 2：vc_attestation 静默失败验证修复（spike）
 
-记忆记录（2026-10 末）：MCP 路径调用 vc_attestation 曾静默失败（成功信封但
-内容缺/空），console HTTPS 直连正常。先复现：MCP 调用 + REST 直调同参数对比；
-差异定位（executor 回环 vs handler 本身）；修复并补回归测试。
-若无法复现则记录结论关闭（链上/环境因素），不阻塞后续刀。
+**验收记录（2026-11-11，已修复）**：根因 = 该端点 REST 缺省返回裸
+`milon-vc-disclosure` 文档（无 `success` 字段，全服务唯一非信封端点）→
+MCP 壳 `parseEnvelope` 不命中 → 无 structuredContent → 宿主报
+「has an output schema but did not return structured content」（即记忆中的
+「MCP 静默失败」，端到端复现确认）。修复 = REST 加可选 query `envelope=true`
+（缺省裸文档不变，console/脚本零影响）+ MCP 侧 DefaultArgs 缺省注入
+`envelope=true`。回归：`TestVcAttestationStructuredOutput`（structured 产出）、
+`TestVcAttestationEnvelopeQuery`（REST 双形态）、`TestDefaultArgsInjection`
+（注入机制，刀 4b 的 executor 部分因此提前落地）。
 
 ## 刀 3：返回值投影（REST 加可选参数，缺省值不破坏现状）
 

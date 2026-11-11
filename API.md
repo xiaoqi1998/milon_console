@@ -2040,6 +2040,7 @@ curl -X POST http://localhost:8080/api/util/verify \
 | 字段 | 类型 | 是否必填 | 说明 |
 | --- | --- | --- | --- |
 | `issuerPrivateKey` | string | 是 | issuer 私钥（hex/base58）：32 字节为经典 Ed25519 密钥；1281 字节为 FN-DSA-512 后量子密钥，按长度自动识别 |
+| `envelope`（query） | string | 否 | `true` 时包统一信封（`success`/`data` 骨架，data 为完整披露文档）返回；缺省回裸 `milon-vc-disclosure` 文档（既有脚本/console 依赖）。MCP 工具 `vc_attestation` 缺省自动携带（修复 MCP 宿主「声明 outputSchema 却无 structuredContent」的静默失败，2026-11） |
 | `issuerPublicKey` | string | 条件必填 | issuer 公钥（hex/base58，897 字节）。issuer 为 FN-DSA-512 密钥时必填（SDK 无法从签名密钥反推公钥），可用 `/api/account/generate?keyType=fndsa512` 与私钥成对生成；Ed25519 时无需传 |
 | `subjectPrivateKey` | string | 条件必填 | subject 私钥（hex），与 `subjectAddress` 二选一 |
 | `subjectAddress` | string | 条件必填 | subject 地址（base58，20 字节），与 `subjectPrivateKey` 二选一 |

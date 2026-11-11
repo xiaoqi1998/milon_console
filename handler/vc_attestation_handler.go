@@ -272,6 +272,14 @@ func (h *VcAttestationHandler) GenerateVcAttestation(c *gin.Context) {
 	}
 
 	// 直接输出裸 JSON 文档（无 success/code/data 包装），与脚本产物文件结构完全一致
+	// envelope=true：包统一信封返回（2026-11 六刀刀2）。缺省保持裸文档——
+	// console 前端与既有脚本直接消费 milon-vc-disclosure 原文，不破坏；
+	// MCP 壳的 parseEnvelope 只认信封，裸文档曾致 structuredContent 缺失、
+	// 错误信号丢失（「MCP vc_attestation 静默失败」的根因）。
+	if c.Query("envelope") == "true" {
+		c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
+		return
+	}
 	c.JSON(http.StatusOK, resp)
 }
 

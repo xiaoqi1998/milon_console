@@ -365,17 +365,17 @@ func TestUtilToolCallMapping(t *testing.T) {
 		// 最小集：issuerPrivateKey + credentialJson，其余 omitempty 字段不得出现
 		{"vc_attestation",
 			`{"issuerPrivateKey":"sk","credentialJson":"{}"}`,
-			"POST", "/api/util/vc-attestation?",
+			"POST", "/api/util/vc-attestation?envelope=true",
 			`{"issuerPrivateKey":"sk","credentialJson":"{}"}`},
 		// vc_attestation：全 13 字段正向传值，锁住全部 json tag 拼写
 		{"vc_attestation",
 			`{"issuerPrivateKey":"sk","issuerPublicKey":"pk","chainId":900000001,"subjectPrivateKey":"ssk","subjectAddress":"subj","issuerKeyId":2,"credentialSchema":"KycLevelCredential","credentialJson":"{}","validUntilMs":1900000000000,"validUntil":"2027-08-24T00:00:00.000Z","credentialName":"n","credentialDesc":"d","issuedAt":"2026-01-01T00:00:00.000Z"}`,
-			"POST", "/api/util/vc-attestation?",
+			"POST", "/api/util/vc-attestation?envelope=true",
 			`{"issuerPrivateKey":"sk","issuerPublicKey":"pk","chainId":900000001,"subjectPrivateKey":"ssk","subjectAddress":"subj","issuerKeyId":2,"credentialSchema":"KycLevelCredential","credentialJson":"{}","validUntilMs":1900000000000,"validUntil":"2027-08-24T00:00:00.000Z","credentialName":"n","credentialDesc":"d","issuedAt":"2026-01-01T00:00:00.000Z"}`},
 		// vc_attestation：指针字段显式 0 值必须透传（validUntilMs=0 = 不过期）
 		{"vc_attestation",
 			`{"issuerPrivateKey":"sk","subjectAddress":"subj","validUntilMs":0}`,
-			"POST", "/api/util/vc-attestation?",
+			"POST", "/api/util/vc-attestation?envelope=true",
 			`{"issuerPrivateKey":"sk","subjectAddress":"subj","validUntilMs":0}`},
 	}
 	assertRestCalls(t, front.URL, seen, cases)
@@ -1141,5 +1141,49 @@ func TestMCPAccountsHeaderPassthroughIsolation(t *testing.T) {
 	}
 	if seenHeaders[0] != hdrA || seenHeaders[1] != hdrB || seenHeaders[2] != hdrA {
 		t.Fatalf("账户头透传错序/残留: %v", seenHeaders)
+	}
+}
+
+// TestVcAttestationStructuredOutput：vc_attestation 的 MCP 调用必须产出
+// structuredContent（2026-11 六刀刀2 回归——「MCP 静默失败」根因是该端点
+// REST 缺省回裸 milon-vc-disclosure，parseEnvelope 不命中 → 宿主报
+// "has an output schema but did not return structured content"。修复 =
+// DefaultArgs 注入 envelope=true，REST 包信封返回）。
+func TestVcAttestationStructuredOutput(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/util/vc-attestation" || r.URL.Query().Get("envelope") != "true" {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"success":false,"message":"unexpected path/query: ` + r.URL.String() + `"}`))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"success":true,"message":"ok","code":0,"data":{"format":"milon-vc-disclosure","version":1,"disclosure":{"args":{"issuer_signature":"ab"}}}}`))
+	}))
+	t.Cleanup(backend.Close)
+	t.Setenv("MILON_REST_BASE_URL", backend.URL)
+	front := httptest.NewServer(NewMCPHandler(""))
+	t.Cleanup(front.Close)
+
+	out := rpcCall(t, front.URL, "tools/call", map[string]any{
+		"name":      "vc_attestation",
+		"arguments": json.RawMessage(`{"issuerPrivateKey":"sk","subjectAddress":"subj"}`),
+	})
+	res, _ := out["result"].(map[string]any)
+	if res == nil {
+		t.Fatalf("无 result: %v", out)
+	}
+	if v, _ := res["isError"].(bool); v {
+		t.Fatalf("isError: %v", res)
+	}
+	sc, _ := res["structuredContent"].(map[string]any)
+	if sc == nil {
+		t.Fatalf("structuredContent 缺失——静默失败回归: %v", res)
+	}
+	if sc["success"] != true {
+		t.Errorf("structured.success = %v, want true", sc["success"])
+	}
+	data, _ := sc["data"].(map[string]any)
+	if data == nil || data["format"] != "milon-vc-disclosure" {
+		t.Errorf("structured.data 应为披露文档: %v", sc["data"])
 	}
 }

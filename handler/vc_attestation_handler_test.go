@@ -238,3 +238,51 @@ func TestGenerateVcAttestationDefaultValidUntil(t *testing.T) {
 		t.Fatalf("缺省有效期 = %d (%s), 期望当前时间+1年 ∈ [%d, %d]", got, time.UnixMilli(got).UTC().Format(time.RFC3339), lo, hi)
 	}
 }
+
+// ==================== envelope 查询参数（2026-11 六刀刀2：MCP 静默失败修复） ====================
+
+// newVcAttestationRouter 组装 POST /api/util/vc-attestation 路由（纯本地计算，无需 RPC）。
+func newVcAttestationRouter(t *testing.T) *gin.Engine {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.POST("/api/util/vc-attestation", NewVcAttestationHandler().GenerateVcAttestation)
+	return r
+}
+
+// TestVcAttestationEnvelopeQuery：缺省回裸文档（现状不变，脚本依赖）；
+// envelope=true 包统一信封（success/data 骨架——MCP parseEnvelope 命中，
+// structuredContent 与错误信号恢复）。
+func TestVcAttestationEnvelopeQuery(t *testing.T) {
+	r := newVcAttestationRouter(t)
+	body := `{"issuerPrivateKey":"04a87da057634774f4bd9eeb97f0c23c9cbce31ca10aa41ddd5b4141919fc4c5","subjectAddress":"22KH61Wc2k7NxC1JeYLw6z3TSy1t"}`
+
+	// 缺省：裸 milon-vc-disclosure（无 success 字段）
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/util/vc-attestation", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	var bare map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &bare)
+	if _, has := bare["success"]; has {
+		t.Errorf("缺省应回裸文档（无 success 字段）, got %s", w.Body.String()[:min(200, w.Body.Len())])
+	}
+	if bare["format"] != "milon-vc-disclosure" {
+		t.Errorf("缺省应是 milon-vc-disclosure 裸文档, got %v", bare["format"])
+	}
+
+	// envelope=true：统一信封，data 为完整裸文档
+	w2 := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodPost, "/api/util/vc-attestation?envelope=true", strings.NewReader(body))
+	req2.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w2, req2)
+	var env map[string]any
+	_ = json.Unmarshal(w2.Body.Bytes(), &env)
+	if env["success"] != true {
+		t.Errorf("envelope=true 应包信封 success:true, got %.200s", w2.Body.String())
+	}
+	data, _ := env["data"].(map[string]any)
+	if data == nil || data["format"] != "milon-vc-disclosure" {
+		t.Errorf("信封 data 应为完整披露文档, got %v", env["data"])
+	}
+}

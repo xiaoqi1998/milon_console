@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -166,5 +167,40 @@ func TestExecutorDefaultTimeout(t *testing.T) {
 	e := NewExecutor("http://127.0.0.1:1", nil)
 	if e.http.Timeout != 300*time.Second {
 		t.Fatalf("默认超时=%v, want 300s", e.http.Timeout)
+	}
+}
+
+// TestDefaultArgsInjection：DefaultArgs 只补缺失键，不覆盖用户显式值
+// （2026-11 六刀刀4b 机制；刀2 的 vc_attestation envelope 先用上）。
+func TestDefaultArgsInjection(t *testing.T) {
+	var gotQuery url.Values
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.Query()
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_, _ = w.Write([]byte(`{"success":true}`))
+	}))
+	t.Cleanup(srv.Close)
+	exec := NewExecutor(srv.URL, nil)
+
+	// query 参数注入：envelope 缺失 → 补 true
+	m := RESTMapping{Method: "POST", PathTemplate: "/api/util/vc-attestation",
+		QueryParams: []string{"envelope"}, DefaultArgs: map[string]any{"envelope": "true"}}
+	if _, err := exec.Call(context.Background(), m, json.RawMessage(`{"issuerPrivateKey":"sk"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if gotQuery.Get("envelope") != "true" {
+		t.Errorf("缺省应注入 envelope=true, got %q", gotQuery.Get("envelope"))
+	}
+	if _, injected := gotBody["envelope"]; injected {
+		t.Errorf("query 参数不应漏进 body: %v", gotBody)
+	}
+
+	// 用户显式值优先
+	if _, err := exec.Call(context.Background(), m, json.RawMessage(`{"issuerPrivateKey":"sk","envelope":"false"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if gotQuery.Get("envelope") != "false" {
+		t.Errorf("显式 false 不得被覆盖, got %q", gotQuery.Get("envelope"))
 	}
 }

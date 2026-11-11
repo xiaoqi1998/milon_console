@@ -290,6 +290,10 @@ type utilVerifyArgs struct {
 // 不传 = 缺省；显式传 0 有业务含义（validUntilMs=0 表示不过期）——omitempty 只吞
 // nil 指针、不吞指向 0 的指针，0 值照常透传，与 handler 的判 nil 逻辑一致。
 type vcAttestationArgs struct {
+	// Envelope 由 DefaultArgs 缺省注入 true（2026-11 六刀刀2）：REST 缺省回裸
+	// milon-vc-disclosure（console/脚本依赖），信封形态供 MCP parseEnvelope 命中
+	// （structuredContent/错误信号恢复——「MCP 静默失败」修复）。
+	Envelope          string `json:"envelope,omitempty" jsonschema:"可选：缺省自动 true（统一信封返回）；显式 false 回裸文档"`
 	IssuerPrivateKey  string `json:"issuerPrivateKey" jsonschema:"必填：issuer 私钥（32 字节 Ed25519 或 1281 字节 FN-DSA-512，hex/base58）"`
 	IssuerPublicKey   string `json:"issuerPublicKey,omitempty" jsonschema:"issuer 为 FN-DSA-512 密钥时必填（897 字节公钥，hex/base58）"`
 	ChainID           *int64 `json:"chainId,omitempty" jsonschema:"可选：链 ID，缺省 900000001"`
@@ -1026,8 +1030,9 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 
 	// VC 凭证披露
 	registerTool[vcAttestationArgs](srv, exec, "vc_attestation",
-		"生成 DiscloseVcAttestation 可验证凭证披露文档（milon-vc-disclosure 裸 JSON：issuer 私钥签名并本地验签，输出可直接用于链上披露；issuer 为 FN-DSA-512 密钥时须同时提供 issuerPublicKey）",
-		RESTMapping{Method: "POST", PathTemplate: "/api/util/vc-attestation"})
+		"生成 DiscloseVcAttestation 可验证凭证披露文档（统一信封包裹 milon-vc-disclosure：issuer 私钥签名并本地验签，data 可直接用于链上披露；issuer 为 FN-DSA-512 密钥时须同时提供 issuerPublicKey）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/util/vc-attestation", QueryParams: []string{"envelope"},
+			DefaultArgs: map[string]any{"envelope": "true"}})
 
 	// ---- Task 5：DID 全生命周期（12 个）----
 

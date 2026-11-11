@@ -41,6 +41,10 @@ type RESTMapping struct {
 	PathTemplate string // 如 "/api/transactions/{hash}"
 	PathParams   []string
 	QueryParams  []string // 若 handler 读 c.Query，则列入；渲染为 query string
+	// DefaultArgs：MCP 侧参数缺省注入（用户显式值优先，只补缺失键）。
+	// 仅用于呈现层便利（如 wait 缺省 true、envelope 固定 true），REST 缺省
+	// 行为不受影响（2026-11 六刀刀4b/刀2）。
+	DefaultArgs map[string]any
 }
 
 // CallOutcome 是一次 REST 调用的结果；IsError=true 时 Body 为 REST 错误 JSON 原文。
@@ -68,6 +72,15 @@ func (e *Executor) Call(ctx context.Context, m RESTMapping, argsJSON json.RawMes
 	if len(argsJSON) > 0 {
 		if err := json.Unmarshal(argsJSON, &args); err != nil {
 			return nil, fmt.Errorf("工具参数不是合法 JSON 对象: %w", err)
+		}
+	}
+	// DefaultArgs 缺省注入：用户显式值优先（存在键不覆盖），只补缺失。
+	for k, v := range m.DefaultArgs {
+		if _, exists := args[k]; !exists {
+			if args == nil {
+				args = map[string]any{}
+			}
+			args[k] = v
 		}
 	}
 	path := m.PathTemplate
