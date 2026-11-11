@@ -146,6 +146,20 @@ tools/list 总字节 ≤ 80,000（现 116,839）
 实现方式：把 measure_test.go 的逻辑转为正式断言测试（无 MILON_MEASURE 门槛），
 超红线即测试失败。
 
+## 验收记录（2026-11-11 devNet 冒烟）
+
+- 工具数 64→50，tools/list 116,839B → 89,547B（-23%）
+- did_update 八 action 链上实测全过（set_alias/add|update|remove_service/
+  set_avatar_uri/add|remove_key；tx 均 confirmed error:None）；未知 action
+  返回可用清单（错误路径即发现路径）
+- transfer_mil wait 注入：confirmed:true 一步到位（发+等一跳）
+- contract_write safe 缺省：simulate_failed 正确阻断上链
+- tx_get/tx_track view=summary、idl_methods method 单方法过滤（token 全量→
+  单 Transfer）、saved_instruction upsert/query/execute/delete 闭环全过
+- 冒烟发现（后续增强，不阻塞）：① IDL 错误对照目前按错误名匹配，链端
+  返回常只有 code 数字+中文描述（如 513 余额不足）——可增加按 code 匹配；
+  ② ed25519 私钥转账仍须显式 keyType（缺省 secp256k1 派生错地址，已知坑）
+
 ## 风险与回滚
 
 - 刀 5 风险最高（接口契约变更）：逐合并独立提交（DID / saved_instruction /
