@@ -53,3 +53,37 @@ func TestMeasureToolsListSize(t *testing.T) {
 	}
 	_ = n
 }
+
+// TestToolsListBudget：tools/list 红线（2026-11 六刀防回弹护栏）——工具数 ≤52、
+// 总字节 ≤92000。超线即失败：新增工具必须先合并瘦身或压描述。
+// 红线依据：六刀合并后实测 50 个 / 89,547B（+3% 余量）；spec 原估 80KB 过于
+// 激进——再压需牺牲 schema 自足性（AI 不调 guide 也能懂参数），不值。
+func TestToolsListBudget(t *testing.T) {
+	front := httptest.NewServer(NewMCPHandler(""))
+	t.Cleanup(front.Close)
+	body, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": map[string]any{}})
+	req, _ := http.NewRequest("POST", front.URL, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(resp.Body)
+	var out map[string]any
+	_ = json.Unmarshal(buf.Bytes(), &out)
+	tools, _ := out["result"].(map[string]any)["tools"].([]any)
+	if len(tools) > 52 {
+		t.Errorf("工具数 %d 超红线 52——新工具需先合并瘦身（参照 2026-11 六刀）", len(tools))
+	}
+	total := 0
+	for _, tl := range tools {
+		b, _ := json.Marshal(tl)
+		total += len(b)
+	}
+	if total > 92000 {
+		t.Errorf("tools/list %d 字节超红线 92000——schema 描述需瘦身", total)
+	}
+}

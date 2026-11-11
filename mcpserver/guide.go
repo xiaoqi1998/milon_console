@@ -18,7 +18,7 @@ import (
 
 // guideDocVersion 手册内容版本（内容变更时递增，每页首行携带）。
 // 2026.10.14：新增「客户端配置账户（地址即引用）」——keys/workflows 页。
-const guideDocVersion = "2026.10.14"
+const guideDocVersion = "2026.11.11"
 
 // sourceRepoURL 本服务开源仓库地址（2026-10-13：告知 AI「不懂可看源码」）。
 // 与 handler 包 buildRepoURL（/api/version 的 repoURL）同值同源——那边可被
@@ -91,9 +91,9 @@ var guideTopics = map[string]string{
 
 	"overview": `# Milon MCP 工具地图 (doc_version ` + guideDocVersion + `)
 
-口诀：查合约先 idl_apps → idl_methods；读状态 contract_read（批量 contract_read_multi）；
-写合约 contract_write（wait:true 省一次 tx_track）；转账 transfer_mil → tx_track；
-整段流程直接用编排工具（sft_flow / vc_flow / bulk_transfer）。
+口诀：查合约先 idl_apps → idl_methods（带 method 只回单方法）；读状态 contract_read（批量
+contract_read_multi）；写合约 contract_write（safe/wait 均缺省开：先模拟再上链 + 同请求等确认）；
+转账 transfer_mil（自动等确认，一步到位）；整段流程直接用编排工具（sft_flow / vc_flow / bulk_transfer）。
 
 ## 账户与余额
 account_generate 生成账户（四曲线可选）· account_info / account_resources 单查 ·
@@ -104,32 +104,31 @@ transfer_mil 一行转账（自动补全部固定参数）· bulk_transfer 批�
 bulk_transfer_status 轮询）
 
 ## 交易查询与收尾
-tx_get / tx_events / tx_parse 查询解析 · tx_wait 等确认 ·
-tx_track 收尾一步到位（get+wait+events 聚合）
+tx_get / tx_events / tx_parse 查询解析（view=summary 轻量投影，AI 收尾推荐）·
+tx_wait 等确认 · tx_track 收尾一步到位（get+wait+events 聚合，同样支持 summary）
 
 ## 合约调用
-idl_apps / idl_methods / idl_metadata 元数据三级（先清单后明细）·
-contract_read(_multi) 只读 · contract_simulate(_multi) dry-run 不耗 gas ·
-contract_write(_multi) 真实上链 · contract_write_safe 先模拟再上链
+idl_apps / idl_methods(带 method 单方法) / idl_metadata 元数据三级（先清单后明细）·
+contract_read(_multi) 只读 · contract_simulate dry-run ·
+contract_write（safe 缺省开）真实上链 · contract_multi 多指令原子（action=simulate/write）
 
-## DID（12 个）
-did_create 幂等创建（已有则补齐差异）· did_document 查文档 · did_name_binding 别名反查 ·
-did_set_alias / add|update|remove_service / set_avatar_uri / add|update|remove_key 细粒度管理 ·
-did_deactivate 不可逆停用
+## DID（5 个）
+did_create 幂等创建（已有则补齐差异）· did_update 细粒度管理（action 八选一：别名/服务/头像/公钥）·
+did_document 查文档 · did_name_binding 别名反查 · did_deactivate 不可逆停用
 
 ## VC / SFT / 编排
 vc_flow 签发全流程（幂等可重跑）· vc_attestation 披露文档生成 ·
 sft_flow SFT 全周期一次调用 · error_lookup 错误码翻译（API 层+全部 IDL app）
 
 ## 保存指令（重复操作复用）
-saved_instruction_create 绑定一次 → saved_instruction_execute 反复执行 ·
-list / get / update（部分更新）/ delete
+saved_instruction_upsert 绑定/更新（id 不传=新建）→ saved_instruction_execute 反复执行（send 默认等确认）·
+query（id 不传=清单）/ delete
 
 ## 密钥 / 网络 / 底层
 util_derive_address（地址派生唯一正道）/ util_derive_public_key / util_sign / util_verify ·
 network_list / network_current / network_switch ·
 rpc_block / rpc_resource / rpc_resource_path / rpc_access_value ·
-view_single / view_multi（预构建 wire）· tx_simulate_raw / tx_submit_raw / tx_inspect_raw（postcard 原始通道）
+view_call（预构建 wire，mode=single/multi）· tx_raw（postcard 原始通道，action=simulate/submit/inspect）
 
 ## 源代码
 本服务完全开源：` + sourceRepoURL + `
@@ -165,27 +164,28 @@ REST 端点在 handler/、MCP 壳与本手册在 mcpserver/、链 SDK 在 gosdk-
 
 ## Gas 与确认
 - faucet 领水有冷却（FaucetCooldownActive，冷却剩余见 account_summary）；批量归集每账户预留 200 gas
-- 写交易 wait:true 同请求等确认（缺省 60s，waitTimeoutSecs 可调）；事后补查用 tx_track
+- 写交易 MCP 侧 wait 缺省 true（同请求等确认，缺省 60s，waitTimeoutSecs 可调；REST 缺省 false 不变）；事后补查用 tx_track
 - 服务端单次调用总超时 300s——超长任务用 bulk_transfer 异步或拆小步骤`,
 
 	"workflows": `# 典型调用流程 (doc_version ` + guideDocVersion + `)
 
 ## 1. 普通转账
-account_generate（或已有私钥）→ faucet_claim 领水 → transfer_mil(to, amount, privateKey) → tx_track(hash)
+account_generate（或已有私钥）→ faucet_claim 领水 → transfer_mil(to, amount, privateKey[, keyType])——
+自动等确认（confirmed=true 即到账，一步到位；ed25519 私钥必须显式 keyType）
 
 ## 2. 合约只读（查状态）
 idl_apps 看清单 → idl_methods(appName) 拿方法与参数名 → contract_read；
 多条查询一次打包 contract_read_multi（省往返）
 
-## 3. 安全写合约（推荐默认）
-idl_methods 拿参数 → contract_write_safe（参数同 contract_write）：
-服务端先 simulate，失败返回 stage=simulate_failed 不上链，通过才真签提交
+## 3. 安全写合约（推荐默认，就是 contract_write 的缺省行为）
+idl_methods(app, method=单方法) 拿参数 → contract_write：safe 缺省开（先 simulate，
+失败返回 stage=simulate_failed 不上链）+ wait 缺省开（同请求等确认）；显式 safe:false 直接提交
 
-## 4. 直接写（参数已确定）
-contract_write（paymentMode + 对应签名字段）+ wait:true —— 同请求拿 confirmed，省一次 tx_track
+## 4. 直接写（参数已确定，跳过模拟）
+contract_write（paymentMode + 对应签名字段，safe:false）——wait 仍缺省开，同请求拿 confirmed
 
 ## 5. 多指令原子写
-contract_write_multi（instructions[] 打包单笔交易，要么全成要么全不入）
+contract_multi(action=write)（instructions[] 打包单笔交易，要么全成要么全不入；action=simulate 干跑）
 
 ## 6. 双账户写（付 gas ≠ 执行）
 contract_write，paymentMode=unified_dual_sign + payer* 字段 + ixAddress/ixPrivateKey
@@ -206,14 +206,18 @@ vc_flow 一次调用：双方领水 → 双方建 DID → issuer 注册组织 �
 bulk_transfer(count, toAddress) 立即返回 jobId → bulk_transfer_status(id) 轮询进度与明细
 
 ## 11. 重复执行某调用
-saved_instruction_create 绑定方法+账户+签名 → saved_instruction_execute(id, mode=send) 反复上链；
-参数变了用 saved_instruction_update 只改 args
+saved_instruction_upsert 绑定方法+账户+签名（id 不传=新建，传=更新）→
+saved_instruction_execute(id, mode=send) 反复上链（send 默认等确认）
 
 ## 12. postcard 高级通道
-tx_inspect_raw 解析（不上链）→ tx_simulate_raw 干跑 → tx_submit_raw 提交；
-view_single / view_multi 走预构建 wire
+tx_raw(action=inspect) 解析（不上链）→ tx_raw(action=simulate) 干跑 → tx_raw(action=submit) 提交；
+view_call（mode=single/multi）走预构建 wire
 
-## 13. 配置账户（地址即引用）
+## 13. DID 细粒度管理
+did_create 建档（幂等，已有则补齐差异）→ did_update(action 八选一) 改别名/服务/头像/公钥 →
+did_document 回读（service/key 的 id 从这里取，remove 系不可逆）
+
+## 14. 配置账户（地址即引用）
 mcp.json 的 milon.headers 配 X-Milon-Accounts（详见 keys 主题「客户端配置账户」）→
 account_config_list 脱敏核对 → contract_write 等写工具只传地址免私钥`,
 
@@ -256,12 +260,12 @@ account_config_list 脱敏核对 → contract_write 等写工具只传地址免�
 - 元数据：先 idl_apps（轻清单）再 idl_methods（单 app），别拉 idl_metadata 全量
 
 ## 少等一轮
-- contract_write / contract_write_multi 带 wait:true —— 同请求内等确认（缺省 60s），
-  响应直接带 confirmed/waitError，省一次 tx_track
-- 收尾只调一次 tx_track（get+wait+events 聚合），别三连发
+- contract_write / contract_multi / transfer_mil 的 wait 均缺省 true —— 同请求内
+  等确认（缺省 60s，waitTimeoutSecs 可调），响应直接带 confirmed/waitError，省一次 tx_track
+- 收尾只调一次 tx_track（get+wait+events 聚合；view=summary 更省），别三连发
 
 ## 少拼参数
-- 转账用 transfer_mil（自动补 token 地址与签名模式），别手组 contract_write
+- 转账用 transfer_mil（自动补 token 地址与签名模式、自动等确认），别手组 contract_write
 - 重复操作 saved_instruction_create 绑一次，之后 execute 反复跑；改参 update 只动 args
 
 ## 少走弯路

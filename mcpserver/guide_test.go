@@ -21,7 +21,7 @@ func TestGuidePageTopics(t *testing.T) {
 	anchors := map[string][]string{
 		"overview":    {"idl_apps", "transfer_mil", "tx_track", "error_lookup", "源代码", "milon_console"},
 		"chain":       {"900000001", "unified_payer_all", "unified_dual_sign", "multi_signer", "fndsa512", "postcard"},
-		"workflows":   {"tx_track", "contract_write_safe", "sft_flow", "vc_flow", "bulk_transfer", "saved_instruction", "配置账户"},
+		"workflows":   {"transfer_mil", "contract_write", "did_update", "sft_flow", "vc_flow", "bulk_transfer", "saved_instruction", "配置账户"},
 		"limits":      {"1042", "1026", "200KB", "20", "5000", "ENABLE_UTIL_SIGN"},
 		"performance": {"contract_read_multi", "wait", "account_summary", "idl_apps"},
 		"keys":        {"secp256k1", "ed25519", "bls12381", "fndsa512", "897", "X-Milon-Accounts", "account_config_list"},

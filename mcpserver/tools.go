@@ -1053,9 +1053,13 @@ func registerRoutedTool[In any](srv *mcp.Server, exec *Executor, name, desc stri
 // 第一段话（2026-10-13 用户要求：告诉 AI 源代码在哪、不懂可以去看）。
 // 与 guide overview 页「源代码」小节、/api/version 的 repoURL 三处同源。
 const serverInstructions = `本服务（milon-api-server）完全开源，源代码：` + sourceRepoURL + `。
+高频三招：查合约状态 = idl_methods(app, method 单方法过滤) → contract_read；
+转账 = transfer_mil（自动等确认，confirmed=true 即到账）；
+写合约 = contract_write（safe 缺省开：先模拟再上链；wait 缺省开：同请求等确认）。
 拿不准用法先调 guide 取主题页（overview/chain/workflows/limits/performance/keys），
-错误码用 error_lookup 翻译；手册或工具描述仍没讲清的（参数语义/链上行为/错误成因），
-可到上述仓库读源码对照——REST 端点在 handler/、MCP 壳与手册在 mcpserver/、链 SDK 在 gosdk-develop/`
+多数链端错误已内联对照提示，错误码查询用 error_lookup；
+手册或工具描述仍没讲清的（参数语义/链上行为/错误成因），可到上述仓库读源码对照——
+REST 端点在 handler/、MCP 壳与手册在 mcpserver/、链 SDK 在 gosdk-develop/`
 
 // BuildServer 构造注册了全部工具、资源与 prompts 的 MCP Server。
 // Task 7 的 server.go 会复用；当前先放 tools.go。
