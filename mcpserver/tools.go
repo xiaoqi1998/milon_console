@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"reflect"
 	"os"
 	"strings"
 	"sync"
@@ -422,12 +424,17 @@ func didUpdateRoute(a didUpdateArgs) (RESTMapping, map[string]any, error) {
 }
 
 // mergeBody 依次合并多个 body 片段，跳过零值键（nil/空串不透传，交各端点
-// handler 缺省与校验——与原 args 的 omitempty 语义等效）。
+// handler 缺省与校验——与原 args 的 omitempty 语义等效）。注意 nil map/slice/
+// 指针装进 any 后 != nil（Go interface 经典坑），须反射判 IsNil。
 func mergeBody(parts ...map[string]any) map[string]any {
 	out := map[string]any{}
 	for _, p := range parts {
 		for k, v := range p {
 			if v == nil || v == "" {
+				continue
+			}
+			if rv := reflect.ValueOf(v); (rv.Kind() == reflect.Map || rv.Kind() == reflect.Slice ||
+				rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface) && rv.IsNil() {
 				continue
 			}
 			out[k] = v
@@ -442,21 +449,21 @@ type didNameBindingArgs struct {
 	Name string `json:"name" jsonschema:"必填：完整别名，「alias-数字」格式，如 alice-1024"`
 }
 
-// savedInstructionCreateArgs 镜像 createSavedInstructionRequest
-// （handler/saved_instruction_handler.go:176，POST /api/saved-instructions）。
-// name/appName/methodName 带 binding:"required"，不标 omitempty；
-// 其余可选（entry 方法保存时 paymentMode 缺省 unified_payer_all）。
-// signatureMode/ixSignatureMode 为 handler 侧 json.RawMessage，按规则镜像为 any。
-// 安全不变量（scrubSecrets）：保存路径不持久化任何私钥，故本结构刻意不镜像
-// payerPrivateKey/ixPrivateKey/ownerPrivateKey——密钥只在 execute 请求体临时出现。
-type savedInstructionCreateArgs struct {
-	Name            string             `json:"name" jsonschema:"必填：展示名称"`
-	Description     string             `json:"description,omitempty" jsonschema:"可选：指令描述"`
-	AppName         string             `json:"appName" jsonschema:"必填：IDL app 名（先用 idl_metadata 查）"`
-	MethodName      string             `json:"methodName" jsonschema:"必填：IDL 方法名"`
-	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）"`
-	PaymentMode     string             `json:"paymentMode,omitempty" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored；entry 缺省 unified_payer_all"`
-	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"payer 地址（私钥不保存，send 执行时另行提供）"`
+// savedInstructionUpsertArgs 合并 create（createSavedInstructionRequest，
+// handler/saved_instruction_handler.go:176）与 update（updateSavedInstructionRequest
+// :195，全字段 nil-able 部分更新）——id 不传=新建、传=部分更新（2026-11 六刀
+// 刀5b）。json tag 逐字镜像两者共有字段；必填性由 handler 按模式分流校验
+// （新建 name/appName/methodName 必填），MCP 侧 required 集为空。
+// 安全不变量不变：私钥字段刻意不镜像（scrubSecrets，私钥永不落盘）。
+type savedInstructionUpsertArgs struct {
+	Id              string             `json:"id,omitempty" jsonschema:"可选：传入则部分更新既有指令（未传字段保持不变）；缺省为新建"`
+	Name            string             `json:"name,omitempty" jsonschema:"新建必填：展示名称；更新可选（不传不变）"`
+	Description     string             `json:"description,omitempty" jsonschema:"可选：指令描述；更新不传不变"`
+	AppName         string             `json:"appName,omitempty" jsonschema:"新建必填：IDL app 名（先用 idl_metadata 查）；不支持改（换方法删除重建）"`
+	MethodName      string             `json:"methodName,omitempty" jsonschema:"新建必填：IDL 方法名；不支持改"`
+	Args            map[string]any     `json:"args,omitempty" jsonschema:"方法参数对象（键名见 idl_metadata）；更新不传不变"`
+	PaymentMode     string             `json:"paymentMode,omitempty" jsonschema:"unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored；entry 新建缺省 unified_payer_all"`
+	PayerAddress    string             `json:"payerAddress,omitempty" jsonschema:"可选：payer 地址（私钥不保存，send 执行时另行提供）"`
 	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"规则同 contract_write.signatureMode"`
 	IxAddress       string             `json:"ixAddress,omitempty" jsonschema:"unified_dual_sign 专用：指令执行账户地址"`
 	IxSignatureMode *signatureModeSpec `json:"ixSignatureMode,omitempty" jsonschema:"unified_dual_sign 专用：ix 账户签名模式，规则同 signatureMode"`
@@ -465,28 +472,33 @@ type savedInstructionCreateArgs struct {
 	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"multi_signer 可选：独立 gas 代付账户（仅地址/签名模式入库）"`
 }
 
-// savedInstructionUpdateArgs 镜像 updateSavedInstructionRequest
-// （handler/saved_instruction_handler.go:195，PUT /api/saved-instructions/{id}）。
-// 部分更新契约：handler 侧全字段 nil-able（*string 指针 / map / RawMessage /
-// slice / 指针元素）且无 binding required——不传 = 保持原值，镜像侧全标
-// omitempty 保持同样的可选语义（schema required 集只含路径参数 id）。
-// handler 不支持改 appName/methodName/kind（需换方法请删除后重建），
-// 故镜像不含这三字段。signatureMode/ixSignatureMode 为 handler 侧
-// json.RawMessage，按规则镜像为 signatureModeSpec（指针保持部分更新语义）。
-// 同 create：密钥字段不镜像（scrubSecrets 不变量，私钥永不落盘）。
-type savedInstructionUpdateArgs struct {
-	Id              string             `json:"id" jsonschema:"必填：保存指令 ID"`
-	Name            *string            `json:"name,omitempty" jsonschema:"可选：新的展示名称；不传保持不变"`
-	Description     *string            `json:"description,omitempty" jsonschema:"可选：新的描述；不传保持不变"`
-	Args            map[string]any     `json:"args,omitempty" jsonschema:"可选：新的方法参数对象；不传保持不变"`
-	PaymentMode     *string            `json:"paymentMode,omitempty" jsonschema:"可选：unified_payer_all/unified_dual_sign/unified_payer_only_gas/split/multi_signer/sponsored"`
-	PayerAddress    *string            `json:"payerAddress,omitempty" jsonschema:"可选：新的 payer 地址"`
-	SignatureMode   *signatureModeSpec `json:"signatureMode,omitempty" jsonschema:"可选：新的签名模式对象，规则同 contract_write.signatureMode"`
-	IxAddress       *string            `json:"ixAddress,omitempty" jsonschema:"可选：unified_dual_sign 专用：指令执行账户地址"`
-	IxSignatureMode *signatureModeSpec `json:"ixSignatureMode,omitempty" jsonschema:"可选：unified_dual_sign 专用：ix 账户签名模式"`
-	OwnerAddress    *string            `json:"ownerAddress,omitempty" jsonschema:"可选：split 专用：owner 地址"`
-	Signers         []signerEntry      `json:"signers,omitempty" jsonschema:"可选：multi_signer 专用：签名者列表（仅地址/签名模式入库）"`
-	GasPayer        *signerEntry       `json:"gasPayer,omitempty" jsonschema:"可选：multi_signer 专用：独立 gas 代付账户（仅地址/签名模式入库）"`
+// savedInstructionUpsertRoute：id 空 → POST /api/saved-instructions（新建）；
+// 非空 → PUT /api/saved-instructions/{id}（部分更新）。id 不进 body。
+func savedInstructionUpsertRoute(a savedInstructionUpsertArgs) (RESTMapping, map[string]any, error) {
+	body := map[string]any{
+		"name": a.Name, "description": a.Description, "appName": a.AppName,
+		"methodName": a.MethodName, "args": a.Args, "paymentMode": a.PaymentMode,
+		"payerAddress": a.PayerAddress, "signatureMode": a.SignatureMode,
+		"ixAddress": a.IxAddress, "ixSignatureMode": a.IxSignatureMode,
+		"ownerAddress": a.OwnerAddress, "signers": a.Signers, "gasPayer": a.GasPayer,
+	}
+	if id := strings.TrimSpace(a.Id); id != "" {
+		return RESTMapping{Method: "PUT", PathTemplate: "/api/saved-instructions/" + url.PathEscape(id)}, mergeBody(body), nil
+	}
+	return RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions"}, mergeBody(body), nil
+}
+
+// savedInstructionQueryArgs 合并 list 与 get：id 不传=列全部，传=查单条。
+type savedInstructionQueryArgs struct {
+	Id string `json:"id,omitempty" jsonschema:"可选：传则查单条（含绑定的账户与签名信息）；缺省列全部"`
+}
+
+// savedInstructionQueryRoute：GET 无 body（route 返回 nil body）。
+func savedInstructionQueryRoute(a savedInstructionQueryArgs) (RESTMapping, map[string]any, error) {
+	if id := strings.TrimSpace(a.Id); id != "" {
+		return RESTMapping{Method: "GET", PathTemplate: "/api/saved-instructions/" + url.PathEscape(id)}, nil, nil
+	}
+	return RESTMapping{Method: "GET", PathTemplate: "/api/saved-instructions"}, nil, nil
 }
 
 // savedInstructionIdArgs 镜像 GetSavedInstruction 的路径参数
@@ -1142,18 +1154,13 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 
 	// ---- Task 5：保存指令（6 个）----
 
-	registerTool[savedInstructionCreateArgs](srv, exec, "saved_instruction_create",
-		"保存一条 IDL 方法调用供后续反复执行（安全不变量：私钥不落盘，仅存方法/参数/地址/签名模式，send 执行时另行临时提供签名私钥）；kind 由 IDL 自动检测（view/entry），entry 方法 paymentMode 缺省 unified_payer_all",
-		RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions"})
-	registerTool[emptyArgs](srv, exec, "saved_instruction_list",
-		"列出全部保存的指令",
-		RESTMapping{Method: "GET", PathTemplate: "/api/saved-instructions"})
-	registerTool[savedInstructionIdArgs](srv, exec, "saved_instruction_get",
-		"按 ID 查询单条保存的指令（含绑定的账户与签名信息）",
-		RESTMapping{Method: "GET", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}})
-	registerTool[savedInstructionUpdateArgs](srv, exec, "saved_instruction_update",
-		"部分更新保存的指令：只改传入的字段，未传字段保持不变（如只换 name 或 args）；不支持改 appName/methodName/kind，需换方法请删除后重建",
-		RESTMapping{Method: "PUT", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}})
+	// 2026-11 六刀刀5b：create+update → upsert、list+get → query（四合二）
+	registerRoutedTool[savedInstructionUpsertArgs](srv, exec, "saved_instruction_upsert",
+		"保存/更新一条可反复执行的 IDL 方法调用：id 不传=新建（name/appName/methodName 必填，kind 由 IDL 自动检测，entry 方法 paymentMode 缺省 unified_payer_all）；传 id=部分更新（只改传入字段，如只换 args；appName/methodName 不支持改，换方法删除重建）。安全不变量：私钥永不落盘，send 执行时另行临时提供",
+		savedInstructionUpsertRoute)
+	registerRoutedTool[savedInstructionQueryArgs](srv, exec, "saved_instruction_query",
+		"查询保存的指令：id 不传=列全部；传=单条明细（含绑定的账户与签名信息）",
+		savedInstructionQueryRoute)
 	registerTool[savedInstructionIdArgs](srv, exec, "saved_instruction_delete",
 		"按 ID 删除保存的指令（不可恢复）",
 		RESTMapping{Method: "DELETE", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}})

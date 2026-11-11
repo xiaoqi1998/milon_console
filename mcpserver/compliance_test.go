@@ -126,7 +126,7 @@ func TestToolDeclarationsModern(t *testing.T) {
 	// 写类抽样：readOnly=false 且为增量写（destructiveHint=false）
 	for _, n := range []string{
 		"contract_write", "contract_write_safe", "transfer_mil", "faucet_claim",
-		"did_update", "sft_flow", "vc_flow", "saved_instruction_create",
+		"did_update", "sft_flow", "vc_flow", "saved_instruction_upsert",
 	} {
 		ann := annOf(t, tools, n)
 		if ann["readOnlyHint"] == true {
@@ -147,7 +147,8 @@ func TestToolDeclarationsModern(t *testing.T) {
 	}
 
 	// 幂等写：同参重放终态不变
-	for _, n := range []string{"did_create", "network_switch", "saved_instruction_update"} {
+	// 2026-11 刀5b：saved_instruction_update 并入 upsert（create 分支非幂等，静态 false）
+	for _, n := range []string{"did_create", "network_switch"} {
 		ann := annOf(t, tools, n)
 		if ann["idempotentHint"] != true {
 			t.Errorf("%s: 幂等写 idempotentHint 应为 true，got %v", n, ann["idempotentHint"])

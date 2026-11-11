@@ -63,7 +63,7 @@ func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers ma
 // 的 want 列表补名。2026-10 变动：+guide=65；contract_write_multi_agent 与
 // contract_write_multisig 两个壳并入 contract_write 显式 paymentMode（-2）=63；
 // +account_config_list（配置账户脱敏回显）=64。
-const wantToolCount = 57
+const wantToolCount = 55
 
 func TestToolsListBasics(t *testing.T) {
 	srv := mcpHTTPServer(t, "")
@@ -92,9 +92,9 @@ func TestToolsListBasics(t *testing.T) {
 		"util_sign", "util_verify", "vc_attestation",
 		// DID（5 个；2026-11 刀5a：细粒度 8 个合并为 did_update）
 		"did_create", "did_update", "did_deactivate", "did_name_binding", "did_document",
-		// Task 5：保存指令（6 个）
-		"saved_instruction_create", "saved_instruction_list",
-		"saved_instruction_get", "saved_instruction_update", "saved_instruction_delete",
+		// 保存指令（4 个；2026-11 刀5b：create+update→upsert、list+get→query）
+		"saved_instruction_upsert", "saved_instruction_query",
+		"saved_instruction_delete",
 		"saved_instruction_execute",
 		// Task 6：高层 flow 工具（4 个）
 		"vc_flow", "sft_flow", "bulk_transfer", "bulk_transfer_status", "transfer_mil", "error_lookup",
@@ -461,50 +461,38 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 			`{"address":"a1"}`,
 			"GET", "/api/tool/did/a1/document?",
 			""},
-		// saved_instruction_create ← createSavedInstructionRequest
-		//（handler/saved_instruction_handler.go:176）最小必填集
-		{"saved_instruction_create",
+		// saved_instruction_upsert（2026-11 刀5b：create+update 合并）
+		// id 不传 → POST 新建（最小必填集；必填性由 handler 分流校验）
+		{"saved_instruction_upsert",
 			`{"name":"n1","appName":"identity","methodName":"m1"}`,
 			"POST", "/api/saved-instructions?",
 			`{"name":"n1","appName":"identity","methodName":"m1"}`},
-		// saved_instruction_create：全 13 字段正向传值，锁住全部 json tag 拼写。
-		// 安全不变量（scrubSecrets）：密钥字段不在 create 契约——服务器不持久化私钥
-		{"saved_instruction_create",
+		// 新建：全字段正向传值，锁住全部 json tag 拼写。
+		// 安全不变量（scrubSecrets）：密钥字段不在契约——服务器不持久化私钥
+		{"saved_instruction_upsert",
 			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","signers":[{"address":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/saved-instructions?",
 			`{"name":"n1","description":"d","appName":"identity","methodName":"m1","args":{"id":"a1"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","signers":[{"address":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
-		// saved_instruction_list ← ListSavedInstructions（handler/saved_instruction_handler.go:278）：
-		// handler 不读任何 query/param，无参 GET
-		{"saved_instruction_list",
-			`{}`,
-			"GET", "/api/saved-instructions?",
-			""},
-		// saved_instruction_get ← GetSavedInstruction（handler/saved_instruction_handler.go:284）：
-		// GET + c.Param("id")
-		{"saved_instruction_get",
-			`{"id":"abcd1234"}`,
-			"GET", "/api/saved-instructions/abcd1234?",
-			""},
-		// saved_instruction_update ← UpdateSavedInstruction（handler/saved_instruction_handler.go:295）：
-		// PUT + c.Param("id") + 部分更新 body。最小集：只传 id——handler 的
-		// updateSavedInstructionRequest（:195）全字段 nil-able 且无 binding required，
-		// 空 body 合法（全部字段保持不变），镜像侧全可选 = 部分更新契约。
-		{"saved_instruction_update",
+		// id 传 → PUT 部分更新（只传要改的字段，id 不进 body）
+		{"saved_instruction_upsert",
 			`{"id":"abcd1234","name":"n2"}`,
 			"PUT", "/api/saved-instructions/abcd1234?",
 			`{"name":"n2"}`},
-		// saved_instruction_update：指针语义 body——只传 name/description/args，
-		// 其余字段（含全部签名字段）不得出现在 REST body（= 未传保持不变）
-		{"saved_instruction_update",
+		// 更新：多字段部分更新 body（未传字段 REST body 不出现 = 保持不变）
+		{"saved_instruction_upsert",
 			`{"id":"abcd1234","description":"d2","args":{"id":"a2"},"paymentMode":"split"}`,
 			"PUT", "/api/saved-instructions/abcd1234?",
 			`{"description":"d2","args":{"id":"a2"},"paymentMode":"split"}`},
-		// saved_instruction_update：全 11 body 字段正向传值（含 signers/gasPayer
-		// 嵌套与 signatureMode 对象），锁住全部 json tag 拼写；密钥字段不在契约
-		{"saved_instruction_update",
-			`{"id":"abcd1234","name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","signers":[{"address":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
-			"PUT", "/api/saved-instructions/abcd1234?",
-			`{"name":"n2","description":"d2","args":{"id":"a2"},"paymentMode":"unified_dual_sign","payerAddress":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ixAddress":"a2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerAddress":"a3","signers":[{"address":"a1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
+		// saved_instruction_query（list+get 合并）：id 不传 → GET 全列
+		{"saved_instruction_query",
+			`{}`,
+			"GET", "/api/saved-instructions?",
+			""},
+		// id 传 → GET 单条
+		{"saved_instruction_query",
+			`{"id":"abcd1234"}`,
+			"GET", "/api/saved-instructions/abcd1234?",
+			""},
 		// saved_instruction_delete ← DeleteSavedInstruction（handler/saved_instruction_handler.go:363）：
 		// DELETE + c.Param("id")，不读 query/body，无 body 路径
 		{"saved_instruction_delete",
@@ -669,15 +657,14 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		// id 为路由 param
 		"did_create":               {"privateKey", "address"},
 		"did_update":               {"action", "privateKey", "address"},
+		// upsert 必填性按模式分流（新建 name/appName/methodName 由 handler 校验）
+		"saved_instruction_upsert":  {},
+		"saved_instruction_query":   {},
 		"did_deactivate":           {"privateKey", "address"},
 		"did_name_binding":         {"name"},
 		"did_document":             {"address"},
-		"saved_instruction_create": {"name", "appName", "methodName"},
-		"saved_instruction_list":   {},
-		"saved_instruction_get":    {"id"},
 		// update：handler updateSavedInstructionRequest 全字段 nil-able 且无
 		// binding required（空 body 合法），镜像侧全可选；仅 id 为路由 param 必填
-		"saved_instruction_update": {"id"},
 		// delete：handler 只读 c.Param("id")（saved_instruction_handler.go:364）
 		"saved_instruction_delete":  {"id"},
 		"saved_instruction_execute": {"id"},
@@ -834,7 +821,7 @@ func TestToolInventory(t *testing.T) {
 		"util_sign":              "密钥与签名",
 		"vc_attestation":         "VC 凭证",
 		"did_document":           "DID",
-		"saved_instruction_list": "保存指令",
+		"saved_instruction_upsert": "保存指令",
 		"vc_flow":                "高层编排",
 		"sft_flow":               "高层编排",
 		"bulk_transfer_status":   "高层编排",
