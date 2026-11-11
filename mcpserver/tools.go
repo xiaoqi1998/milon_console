@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -358,65 +359,81 @@ type didMutateArgs struct {
 	Address    string `json:"address" jsonschema:"必填：32 字节私钥在不同曲线下派生不同地址，传账户生成时返回的地址"`
 }
 
-// didSetAliasArgs 镜像 SetAlias 的匿名 request（handler/did_handler.go:465）。
-// alias 被 handler（:473-477）校验必填；suffix 可选指针（缺省服务端代填并自动换号重试）。
-type didSetAliasArgs struct {
+// didUpdateArgs 合并 DID 八个细粒度写操作（2026-11 六刀刀5a：action 路由）。
+// 公共身份字段镜像 didMutateBase；各 action 专属字段如下，handler 侧校验规则
+// 不变（来源标注沿用各端点原注释）。label 在 set_alias 语义外复用于密钥标签
+// （add_key/update_key 的可选 *string——空串不透传 = 不设，与原 omitempty 等效）。
+type didUpdateArgs struct {
 	didMutateArgs
-	Alias  string  `json:"alias" jsonschema:"必填：别名主体；最终别名为「alias-数字」格式"`
-	Suffix *uint32 `json:"suffix,omitempty" jsonschema:"可选：数字后缀；缺省服务端代填，撞名自动换号重试"`
+	Action string `json:"action" jsonschema:"必填：八选一——set_alias 绑定/换别名 / add_service 加服务 / update_service 改服务 / remove_service 删服务（不可逆）/ set_avatar_uri 换头像 / add_key 加公钥 / update_key 换公钥 / remove_key 删公钥（最后一把链端拒绝 1042）"`
+	// set_alias 专用（SetAlias handler/did_handler.go:465；alias 必填、suffix 缺省代填撞名换号）
+	Alias  string  `json:"alias,omitempty" jsonschema:"set_alias 必填：别名主体；最终「alias-数字」全局唯一"`
+	Suffix *uint32 `json:"suffix,omitempty" jsonschema:"可选（set_alias）：数字后缀；缺省服务端代填，撞名自动换号重试"`
+	// service 专用（AddService/UpdateService；label/endpoint 必填，链端 1047/1048）
+	Label           string `json:"label,omitempty" jsonschema:"add_service/update_service 必填：服务标签（add_key/update_key 复用为可选密钥标签）"`
+	ServiceEndpoint string `json:"serviceEndpoint,omitempty" jsonschema:"add_service/update_service 必填：服务端点绝对 URI（如 https://example.com）"`
+	// id 定位（UpdateService :549 / RemoveService / UpdateKey :708 / RemoveKey；0 是合法 id）
+	Id *uint8 `json:"id,omitempty" jsonschema:"update_service/remove_service/update_key/remove_key 必填：目标 id（从 did_document 的对应列表取）"`
+	// 头像（SetAvatarUri :619；1-512 字节，链端 1045）
+	AvatarURI string `json:"avatarUri,omitempty" jsonschema:"set_avatar_uri 必填：头像 URI（1-512 字节）"`
+	// 公钥（AddKey :655 newPublicKey 必填 / UpdateKey :698 id+newPublicKey 必填）
+	NewPublicKey string `json:"newPublicKey,omitempty" jsonschema:"add_key/update_key 必填：新公钥（base58）"`
 }
 
-// didAddServiceArgs 镜像 AddService 的匿名 request（handler/did_handler.go:502）。
-// label/serviceEndpoint 均 handler 校验必填（:514-517，链端错误 1047/1048）。
-type didAddServiceArgs struct {
-	didMutateArgs
-	Label           string `json:"label" jsonschema:"必填：服务标签"`
-	ServiceEndpoint string `json:"serviceEndpoint" jsonschema:"必填：服务端点绝对 URI（如 https://example.com）"`
+// didUpdateRoute 按 action 把合并参数路由到原八个 REST 端点（REST 全部保留，
+// 只删 MCP 壳）。mergeBody 跳过零值键——各端点 handler 校验规则不变。
+func didUpdateRoute(a didUpdateArgs) (RESTMapping, map[string]any, error) {
+	base := map[string]any{"privateKey": a.PrivateKey, "address": a.Address}
+	if a.PublicKey != "" {
+		base["publicKey"] = a.PublicKey
+	}
+	alias := map[string]any{"alias": a.Alias, "suffix": a.Suffix}
+	service := map[string]any{"label": a.Label, "serviceEndpoint": a.ServiceEndpoint}
+	keyLbl := map[string]any{}
+	if a.Label != "" {
+		keyLbl["label"] = a.Label
+	}
+	switch strings.ToLower(strings.TrimSpace(a.Action)) {
+	case "set_alias":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/set-alias"}, mergeBody(base, alias), nil
+	case "add_service":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/add-service"}, mergeBody(base, service), nil
+	case "update_service":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/update-service"},
+			mergeBody(base, service, map[string]any{"id": a.Id}), nil
+	case "remove_service":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/remove-service"},
+			mergeBody(base, map[string]any{"id": a.Id}), nil
+	case "set_avatar_uri":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/set-avatar-uri"},
+			mergeBody(base, map[string]any{"avatarUri": a.AvatarURI}), nil
+	case "add_key":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/add-key"},
+			mergeBody(base, keyLbl, map[string]any{"newPublicKey": a.NewPublicKey}), nil
+	case "update_key":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/update-key"},
+			mergeBody(base, keyLbl, map[string]any{"id": a.Id, "newPublicKey": a.NewPublicKey}), nil
+	case "remove_key":
+		return RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/remove-key"},
+			mergeBody(base, map[string]any{"id": a.Id}), nil
+	}
+	return RESTMapping{}, nil, fmt.Errorf(
+		"未知 action %q；可用：set_alias / add_service / update_service / remove_service / set_avatar_uri / add_key / update_key / remove_key", a.Action)
 }
 
-// didUpdateServiceArgs 镜像 UpdateService 的匿名 request（handler/did_handler.go:540）。
-// id 必填（handler :549 校验 nil 400），指针类型保持（0 是合法 service id）。
-type didUpdateServiceArgs struct {
-	didMutateArgs
-	Id              *uint8 `json:"id" jsonschema:"必填：服务 id（从 did_document 的 services 列表获取）"`
-	Label           string `json:"label" jsonschema:"必填：服务标签"`
-	ServiceEndpoint string `json:"serviceEndpoint" jsonschema:"必填：服务端点绝对 URI"`
-}
-
-// didRemoveServiceArgs 镜像 RemoveService 的匿名 request（handler/did_handler.go:584）。
-type didRemoveServiceArgs struct {
-	didMutateArgs
-	Id *uint8 `json:"id" jsonschema:"必填：服务 id（从 did_document 获取）"`
-}
-
-// didSetAvatarUriArgs 镜像 SetAvatarUri 的匿名 request（handler/did_handler.go:619）。
-// avatarUri 被 handler（:626-630）校验必填（链端要求长度 1-512 字节，错误 1045）。
-type didSetAvatarUriArgs struct {
-	didMutateArgs
-	AvatarURI string `json:"avatarUri" jsonschema:"必填：头像 URI（1-512 字节）"`
-}
-
-// didAddKeyArgs 镜像 AddKey 的匿名 request（handler/did_handler.go:655）。
-// newPublicKey 必填（:663-667）；label 可选指针（缺省 = 链端 option<String>::None）。
-type didAddKeyArgs struct {
-	didMutateArgs
-	NewPublicKey string  `json:"newPublicKey" jsonschema:"必填：要加入文档的公钥（base58）"`
-	Label        *string `json:"label,omitempty" jsonschema:"可选：密钥标签；缺省不设"`
-}
-
-// didUpdateKeyArgs 镜像 UpdateKey 的匿名 request（handler/did_handler.go:698）。
-// id 与 newPublicKey 均 handler 校验必填（:708-711）。
-type didUpdateKeyArgs struct {
-	didMutateArgs
-	Id           *uint8  `json:"id" jsonschema:"必填：密钥 id（从 did_document 的 keys 列表获取）"`
-	NewPublicKey string  `json:"newPublicKey" jsonschema:"必填：新公钥（base58）"`
-	Label        *string `json:"label,omitempty" jsonschema:"可选：密钥标签"`
-}
-
-// didRemoveKeyArgs 镜像 RemoveKey 的匿名 request（handler/did_handler.go:742）。
-type didRemoveKeyArgs struct {
-	didMutateArgs
-	Id *uint8 `json:"id" jsonschema:"必填：密钥 id（最后一把密钥链端拒绝，错误 1042）"`
+// mergeBody 依次合并多个 body 片段，跳过零值键（nil/空串不透传，交各端点
+// handler 缺省与校验——与原 args 的 omitempty 语义等效）。
+func mergeBody(parts ...map[string]any) map[string]any {
+	out := map[string]any{}
+	for _, p := range parts {
+		for k, v := range p {
+			if v == nil || v == "" {
+				continue
+			}
+			out[k] = v
+		}
+	}
+	return out
 }
 
 // didNameBindingArgs 镜像 NameBinding 的 query 参数（handler/did_handler.go:835
@@ -869,6 +886,58 @@ func registerTool[In any](srv *mcp.Server, exec *Executor, name, desc string, m 
 		})
 }
 
+// registerRoutedTool 注册「按参数路由到不同 REST 端点」的合并工具（2026-11
+// 六刀刀5）：route 回调依据 args 产出目标映射与 body（body 不含路由键）。
+// inventory/annotations/outputSchema 与 registerTool 同规则；Method 记 ROUTED。
+// route 返回 error 时折叠为 isError=true 的可读结果（未知 action 即发现路径）。
+func registerRoutedTool[In any](srv *mcp.Server, exec *Executor, name, desc string,
+	route func(args In) (RESTMapping, map[string]any, error)) {
+	if !inventorySeen[name] {
+		inventorySeen[name] = true
+		inventory = append(inventory, ToolInfo{
+			Name:        name,
+			Description: desc,
+			Group:       toolGroupOf(name),
+			Method:      "ROUTED",
+			Path:        "(multi)",
+		})
+	}
+	mcp.AddTool[In, any](srv, &mcp.Tool{
+		Name:         name,
+		Title:        toolTitleOf(name, desc),
+		Description:  desc,
+		Annotations:  toolAnnotationsFor(name, RESTMapping{Method: "POST"}),
+		OutputSchema: envelopeOutputSchema,
+	},
+		func(ctx context.Context, req *mcp.CallToolRequest, args In) (*mcp.CallToolResult, any, error) {
+			m, body, err := route(args)
+			if err != nil {
+				return &mcp.CallToolResult{
+					IsError: true,
+					Content: []mcp.Content{&mcp.TextContent{Text: err.Error()}},
+				}, nil, nil
+			}
+			raw, merr := json.Marshal(body)
+			if merr != nil {
+				return nil, nil, merr
+			}
+			out, cerr := exec.Call(ctx, m, raw)
+			if cerr != nil {
+				return nil, nil, cerr
+			}
+			isError := out.IsError
+			var structured any
+			if success, ok := parseEnvelope(out.Body); ok {
+				isError = isError || !success
+				structured = json.RawMessage(out.Body)
+			}
+			return &mcp.CallToolResult{
+				IsError:  isError,
+				Content:  []mcp.Content{&mcp.TextContent{Text: string(out.Body)}},
+			}, structured, nil
+		})
+}
+
 // serverInstructions 是 initialize 响应里的 instructions——AI 连接时看到的
 // 第一段话（2026-10-13 用户要求：告诉 AI 源代码在哪、不懂可以去看）。
 // 与 guide overview 页「源代码」小节、/api/version 的 repoURL 三处同源。
@@ -1052,37 +1121,11 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		"创建 DID（幂等）：一步完成 创建（+可选别名）+服务+头像；链上已有 DID 时按请求补齐差异（缺别名 SetAlias/缺服务 AddService/头像不同 SetAvatarUri），不覆盖已有",
 		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/create"})
 
-	// 别名
-	registerTool[didSetAliasArgs](srv, exec, "did_set_alias",
-		"为已有 DID 绑定/更换别名（「alias-数字」格式且全局唯一；suffix 缺省服务端代填，撞名自动换号重试；响应含最新 nameBinding）",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/set-alias"})
-
-	// 服务端点
-	registerTool[didAddServiceArgs](srv, exec, "did_add_service",
-		"向 DID 文档添加服务端点（label + 绝对 URI）；响应带最新文档，从中取链上分配的 service id",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/add-service"})
-	registerTool[didUpdateServiceArgs](srv, exec, "did_update_service",
-		"更新 DID 文档中的服务端点（id 从 did_document 的 services 列表获取）",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/update-service"})
-	registerTool[didRemoveServiceArgs](srv, exec, "did_remove_service",
-		"移除 DID 文档中的服务端点（id 从 did_document 获取）",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/remove-service"})
-
-	// 头像
-	registerTool[didSetAvatarUriArgs](srv, exec, "did_set_avatar_uri",
-		"设置 DID 头像 URI（长度 1-512 字节）；响应带最新文档",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/set-avatar-uri"})
-
-	// 密钥管理
-	registerTool[didAddKeyArgs](srv, exec, "did_add_key",
-		"向 DID 文档添加公钥（响应带最新文档，从中取链上分配的 key id）",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/add-key"})
-	registerTool[didUpdateKeyArgs](srv, exec, "did_update_key",
-		"更新 DID 文档中的公钥（id 从 did_document 的 keys 列表获取）",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/update-key"})
-	registerTool[didRemoveKeyArgs](srv, exec, "did_remove_key",
-		"移除 DID 文档中的公钥（最后一把密钥链端拒绝，错误 1042）",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/did/remove-key"})
+	// 细粒度更新（2026-11 六刀刀5a：八合一，action 路由到原 REST 端点——
+	// REST 全部保留，只删 MCP 壳）
+	registerRoutedTool[didUpdateArgs](srv, exec, "did_update",
+		"DID 文档细粒度更新（action 八选一，路由到对应链上端点）：set_alias 绑定/换别名（全局唯一，撞名自动换号）· add_service/update_service/remove_service 服务端点管理 · set_avatar_uri 换头像（1-512 字节）· add_key/update_key/remove_key 公钥管理；id 从 did_document 对应列表取；remove 系不可逆（remove_key 最后一把链端拒绝 1042）；响应均带最新文档",
+		didUpdateRoute)
 
 	// 停用
 	registerTool[didMutateArgs](srv, exec, "did_deactivate",

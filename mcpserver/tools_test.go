@@ -63,7 +63,7 @@ func rpcCallWithHeaders(t *testing.T, url, method string, params any, headers ma
 // 的 want 列表补名。2026-10 变动：+guide=65；contract_write_multi_agent 与
 // contract_write_multisig 两个壳并入 contract_write 显式 paymentMode（-2）=63；
 // +account_config_list（配置账户脱敏回显）=64。
-const wantToolCount = 64
+const wantToolCount = 57
 
 func TestToolsListBasics(t *testing.T) {
 	srv := mcpHTTPServer(t, "")
@@ -90,12 +90,8 @@ func TestToolsListBasics(t *testing.T) {
 		// Task 4：密钥与签名（5 个）
 		"util_derive_address", "util_derive_public_key",
 		"util_sign", "util_verify", "vc_attestation",
-		// Task 5：DID 全生命周期（12 个）
-		"did_create", "did_set_alias",
-		"did_add_service", "did_update_service", "did_remove_service",
-		"did_set_avatar_uri",
-		"did_add_key", "did_update_key", "did_remove_key",
-		"did_deactivate", "did_name_binding", "did_document",
+		// DID（5 个；2026-11 刀5a：细粒度 8 个合并为 did_update）
+		"did_create", "did_update", "did_deactivate", "did_name_binding", "did_document",
 		// Task 5：保存指令（6 个）
 		"saved_instruction_create", "saved_instruction_list",
 		"saved_instruction_get", "saved_instruction_update", "saved_instruction_delete",
@@ -409,49 +405,42 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 			`{"privateKey":"sk","publicKey":"pk","address":"a1","subjectType":"Organization","alias":"alice","suffix":1024,"services":[{"label":"blog","serviceEndpoint":"https://example.com"}],"avatarUri":"https://example.com/me.png"}`,
 			"POST", "/api/tool/did/create?",
 			`{"privateKey":"sk","publicKey":"pk","address":"a1","subjectType":"Organization","alias":"alice","suffix":1024,"services":[{"label":"blog","serviceEndpoint":"https://example.com"}],"avatarUri":"https://example.com/me.png"}`},
-		// did_set_alias ← SetAlias 匿名 request（handler/did_handler.go:465）
-		{"did_set_alias",
-			`{"privateKey":"sk","address":"a1","alias":"alice","suffix":1024}`,
+		// did_update（2026-11 刀5a 八合一）← action 路由到原八个端点。
+		// 8 个 action 各一条：锁定路由目标与 body 组装（零值键不透传）。
+		{"did_update",
+			`{"action":"set_alias","privateKey":"sk","address":"a1","alias":"alice","suffix":1024}`,
 			"POST", "/api/tool/did/set-alias?",
 			`{"privateKey":"sk","address":"a1","alias":"alice","suffix":1024}`},
-		// did_add_service ← AddService 匿名 request（handler/did_handler.go:502）
-		{"did_add_service",
-			`{"privateKey":"sk","address":"a1","label":"blog","serviceEndpoint":"https://example.com"}`,
+		{"did_update",
+			`{"action":"add_service","privateKey":"sk","address":"a1","label":"blog","serviceEndpoint":"https://example.com"}`,
 			"POST", "/api/tool/did/add-service?",
 			`{"privateKey":"sk","address":"a1","label":"blog","serviceEndpoint":"https://example.com"}`},
-		// did_update_service ← UpdateService 匿名 request（handler/did_handler.go:540）
-		{"did_update_service",
-			`{"privateKey":"sk","address":"a1","id":2,"label":"blog","serviceEndpoint":"https://new.example.com"}`,
+		{"did_update",
+			`{"action":"update_service","privateKey":"sk","address":"a1","id":2,"label":"blog","serviceEndpoint":"https://new.example.com"}`,
 			"POST", "/api/tool/did/update-service?",
 			`{"privateKey":"sk","address":"a1","id":2,"label":"blog","serviceEndpoint":"https://new.example.com"}`},
-		// did_remove_service ← RemoveService 匿名 request（handler/did_handler.go:584）
-		{"did_remove_service",
-			`{"privateKey":"sk","address":"a1","id":2}`,
+		{"did_update",
+			`{"action":"remove_service","privateKey":"sk","address":"a1","id":2}`,
 			"POST", "/api/tool/did/remove-service?",
 			`{"privateKey":"sk","address":"a1","id":2}`},
-		// did_set_avatar_uri ← SetAvatarUri 匿名 request（handler/did_handler.go:619）
-		{"did_set_avatar_uri",
-			`{"privateKey":"sk","address":"a1","avatarUri":"https://example.com/a.png"}`,
+		{"did_update",
+			`{"action":"set_avatar_uri","privateKey":"sk","address":"a1","avatarUri":"https://example.com/a.png"}`,
 			"POST", "/api/tool/did/set-avatar-uri?",
 			`{"privateKey":"sk","address":"a1","avatarUri":"https://example.com/a.png"}`},
-		// did_add_key ← AddKey 匿名 request（handler/did_handler.go:655），label 可选指针
-		{"did_add_key",
-			`{"privateKey":"sk","address":"a1","newPublicKey":"pk2","label":"backup"}`,
+		{"did_update",
+			`{"action":"add_key","privateKey":"sk","address":"a1","newPublicKey":"pk2","label":"backup"}`,
 			"POST", "/api/tool/did/add-key?",
 			`{"privateKey":"sk","address":"a1","newPublicKey":"pk2","label":"backup"}`},
-		// did_add_key：label 缺省（omitempty 吞 nil 指针，handler 侧 = option<String>::None）
-		{"did_add_key",
-			`{"privateKey":"sk","address":"a1","newPublicKey":"pk2"}`,
+		{"did_update",
+			`{"action":"add_key","privateKey":"sk","address":"a1","newPublicKey":"pk2"}`,
 			"POST", "/api/tool/did/add-key?",
 			`{"privateKey":"sk","address":"a1","newPublicKey":"pk2"}`},
-		// did_update_key ← UpdateKey 匿名 request（handler/did_handler.go:698）
-		{"did_update_key",
-			`{"privateKey":"sk","address":"a1","id":1,"newPublicKey":"pk2"}`,
+		{"did_update",
+			`{"action":"update_key","privateKey":"sk","address":"a1","id":1,"newPublicKey":"pk2"}`,
 			"POST", "/api/tool/did/update-key?",
 			`{"privateKey":"sk","address":"a1","id":1,"newPublicKey":"pk2"}`},
-		// did_remove_key ← RemoveKey 匿名 request（handler/did_handler.go:742）
-		{"did_remove_key",
-			`{"privateKey":"sk","address":"a1","id":1}`,
+		{"did_update",
+			`{"action":"remove_key","privateKey":"sk","address":"a1","id":1}`,
 			"POST", "/api/tool/did/remove-key?",
 			`{"privateKey":"sk","address":"a1","id":1}`},
 		// did_deactivate ← didMutateBase（handler/did_handler.go:60，Deactivate:776 直接绑定）；
@@ -679,14 +668,7 @@ func TestSchemaRequiredMatchesREST(t *testing.T) {
 		// saved_instruction_handler.go name/appName/methodName binding required，
 		// id 为路由 param
 		"did_create":               {"privateKey", "address"},
-		"did_set_alias":            {"privateKey", "address", "alias"},
-		"did_add_service":          {"privateKey", "address", "label", "serviceEndpoint"},
-		"did_update_service":       {"privateKey", "address", "id", "label", "serviceEndpoint"},
-		"did_remove_service":       {"privateKey", "address", "id"},
-		"did_set_avatar_uri":       {"privateKey", "address", "avatarUri"},
-		"did_add_key":              {"privateKey", "address", "newPublicKey"},
-		"did_update_key":           {"privateKey", "address", "id", "newPublicKey"},
-		"did_remove_key":           {"privateKey", "address", "id"},
+		"did_update":               {"action", "privateKey", "address"},
 		"did_deactivate":           {"privateKey", "address"},
 		"did_name_binding":         {"name"},
 		"did_document":             {"address"},

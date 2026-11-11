@@ -126,7 +126,7 @@ func TestToolDeclarationsModern(t *testing.T) {
 	// 写类抽样：readOnly=false 且为增量写（destructiveHint=false）
 	for _, n := range []string{
 		"contract_write", "contract_write_safe", "transfer_mil", "faucet_claim",
-		"did_add_key", "did_set_alias", "sft_flow", "vc_flow", "saved_instruction_create",
+		"did_update", "sft_flow", "vc_flow", "saved_instruction_create",
 	} {
 		ann := annOf(t, tools, n)
 		if ann["readOnlyHint"] == true {
@@ -137,8 +137,9 @@ func TestToolDeclarationsModern(t *testing.T) {
 		}
 	}
 
-	// 移除/停用/不可逆：destructiveHint=true
-	for _, n := range []string{"did_deactivate", "did_remove_key", "did_remove_service", "saved_instruction_delete"} {
+	// 移除/停用/不可逆：destructiveHint=true（did_update 的 remove 系 action 是
+	// 动态 destructive——静态 annotations 按 POST 写处理，不可逆性在描述注明）
+	for _, n := range []string{"did_deactivate", "saved_instruction_delete"} {
 		ann := annOf(t, tools, n)
 		if ann["destructiveHint"] != true {
 			t.Errorf("%s: 移除/停用类 destructiveHint 应为 true，got %v", n, ann["destructiveHint"])
