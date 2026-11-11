@@ -43,10 +43,10 @@ const ENDPOINTS = [
   { id: 'error-lookup', method: 'GET', path: '/api/errors/:query', summary: '错误码翻译(API码表+IDL链上错误)', group: '系统',
     pathParams: [{ name: 'query', ph: '521或Cooldown' }] },
   { id: 'transfer-mil', method: 'POST', path: '/api/tool/transfer-mil', summary: 'MIL 转账快捷封装(内部派生地址+填固定参数)', group: '合约',
-    bodyTemplate: JSON.stringify({ to: 'base58地址', amount: 1000000, privateKey: 'hex或base58私钥', keyType: 'secp256k1' }, null, 2) },
-  { id: 'tx-track', method: 'GET', path: '/api/transactions/:hash/track', summary: '交易全链路追踪(存在+等待+事件聚合,终态status)', group: '交易',
+    bodyTemplate: JSON.stringify({ to: 'base58地址', amount: 1000000, privateKey: 'hex或base58私钥', keyType: 'secp256k1', wait: true, waitTimeoutSecs: 60 }, null, 2) },
+  { id: 'tx-track', method: 'GET', path: '/api/transactions/:hash/track', summary: '交易全链路追踪(存在+等待+事件聚合,终态status; view=summary 轻量投影)', group: '交易',
     pathParams: [{ name: 'hash', ph: 'hex或base58' }],
-    queryParams: [{ name: 'timeoutSecs', ph: '60' }] },
+    queryParams: [{ name: 'timeoutSecs', ph: '60' }, { name: 'view', ph: 'full|summary' }] },
   { id: 'tx-simulate', method: 'POST', path: '/api/transactions/simulate', summary: '底层模拟交易', group: '交易',
     bodyTemplate: JSON.stringify({ transactionPostcard: 'base64编码' }, null, 2) },
   { id: 'tx-submit', method: 'POST', path: '/api/transactions/submit', summary: '底层提交交易', group: '交易',
@@ -83,6 +83,7 @@ const ENDPOINTS = [
     bodyTemplate: JSON.stringify({
       issuerPrivateKey: 'hex或base58私钥(32字节Ed25519 或 1281字节FN-DSA-512)',
       issuerPublicKey: 'hex或base58公钥(仅FN-DSA-512 issuer必填, /api/account/generate?keyType=fndsa512 生成)',
+      // 可选 query: ?envelope=true 包统一信封返回(缺省回裸 milon-vc-disclosure 文档,MCP 已缺省携带),
       subjectPrivateKey: 'hex私钥(与subjectAddress二选一)',
       subjectAddress: 'base58地址(与subjectPrivateKey二选一)',
       credentialSchema: 'KycLevelCredential',
@@ -3735,11 +3736,13 @@ var IDL_EXAMPLE_ARGS = {
   'token.CreateVesting': {
     creator: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     token: 'M11on1111111111111111111111',
-    start_at_ms: 1000,
+    // start_at_ms 必须是未来的 13 位毫秒时间戳(过去会被 537 拒);示例用"1 小时后"
+    start_at_ms: Date.now() + 3600 * 1000,
     recipients: [
       {
         recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
-        name: null,
+        // name 是展示标签,不能为空串(537),但各计划可重名
+        name: 'seed-round-1',
         total_amount: 1000000000,
         initial_period_seconds: 1000,
         initial_amount: 1000,
