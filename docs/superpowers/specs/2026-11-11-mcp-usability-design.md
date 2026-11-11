@@ -71,7 +71,7 @@ MCP 壳 `parseEnvelope` 不命中 → 无 structuredContent → 宿主报
 |---|---|---|
 | idl_methods | 加 `method` 可选 query：只返回该方法的参数/返回值/signer/错误码明细 | 镜像参数；schema 标注「查单方法强烈建议传」 |
 | tx_get / tx_track | 加 `view` 可选 query（`full` 缺省 / `summary`）：summary 只回 status/payer/eventsCount/digest | 镜像参数；schema 标注「AI 推荐 summary」 |
-| account_resources | 加 `prefix` 可选 query：资源路径前缀过滤 | 镜像参数 |
+| account_resources | ~~加 `prefix` 可选 query~~ **已取消（2026-11-11 实施修正）**：该端点实际返回 `AccountView{Address, Threshold, PublicKeysBs58}`（账户元信息）而非资源集合，返回量天然小，prefix 无对象——spec 设计时误判 | 不改 |
 
 **测试**：REST 层参数化测试（缺省=现状字节等价、summary 裁剪断言）；
 MCP 契约测试同步（TestSchemaRequiredMatchesREST）。
