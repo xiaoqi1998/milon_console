@@ -105,9 +105,10 @@ type idlMetadataArgs struct {
 	Apps string `json:"apps,omitempty" jsonschema:"可选：逗号分隔的 app 名（如 token,identity），只返回这些 app 的元数据——全量约 200KB 建议过滤；未知名会 400 报出可用清单"`
 }
 
-// idlMethodsArgs 镜像 AppMethods 的路径参数。
+// idlMethodsArgs 镜像 AppMethods 的路径参数 + method query（2026-11 六刀刀3a）。
 type idlMethodsArgs struct {
 	AppName string `json:"appName" jsonschema:"必填：app 名（idl_apps 返回的 name，如 token）"`
+	Method  string `json:"method,omitempty" jsonschema:"可选：只返回单个方法的明细（强烈建议传——省去全 app 几十个方法的返回量）；大小写宽容；未知名会 400 报出可用方法清单"`
 }
 
 type hashArgs struct {
@@ -979,8 +980,8 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		"IDL app 轻量清单（名称/简介/方法数）——idl_metadata 全量约 200KB 易撑爆上下文，建议先调本工具看有什么，再按需调 idl_methods",
 		RESTMapping{Method: "GET", PathTemplate: "/api/idl/apps"})
 	registerTool[idlMethodsArgs](srv, exec, "idl_methods",
-		"查单个 app 的全量方法明细（参数/返回值/signer 角色/错误码）；contract_read/write 的 methodName 直接用返回的 name（PascalCase，如 Transfer；传小写也会被自动解析，但优先用原样）",
-		RESTMapping{Method: "GET", PathTemplate: "/api/idl/apps/{appName}/methods", PathParams: []string{"appName"}})
+		"查单个 app 的方法明细（参数/返回值/signer 角色/错误码）；强烈建议传 method 只取单方法（省 token——全 app 几十个方法一次全回很重）；contract_read/write 的 methodName 直接用返回的 name（PascalCase，如 Transfer；传小写也会被自动解析，但优先用原样）",
+		RESTMapping{Method: "GET", PathTemplate: "/api/idl/apps/{appName}/methods", PathParams: []string{"appName"}, QueryParams: []string{"method"}})
 
 	// ---- Task 3：合约/视图/原始交易家族（13 个，全部 POST 纯 JSON body，无 query/path 参数）----
 

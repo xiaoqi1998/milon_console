@@ -559,6 +559,8 @@ func (h *IDLHandler) ListApps(c *gin.Context) {
 
 // AppMethods handles GET /api/idl/apps/:appName/methods
 // 返回单个 app 的全量方法元数据（含参数/返回值/signer 角色明细）。
+// ?method= 单方法过滤（2026-11 六刀刀3a）：只返回该方法的明细，大小写宽容
+// （与 contract_write 的方法名解析一致）；未知名 400 报出全部可用方法名。
 func (h *IDLHandler) AppMethods(c *gin.Context) {
 	appName := c.Param("appName")
 	mc := middleware.ClientFrom(c)
@@ -571,5 +573,25 @@ func (h *IDLHandler) AppMethods(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, "unknown app: "+appName, nil))
 		return
 	}
-	c.JSON(http.StatusOK, types.SuccessResponse(buildAppMeta(appName, pd), "ok"))
+	meta := buildAppMeta(appName, pd)
+	if method := strings.TrimSpace(c.Query("method")); method != "" {
+		want := strings.ToLower(method)
+		kept := make([]idlInstructionMeta, 0, 1)
+		for _, m := range meta.Instructions {
+			if strings.ToLower(m.Name) == want {
+				kept = append(kept, m)
+			}
+		}
+		if len(kept) == 0 {
+			available := make([]string, 0, len(meta.Instructions))
+			for _, m := range meta.Instructions {
+				available = append(available, m.Name)
+			}
+			c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER,
+				fmt.Sprintf("unknown method %q in app %s；可用: %v", method, appName, available), nil))
+			return
+		}
+		meta.Instructions = kept
+	}
+	c.JSON(http.StatusOK, types.SuccessResponse(meta, "ok"))
 }

@@ -87,3 +87,64 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+// ==================== method 单方法过滤（2026-11 六刀刀3a） ====================
+
+// newIDLMethodsRouter 组装 GET /api/idl/apps/:appName/methods 路由。
+func newIDLMethodsRouter(t *testing.T) *gin.Engine {
+	t.Helper()
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	t.Cleanup(fake.Close)
+	gin.SetMode(gin.TestMode)
+	nm := client.NewNetworkManager("devNet", fake.URL)
+	r := gin.New()
+	api := r.Group("/api", middleware.ResolveNetwork(nm))
+	ih := NewIDLHandler(nm)
+	api.GET("/idl/apps/:appName/methods", ih.AppMethods)
+	return r
+}
+
+// TestAppMethodsSingleMethodFilter：?method= 只返回单个方法（大小写宽容）；
+// 未知名 400 报出全部可用方法名（错误路径即发现路径）；缺省全量不变。
+func TestAppMethodsSingleMethodFilter(t *testing.T) {
+	r := newIDLMethodsRouter(t)
+
+	get := func(q string) (int, []string, string) {
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/idl/apps/token/methods"+q, nil))
+		var resp struct {
+			Success bool `json:"success"`
+			Data    struct {
+				Instructions []struct {
+					Name string `json:"name"`
+				} `json:"instructions"`
+			} `json:"data"`
+		}
+		_ = json.Unmarshal(w.Body.Bytes(), &resp)
+		names := make([]string, 0, len(resp.Data.Instructions))
+		for _, i := range resp.Data.Instructions {
+			names = append(names, i.Name)
+		}
+		return w.Code, names, w.Body.String()
+	}
+
+	// 全量基线：token app 不止一个方法
+	code, all, _ := get("")
+	if code != http.StatusOK || len(all) < 2 {
+		t.Fatalf("缺省应全量（token 实测 %d 个方法）: %d %v", len(all), code, all)
+	}
+
+	// 单方法（小写传入，PascalCase 命中——与 contract_write 的方法名宽容一致）
+	code, one, _ := get("?method=transfer")
+	if code != http.StatusOK || len(one) != 1 || one[0] != "Transfer" {
+		t.Fatalf("?method=transfer 应只回 Transfer: %d %v", code, one)
+	}
+
+	// 未知名：400 且报可用方法清单
+	code, _, body := get("?method=NoSuchMethod")
+	if code != http.StatusBadRequest || !containsAny(body, "Transfer") {
+		t.Fatalf("未知名应 400 且报可用清单: %d %.200s", code, body)
+	}
+}
