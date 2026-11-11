@@ -47,10 +47,10 @@ func TestMcpToolsEndpoint(t *testing.T) {
 	if len(resp.Data) != len(mcpserver.ToolInventory()) {
 		t.Fatalf("端点返回 %d 个 != inventory %d 个", len(resp.Data), len(mcpserver.ToolInventory()))
 	}
-	// 下限防工具意外丢失。2026-10 瘦身后 64；2026-11 刀5a DID 八合一 57、
-	// 刀5b saved_instruction 四合二 55（与 mcpserver.wantToolCount 同源）。
-	if len(resp.Data) < 55 {
-		t.Fatalf("工具数=%d, want ≥55", len(resp.Data))
+	// 下限防工具意外丢失。2026-10 瘦身后 64；2026-11 刀5 三批合并后 50
+	//（与 mcpserver.wantToolCount 同源）。
+	if len(resp.Data) < 50 {
+		t.Fatalf("工具数=%d, want ≥50", len(resp.Data))
 	}
 	seen := map[string]bool{}
 	for _, ti := range resp.Data {
