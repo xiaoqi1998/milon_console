@@ -561,7 +561,7 @@ func (h *SavedInstructionHandler) executeRead(c *gin.Context, mc *milon.Client, 
 
 	result, err := mc.View([]api.PackedInstruction{wire}, milon.WithRequestID(requestId))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to execute view: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to execute view: "+withChainErrorHintFor(c, err.Error()), nil))
 		return
 	}
 
@@ -605,7 +605,7 @@ func (h *SavedInstructionHandler) executeSimulate(c *gin.Context, mc *milon.Clie
 
 	result, err := mc.SimulateTx(tx, milon.WithRequestID(requestId))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to simulate: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to simulate: "+withChainErrorHintFor(c, err.Error()), nil))
 		return
 	}
 
@@ -698,7 +698,7 @@ func (h *SavedInstructionHandler) executeSend(c *gin.Context, mc *milon.Client, 
 	}
 
 	if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to submit tx: "+err.Error(), nil))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to submit tx: "+withChainErrorHintFor(c, err.Error()), nil))
 		return
 	}
 

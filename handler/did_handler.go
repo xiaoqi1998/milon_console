@@ -919,10 +919,10 @@ func (h *DidHandler) resolve(c *gin.Context, endpoint string, base *didMutateBas
 	return sk, pub, addr, true
 }
 
-// fail 细粒度端点的统一 500 出口。
+// fail 细粒度端点的统一 500 出口（2026-11 刀1b：SDK 错误挂 IDL 码表对照）。
 func (h *DidHandler) fail(c *gin.Context, endpoint string, err error) {
 	logSDKError(c, endpoint, err)
-	c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, err.Error(), nil))
+	c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, withChainErrorHintFor(c, err.Error()), nil))
 }
 
 // didSend 构建并发送一笔 identity 写交易,返回 txHash。

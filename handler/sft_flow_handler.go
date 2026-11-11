@@ -324,7 +324,7 @@ func (h *SftFlowHandler) SftFlow(c *gin.Context) {
 	}
 	fail := func(stage string, err error) {
 		logSDKError(c, "SftFlow", fmt.Errorf("%s: %w", stage, err))
-		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, stage+": "+err.Error(), resp))
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, stage+": "+withChainErrorHintFor(c, err.Error()), resp))
 	}
 
 	// [1] owner 领水(幂等:余额充足即跳过)

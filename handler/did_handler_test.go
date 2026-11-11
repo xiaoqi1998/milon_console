@@ -2,9 +2,51 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"milon-api-server/client"
+	"milon-api-server/middleware"
+
+	"github.com/gin-gonic/gin"
 )
+
+// newDidMutateRouter 组装挂了 ResolveNetwork 的测试路由（不可达 RPC 也无妨：
+// 本测试不真正发链上请求，只验证 fail 出口的消息加工）。
+func newDidMutateRouter(t *testing.T) (*gin.Engine, *gin.RouterGroup, *DidHandler) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	nm := client.NewNetworkManager("devNet", "http://127.0.0.1:1")
+	r := gin.New()
+	api := r.Group("/api", middleware.ResolveNetwork(nm))
+	return r, api, NewDidHandler(nm)
+}
+
+// TestDidFailCarriesIDLCrossRef：fail 统一出口的错误消息应带链端错误对照
+// （2026-11 六刀刀1b：全部 DID 细粒度端点的 SDK 错误经 withChainErrorHintFor）。
+func TestDidFailCarriesIDLCrossRef(t *testing.T) {
+	engine, api, h := newDidMutateRouter(t)
+	api.GET("/__fail", func(c *gin.Context) {
+		h.fail(c, "TestEndpoint", fmt.Errorf("identity rejected: DidDeactivated"))
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/__fail", nil)
+	engine.ServeHTTP(w, req)
+
+	body := w.Body.String()
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("fail 出口应 500, got %d: %s", w.Code, body)
+	}
+	if !strings.Contains(body, "DidDeactivated") {
+		t.Errorf("错误消息应含原始错误名: %s", body)
+	}
+	if !strings.Contains(body, "链端错误对照") {
+		t.Errorf("错误消息应含 IDL 对照提示: %s", body)
+	}
+}
 
 // ==================== buildDidName ====================
 
