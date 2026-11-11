@@ -106,6 +106,8 @@ type transferMilArgs struct {
 	FromAddress string `json:"fromAddress,omitempty" jsonschema:"可选：转出方地址（已配置操作账户时免传 privateKey）"`
 	KeyType     string `json:"keyType,omitempty" jsonschema:"可选：私钥曲线 secp256k1(缺省)/ed25519/bls12381/fndsa512"`
 	PublicKey   string `json:"publicKey,omitempty" jsonschema:"fndsa512 时必填（897 字节公钥，Go 无法从私钥派生；account_generate 的返回里有）"`
+	Wait        bool   `json:"wait,omitempty" jsonschema:"可选：MCP 侧缺省 true（同请求等确认，响应带 confirmed——省一轮 tx_track）；不等待显式传 false"`
+	WaitTimeoutSecs int `json:"waitTimeoutSecs,omitempty" jsonschema:"可选：wait 等待超时秒数，缺省 60"`
 }
 
 // idlMetadataArgs 镜像 GetIDLMetadata 的 query 参数（apps 过滤，2026-10 AI 提速）。
@@ -1004,11 +1006,11 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 	// 合约写（真实上链）。multi-agent / multisig 两个专用端点不再单独开 MCP 壳
 	// （2026-10 瘦身）：二者只是 paymentMode 预填的便捷变体，MCP 侧统一走
 	// contract_write 显式传 paymentMode=unified_dual_sign / split；REST 端点保留。
-	registerTool[contractWriteArgs](srv, exec, "contract_write", "构建并提交合约写交易（按 paymentMode 签名，真实上链）", RESTMapping{Method: "POST", PathTemplate: "/api/write"})
-	registerTool[contractMultiArgs](srv, exec, "contract_write_multi", "多指令打包写交易（单笔交易原子上链）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi"})
+	registerTool[contractWriteArgs](srv, exec, "contract_write", "构建并提交合约写交易（按 paymentMode 签名，真实上链；wait 缺省 true 同请求等确认，省一轮 tx_track）", RESTMapping{Method: "POST", PathTemplate: "/api/write", DefaultArgs: map[string]any{"wait": true}})
+	registerTool[contractMultiArgs](srv, exec, "contract_write_multi", "多指令打包写交易（单笔交易原子上链；wait 缺省 true 同请求等确认）", RESTMapping{Method: "POST", PathTemplate: "/api/write/multi", DefaultArgs: map[string]any{"wait": true}})
 	registerTool[writeSafeArgs](srv, exec, "contract_write_safe",
-		"安全版合约写：先模拟（不消耗 gas）再真签提交——模拟失败返回 stage=simulate_failed 并阻止上链，模拟通过才走与 contract_write 完全相同的提交路径；请求参数与 contract_write 一致",
-		RESTMapping{Method: "POST", PathTemplate: "/api/write-safe"})
+		"安全版合约写：先模拟（不消耗 gas）再真签提交——模拟失败返回 stage=simulate_failed 并阻止上链，模拟通过才走与 contract_write 完全相同的提交路径；请求参数与 contract_write 一致；wait 缺省 true 同请求等确认",
+		RESTMapping{Method: "POST", PathTemplate: "/api/write-safe", DefaultArgs: map[string]any{"wait": true}})
 
 	// 原始 postcard 交易（simulate/submit/inspect 共用 rawTransactionRequest）
 	registerTool[rawTransactionArgs](srv, exec, "tx_simulate_raw", "模拟执行 postcard 原始交易（不消耗 gas）", RESTMapping{Method: "POST", PathTemplate: "/api/transactions/simulate"})
@@ -1114,7 +1116,8 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		RESTMapping{Method: "DELETE", PathTemplate: "/api/saved-instructions/{id}", PathParams: []string{"id"}})
 	registerTool[savedInstructionExecuteArgs](srv, exec, "saved_instruction_execute",
 		"执行保存的指令（mode 缺省 auto：view→read、entry→simulate；send 真实上链，可用 wait 控制是否等待确认；服务器不存密钥——send 模式须在参数临时提供签名私钥（过境即焚）：unified_*/sponsored 传 payerPrivateKey，dual_sign 另加 ixPrivateKey，split 传 ownerPrivateKey，multi_signer 传 signers[].privateKey）",
-		RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions/{id}/execute", PathParams: []string{"id"}, QueryParams: []string{"mode", "wait"}})
+		RESTMapping{Method: "POST", PathTemplate: "/api/saved-instructions/{id}/execute", PathParams: []string{"id"}, QueryParams: []string{"mode", "wait"},
+			DefaultArgs: map[string]any{"wait": true}})
 
 	// ---- Task 6：高层 flow 工具（4 个）----
 
@@ -1138,8 +1141,8 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		"错误码翻译：按十进制错误码或名字子串查 API 层码表与全部 IDL app 的链上错误码（如 521=VcRequired / Cooldown=FaucetCooldownActive），返回来源(api/app:名)+码+名字+说明+处置建议",
 		RESTMapping{Method: "GET", PathTemplate: "/api/errors/{query}", PathParams: []string{"query"}})
 	registerTool[transferMilArgs](srv, exec, "transfer_mil",
-		"MIL 转账快捷封装：只给 to/amount/privateKey（或 fromAddress 引用已配置操作账户免传私钥），内部完成密钥派生地址 + 填充 token.Transfer 全部固定参数（MIL 代币地址/unified_payer_all/pubkey 签名模式自动修正），复用与 contract_write 完全相同的提交路径；返回 txHash，建议接着用 tx_track 跟踪确认",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/transfer-mil"})
+		"MIL 转账快捷封装：只给 to/amount/privateKey（或 fromAddress 引用已配置操作账户免传私钥），内部完成密钥派生地址 + 填充 token.Transfer 全部固定参数（MIL 代币地址/unified_payer_all/pubkey 签名模式自动修正），复用与 contract_write 完全相同的提交路径；wait 缺省 true（同请求等确认，confirmed=true 即到账——一步到位）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/transfer-mil", DefaultArgs: map[string]any{"wait": true}})
 	registerTool[bulkTransferStatusArgs](srv, exec, "bulk_transfer_status",
 		"查询批量转账任务进度与结果（含 done/success/failed 计数、归集总额与逐账户明细；jobId 来自 bulk_transfer 的返回）",
 		RESTMapping{Method: "GET", PathTemplate: "/api/tool/bulk-transfer/{id}", PathParams: []string{"id"}})

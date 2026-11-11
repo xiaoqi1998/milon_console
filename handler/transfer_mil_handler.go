@@ -10,6 +10,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/gin-gonic/gin"
+	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/provider"
@@ -27,6 +28,9 @@ type transferMilRequest struct {
 	FromAddress string `json:"fromAddress,omitempty"`
 	KeyType     string `json:"keyType,omitempty"`
 	PublicKey   string `json:"publicKey,omitempty"`
+	// Wait=true 时提交后等待确认（缺省 false 立即返回——现状；2026-11 六刀刀4a）。
+	Wait            bool `json:"wait,omitempty"`
+	WaitTimeoutSecs int  `json:"waitTimeoutSecs,omitempty"`
 }
 
 // TransferMil handles POST /api/tool/transfer-mil
@@ -113,13 +117,30 @@ func (h *ContractHandler) TransferMil(c *gin.Context) {
 	}
 
 	logBusinessInfo(c, "TransferMil", "txHash", txHash, "from", fromAddr, "to", req.To, "amount", req.Amount)
-	c.JSON(http.StatusOK, types.SuccessResponse(gin.H{
+	respBody := gin.H{
 		"txHash": txHash,
 		"from":   fromAddr,
 		"to":     req.To,
 		"amount": req.Amount,
 		"token":  milTokenAddress,
 		"rawTx":  serializeTx(tx),
-		"tip":    "用 tx_track 工具（GET /api/transactions/{hash}/track）跟踪确认",
-	}, "ok"))
+	}
+	// wait=true：同请求等确认（缺省 60s，waitTimeoutSecs 可调——与 contract_write
+	// 一致），发+等并成一跳——MCP 侧由 DefaultArgs 缺省注入（刀4b）。
+	if req.Wait {
+		waitTimeout := 60 * time.Second
+		if req.WaitTimeoutSecs > 0 {
+			waitTimeout = time.Duration(req.WaitTimeoutSecs) * time.Second
+		}
+		if _, werr := mc.WaitForTransaction(txHash, milon.WithWaitRequestID(requestId), milon.WithWaitPollTimeout(waitTimeout)); werr != nil {
+			respBody["confirmed"] = false
+			respBody["waitError"] = withChainErrorHint(werr.Error())
+		} else {
+			respBody["confirmed"] = true
+		}
+		respBody["tip"] = "已等待确认：confirmed=true 即上链成功；false 时用 txHash 查 waitError"
+	} else {
+		respBody["tip"] = "用 tx_track 工具（GET /api/transactions/{hash}/track）跟踪确认；或加 wait:true 同请求等确认"
+	}
+	c.JSON(http.StatusOK, types.SuccessResponse(respBody, "ok"))
 }

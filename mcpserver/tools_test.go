@@ -265,12 +265,12 @@ func TestContractToolCallMapping(t *testing.T) {
 		{"contract_write",
 			`{"appName":"nft","methodName":"mint","args":{},"paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1"}`,
 			"POST", "/api/write?",
-			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1"}`},
+			`{"appName":"nft","methodName":"mint","paymentMode":"unified_payer_all","payerPrivateKey":"sk","payerAddress":"a1","wait":true}`},
 		// contract_write_multi ← multiContractRequest（handler/contract.go:1132，WriteContractMulti:1346）
 		{"contract_write_multi",
 			`{"instructions":[{"appName":"nft","methodName":"mint","args":{}}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
 			"POST", "/api/write/multi?",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}},"wait":true}`},
 		// tx_simulate_raw ← rawTransactionRequest（handler/transaction_handler.go:293）
 		{"tx_simulate_raw",
 			`{"transactionPostcard":"pc1"}`,
@@ -309,16 +309,16 @@ func TestContractToolCallMapping(t *testing.T) {
 			"POST", "/api/simulate/multi?",
 			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"unified_dual_sign","payerAddress":"a1","ixAddress":"a2","ixPrivateKey":"sk2","ixSignatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}`},
 		{"contract_write",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`,
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}},"wait":true}`,
 			"POST", "/api/write?",
-			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}}`},
+			`{"appName":"nft","methodName":"mint","paymentMode":"multi_signer","signers":[{"address":"a1","privateKey":"sk1","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}}],"gasPayer":{"address":"a2","privateKey":"sk2","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"}},"wait":true}`},
 		// ---- Task 5 顺手补：Task 4 审查遗留——contractMultiArgs 的
 		// payerPrivateKey/signatureMode/ownerPrivateKey/ownerAddress 与
 		// contractWriteArgs 的 ixSignatureMode 仍无正向传值用例，补 2 例锁拼写。----
 		{"contract_write_multi",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`,
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1","wait":true}`,
 			"POST", "/api/write/multi?",
-			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1"}`},
+			`{"instructions":[{"appName":"nft","methodName":"mint"}],"paymentMode":"split","payerPrivateKey":"sk","signatureMode":{"type":"pubkey","publicKey":"0x02f175c4673255dc8e674d70c3d6d45550ccebafb745fbd386fa52ce6f74bb2ef6"},"ownerPrivateKey":"sk2","ownerAddress":"a1","wait":true}`},
 	}
 	assertRestCalls(t, front.URL, seen, cases)
 }
@@ -526,7 +526,7 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 		// POST + c.Param("id")；mode/wait 可选 query（DefaultQuery:395/515），缺省不带
 		{"saved_instruction_execute",
 			`{"id":"abcd1234"}`,
-			"POST", "/api/saved-instructions/abcd1234/execute?",
+			"POST", "/api/saved-instructions/abcd1234/execute?wait=true",
 			`{}`},
 		// saved_instruction_execute：mode/wait 正向传值（query 渲染；
 		// wait 类型化为 *bool——2026-10 AI 易用性修复，布尔 false 渲染 wait=false）
@@ -538,7 +538,7 @@ func TestDidSavedInstructionToolCallMapping(t *testing.T) {
 		// 密钥随 body 临时提供，id/mode/wait 之外的参数全部进 body
 		{"saved_instruction_execute",
 			`{"id":"abcd1234","mode":"send","payerPrivateKey":"sk1"}`,
-			"POST", "/api/saved-instructions/abcd1234/execute?mode=send",
+			"POST", "/api/saved-instructions/abcd1234/execute?mode=send&wait=true",
 			`{"payerPrivateKey":"sk1"}`},
 	}
 	assertRestCalls(t, front.URL, seen, cases)
