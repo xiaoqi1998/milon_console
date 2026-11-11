@@ -69,12 +69,20 @@ type txEventsArgs struct {
 type txWaitArgs struct {
 	Hash        string `json:"hash" jsonschema:"交易哈希"`
 	TimeoutSecs int    `json:"timeoutSecs,omitempty" jsonschema:"可选：等待超时秒数，缺省 60"`
+	View        string `json:"view,omitempty" jsonschema:"可选：summary 只回状态/事件数/摘要（AI 推荐收尾用，省 token）；full=全量（缺省）"`
 }
 
-// txTrackArgs 镜像 TrackTransaction 的参数（hash 路径参数 + timeoutSecs query）。
+// txTrackArgs 镜像 TrackTransaction 的参数（hash 路径参数 + timeoutSecs/view query）。
 type txTrackArgs struct {
 	Hash        string `json:"hash" jsonschema:"必填：交易哈希（hex 或 base58）"`
 	TimeoutSecs int    `json:"timeoutSecs,omitempty" jsonschema:"可选：等待确认超时秒数，缺省 60"`
+	View        string `json:"view,omitempty" jsonschema:"可选：summary 只回状态/事件数/摘要（AI 推荐收尾用，省 token）；full=全量（缺省）"`
+}
+
+// txViewArgs 镜像 GetTransactionByHash 的参数（hash 路径 + view query）。
+type txViewArgs struct {
+	Hash string `json:"hash" jsonschema:"哈希（hex 或 base58）"`
+	View string `json:"view,omitempty" jsonschema:"可选：summary 只回状态/事件数/摘要（AI 推荐收尾用，省 token）；full=全量（缺省）"`
 }
 
 // writeSafeArgs 与 contractWriteArgs 相同（请求体同 /api/write）。
@@ -962,13 +970,13 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 		RESTMapping{Method: "GET", PathTemplate: "/api/accounts/{address}/summary", PathParams: []string{"address"}})
 	registerTool[faucetClaimArgs](srv, exec, "faucet_claim", "从 faucet 领取代币（需私钥签名，或地址为已配置操作账户时免私钥领水；等待确认后返回 txHash）", RESTMapping{Method: "POST", PathTemplate: "/api/faucet/claim"})
 	registerTool[addressArgs](srv, exec, "faucet_balance", "查询账户余额（faucet 口径）", RESTMapping{Method: "GET", PathTemplate: "/api/faucet/balance/{address}", PathParams: []string{"address"}})
-	registerTool[hashArgs](srv, exec, "tx_get", "按哈希查询交易", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}", PathParams: []string{"hash"}})
+	registerTool[txViewArgs](srv, exec, "tx_get", "按哈希查询交易（view=summary 回轻量摘要，AI 收尾推荐）", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}", PathParams: []string{"hash"}, QueryParams: []string{"view"}})
 	registerTool[txParseArgs](srv, exec, "tx_parse", "解析交易（结构化 postcard）", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/parse", PathParams: []string{"hash"}, QueryParams: []string{"remote"}})
 	registerTool[txEventsArgs](srv, exec, "tx_events", "查询交易事件", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/events", PathParams: []string{"hash"}, QueryParams: []string{"typeTag"}})
-	registerTool[txWaitArgs](srv, exec, "tx_wait", "等待交易确认（可能长轮询）", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/wait", PathParams: []string{"hash"}, QueryParams: []string{"timeoutSecs"}})
+	registerTool[txWaitArgs](srv, exec, "tx_wait", "等待交易确认（可能长轮询；view=summary 回轻量摘要）", RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/wait", PathParams: []string{"hash"}, QueryParams: []string{"timeoutSecs", "view"}})
 	registerTool[txTrackArgs](srv, exec, "tx_track",
 		"交易全链路追踪（tx_get+tx_wait+tx_events 聚合）：查存在→等确认（缺省 60s）→返回 status（not_found/timeout/confirmed）+ 交易摘要 + 事件，AI 发完交易后的收尾一步到位",
-		RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/track", PathParams: []string{"hash"}, QueryParams: []string{"timeoutSecs"}})
+		RESTMapping{Method: "GET", PathTemplate: "/api/transactions/{hash}/track", PathParams: []string{"hash"}, QueryParams: []string{"timeoutSecs", "view"}})
 	registerTool[heightArgs](srv, exec, "rpc_block", "按高度查区块头", RESTMapping{Method: "GET", PathTemplate: "/api/rpc/blocks/{height}", PathParams: []string{"height"}})
 	registerTool[hashArgs](srv, exec, "rpc_resource", "按哈希查链上资源原文", RESTMapping{Method: "GET", PathTemplate: "/api/rpc/resources/{hash}", PathParams: []string{"hash"}})
 	registerTool[accessValueArgs](srv, exec, "rpc_access_value", "按 blob 哈希批量取 access value", RESTMapping{Method: "POST", PathTemplate: "/api/rpc/access-value"})

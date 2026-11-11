@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"math/big"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"milon-api-server/client"
@@ -69,6 +71,33 @@ type txHistoryResponse struct {
 	Signatures   []txHistorySignatureResponse `json:"signatures"`
 	Instructions []string                     `json:"instructions"`
 	Receipt      txReceiptResponse            `json:"receipt"`
+}
+
+// txSummaryResponse 是 view=summary 的轻量投影（2026-11 六刀刀3b）：只留 AI
+// 收尾判断所需字段，砍掉 instructions（hex 大数组）/signatures/access 原文。
+type txSummaryResponse struct {
+	Summary           bool    `json:"summary"`
+	Stamp             uint64  `json:"stamp"`
+	Payer             *uint8  `json:"payer,omitempty"`
+	Error             *uint16 `json:"error,omitempty"`
+	GasCharged        uint64  `json:"gasCharged"`
+	EventsCount       int     `json:"eventsCount"`
+	InstructionDigest string  `json:"instructionDigest"`
+}
+
+// summarizeTxHistory 投影全量响应为摘要。InstructionDigest = instructions 的
+// sha256 前 8 字节 hex——同交易可判等价，不占上下文体积。
+func summarizeTxHistory(r txHistoryResponse) txSummaryResponse {
+	d := sha256.Sum256([]byte(strings.Join(r.Instructions, ",")))
+	return txSummaryResponse{
+		Summary:           true,
+		Stamp:             r.Stamp,
+		Payer:             r.Payer,
+		Error:             r.Receipt.Error,
+		GasCharged:        r.Receipt.GasCharged,
+		EventsCount:       len(r.Receipt.Events),
+		InstructionDigest: hex.EncodeToString(d[:8]),
+	}
 }
 
 // --- DTOs for EventsByTxHash ---
@@ -218,6 +247,10 @@ func (h *TransactionHandler) GetTransactionByHash(c *gin.Context) {
 	}
 
 	resp := toTxHistoryResponse(result.BodyTxHistory)
+	if c.DefaultQuery("view", "full") == "summary" {
+		c.JSON(http.StatusOK, types.SuccessResponse(summarizeTxHistory(resp), "ok"))
+		return
+	}
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
 }
 
@@ -287,6 +320,10 @@ func (h *TransactionHandler) WaitForTransaction(c *gin.Context) {
 	}
 
 	resp := toTxHistoryResponse(result.BodyTxHistory)
+	if c.DefaultQuery("view", "full") == "summary" {
+		c.JSON(http.StatusOK, types.SuccessResponse(summarizeTxHistory(resp), "ok"))
+		return
+	}
 	c.JSON(http.StatusOK, types.SuccessResponse(resp, "ok"))
 }
 
@@ -348,12 +385,20 @@ func (h *TransactionHandler) TrackTransaction(c *gin.Context) {
 		events = append(events, evResult)
 	}
 
-	c.JSON(http.StatusOK, types.SuccessResponse(map[string]any{
+	respData := map[string]any{
 		"status":      status,
 		"hash":        hash,
 		"transaction": txSummary,
 		"events":      events,
-	}, "ok"))
+	}
+	// view=summary（2026-11 六刀刀3b）：transaction 换投影、events 换计数——
+	// AI 收尾只需状态与量级，原文（hex 指令/签名/access）留在 full 视图。
+	if c.DefaultQuery("view", "full") == "summary" {
+		respData["transaction"] = summarizeTxHistory(txSummary)
+		respData["eventsCount"] = len(events)
+		delete(respData, "events")
+	}
+	c.JSON(http.StatusOK, types.SuccessResponse(respData, "ok"))
 }
 
 // rawTransactionRequest is the request body for POST /api/transactions/simulate and /api/transactions/submit.

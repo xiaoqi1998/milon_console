@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"milon-api-server/client"
@@ -100,5 +101,78 @@ func TestTxTrackTimeoutWithSummary(t *testing.T) {
 	}
 	if resp.Data.Transaction == nil {
 		t.Fatalf("timeout 应携带交易摘要, body=%s", w.Body.String())
+	}
+}
+
+// ==================== view=summary 轻量投影（2026-11 六刀刀3b） ====================
+
+// newTxViewRouter 组装 tx_get 与 tx_track 路由（ok 模式：返回空 TxHistory）。
+func newTxViewRouter(t *testing.T) *gin.Engine {
+	t.Helper()
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var rpcReq struct {
+			RequestID uint64 `json:"request_id"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&rpcReq)
+		th := api.TxHistory{}
+		ser := postcard.NewSerializerWithCap(64)
+		if err := th.MarshalPostcard(ser); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(struct {
+			RequestID uint64 `json:"request_id"`
+			Status    uint8  `json:"status"`
+			Body      []byte `json:"body"`
+		}{RequestID: rpcReq.RequestID, Status: 0, Body: ser.Bytes()})
+	}))
+	t.Cleanup(fake.Close)
+	gin.SetMode(gin.TestMode)
+	nm := client.NewNetworkManager("devNet", fake.URL)
+	r := gin.New()
+	grp := r.Group("/api", middleware.ResolveNetwork(nm))
+	th := NewTransactionHandler(nm)
+	grp.GET("/transactions/:hash", th.GetTransactionByHash)
+	grp.GET("/transactions/:hash/track", th.TrackTransaction)
+	return r
+}
+
+// TestTxViewSummary：view=summary 时 tx_get 回投影（无 instructions/signatures/
+// access 原文，带 summary:true 与 eventsCount）；tx_track 的 transaction 同样
+// 换投影且 events 变计数；缺省不带 view 保持全量（现状不变）。
+func TestTxViewSummary(t *testing.T) {
+	r := newTxViewRouter(t)
+	hash := "Gktrqa8t4D37vwiNRTcfF99tKwgz94DXxMnX7pfrvfMu"
+
+	// tx_get view=summary
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/transactions/"+hash+"?view=summary", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("http %d: %s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `"summary":true`) || !strings.Contains(body, `"eventsCount"`) {
+		t.Errorf("summary 应含 summary:true/eventsCount: %.300s", body)
+	}
+	for _, banned := range []string{`"signatures"`, `"access"`} {
+		if strings.Contains(body, banned) {
+			t.Errorf("summary 不应含 %s: %.300s", banned, body)
+		}
+	}
+
+	// tx_get 缺省全量（现状不变）
+	w2 := httptest.NewRecorder()
+	r.ServeHTTP(w2, httptest.NewRequest(http.MethodGet, "/api/transactions/"+hash, nil))
+	if !strings.Contains(w2.Body.String(), `"signatures"`) {
+		t.Errorf("缺省应保持全量: %.300s", w2.Body.String())
+	}
+
+	// tx_track view=summary：transaction 为投影 + eventsCount
+	w3 := httptest.NewRecorder()
+	r.ServeHTTP(w3, httptest.NewRequest(http.MethodGet, "/api/transactions/"+hash+"/track?view=summary&timeoutSecs=1", nil))
+	b3 := w3.Body.String()
+	if w3.Code != http.StatusOK || !strings.Contains(b3, `"summary":true`) || !strings.Contains(b3, `"eventsCount"`) {
+		t.Errorf("track summary 应带投影与计数: %.300s", b3)
 	}
 }
