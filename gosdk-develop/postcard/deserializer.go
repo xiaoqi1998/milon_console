@@ -140,6 +140,14 @@ func (d *Deserializer) deserializeVarUint64(max uint64, name string) (uint64, er
 		}
 		b := d.buffer[d.offset]
 		d.offset++
+
+		// The 10th group only has one meaningful bit: any higher bit would be
+		// shifted out of the 64-bit value and silently lost, so the max check
+		// below would never see it.
+		if shift == 63 && b&0x7f > 1 {
+			return 0, fmt.Errorf("%s overflow", name)
+		}
+
 		value |= uint64(b&0x7f) << shift
 		if (b & 0x80) == 0 {
 			if value > max {

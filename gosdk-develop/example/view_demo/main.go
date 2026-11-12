@@ -15,7 +15,7 @@ func main() {
 }
 
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	tokenSk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	tokenPk := tokenSk.Ed25519Public()
@@ -114,7 +114,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to simulate transaction on chain:" + err.Error())
 	}
-	helper.CheckSimulateSuccess(simulateResult)
+	if err := helper.CheckSimulateSuccess(simulateResult); err != nil {
+		panic(err)
+	}
 	fmt.Printf("Simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
 
 	// 4. Real sign on the same builder (same TxHash)
@@ -128,7 +130,7 @@ func example(networkConfig milon.Network) {
 	}
 
 	// 5. Submit transaction on chain
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -139,7 +141,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	fmt.Printf("\n================ Final MIL ================\n")
@@ -167,7 +171,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err := client.View([]api.PackedInstruction{balanceAccount1Wire})
+	viewTxResult, err := client.View(balanceAccount1Wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -182,7 +186,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{balanceAccount2Wire})
+	viewTxResult, err = client.View(balanceAccount2Wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -197,13 +201,13 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{balanceAccount3Wire})
+	viewTxResult, err = client.View(balanceAccount3Wire)
 	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wire2ViewDecode, err := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
-	if err != nil {
-		fmt.Printf("token account3 balance DecodeView error:%v \n", err.Error())
+		// account3 never received this token, so the single view RPC fails as a
+		// whole, while BatchView below reports the same failure per item.
+		fmt.Printf("❌ token account3 balance: %v \n", err)
+	} else if wire2ViewDecode, decodeErr := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody); decodeErr != nil {
+		fmt.Printf("token account3 balance DecodeView error:%v \n", decodeErr.Error())
 	} else {
 		fmt.Printf("token account3 balance: %+v \n", wire2ViewDecode)
 	}
@@ -212,7 +216,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode Metadata:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{metadataWire})
+	viewTxResult, err = client.View(metadataWire)
 	if err != nil {
 		panic("failed to view Metadata:" + err.Error())
 	}
@@ -227,7 +231,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode TotalSupply:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{totalSupplyWire})
+	viewTxResult, err = client.View(totalSupplyWire)
 	if err != nil {
 		panic("failed to view TotalSupply:" + err.Error())
 	}
@@ -240,7 +244,8 @@ func example(networkConfig milon.Network) {
 
 	fmt.Printf("\n================ Now do it again, but with a different method ================\n")
 
-	viewTxResult, err = client.View([]api.PackedInstruction{
+	// BatchView sends every instruction in one request (RPC method 16).
+	batchViewResult, err := client.BatchView([]api.PackedInstruction{
 		balanceAccount1Wire,
 		balanceAccount2Wire,
 		balanceAccount3Wire,
@@ -259,7 +264,7 @@ func example(networkConfig milon.Network) {
 			"token::Metadata",
 			"token::TotalSupply",
 		},
-		viewTxResult.HTTPResponseBody,
+		batchViewResult.HTTPResponseBody,
 	)
 	if err != nil {
 		panic("failed to decode view data: " + err.Error())

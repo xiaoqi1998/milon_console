@@ -15,7 +15,7 @@ func main() {
 }
 
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	// Sender
 	senderSk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
@@ -64,7 +64,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to simulate transaction on chain:" + err.Error())
 	}
-	helper.CheckSimulateSuccess(simulateResult)
+	if err := helper.CheckSimulateSuccess(simulateResult); err != nil {
+		panic(err)
+	}
 	fmt.Printf("Simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
 
 	// 4. Real sign on the same builder (same TxHash).
@@ -74,7 +76,7 @@ func example(networkConfig milon.Network) {
 	}
 
 	// 5. Submit transaction on chain
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -85,7 +87,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	fmt.Printf("\n================ Intermediate MIL ================\n")
@@ -108,8 +112,12 @@ func example(networkConfig milon.Network) {
 	}
 
 	// Show the on-chain account and its signers
-	helper.DisplayGetAccount(client, sender)
-	helper.DisplayAccountGetListSigners(client, sender)
+	if err := helper.DisplayGetAccount(client, sender); err != nil {
+		panic(err)
+	}
+	if err := helper.DisplayAccountGetListSigners(client, sender); err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("\n================ Transfer MIL (with on-chain account) ================\n")
 
@@ -136,7 +144,7 @@ func example(networkConfig milon.Network) {
 	}
 
 	// 3. Submit transaction on chain
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -147,7 +155,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	fmt.Printf("\n================ Final MIL ================\n")

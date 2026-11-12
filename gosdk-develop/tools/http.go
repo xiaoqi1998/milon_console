@@ -23,25 +23,43 @@ var httpClient = &http.Client{
 	},
 }
 
-// HttpPostByBytes sends an HTTP POST request with raw bytes as the body.
+// HttpPostByBytes sends an HTTP POST request with raw bytes as the body,
+// retrying transient failures up to maxRetries times. Only use it for
+// idempotent requests (reads); writes must use HttpPostByBytesNoRetry.
 func HttpPostByBytes(ctx context.Context, url string, dataBytes []byte, header map[string]string) (statusCode int, responseBytes []byte, err error) {
-	bodyFactory := func() io.Reader {
+	return httpPost(ctx, url, newBytesBodyFactory(dataBytes), header, maxRetries)
+}
+
+// HttpPostByBytesNoRetry sends an HTTP POST request with raw bytes exactly
+// once. It is required for non-idempotent requests such as submitting a
+// transaction: if the response of an accepted request is lost, an automatic
+// retry would submit the same transaction again.
+func HttpPostByBytesNoRetry(ctx context.Context, url string, dataBytes []byte, header map[string]string) (statusCode int, responseBytes []byte, err error) {
+	return httpPost(ctx, url, newBytesBodyFactory(dataBytes), header, 1)
+}
+
+// newBytesBodyFactory returns a factory that produces a fresh reader over
+// dataBytes for every attempt.
+func newBytesBodyFactory(dataBytes []byte) func() io.Reader {
+	return func() io.Reader {
 		if len(dataBytes) > 0 {
 			return bytes.NewReader(dataBytes)
 		}
 		return nil
 	}
-	return httpPost(ctx, url, bodyFactory, header)
 }
 
-// httpPost sends an HTTP POST request, retrying up to maxRetries times on
+// httpPost sends an HTTP POST request, retrying up to attempts times on
 // network errors and 5xx responses with exponential backoff. The bodyFactory
 // is called for each attempt so the request body is always fresh (avoids
 // "body already closed" on retry). 5xx responses are fully read before retry
 // so the keep-alive connection can be reused; the last attempt's response is
 // returned as-is for the caller to surface.
-func httpPost(ctx context.Context, url string, bodyFactory func() io.Reader, header map[string]string) (statusCode int, responseBytes []byte, err error) {
-	for i := 0; i < maxRetries; i++ {
+func httpPost(ctx context.Context, url string, bodyFactory func() io.Reader, header map[string]string, attempts int) (statusCode int, responseBytes []byte, err error) {
+	if attempts < 1 {
+		attempts = 1
+	}
+	for i := 0; i < attempts; i++ {
 		var body io.Reader
 		if bodyFactory != nil {
 			body = bodyFactory()
@@ -67,7 +85,7 @@ func httpPost(ctx context.Context, url string, bodyFactory func() io.Reader, hea
 			if ctx.Err() != nil {
 				return 0, nil, ctx.Err()
 			}
-			if i < maxRetries-1 {
+			if i < attempts-1 {
 				if waitErr := retryBackoff(ctx, i); waitErr != nil {
 					return 0, nil, waitErr
 				}
@@ -87,7 +105,7 @@ func httpPost(ctx context.Context, url string, bodyFactory func() io.Reader, hea
 
 		// 5xx: transient node failures (overload, rolling upgrade, ...).
 		// The body is fully read above so the connection can be reused.
-		if statusCode >= 500 && statusCode < 600 && i < maxRetries-1 {
+		if statusCode >= 500 && statusCode < 600 && i < attempts-1 {
 			if waitErr := retryBackoff(ctx, i); waitErr != nil {
 				return 0, nil, waitErr
 			}

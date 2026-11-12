@@ -25,37 +25,80 @@ func (mt *MethodType) UnmarshalPostcard(deserializer *postcard.Deserializer) err
 
 const (
 	// --- Core chain / execute (1-49, step 5)
-	MethodTypeChainHead       MethodType = 1
-	MethodTypeSubmitTx        MethodType = 5
-	MethodTypeBatchSubmitTx   MethodType = 6
-	MethodTypeSimulateTx      MethodType = 10
-	MethodTypeBatchSimulateTx MethodType = 11
-	MethodTypeView            MethodType = 15
-	MethodTypeBatchView       MethodType = 16
-	MethodTypeGetAccount      MethodType = 20
-	MethodTypeEventsByTxHash  MethodType = 25
+	MethodTypeChainHead           MethodType = 1
+	MethodTypeSubmitTx            MethodType = 5
+	MethodTypeBatchSubmitTx       MethodType = 6
+	MethodTypeSimulateTx          MethodType = 10
+	MethodTypeBatchSimulateTx     MethodType = 11
+	MethodTypeView                MethodType = 15
+	MethodTypeBatchView           MethodType = 16
+	MethodTypeGetAccount          MethodType = 20
+	MethodTypeBatchGetAccount     MethodType = 21
+	MethodTypeEventsByTxHash      MethodType = 25
+	MethodTypeBatchEventsByTxHash MethodType = 26
+	MethodTypeNodeCapability      MethodType = 30
 
 	// --- Query block / tx (50-149, step 5)
-	MethodTypeGetBlockByHeight  MethodType = 50
-	MethodTypeGetTxByHash       MethodType = 55
-	MethodTypeGetTxHistoryProof MethodType = 60
+	MethodTypeGetBlockByHeight       MethodType = 50
+	MethodTypeBatchGetBlockByHeight  MethodType = 51
+	MethodTypeGetTxByHash            MethodType = 55
+	MethodTypeBatchGetTxByHash       MethodType = 56
+	MethodTypeGetTxHistoryProof      MethodType = 60
+	MethodTypeBatchGetTxHistoryProof MethodType = 61
 
-	// --- Resource raw / batch (150-199, step 5)
+	// --- Resource raw (150-199, step 5)
 	MethodTypeGetResource                MethodType = 150
+	MethodTypeBatchGetResource           MethodType = 151
 	MethodTypeGetResourcePathByHash      MethodType = 155
 	MethodTypeBatchGetResourcePathByHash MethodType = 160
 	MethodTypeGetAccessValue             MethodType = 165
 	MethodTypeBatchGetAccessValue        MethodType = 166
 )
 
+// methodTypeNames maps every known RPC method to its name so error messages
+// can identify the method instead of a bare number.
+var methodTypeNames = map[MethodType]string{
+	MethodTypeChainHead:                  "chain_head",
+	MethodTypeSubmitTx:                   "submit_tx",
+	MethodTypeBatchSubmitTx:              "batch_submit_tx",
+	MethodTypeSimulateTx:                 "simulate_tx",
+	MethodTypeBatchSimulateTx:            "batch_simulate_tx",
+	MethodTypeView:                       "view",
+	MethodTypeBatchView:                  "batch_view",
+	MethodTypeGetAccount:                 "get_account",
+	MethodTypeBatchGetAccount:            "batch_get_account",
+	MethodTypeEventsByTxHash:             "events_by_tx_hash",
+	MethodTypeBatchEventsByTxHash:        "batch_events_by_tx_hash",
+	MethodTypeNodeCapability:             "node_capability",
+	MethodTypeGetBlockByHeight:           "get_block_by_height",
+	MethodTypeBatchGetBlockByHeight:      "batch_get_block_by_height",
+	MethodTypeGetTxByHash:                "get_tx_by_hash",
+	MethodTypeBatchGetTxByHash:           "batch_get_tx_by_hash",
+	MethodTypeGetTxHistoryProof:          "get_tx_history_proof",
+	MethodTypeBatchGetTxHistoryProof:     "batch_get_tx_history_proof",
+	MethodTypeGetResource:                "get_resource",
+	MethodTypeBatchGetResource:           "batch_get_resource",
+	MethodTypeGetResourcePathByHash:      "get_resource_path_by_hash",
+	MethodTypeBatchGetResourcePathByHash: "batch_get_resource_path_by_hash",
+	MethodTypeGetAccessValue:             "get_access_value",
+	MethodTypeBatchGetAccessValue:        "batch_get_access_value",
+}
+
+// String returns the RPC method name, falling back to the numeric value for
+// methods that have no registered name.
+func (mt MethodType) String() string {
+	if name, ok := methodTypeNames[mt]; ok {
+		return name
+	}
+	return fmt.Sprintf("method(%d)", uint16(mt))
+}
+
 func NewRpcRequest(method MethodType, requestId RequestID, body []byte) *RpcRequest {
-	tx := &RpcRequest{
+	return &RpcRequest{
 		Method:    method,
 		RequestId: requestId,
 		Body:      body,
 	}
-
-	return tx
 }
 
 type RpcRequest struct {

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/milon-labs/milon-go-sdk/api"
+	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/postcard"
 	"github.com/milon-labs/milon-go-sdk/provider"
 	"github.com/stretchr/testify/assert"
@@ -120,6 +121,50 @@ func TestSimulateReceipt_WithError(t *testing.T) {
 	}, false)
 	assert.NoError(t, err)
 	assert.Equal(t, payload, *deserialized.Error)
+}
+
+func TestSimulateReceipt_Signers(t *testing.T) {
+	rawAddress := make([]byte, crypto.AddressRawLen)
+	for i := range rawAddress {
+		rawAddress[i] = byte(i + 1)
+	}
+	address, err := crypto.NewAddressFromBytes(rawAddress)
+	assert.NoError(t, err)
+
+	original := api.SimulateReceipt{
+		TxID:       api.TxId{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+		TxHash:     api.TxHash{1, 2, 3},
+		State:      1,
+		Access:     []api.AccessRecord{},
+		Events:     []api.TypeTagWithData{},
+		GasCharged: 12958,
+		Signers: []api.SignerRequirement{
+			{Address: *address, RequiresPqSignature: true},
+			{Address: *address, RequiresPqSignature: false},
+		},
+	}
+
+	data, err := postcard.SerializePostcard(&original)
+	assert.NoError(t, err)
+
+	// The signers vector sits right after gas_charged: a 1-byte length prefix
+	// followed by 21 bytes (20-byte address + 1-byte flag) per entry, so only
+	// the entries grow the encoding beyond the empty vector.
+	withoutSigners := original
+	withoutSigners.Signers = nil
+	base, err := postcard.SerializePostcard(&withoutSigners)
+	assert.NoError(t, err)
+	assert.Len(t, data, len(base)+len(original.Signers)*(crypto.AddressRawLen+1))
+
+	deserialized, err := postcard.DeserializePostcard(data, func(d *postcard.Deserializer) (api.SimulateReceipt, error) {
+		var r api.SimulateReceipt
+		if err := r.UnmarshalPostcard(d); err != nil {
+			return r, err
+		}
+		return r, nil
+	}, false)
+	assert.NoError(t, err)
+	assert.Equal(t, original.Signers, deserialized.Signers)
 }
 
 func TestSimulateReceipt_DeserializeErrors(t *testing.T) {

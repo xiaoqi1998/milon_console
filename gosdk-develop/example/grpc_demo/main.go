@@ -16,7 +16,7 @@ func main() {
 // subscribes starting from block 0 and processes only the first block—printing each transaction with PrintFramedHistory,
 // the callback returns false to stop fetching and does nothing else.
 func example1(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	// StreamBlocks(startBlock, onBlockDone):
 	//   startBlock  = 0, starting from the genesis block
@@ -54,7 +54,7 @@ func example1(networkConfig milon.Network) {
 // subscribes starting from block 0; after each block is processed (resolve resource paths + print PrintFramedHistory),
 // the callback returns true to continue fetching—keeping reading data, and after reaching the chain tip it keeps waiting for new blocks.
 func example2(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	// StreamBlocks(startBlock, onBlockDone):
 	//   startBlock  = 0, starting from the genesis block

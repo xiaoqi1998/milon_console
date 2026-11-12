@@ -716,7 +716,7 @@ func sftFlowVerify(mc *milon.Client, sftAddr crypto.Address, slot *sftFlowSlotRe
 // sftFlowSendWait 提交交易、等待确认并校验链上执行成功。
 // 返回回执与 txHash(失败时也返回,便于追踪已提交的交易)。
 func sftFlowSendWait(mc *milon.Client, tx *lib.Transaction) (*api.TxHistory, string, error) {
-	if err := mc.SubmitTx(tx, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli()))); err != nil {
+	if _, err := mc.SubmitTx(tx, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli()))); err != nil {
 		return nil, "", err
 	}
 	txHash := txHashHex(tx)

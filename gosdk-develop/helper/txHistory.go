@@ -9,54 +9,67 @@ import (
 
 // DisplayTxHistory prints a decoded transaction history: its instructions,
 // access records (including decoded resource values) and events.
-func DisplayTxHistory(client *milon.Client, txHistory *api.TxHistory) {
+func DisplayTxHistory(client *milon.Client, txHistory *api.TxHistory) error {
 	fmt.Printf("\n================ Display TxHistory ================\n")
 
 	if txHistory == nil {
 		fmt.Printf("txHistory: nil\n")
 		fmt.Printf("\n================ Display TxHistory ================\n")
-		return
+		return nil
 	}
 
 	fmt.Printf("txHistory: %+v \n\n", txHistory)
 
-	displayInstructions(client, txHistory.Instructions)
-	displayAccessRecords(client, txHistory.Receipt.Access)
-	displayEvents(client, txHistory.Receipt.Events)
+	if err := displayInstructions(client, txHistory.Instructions); err != nil {
+		return err
+	}
+	if err := displayAccessRecords(client, txHistory.Receipt.Access); err != nil {
+		return err
+	}
+	if err := displayEvents(client, txHistory.Receipt.Events); err != nil {
+		return err
+	}
 
 	fmt.Printf("\n================ Display TxHistory ================\n")
+	return nil
 }
 
-func displayInstructions(client *milon.Client, instructions []api.PackedInstruction) {
+func displayInstructions(client *milon.Client, instructions []api.PackedInstruction) error {
 	fmt.Printf("\nInstructions (len=%d):\n", len(instructions))
 	for i, instruction := range instructions {
 		fmt.Printf("\t [%d] instruction: \n", i)
 
 		decodedInstruction, err := client.GetProviderManager().DecodeInstruction(instruction)
 		if err != nil {
-			panic("failed to decode instruction: " + err.Error())
+			return fmt.Errorf("failed to decode instruction: %w", err)
 		}
 
 		fmt.Printf("\t\t decodedInstruction = %#v \n", decodedInstruction)
 		fmt.Printf("\t\t FormatDecodedInstruction = %+v \n\n", client.GetProviderManager().FormatDecodedInstruction(decodedInstruction))
 	}
+	return nil
 }
 
 // displayAccessRecords prints one access record per resource. The receipt keeps
 // them sorted by resource ID hash ascending, so a consumer looking for a
 // specific resource must match ResourceID rather than a fixed index.
-func displayAccessRecords(client *milon.Client, records []api.AccessRecord) {
+func displayAccessRecords(client *milon.Client, records []api.AccessRecord) error {
 	fmt.Printf("\nAccess Records (len=%d):\n", len(records))
 	for i, record := range records {
 		fmt.Printf("\t [%d] ResourceID: %v\n", i, record.ResourceID)
 
 		displayResourcePath(client, record.ResourceID)
 
-		displayPersistedValue(client, "FirstSnapshot", record.FirstSnapshot)
-		displayLastWritten(client, record)
+		if _, _, err := displayPersistedValue(client, "FirstSnapshot", record.FirstSnapshot); err != nil {
+			return err
+		}
+		if err := displayLastWritten(client, record); err != nil {
+			return err
+		}
 	}
 
 	displayBatchResourcePaths(client, records)
+	return nil
 }
 
 // displayBatchResourcePaths prints all resource paths with a single
@@ -101,33 +114,37 @@ func displayResourcePath(client *milon.Client, resourceID api.RsHash) {
 // displayLastWritten prints the last-written value and, when it is an inline
 // value, also fetches the current on-chain resource value so the snapshot at
 // tx time can be compared with the latest state.
-func displayLastWritten(client *milon.Client, record api.AccessRecord) {
-	pd, idlType := displayPersistedValue(client, "LastWritten", &record.LastWritten)
+func displayLastWritten(client *milon.Client, record api.AccessRecord) error {
+	pd, idlType, err := displayPersistedValue(client, "LastWritten", &record.LastWritten)
+	if err != nil {
+		return err
+	}
 	if pd == nil || idlType == nil {
-		return
+		return nil
 	}
 
 	getResourceResult, err := client.GetResource(record.ResourceID)
 	if err != nil {
 		fmt.Printf("\t\t\t client.GetResource error: %+v \n", err)
-		return
+		return nil
 	}
 
 	valueDecoded, err := pd.DecodeDataByIDLTypeName(idlType.Name, getResourceResult.BodyGetResource.Data.Value)
 	if err != nil {
-		panic("failed to decode LastWritten GetResource data: " + err.Error())
+		return fmt.Errorf("failed to decode LastWritten GetResource data: %w", err)
 	}
 
 	fmt.Printf("\t\t\t now client.GetResource.BodyGetResource: %+v\n", getResourceResult.BodyGetResource)
 	fmt.Printf("\t\t\t now getResourceResult.BodyGetResource.Data.Value Decoded (%s): %+v\n\n", idlType.Name, valueDecoded)
+	return nil
 }
 
 // displayPersistedValue prints one PersistedValue (Inline or External). For the
 // Inline variant it also returns the resolved IDL type for further lookups.
-func displayPersistedValue(client *milon.Client, label string, pv *api.PersistedValue) (*provider.Provider, *provider.IDLType) {
+func displayPersistedValue(client *milon.Client, label string, pv *api.PersistedValue) (*provider.Provider, *provider.IDLType, error) {
 	if pv == nil {
 		fmt.Printf("\t\t %s: None\n", label)
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	fmt.Printf("\t\t %s: \n", label)
@@ -138,47 +155,50 @@ func displayPersistedValue(client *milon.Client, label string, pv *api.Persisted
 		return decodeInlineData(client, label, pv.TypeTag, pv.InlineData)
 	case 1: // External
 		fmt.Printf("\t\t\t External(BlobHash=%x)\n", pv.ExternalHash)
-		displayExternalData(client, label, pv.ExternalHash)
-		return nil, nil
+		if err := displayExternalData(client, label, pv.ExternalHash); err != nil {
+			return nil, nil, err
+		}
+		return nil, nil, nil
 	default:
-		panic(fmt.Sprintf("Unknown(variant=%d)", pv.Variant))
+		return nil, nil, fmt.Errorf("unknown PersistedValue variant %d", pv.Variant)
 	}
 }
 
 // displayExternalData fetches and prints the blob an External PersistedValue
 // points at. A blob the node no longer has (Data == nil) is reported instead of
 // being treated as an error.
-func displayExternalData(client *milon.Client, label string, blobHash api.BlobHash) {
+func displayExternalData(client *milon.Client, label string, blobHash api.BlobHash) error {
 	getAccessValueResult, err := client.GetAccessValue(blobHash)
 	if err != nil {
-		panic("failed to get " + label + " access value: " + err.Error())
+		return fmt.Errorf("failed to get %s access value: %w", label, err)
 	}
 
 	accessValue := getAccessValueResult.BodyGetAccessValue
 	if accessValue == nil || accessValue.Data == nil {
 		fmt.Printf("\t\t\t no access value stored for BlobHash=%x\n", blobHash)
-		return
+		return nil
 	}
 
 	fmt.Printf("\t\t\t AccessValue(BlobHash=%x, type_tag=%d, data_len=%d)\n",
 		accessValue.BlobHash[:], accessValue.Data.TypeTag, len(accessValue.Data.Value))
 	fmt.Printf("\t\t\t Data: %x\n", accessValue.Data.Value)
 
-	pd, idlType := findIDLTypeByTag(client, accessValue.Data.TypeTag)
+	pd, idlType := client.FindIDLTypeByTag(accessValue.Data.TypeTag)
 	if pd == nil || idlType == nil {
 		fmt.Printf("\t\t\t Warning: unknown type_tag %d, skipping decode\n", accessValue.Data.TypeTag)
-		return
+		return nil
 	}
 
 	decodedValue, err := pd.DecodeDataByIDLTypeName(idlType.Name, accessValue.Data.Value)
 	if err != nil {
-		panic("failed to decode " + label + " access value data: " + err.Error())
+		return fmt.Errorf("failed to decode %s access value data: %w", label, err)
 	}
 
 	fmt.Printf("\t\t\t Value Decoded (%s): %+v\n\n", idlType.Name, decodedValue)
+	return nil
 }
 
-func displayEvents(client *milon.Client, events []api.TypeTagWithData) {
+func displayEvents(client *milon.Client, events []api.TypeTagWithData) error {
 	fmt.Printf("\nEvents (len=%d):\n", len(events))
 	for i, event := range events {
 		fmt.Printf("\t [%d] TypeTag: %d \n", i, event.TypeTag)
@@ -186,50 +206,27 @@ func displayEvents(client *milon.Client, events []api.TypeTagWithData) {
 
 		decodedEvent, err := client.GetProviderManager().DecodeEventDataByTag(event.TypeTag, event.Value)
 		if err != nil {
-			panic("failed to decode event: " + err.Error())
+			return fmt.Errorf("failed to decode event: %w", err)
 		}
 
 		fmt.Printf("\t\t decodedEvent: %+v\n", decodedEvent)
 		fmt.Printf("\t\t FormatDecodedEvent: %+v \n\n", client.GetProviderManager().FormatDecodedEvent(decodedEvent))
 	}
+	return nil
 }
 
-// findIDLTypeByTag locates the provider and IDL type of a persisted value.
-// Resource tags (declared in the IDL resources section) are checked first;
-// the types index remains as a fallback for values that are not declared as
-// resources.
-func findIDLTypeByTag(client *milon.Client, typeTag uint64) (*provider.Provider, *provider.IDLType) {
-	for _, pd := range client.GetAllPd() {
-		if resource, ok := pd.GetResourceByTypeTag(typeTag); ok {
-			if idlType, ok := pd.IDLTypeByName[resource.Type]; ok {
-				return pd, &idlType
-			}
-			// The resource value type may be a builtin that the IDL does not
-			// declare in its types section (e.g. system _B256 uses B256);
-			// primitive types are decoded by name.
-			return pd, &provider.IDLType{Kind: "builtin", Name: resource.Type}
-		}
-	}
-	for _, pd := range client.GetAllPd() {
-		if idlType, ok := pd.GetIDLTypeByTypeTag(typeTag); ok {
-			return pd, idlType
-		}
-	}
-	return nil, nil
-}
-
-func decodeInlineData(client *milon.Client, label string, typeTag uint64, data []byte) (*provider.Provider, *provider.IDLType) {
-	pd, idlType := findIDLTypeByTag(client, typeTag)
+func decodeInlineData(client *milon.Client, label string, typeTag uint64, data []byte) (*provider.Provider, *provider.IDLType, error) {
+	pd, idlType := client.FindIDLTypeByTag(typeTag)
 	if pd == nil || idlType == nil {
 		fmt.Printf("\t\t\t Warning: unknown type_tag %d, skipping decode\n", typeTag)
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	valueDecoded, err := pd.DecodeDataByIDLTypeName(idlType.Name, data)
 	if err != nil {
-		panic("failed to decode " + label + " InlineData: " + err.Error())
+		return nil, nil, fmt.Errorf("failed to decode %s InlineData: %w", label, err)
 	}
 
 	fmt.Printf("\t\t\t Value Decoded (%s): %+v\n", idlType.Name, valueDecoded)
-	return pd, idlType
+	return pd, idlType, nil
 }

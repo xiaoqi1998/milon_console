@@ -78,7 +78,7 @@
         {
           "name": "validator",
           "role": "input",
-          "type": "ValidatorId"
+          "type": "B256"
         },
         {
           "name": "controller",
@@ -373,7 +373,7 @@
         },
         {
           "name": "proposer_validator",
-          "type": "ValidatorId"
+          "type": "B256"
         }
       ],
       "kind": "struct",
@@ -596,7 +596,7 @@
       "fields": [
         {
           "name": "validator",
-          "type": "ValidatorId"
+          "type": "B256"
         },
         {
           "name": "consensus_account",
@@ -656,11 +656,6 @@
       "kind": "builtin",
       "name": "String",
       "typeTag": 8566531010829758022
-    },
-    {
-      "kind": "builtin",
-      "name": "ValidatorId",
-      "typeTag": 14542707920151212342
     },
     {
       "kind": "builtin",
@@ -761,17 +756,17 @@
     },
     {
       "name": "_ConsensusValidatorByAccount",
-      "type": "ValidatorId",
+      "type": "B256",
       "typeTag": 14542707920151212342
     },
     {
       "name": "_ConsensusValidatorByPubkey",
-      "type": "ValidatorId",
+      "type": "B256",
       "typeTag": 14542707920151212342
     },
     {
       "name": "_ConsensusValidatorByBls",
-      "type": "ValidatorId",
+      "type": "B256",
       "typeTag": 14542707920151212342
     },
     {

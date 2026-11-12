@@ -5,12 +5,13 @@ import (
 	"github.com/milon-labs/milon-go-sdk"
 )
 
-func DisplayGetAccount(client *milon.Client, accountRelaxed any) {
+// DisplayGetAccount prints the account view resolved from a relaxed address.
+func DisplayGetAccount(client *milon.Client, accountRelaxed any) error {
 	fmt.Printf("\n================ Display GetAccount ================\n\n")
 
 	getAccountResult, err := client.GetAccount(accountRelaxed)
 	if err != nil {
-		panic("failed to get account: " + err.Error())
+		return fmt.Errorf("failed to get account: %w", err)
 	}
 
 	fmt.Printf("Address : %v \n", getAccountResult.BodyAccountView.Address)
@@ -18,4 +19,5 @@ func DisplayGetAccount(client *milon.Client, accountRelaxed any) {
 	fmt.Printf("Threshold : %v \n", getAccountResult.BodyAccountView.Threshold)
 
 	fmt.Printf("\n================ Display GetAccount ================\n")
+	return nil
 }

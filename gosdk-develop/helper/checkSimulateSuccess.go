@@ -6,16 +6,20 @@ import (
 	"github.com/milon-labs/milon-go-sdk/api"
 )
 
-// CheckSimulateSuccess panics when the simulate receipt is not successful,
-// printing the on-chain error code and message when available.
-func CheckSimulateSuccess(result *milon.SimulateTxResult) {
-	if result == nil || result.BodySimulateReceipt.State != api.TxStateSuccess {
+// CheckSimulateSuccess returns an error when the simulate receipt is not
+// successful, reporting the on-chain error code and message when available.
+func CheckSimulateSuccess(result *milon.SimulateTxResult) error {
+	if result == nil {
+		return fmt.Errorf("simulate result is nil")
+	}
+	if result.BodySimulateReceipt.State != api.TxStateSuccess {
 		code := uint16(0)
 		message := ""
-		if result != nil && result.BodySimulateReceipt.Error != nil {
+		if result.BodySimulateReceipt.Error != nil {
 			code = result.BodySimulateReceipt.Error.Code
 			message = result.BodySimulateReceipt.Error.Message
 		}
-		panic(fmt.Sprintf("simulate failed on chain: error code = %d, message = %s", code, message))
+		return fmt.Errorf("simulate failed on chain: error code = %d, message = %s", code, message)
 	}
+	return nil
 }

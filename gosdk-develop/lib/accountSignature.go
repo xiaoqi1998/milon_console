@@ -89,7 +89,8 @@ type IxHashItem struct {
 // AuthMessage assembles the account auth message:
 // Blake3(MILON_ROOT || TX_AUTH_DOMAIN || chain_id || owner || auth_bit || tx_hash || ixHashes)
 func (as *AccountSignature) AuthMessage(account crypto.Address, txHash api.TxHash, ixHashes []IxHashItem) (api.TxHash, error) {
-	hasher := crypto.Hasher(crypto.TxAuthDomainBytes)
+	hasher := crypto.AcquireHasher(crypto.TxAuthDomainBytes)
+	defer crypto.ReleaseHasher(hasher)
 
 	var chainIDBytes [8]byte
 	binary.BigEndian.PutUint64(chainIDBytes[:], GetChainId())
@@ -372,7 +373,8 @@ func CollectIxHashes(authBit types.Bitmap64, ixHashes []api.TxHash) []IxHashItem
 // auth_bit ix subset (ascending index, bit62/63 skipped). It must match the
 // on-chain vote_batch_hash of the execute transaction.
 func VoteBatchHash(authBit types.Bitmap64, allIxHashes []api.TxHash) api.TxHash {
-	hasher := crypto.Hasher(crypto.VoteBatchHashDomainBytes)
+	hasher := crypto.AcquireHasher(crypto.VoteBatchHashDomainBytes)
+	defer crypto.ReleaseHasher(hasher)
 	for _, h := range allIxHashes {
 		hasher.Write(h[:])
 	}

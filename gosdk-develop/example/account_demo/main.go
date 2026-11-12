@@ -16,7 +16,7 @@ func main() {
 }
 
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	// Create 4 signers: signerA/B/C/D as multisig participants
 	signerA := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
@@ -51,27 +51,39 @@ func example(networkConfig milon.Network) {
 	fmt.Printf("\n================ 1.createAccount ================\n")
 
 	createAccount(client, pkA, signerA)
-	helper.DisplayAccountGetListSigners(client, accountA)
+	if err := helper.DisplayAccountGetListSigners(client, accountA); err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("\n================ 2.addSigner ================\n")
 	addSigner(client, pkA, signerA, pkB)
-	helper.DisplayAccountGetListSigners(client, accountA)
+	if err := helper.DisplayAccountGetListSigners(client, accountA); err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("\n================ 3.addSigners ================\n")
 	addSigners(client, pkA, signerA, pkC, pkD)
-	helper.DisplayAccountGetListSigners(client, accountA)
+	if err := helper.DisplayAccountGetListSigners(client, accountA); err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("\n================ 4.setThreshold ================\n")
 	setThreshold(client, pkA, signerA, pkC, signerC)
-	helper.DisplayAccountGetListSigners(client, accountA)
+	if err := helper.DisplayAccountGetListSigners(client, accountA); err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("\n================ 5.removeSigner ================\n")
 	removeSigner(client, pkA, pkC, signerC, pkD, signerD)
-	helper.DisplayAccountGetListSigners(client, accountA)
+	if err := helper.DisplayAccountGetListSigners(client, accountA); err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("\n================ 6.setSignerWeight ================\n")
 	setSignerWeight(client, pkA, signerA, pkC, signerC, pkD, signerD)
-	helper.DisplayAccountGetListSigners(client, accountA)
+	if err := helper.DisplayAccountGetListSigners(client, accountA); err != nil {
+		panic(err)
+	}
 }
 
 func createAccount(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.SecretKeyer) {
@@ -89,7 +101,7 @@ func createAccount(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.S
 		panic("failed to build and sign transaction:" + err.Error())
 	}
 
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -129,7 +141,7 @@ func addSigner(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.Secre
 		panic("failed to build signed transaction:" + err.Error())
 	}
 
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -169,7 +181,7 @@ func addSigners(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.Secr
 		panic("failed to build signed transaction:" + err.Error())
 	}
 
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -210,7 +222,7 @@ func setThreshold(client *milon.Client, pkA *crypto.PublicKey, signerA crypto.Se
 		panic("failed to build signed transaction:" + err.Error())
 	}
 
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -251,7 +263,7 @@ func removeSigner(client *milon.Client, pkA *crypto.PublicKey, pkC *crypto.Publi
 		panic("failed to build signed transaction:" + err.Error())
 	}
 
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -293,7 +305,7 @@ func setSignerWeight(client *milon.Client, pkA *crypto.PublicKey, signerA crypto
 		panic("failed to build signed transaction:" + err.Error())
 	}
 
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}

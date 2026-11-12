@@ -378,10 +378,6 @@ func (p *Provider) serializeValue(serializer *postcard.Serializer, argName strin
 		return serializeFixedBytesValue(serializer, value, 20, "B160")
 	case "B256":
 		return serializeFixedBytesValue(serializer, value, 32, "B256")
-	case "ValidatorId", "PoolId":
-		// Rust newtypes ValidatorId([u8; 32]) and PoolId([u8; 32]) are
-		// #[serde(transparent)] over a fixed 32-byte array, not over u64.
-		return serializeFixedBytesValue(serializer, value, 32, argName)
 	default:
 		return fmt.Errorf("unsupported IDL type: %s", argName)
 	}
@@ -546,6 +542,12 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 			key, err := p.deserializeValue(keyType, body, offset)
 			if err != nil {
 				return nil, err
+			}
+			// vec/struct/tuple key types decode to slices or maps, which cannot
+			// be used as Go map keys; report the type instead of panicking.
+			keyTypeOf := reflect.TypeOf(key)
+			if keyTypeOf == nil || !keyTypeOf.Comparable() {
+				return nil, fmt.Errorf("map key type %s decodes to %T, which cannot be a Go map key", keyType, key)
 			}
 			value, err := p.deserializeValue(valueType, body, offset)
 			if err != nil {
@@ -760,11 +762,17 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		*offset++
 		return val, nil
 	case "u16":
-		val, err := decodeViewVarUint(body, offset)
-		return uint16(val), err
+		val, err := decodeBoundedUint(body, offset, math.MaxUint16, "u16")
+		if err != nil {
+			return nil, err
+		}
+		return uint16(val), nil
 	case "u32":
-		val, err := decodeViewVarUint(body, offset)
-		return uint32(val), err
+		val, err := decodeBoundedUint(body, offset, math.MaxUint32, "u32")
+		if err != nil {
+			return nil, err
+		}
+		return uint32(val), nil
 	case "u64", "Bitmap64", "Amount", "Epoch":
 		return decodeViewVarUint(body, offset)
 	case "u128":
@@ -779,11 +787,18 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		*offset++
 		return val, nil
 	case "i16":
-		val, err := decodeViewVarUint(body, offset)
-		return int16(val), err
+		// Signed integers are stored as two's complement of the unsigned width.
+		val, err := decodeBoundedUint(body, offset, math.MaxUint16, "i16")
+		if err != nil {
+			return nil, err
+		}
+		return int16(val), nil
 	case "i32":
-		val, err := decodeViewVarUint(body, offset)
-		return int32(val), err
+		val, err := decodeBoundedUint(body, offset, math.MaxUint32, "i32")
+		if err != nil {
+			return nil, err
+		}
+		return int32(val), nil
 	case "i64":
 		val, err := decodeViewVarUint(body, offset)
 		return int64(val), err
@@ -810,9 +825,6 @@ func (p *Provider) deserializeValue(idlTypeName string, body []byte, offset *int
 		return deserializeFixedBytesValue(body, offset, 20, "B160")
 	case "B256":
 		return deserializeFixedBytesValue(body, offset, 32, "B256")
-	case "ValidatorId", "PoolId":
-		// #[serde(transparent)] newtypes over [u8; 32]: fixed 32 bytes on wire.
-		return deserializeFixedBytesValue(body, offset, 32, idlTypeName)
 	default:
 		return nil, fmt.Errorf("unsupported IDL type: %s", idlTypeName)
 	}
@@ -997,6 +1009,35 @@ func (p *Provider) DecodeViewData(instructionName string, body []byte) (any, err
 	return values[0].Value, nil
 }
 
+// DecodeViewValue decodes the response body of the single-instruction view
+// RPC (chain method 15), which carries the plain return value with no
+// Vec<Result<..>> envelope.
+func (p *Provider) DecodeViewValue(instructionName string, body []byte) (any, error) {
+	instruction, err := p.GetInstructionByName(instructionName)
+	if err != nil {
+		return nil, err
+	}
+
+	if instruction.Kind != "view" {
+		return nil, fmt.Errorf("%s is not a view instruction (kind=%s)", instructionName, instruction.Kind)
+	}
+
+	returnType := strings.TrimSpace(instruction.Returns.Type)
+	if returnType == "" {
+		return nil, fmt.Errorf("IDL view method %s is missing returns.type", instructionName)
+	}
+
+	offset := 0
+	value, err := p.deserializeValue(returnType, body, &offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize view value: %w", err)
+	}
+	if offset != len(body) {
+		return nil, fmt.Errorf("%d trailing bytes after decoding view value", len(body)-offset)
+	}
+	return value, nil
+}
+
 func (p *Provider) DecodeDataByIDLTypeName(idlTypeName string, data []byte) (any, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("empty resource data")
@@ -1015,6 +1056,20 @@ func (p *Provider) DecodeDataByIDLTypeName(idlTypeName string, data []byte) (any
 	return value, nil
 }
 
+// decodeBoundedUint decodes a varint and rejects values that do not fit the
+// declared width. Truncating silently would turn a malformed or mismatched
+// payload into a plausible but wrong value.
+func decodeBoundedUint(input []byte, offset *int, max uint64, typeName string) (uint64, error) {
+	value, err := decodeViewVarUint(input, offset)
+	if err != nil {
+		return 0, err
+	}
+	if value > max {
+		return 0, fmt.Errorf("%s value %d exceeds the %s range (max %d)", typeName, value, typeName, max)
+	}
+	return value, nil
+}
+
 // decodeViewVarUint decodes a varint (uint64, at most 10 bytes).
 func decodeViewVarUint(input []byte, offset *int) (uint64, error) {
 	var value uint64
@@ -1027,6 +1082,12 @@ func decodeViewVarUint(input []byte, offset *int) (uint64, error) {
 
 		b := input[*offset]
 		*offset++
+
+		// The 10th group only has one meaningful bit: any higher bit would be
+		// shifted out of the 64-bit value and silently lost.
+		if shift == 63 && b&0x7f > 1 {
+			return 0, fmt.Errorf("varint overflows uint64")
+		}
 
 		value |= uint64(b&0x7f) << shift
 		if b&0x80 == 0 {

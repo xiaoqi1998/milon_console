@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
+
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/postcard"
@@ -21,6 +23,18 @@ type TxProofIdentifier [TxProofIdentifierLen]byte
 type TxId [TxIdLen]byte
 type RsHash [RsHashLen]byte
 type BlobHash [BlobHashLen]byte
+
+// Result variant indexes of the Rust enum the node encodes for every batch
+// item. Each Batch* RPC (6, 11, 16, 21, 26, 51, 56, 61, 151, 166) returns the
+// same outer envelope: postcard Vec<Result<O, ApiFailure>> where O is the single
+// method's response type (api/rpc/server/src/dispatch.rs::batch_map).
+//
+//	variant 0 (Ok)  followed by the O payload
+//	variant 1 (Err) followed by an ApiFailure payload
+const (
+	batchResultOk  uint32 = 0
+	batchResultErr uint32 = 1
+)
 
 const MIL = "M11on1111111111111111111111"
 
@@ -55,12 +69,15 @@ func (txId TxId) ToBase58() string {
 	return base58.Encode(txId[:])
 }
 
-//func (rsHash RsHash) String() string {
-//	return base58.Encode(rsHash[:])
-//}
-//func (blobHash BlobHash) String() string {
-//	return base58.Encode(blobHash[:])
-//}
+// String implements the Stringer interface, returning Base58 format
+func (rsHash RsHash) String() string {
+	return base58.Encode(rsHash[:])
+}
+
+// String implements the Stringer interface, returning Base58 format
+func (blobHash BlobHash) String() string {
+	return base58.Encode(blobHash[:])
+}
 
 func NewTxHashFromRelaxed(input any) (TxHash, error) {
 	var hash TxHash
@@ -138,20 +155,27 @@ func NewTxHashOrTxIdFromRelaxed(input any) ([]byte, error) {
 	}
 }
 
-// UnmarshalRsHashFromJSONArray parses an RsHash from a JSON number array ([]interface{}).
-// Each element is a float64 (JSON number → Go json.Decoder default) converted to byte.
+// UnmarshalRsHashFromJSONArray parses an RsHash from a JSON number array
+// ([]interface{}).
+// Every element must be an integer in [0, 255] and the array must hold exactly
+// RsHashLen bytes: silently skipping or truncating an element would produce a
+// hash that matches no resource.
 func UnmarshalRsHashFromJSONArray(raw []interface{}) (RsHash, error) {
 	var rsHash RsHash
+	if len(raw) != RsHashLen {
+		return rsHash, fmt.Errorf("rsHash byte array must have %d elements, got %d", RsHashLen, len(raw))
+	}
 	for i, b := range raw {
-		if i >= RsHashLen {
-			return rsHash, fmt.Errorf("rsHash byte array length exceeds %d", RsHashLen)
+		val, ok := b.(float64)
+		if !ok {
+			return rsHash, fmt.Errorf("rsHash[%d] is %T, expected a JSON number", i, b)
 		}
-		if val, ok := b.(float64); ok {
-			rsHash[i] = byte(val)
+		if val != math.Trunc(val) || val < 0 || val > math.MaxUint8 {
+			return rsHash, fmt.Errorf("rsHash[%d] = %v is not an unsigned byte value", i, val)
 		}
+		rsHash[i] = byte(val)
 	}
 	return rsHash, nil
-
 }
 
 // TypeTagWithData contains type_tag and value bytes

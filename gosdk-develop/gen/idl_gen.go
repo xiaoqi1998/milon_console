@@ -95,7 +95,7 @@ provider.IDL{
 					provider.Arg{
 						Name: "validator",
 						Role: "input",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 					provider.Arg{
 						Name: "controller",
@@ -390,7 +390,7 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "proposer_validator",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 				},
 				Kind: "struct",
@@ -613,7 +613,7 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "validator",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 					provider.StructField{
 						Name: "consensus_account",
@@ -673,11 +673,6 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "String",
 				TypeTag: 8566531010829758022,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "ValidatorId",
-				TypeTag: 14542707920151212342,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -778,17 +773,17 @@ provider.IDL{
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByAccount",
-				Type: "ValidatorId",
+				Type: "B256",
 				TypeTag: 14542707920151212342,
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByPubkey",
-				Type: "ValidatorId",
+				Type: "B256",
 				TypeTag: 14542707920151212342,
 			},
 			provider.Resource{
 				Name: "_ConsensusValidatorByBls",
-				Type: "ValidatorId",
+				Type: "B256",
 				TypeTag: 14542707920151212342,
 			},
 			provider.Resource{
@@ -1663,7 +1658,7 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 288,
-				Message: "Address {0:?} index 0 is not the FN-DSA-512 key that derives it",
+				Message: "Address {0:?} index 0 is not the public key that derives it",
 				Name: "SignerAddressKeyMismatch",
 			},
 		},
@@ -2495,13 +2490,18 @@ provider.IDL{
 					provider.Arg{
 						Name: "rules",
 						Role: "input",
-						Type: "GiftRules",
+						Type: "HongbaoRules",
+					},
+					provider.Arg{
+						Name: "message",
+						Role: "input",
+						Type: "option<String>",
 					},
 				},
-				Discriminator: 15225,
-				Handler: "create_equal_gift",
+				Discriminator: 56849,
+				Handler: "create_equal_hongbao",
 				Kind: "entry",
-				Name: "CreateEqualGift",
+				Name: "CreateEqualHongbao",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -2528,13 +2528,119 @@ provider.IDL{
 					provider.Arg{
 						Name: "rules",
 						Role: "input",
-						Type: "GiftRules",
+						Type: "HongbaoRules",
+					},
+					provider.Arg{
+						Name: "message",
+						Role: "input",
+						Type: "option<String>",
 					},
 				},
-				Discriminator: 4265,
-				Handler: "create_lucky_gift",
+				Discriminator: 32577,
+				Handler: "create_lucky_hongbao",
 				Kind: "entry",
-				Name: "CreateLuckyGift",
+				Name: "CreateLuckyHongbao",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "creator",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "token",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "total_amount",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "claim_count",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "allocation",
+						Role: "input",
+						Type: "HongbaoAllocation",
+					},
+					provider.Arg{
+						Name: "credential_ids",
+						Role: "input",
+						Type: "vec<String>",
+					},
+					provider.Arg{
+						Name: "expires_at_ms",
+						Role: "input",
+						Type: "option<u64>",
+					},
+					provider.Arg{
+						Name: "message",
+						Role: "input",
+						Type: "option<String>",
+					},
+				},
+				Discriminator: 38296,
+				Handler: "create_credential_hongbao",
+				Kind: "entry",
+				Name: "CreateCredentialHongbao",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "creator",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "token",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "total_amount",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "claim_count",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "allocation",
+						Role: "input",
+						Type: "HongbaoAllocation",
+					},
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "min_amount",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "expires_at_ms",
+						Role: "input",
+						Type: "option<u64>",
+					},
+					provider.Arg{
+						Name: "message",
+						Role: "input",
+						Type: "option<String>",
+					},
+				},
+				Discriminator: 18018,
+				Handler: "create_sft_hongbao",
+				Kind: "entry",
+				Name: "CreateSftHongbao",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -2544,42 +2650,42 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 5582,
-				Handler: "claim_gift",
+				Discriminator: 46748,
+				Handler: "claim_hongbao",
 				Kind: "entry",
-				Name: "ClaimGift",
+				Name: "ClaimHongbao",
 				Sponsor: true,
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 44430,
-				Handler: "refund_gift",
+				Discriminator: 51292,
+				Handler: "refund_hongbao",
 				Kind: "entry",
-				Name: "RefundGift",
+				Name: "RefundHongbao",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 27946,
-				Handler: "run_gift_cleanup",
+				Discriminator: 43410,
+				Handler: "run_hongbao_cleanup",
 				Kind: "entry",
-				Name: "RunGiftCleanup",
+				Name: "RunHongbaoCleanup",
 				Sponsor: true,
 			},
 			provider.Instruction{
@@ -2664,39 +2770,55 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 11780,
-				Handler: "gift_info",
+				Discriminator: 30775,
+				Handler: "hongbao_message",
 				Kind: "view",
-				Name: "GiftInfo",
+				Name: "HongbaoMessage",
 				Returns: provider.ReturnValue{
-					Type: "GiftState",
+					Type: "String",
 				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 57835,
-				Handler: "gift_settlement",
+				Discriminator: 4156,
+				Handler: "hongbao_info",
 				Kind: "view",
-				Name: "GiftSettlement",
+				Name: "HongbaoInfo",
 				Returns: provider.ReturnValue{
-					Type: "GiftSettlement",
+					Type: "HongbaoState",
 				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "gift_id",
+						Name: "hongbao_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 56611,
+				Handler: "hongbao_settlement",
+				Kind: "view",
+				Name: "HongbaoSettlement",
+				Returns: provider.ReturnValue{
+					Type: "HongbaoSettlement",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "hongbao_id",
 						Role: "input",
 						Type: "Address",
 					},
@@ -2706,10 +2828,10 @@ provider.IDL{
 						Type: "Address",
 					},
 				},
-				Discriminator: 8017,
-				Handler: "can_claim_gift",
+				Discriminator: 5289,
+				Handler: "can_claim_hongbao",
 				Kind: "view",
-				Name: "CanClaimGift",
+				Name: "CanClaimHongbao",
 				Returns: provider.ReturnValue{
 					Type: "bool",
 				},
@@ -2826,8 +2948,8 @@ provider.IDL{
 					},
 				},
 				Kind: "enum",
-				Name: "GiftAllocation",
-				TypeTag: 12211908797870093821,
+				Name: "HongbaoAllocation",
+				TypeTag: 12559390919027217581,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -2851,10 +2973,34 @@ provider.IDL{
 							},
 						},
 					},
+					provider.EnumVariant{
+						Name: "SftHolding",
+						Kind: "struct",
+						Fields: []provider.StructField{
+							provider.StructField{
+								Name: "sft",
+								Type: "Address",
+							},
+							provider.StructField{
+								Name: "min_amount",
+								Type: "u64",
+							},
+						},
+					},
+					provider.EnumVariant{
+						Name: "Credentials",
+						Kind: "struct",
+						Fields: []provider.StructField{
+							provider.StructField{
+								Name: "credential_ids",
+								Type: "vec<String>",
+							},
+						},
+					},
 				},
 				Kind: "enum",
-				Name: "GiftEligibility",
-				TypeTag: 8046041254037002544,
+				Name: "HongbaoEligibility",
+				TypeTag: 7147486567772066656,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -2872,7 +3018,7 @@ provider.IDL{
 					},
 				},
 				Kind: "struct",
-				Name: "GiftRules",
+				Name: "HongbaoRules",
 				TypeTag: 15766145922554532178,
 			},
 			provider.IDLType{
@@ -2882,7 +3028,7 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.StructField{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Type: "Address",
 					},
 					provider.StructField{
@@ -2911,11 +3057,11 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "allocation",
-						Type: "GiftAllocation",
+						Type: "HongbaoAllocation",
 					},
 					provider.StructField{
 						Name: "eligibility",
-						Type: "GiftEligibility",
+						Type: "HongbaoEligibility",
 					},
 					provider.StructField{
 						Name: "claimed_recipients",
@@ -2923,7 +3069,7 @@ provider.IDL{
 					},
 				},
 				Kind: "struct",
-				Name: "GiftState",
+				Name: "HongbaoState",
 				TypeTag: 8047344484983905260,
 			},
 			provider.IDLType{
@@ -2946,7 +3092,7 @@ provider.IDL{
 					},
 				},
 				Kind: "struct",
-				Name: "GiftSettlement",
+				Name: "HongbaoSettlement",
 				TypeTag: 373282345846871664,
 			},
 			provider.IDLType{
@@ -2961,7 +3107,7 @@ provider.IDL{
 					},
 				},
 				Kind: "struct",
-				Name: "GiftCleanupQueueState",
+				Name: "HongbaoCleanupQueueState",
 				TypeTag: 5496675755488506181,
 			},
 			provider.IDLType{
@@ -3143,42 +3289,47 @@ provider.IDL{
 				TypeTag: 5563585020063213298,
 			},
 			provider.Resource{
-				Name: "_Gift",
-				Type: "GiftState",
+				Name: "_HongbaoMessage",
+				Type: "String",
+				TypeTag: 8566531010829758022,
+			},
+			provider.Resource{
+				Name: "_Hongbao",
+				Type: "HongbaoState",
 				TypeTag: 8047344484983905260,
 			},
 			provider.Resource{
-				Name: "_GiftUsed",
+				Name: "_HongbaoUsed",
 				Type: "B256",
 				TypeTag: 12016729314829497160,
 			},
 			provider.Resource{
-				Name: "_GiftClaimed",
+				Name: "_HongbaoClaimed",
 				Type: "bool",
 				TypeTag: 14785269867199075517,
 			},
 			provider.Resource{
-				Name: "_GiftClaimIndex",
+				Name: "_HongbaoClaimIndex",
 				Type: "Address",
 				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
-				Name: "_GiftSettlement",
-				Type: "GiftSettlement",
+				Name: "_HongbaoSettlement",
+				Type: "HongbaoSettlement",
 				TypeTag: 373282345846871664,
 			},
 			provider.Resource{
-				Name: "_GiftCleanupQueue",
-				Type: "GiftCleanupQueueState",
+				Name: "_HongbaoCleanupQueue",
+				Type: "HongbaoCleanupQueueState",
 				TypeTag: 5496675755488506181,
 			},
 			provider.Resource{
-				Name: "_GiftCleanupNext",
+				Name: "_HongbaoCleanupNext",
 				Type: "Address",
 				TypeTag: 17438174819379414968,
 			},
 			provider.Resource{
-				Name: "_GiftClaimApp",
+				Name: "_HongbaoClaimApp",
 				Type: "u8",
 				TypeTag: 631772817358541784,
 			},
@@ -3187,13 +3338,18 @@ provider.IDL{
 				Type: "VestingState",
 				TypeTag: 5151897875976358800,
 			},
+			provider.Resource{
+				Name: "_TokenVesting",
+				Type: "Address",
+				TypeTag: 17438174819379414968,
+			},
 		},
 		Events: []provider.Event{
 			provider.Event{
-				Name: "GiftCreated",
+				Name: "HongbaoCreated",
 				Fields: []provider.EventField{
 					provider.EventField{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Type: "Address",
 						Indexed: true,
 					},
@@ -3412,58 +3568,58 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 524,
-				Message: "gift not found: {0:?}",
-				Name: "GiftNotFound",
+				Message: "hongbao not found: {0:?}",
+				Name: "HongbaoNotFound",
 			},
 			provider.ErrorDef{
 				Code: 525,
-				Message: "gift id already used: {0:?}",
-				Name: "GiftAlreadyExists",
+				Message: "hongbao id already used: {0:?}",
+				Name: "HongbaoAlreadyExists",
 			},
 			provider.ErrorDef{
 				Code: 526,
-				Message: "gift expired: {0:?}",
-				Name: "GiftExpired",
+				Message: "hongbao expired: {0:?}",
+				Name: "HongbaoExpired",
 			},
 			provider.ErrorDef{
 				Code: 527,
-				Message: "gift is not expired: {0:?}",
-				Name: "GiftNotExpired",
+				Message: "hongbao is not expired: {0:?}",
+				Name: "HongbaoNotExpired",
 			},
 			provider.ErrorDef{
 				Code: 528,
-				Message: "gift is still active: {0:?}",
-				Name: "GiftStillActive",
+				Message: "hongbao is still active: {0:?}",
+				Name: "HongbaoStillActive",
 			},
 			provider.ErrorDef{
 				Code: 529,
-				Message: "invalid gift definition: {0}",
-				Name: "InvalidGiftDefinition",
+				Message: "invalid hongbao definition: {0}",
+				Name: "InvalidHongbaoDefinition",
 			},
 			provider.ErrorDef{
 				Code: 530,
-				Message: "gift claimant is not eligible: {0:?}",
-				Name: "GiftNotEligible",
+				Message: "hongbao claimant is not eligible: {0:?}",
+				Name: "HongbaoNotEligible",
 			},
 			provider.ErrorDef{
 				Code: 531,
-				Message: "gift already claimed by: {0:?}",
-				Name: "GiftAlreadyClaimed",
+				Message: "hongbao already claimed by: {0:?}",
+				Name: "HongbaoAlreadyClaimed",
 			},
 			provider.ErrorDef{
 				Code: 532,
-				Message: "gift escrow invariant violated: {0:?}",
-				Name: "GiftEscrowInvariantViolation",
+				Message: "hongbao escrow invariant violated: {0:?}",
+				Name: "HongbaoEscrowInvariantViolation",
 			},
 			provider.ErrorDef{
 				Code: 533,
 				Message: "secure randomness unavailable: {0}",
-				Name: "GiftRandomnessUnavailable",
+				Name: "HongbaoRandomnessUnavailable",
 			},
 			provider.ErrorDef{
 				Code: 534,
-				Message: "gift cleanup wake rejected",
-				Name: "GiftCleanupWakeRejected",
+				Message: "hongbao cleanup wake rejected",
+				Name: "HongbaoCleanupWakeRejected",
 			},
 			provider.ErrorDef{
 				Code: 535,
@@ -3510,6 +3666,11 @@ provider.IDL{
 				Message: "vesting escrow invariant violated: {0:?}",
 				Name: "VestingEscrowInvariantViolation",
 			},
+			provider.ErrorDef{
+				Code: 544,
+				Message: "Transparent SftError",
+				Name: "SftError",
+			},
 		},
 		Constants: []provider.Constant{
 			provider.Constant{
@@ -3543,32 +3704,42 @@ provider.IDL{
 				Value: "1_000_000 * 1_000_000",
 			},
 			provider.Constant{
-				Name: "MAX_GIFT_CLAIMS",
+				Name: "MAX_HONGBAO_CLAIMS",
 				Type: "u64",
 				Value: 1024,
 			},
 			provider.Constant{
-				Name: "GIFT_FEE_PER_CLAIM",
+				Name: "HONGBAO_FEE_PER_CLAIM",
 				Type: "u64",
 				Value: 100000,
 			},
 			provider.Constant{
-				Name: "MAX_GIFT_RECIPIENTS",
+				Name: "MAX_HONGBAO_RECIPIENTS",
 				Type: "usize",
 				Value: 32,
 			},
 			provider.Constant{
-				Name: "DEFAULT_GIFT_EXPIRATION_MS",
+				Name: "MAX_HONGBAO_CREDENTIALS",
+				Type: "usize",
+				Value: 8,
+			},
+			provider.Constant{
+				Name: "DEFAULT_HONGBAO_EXPIRATION_MS",
 				Type: "u64",
 				Value: 8.64e+07,
 			},
 			provider.Constant{
-				Name: "GIFT_CLEANUP_BATCH",
+				Name: "HONGBAO_CLEANUP_BATCH",
 				Type: "u64",
 				Value: 64,
 			},
 			provider.Constant{
-				Name: "GIFT_CLEANUP_INTERVAL_MS",
+				Name: "MAX_HONGBAO_MESSAGE_BYTES",
+				Type: "usize",
+				Value: 64,
+			},
+			provider.Constant{
+				Name: "HONGBAO_CLEANUP_INTERVAL_MS",
 				Type: "u64",
 				Value: 1000,
 			},
@@ -3634,7 +3805,7 @@ provider.IDL{
 				Kind: "entry",
 				Name: "CreatePool",
 				Returns: provider.ReturnValue{
-					Type: "PoolId",
+					Type: "B256",
 				},
 			},
 			provider.Instruction{
@@ -3647,7 +3818,82 @@ provider.IDL{
 					provider.Arg{
 						Name: "pool_id",
 						Role: "input",
-						Type: "PoolId",
+						Type: "B256",
+					},
+				},
+				Discriminator: 55077,
+				Handler: "pause_pool",
+				Kind: "entry",
+				Name: "PausePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 55138,
+				Handler: "resume_pool",
+				Kind: "entry",
+				Name: "ResumePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 40303,
+				Handler: "close_pool",
+				Kind: "entry",
+				Name: "ClosePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 51163,
+				Handler: "sweep_pool_residual",
+				Kind: "entry",
+				Name: "SweepPoolResidual",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "B256",
 					},
 					provider.Arg{
 						Name: "amount",
@@ -3659,9 +3905,6 @@ provider.IDL{
 				Handler: "stake_into_pool",
 				Kind: "entry",
 				Name: "StakeIntoPool",
-				Returns: provider.ReturnValue{
-					Type: "B256",
-				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -3671,38 +3914,20 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "stake_id",
-						Role: "input",
-						Type: "B256",
-					},
-				},
-				Discriminator: 27835,
-				Handler: "cancel_stake_by_id",
-				Kind: "entry",
-				Name: "CancelStakeById",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "stake_id",
+						Name: "pool_id",
 						Role: "input",
 						Type: "B256",
 					},
 					provider.Arg{
-						Name: "shares",
+						Name: "effective_cycle",
 						Role: "input",
 						Type: "u64",
 					},
 				},
-				Discriminator: 27517,
-				Handler: "request_unstake_by_id",
+				Discriminator: 26203,
+				Handler: "cancel_pending_stake",
 				Kind: "entry",
-				Name: "RequestUnstakeById",
+				Name: "CancelPendingStake",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -3712,15 +3937,20 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "stake_id",
+						Name: "pool_id",
 						Role: "input",
 						Type: "B256",
 					},
+					provider.Arg{
+						Name: "amount",
+						Role: "input",
+						Type: "u64",
+					},
 				},
-				Discriminator: 44602,
-				Handler: "cancel_unstake_by_id",
+				Discriminator: 34861,
+				Handler: "request_unstake",
 				Kind: "entry",
-				Name: "CancelUnstakeById",
+				Name: "RequestUnstake",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -3730,15 +3960,59 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "stake_id",
+						Name: "pool_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "effective_cycle",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 53570,
+				Handler: "cancel_unstake",
+				Kind: "entry",
+				Name: "CancelUnstake",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
 						Role: "input",
 						Type: "B256",
 					},
 				},
-				Discriminator: 50003,
-				Handler: "claim_rewards_by_id",
+				Discriminator: 35421,
+				Handler: "claim_principal",
 				Kind: "entry",
-				Name: "ClaimRewardsById",
+				Name: "ClaimPrincipal",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 49863,
+				Handler: "claim_rewards",
+				Kind: "entry",
+				Name: "ClaimRewards",
 				Returns: provider.ReturnValue{
 					Type: "u64",
 				},
@@ -3753,7 +4027,7 @@ provider.IDL{
 					provider.Arg{
 						Name: "pool_id",
 						Role: "input",
-						Type: "PoolId",
+						Type: "B256",
 					},
 					provider.Arg{
 						Name: "amount",
@@ -3769,25 +4043,23 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "owner",
+						Name: "recipient",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
 						Name: "pool_id",
 						Role: "input",
-						Type: "PoolId",
-					},
-					provider.Arg{
-						Name: "config",
-						Role: "input",
-						Type: "PoolRewardConfig",
+						Type: "B256",
 					},
 				},
-				Discriminator: 37925,
-				Handler: "request_pool_reward_config",
+				Discriminator: 39476,
+				Handler: "claim_commission",
 				Kind: "entry",
-				Name: "RequestPoolRewardConfig",
+				Name: "ClaimCommission",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -3799,7 +4071,7 @@ provider.IDL{
 					provider.Arg{
 						Name: "pool_id",
 						Role: "input",
-						Type: "PoolId",
+						Type: "B256",
 					},
 				},
 				Discriminator: 17449,
@@ -3820,169 +4092,25 @@ provider.IDL{
 					provider.Arg{
 						Name: "pool_id",
 						Role: "input",
-						Type: "PoolId",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "config",
+						Role: "input",
+						Type: "PoolRewardConfig",
 					},
 				},
-				Discriminator: 55077,
-				Handler: "pause_pool",
+				Discriminator: 37925,
+				Handler: "request_pool_reward_config",
 				Kind: "entry",
-				Name: "PausePool",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 55138,
-				Handler: "resume_pool",
-				Kind: "entry",
-				Name: "ResumePool",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 22554,
-				Handler: "freeze_pool",
-				Kind: "entry",
-				Name: "FreezePool",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 43503,
-				Handler: "unfreeze_pool",
-				Kind: "entry",
-				Name: "UnfreezePool",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 40303,
-				Handler: "close_pool",
-				Kind: "entry",
-				Name: "ClosePool",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 51163,
-				Handler: "sweep_pool_residual",
-				Kind: "entry",
-				Name: "SweepPoolResidual",
-				Returns: provider.ReturnValue{
-					Type: "u64",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "stake_asset",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "reward_asset",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "reward_per_validator",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 48796,
-				Handler: "configure_validator_reward_policy",
-				Kind: "entry",
-				Name: "ConfigureValidatorRewardPolicy",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "funder",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "stake_asset",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "reward_asset",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "amount",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 55411,
-				Handler: "fund_validator_reward_policy",
-				Kind: "entry",
-				Name: "FundValidatorRewardPolicy",
+				Name: "RequestPoolRewardConfig",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
 						Name: "pool_id",
 						Role: "input",
-						Type: "PoolId",
+						Type: "B256",
 					},
 				},
 				Discriminator: 60310,
@@ -3996,120 +4124,9 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "stake_id",
+						Name: "pool_id",
 						Role: "input",
 						Type: "B256",
-					},
-				},
-				Discriminator: 56858,
-				Handler: "stake_by_id",
-				Kind: "view",
-				Name: "StakeById",
-				Returns: provider.ReturnValue{
-					Type: "Stake",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 309,
-				Handler: "pool_treasury_balance",
-				Kind: "view",
-				Name: "PoolTreasuryBalance",
-				Returns: provider.ReturnValue{
-					Type: "u64",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 28539,
-				Handler: "stake_ids",
-				Kind: "view",
-				Name: "StakeIds",
-				Returns: provider.ReturnValue{
-					Type: "vec<B256>",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 8203,
-				Handler: "stake_position_by_pool",
-				Kind: "view",
-				Name: "StakePositionByPool",
-				Returns: provider.ReturnValue{
-					Type: "PoolStakePosition",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "owner",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 64591,
-				Handler: "pending_stakes",
-				Kind: "view",
-				Name: "PendingStakes",
-				Returns: provider.ReturnValue{
-					Type: "vec<B256>",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
-					},
-				},
-				Discriminator: 32423,
-				Handler: "total_shares",
-				Kind: "view",
-				Name: "TotalShares",
-				Returns: provider.ReturnValue{
-					Type: "u64",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "pool_id",
-						Role: "input",
-						Type: "PoolId",
 					},
 				},
 				Discriminator: 11487,
@@ -4123,48 +4140,59 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
 						Name: "pool_id",
 						Role: "input",
-						Type: "PoolId",
+						Type: "B256",
 					},
 				},
-				Discriminator: 20540,
-				Handler: "reward_index",
+				Discriminator: 65179,
+				Handler: "position",
 				Kind: "view",
-				Name: "RewardIndex",
+				Name: "Position",
 				Returns: provider.ReturnValue{
-					Type: "u128",
+					Type: "Position",
 				},
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "stake_asset",
+						Name: "pool_id",
 						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "reward_asset",
-						Role: "input",
-						Type: "Address",
+						Type: "B256",
 					},
 				},
-				Discriminator: 16051,
-				Handler: "validator_reward_policy",
+				Discriminator: 309,
+				Handler: "pool_treasury_balance",
 				Kind: "view",
-				Name: "ValidatorRewardPolicy",
+				Name: "PoolTreasuryBalance",
 				Returns: provider.ReturnValue{
-					Type: "ValidatorRewardPolicy",
+					Type: "u64",
 				},
 			},
 			provider.Instruction{
-				Args: nil,
-				Discriminator: 51436,
-				Handler: "validator_reward_policy_configured",
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "recipient",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 51494,
+				Handler: "commission_balance",
 				Kind: "view",
-				Name: "ValidatorRewardPolicyConfigured",
+				Name: "CommissionBalance",
 				Returns: provider.ReturnValue{
-					Type: "bool",
+					Type: "u64",
 				},
 			},
 		},
@@ -4182,11 +4210,6 @@ provider.IDL{
 						Fields: nil,
 					},
 					provider.EnumVariant{
-						Name: "Frozen",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
 						Name: "Closing",
 						Kind: "unit",
 						Fields: nil,
@@ -4199,24 +4222,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "PoolStatus",
-				TypeTag: 17680148924642691372,
-			},
-			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
-						Name: "Disabled",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "System",
-						Kind: "unit",
-						Fields: nil,
-					},
-				},
-				Kind: "enum",
-				Name: "SlashingMode",
-				TypeTag: 6613645985445293540,
+				TypeTag: 11829355056571301769,
 			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
@@ -4256,7 +4262,7 @@ provider.IDL{
 				},
 				Kind: "enum",
 				Name: "CycleBasis",
-				TypeTag: 745494636739994664,
+				TypeTag: 7099687035361895509,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4273,17 +4279,215 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "reward_distribution_delay",
-						Type: "u64",
-					},
-					provider.StructField{
 						Name: "commission_change_delay",
 						Type: "u64",
 					},
 				},
 				Kind: "struct",
 				Name: "PoolCycleConfig",
-				TypeTag: 5284237065249288842,
+				TypeTag: 2586632331894924797,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "manage_status",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "manage_rewards",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "PoolAppPermissions",
+				TypeTag: 6213321200983040698,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "pool_id",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "owner",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "manager_app",
+						Type: "option<u8>",
+					},
+					provider.StructField{
+						Name: "app_permissions",
+						Type: "PoolAppPermissions",
+					},
+					provider.StructField{
+						Name: "stake_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "reward_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "cycle_config",
+						Type: "PoolCycleConfig",
+					},
+				},
+				Kind: "struct",
+				Name: "PoolDefinition",
+				TypeTag: 13417802696927158930,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "status",
+						Type: "PoolStatus",
+					},
+					provider.StructField{
+						Name: "closing_cycle",
+						Type: "option<u64>",
+					},
+				},
+				Kind: "struct",
+				Name: "PoolControl",
+				TypeTag: 10399656449715050992,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "pool_id",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "owner",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "manager_app",
+						Type: "option<u8>",
+					},
+					provider.StructField{
+						Name: "app_permissions",
+						Type: "PoolAppPermissions",
+					},
+					provider.StructField{
+						Name: "stake_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "reward_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "cycle_config",
+						Type: "PoolCycleConfig",
+					},
+					provider.StructField{
+						Name: "status",
+						Type: "PoolStatus",
+					},
+					provider.StructField{
+						Name: "active_principal",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "reward_index",
+						Type: "u128",
+					},
+					provider.StructField{
+						Name: "reward_config",
+						Type: "PoolRewardConfig",
+					},
+					provider.StructField{
+						Name: "held_principal",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "pending_principal",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "reward_liability",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "commission_liability",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "position_count",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "settlement_cursor",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "Pool",
+				TypeTag: 15051713596546630303,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "cycle",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "PendingAmount",
+				TypeTag: 11270933695585623483,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "owner",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "pool_id",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "active_principal",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "reward_checkpoint",
+						Type: "u128",
+					},
+					provider.StructField{
+						Name: "reward_fraction",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "claimable_rewards",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "claimable_principal",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "deposits",
+						Type: "vec<PendingAmount>",
+					},
+					provider.StructField{
+						Name: "exits",
+						Type: "vec<PendingAmount>",
+					},
+					provider.StructField{
+						Name: "tracked",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "Position",
+				TypeTag: 877714062706965335,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4298,7 +4502,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "PoolRewardConfig",
-				TypeTag: 1255043119785956927,
+				TypeTag: 12365982797053730650,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4307,8 +4511,8 @@ provider.IDL{
 						Type: "PoolRewardConfig",
 					},
 					provider.StructField{
-						Name: "requested_cycle",
-						Type: "u64",
+						Name: "pending",
+						Type: "option<PoolRewardConfig>",
 					},
 					provider.StructField{
 						Name: "effective_cycle",
@@ -4316,49 +4520,17 @@ provider.IDL{
 					},
 				},
 				Kind: "struct",
-				Name: "PendingRewardConfig",
-				TypeTag: 865817419697605902,
+				Name: "RewardTerms",
+				TypeTag: 2910991785752384865,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "pool_id",
-						Type: "PoolId",
-					},
-					provider.StructField{
-						Name: "owner",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "stake_asset",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "reward_asset",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "status",
-						Type: "PoolStatus",
-					},
-					provider.StructField{
-						Name: "slashing_mode",
-						Type: "SlashingMode",
-					},
-					provider.StructField{
-						Name: "cycle_config",
-						Type: "PoolCycleConfig",
-					},
-					provider.StructField{
-						Name: "total_shares",
+						Name: "cursor",
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "principal_assets",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "held_principal",
+						Name: "active_principal",
 						Type: "u64",
 					},
 					provider.StructField{
@@ -4367,191 +4539,12 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "scaled_reward_remainder",
-						Type: "u128",
-					},
-					provider.StructField{
-						Name: "reward_config",
-						Type: "PoolRewardConfig",
-					},
-					provider.StructField{
-						Name: "pending_reward_config",
-						Type: "option<PendingRewardConfig>",
-					},
-					provider.StructField{
-						Name: "claimable_commission",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "reward_liability",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "settlement_cursor",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "pending_stake_count",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "pending_unstake_count",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "closing_cycle",
-						Type: "option<u64>",
-					},
-					provider.StructField{
-						Name: "scheduled_cycles",
-						Type: "vec<u64>",
-					},
-				},
-				Kind: "struct",
-				Name: "Pool",
-				TypeTag: 9857364790664378562,
-			},
-			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
-						Name: "Pending",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Active",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Closed",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Cancelled",
-						Kind: "unit",
-						Fields: nil,
-					},
-				},
-				Kind: "enum",
-				Name: "StakeStatus",
-				TypeTag: 6400687400352756128,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "shares",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "submitted_cycle",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "effective_cycle",
 						Type: "u64",
 					},
 				},
 				Kind: "struct",
-				Name: "PendingUnstake",
-				TypeTag: 18398151268513761442,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "stake_id",
-						Type: "B256",
-					},
-					provider.StructField{
-						Name: "owner",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "pool_id",
-						Type: "PoolId",
-					},
-					provider.StructField{
-						Name: "shares",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "principal",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "reward_debt",
-						Type: "u128",
-					},
-					provider.StructField{
-						Name: "claimable_rewards",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "submitted_cycle",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "effective_cycle",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "status",
-						Type: "StakeStatus",
-					},
-					provider.StructField{
-						Name: "pending_unstake",
-						Type: "option<PendingUnstake>",
-					},
-				},
-				Kind: "struct",
-				Name: "Stake",
-				TypeTag: 1411630656601401662,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "owner",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "pool_id",
-						Type: "PoolId",
-					},
-					provider.StructField{
-						Name: "shares",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "reward_debt",
-						Type: "u128",
-					},
-					provider.StructField{
-						Name: "claimable_rewards",
-						Type: "u64",
-					},
-				},
-				Kind: "struct",
-				Name: "PoolStakePosition",
-				TypeTag: 5641062029386042771,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "stake_shares",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "unstake_shares",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "reward",
-						Type: "u64",
-					},
-				},
-				Kind: "struct",
-				Name: "CycleBucket",
-				TypeTag: 11951289580227596372,
+				Name: "PoolIndex",
+				TypeTag: 330247502269344070,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4565,91 +4558,8 @@ provider.IDL{
 					},
 				},
 				Kind: "struct",
-				Name: "CycleRecord",
-				TypeTag: 3289233420045365543,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "pool_id",
-						Type: "PoolId",
-					},
-					provider.StructField{
-						Name: "amount",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "effective_cycle",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "evidence_id",
-						Type: "B256",
-					},
-				},
-				Kind: "struct",
-				Name: "SlashReceipt",
-				TypeTag: 11645205427099173315,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "ids",
-						Type: "vec<B256>",
-					},
-				},
-				Kind: "struct",
-				Name: "StakeIds",
-				TypeTag: 15418512581460945264,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "stake_asset",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "reward_asset",
-						Type: "Address",
-					},
-					provider.StructField{
-						Name: "reward_per_validator",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "available",
-						Type: "u64",
-					},
-				},
-				Kind: "struct",
-				Name: "ValidatorRewardPolicy",
-				TypeTag: 11159178674765679005,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "assets",
-						Type: "vec<tuple<Address,Address>>",
-					},
-				},
-				Kind: "struct",
-				Name: "PolicyAssets",
-				TypeTag: 5099006009109120273,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "initialized",
-						Type: "bool",
-					},
-					provider.StructField{
-						Name: "last_settled_epoch",
-						Type: "u64",
-					},
-				},
-				Kind: "struct",
-				Name: "RewardCursor",
-				TypeTag: 3176201935640261171,
+				Name: "Checkpoint",
+				TypeTag: 1244994445814999482,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -4660,11 +4570,6 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "B256",
 				TypeTag: 12016729314829497160,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "PoolId",
-				TypeTag: 10033863623731171282,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -4681,76 +4586,97 @@ provider.IDL{
 				Name: "u64",
 				TypeTag: 5563585020063213298,
 			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u8",
+				TypeTag: 631772817358541784,
+			},
 		},
 		Resources: []provider.Resource{
 			provider.Resource{
-				Name: "_CorePool",
-				Type: "Pool",
-				TypeTag: 9857364790664378562,
+				Name: "_Definition",
+				Type: "PoolDefinition",
+				TypeTag: 13417802696927158930,
 			},
 			provider.Resource{
-				Name: "_CoreStake",
-				Type: "Stake",
-				TypeTag: 1411630656601401662,
+				Name: "_Control",
+				Type: "PoolControl",
+				TypeTag: 10399656449715050992,
 			},
 			provider.Resource{
-				Name: "_CoreStakeIdsByOwner",
-				Type: "StakeIds",
-				TypeTag: 15418512581460945264,
+				Name: "_Held",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 			provider.Resource{
-				Name: "_CoreStakeIdsByPool",
-				Type: "StakeIds",
-				TypeTag: 15418512581460945264,
+				Name: "_Pending",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 			provider.Resource{
-				Name: "_CoreSlashEvidence",
-				Type: "bool",
-				TypeTag: 14785269867199075517,
+				Name: "_Position",
+				Type: "Position",
+				TypeTag: 877714062706965335,
 			},
 			provider.Resource{
-				Name: "_CoreCycleBucket",
-				Type: "CycleBucket",
-				TypeTag: 11951289580227596372,
+				Name: "_Positions",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 			provider.Resource{
-				Name: "_CoreCycleRecord",
-				Type: "CycleRecord",
-				TypeTag: 3289233420045365543,
+				Name: "_Terms",
+				Type: "RewardTerms",
+				TypeTag: 2910991785752384865,
 			},
 			provider.Resource{
-				Name: "_ValidatorRewardPolicy",
-				Type: "ValidatorRewardPolicy",
-				TypeTag: 11159178674765679005,
+				Name: "_Rewards",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 			provider.Resource{
-				Name: "_PolicyAssets",
-				Type: "PolicyAssets",
-				TypeTag: 5099006009109120273,
+				Name: "_Commission",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
 			},
 			provider.Resource{
-				Name: "_RewardCursor",
-				Type: "RewardCursor",
-				TypeTag: 3176201935640261171,
+				Name: "_CommissionTotal",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Index",
+				Type: "PoolIndex",
+				TypeTag: 330247502269344070,
+			},
+			provider.Resource{
+				Name: "_Deposits",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Exits",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Checkpoint",
+				Type: "Checkpoint",
+				TypeTag: 1244994445814999482,
 			},
 		},
 		Events: []provider.Event{
 			provider.Event{
-				Name: "StakeCreated",
+				Name: "StakeDeposited",
 				Fields: []provider.EventField{
 					provider.EventField{
 						Name: "pool_id",
-						Type: "PoolId",
+						Type: "B256",
 						Indexed: true,
 					},
 					provider.EventField{
 						Name: "owner",
 						Type: "Address",
 						Indexed: true,
-					},
-					provider.EventField{
-						Name: "stake_id",
-						Type: "B256",
 					},
 					provider.EventField{
 						Name: "amount",
@@ -4761,14 +4687,78 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				TypeTag: 7761322164556565014,
+				TypeTag: 9725700363876492253,
+			},
+			provider.Event{
+				Name: "UnstakeRequested",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "B256",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "owner",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "effective_cycle",
+						Type: "u64",
+					},
+				},
+				TypeTag: 13504388361024046117,
+			},
+			provider.Event{
+				Name: "PrincipalClaimed",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "B256",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "owner",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 15535743807254057191,
+			},
+			provider.Event{
+				Name: "RewardsClaimed",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "pool_id",
+						Type: "B256",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "owner",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 18148718922460551977,
 			},
 			provider.Event{
 				Name: "PoolRewardConfigChangeRequested",
 				Fields: []provider.EventField{
 					provider.EventField{
 						Name: "pool_id",
-						Type: "PoolId",
+						Type: "B256",
 						Indexed: true,
 					},
 					provider.EventField{
@@ -4791,7 +4781,7 @@ provider.IDL{
 				Fields: []provider.EventField{
 					provider.EventField{
 						Name: "pool_id",
-						Type: "PoolId",
+						Type: "B256",
 						Indexed: true,
 					},
 					provider.EventField{
@@ -4810,7 +4800,7 @@ provider.IDL{
 				Fields: []provider.EventField{
 					provider.EventField{
 						Name: "pool_id",
-						Type: "PoolId",
+						Type: "B256",
 						Indexed: true,
 					},
 					provider.EventField{
@@ -4833,7 +4823,7 @@ provider.IDL{
 				Fields: []provider.EventField{
 					provider.EventField{
 						Name: "pool_id",
-						Type: "PoolId",
+						Type: "B256",
 						Indexed: true,
 					},
 				},
@@ -4844,7 +4834,7 @@ provider.IDL{
 				Fields: []provider.EventField{
 					provider.EventField{
 						Name: "pool_id",
-						Type: "PoolId",
+						Type: "B256",
 						Indexed: true,
 					},
 					provider.EventField{
@@ -4852,69 +4842,36 @@ provider.IDL{
 						Type: "Address",
 					},
 					provider.EventField{
-						Name: "amount",
+						Name: "reward_amount",
 						Type: "u64",
 					},
 				},
 				TypeTag: 249705490704053362,
 			},
-			provider.Event{
-				Name: "PoolSlashed",
-				Fields: []provider.EventField{
-					provider.EventField{
-						Name: "pool_id",
-						Type: "PoolId",
-						Indexed: true,
-					},
-					provider.EventField{
-						Name: "amount",
-						Type: "u64",
-					},
-					provider.EventField{
-						Name: "effective_cycle",
-						Type: "u64",
-					},
-					provider.EventField{
-						Name: "evidence_id",
-						Type: "B256",
-					},
-				},
-				TypeTag: 11033796372910543802,
-			},
 		},
 		Errors: []provider.ErrorDef{
 			provider.ErrorDef{
 				Code: 768,
-				Message: "Principal custody backing mismatch: liability {0}, backing {1}",
-				Name: "PrincipalVaultBackingMismatch",
-			},
-			provider.ErrorDef{
-				Code: 769,
 				Message: "Invalid parameters: {0}",
 				Name: "InvalidParameters",
 			},
 			provider.ErrorDef{
-				Code: 770,
-				Message: "Reward treasury backing mismatch: liability {0}, backing {1}",
-				Name: "RewardTreasuryBackingMismatch",
-			},
-			provider.ErrorDef{
-				Code: 771,
+				Code: 769,
 				Message: "Staking invariant violation: {0}",
 				Name: "InvariantViolation",
 			},
 			provider.ErrorDef{
-				Code: 772,
+				Code: 770,
 				Message: "protocol epoch clock is not initialized",
 				Name: "EpochClockNotReady",
 			},
 			provider.ErrorDef{
-				Code: 773,
+				Code: 771,
 				Message: "Transparent TokenError",
 				Name: "TokenError",
 			},
 			provider.ErrorDef{
-				Code: 774,
+				Code: 772,
 				Message: "Transparent ContextError",
 				Name: "ContextError",
 			},
@@ -4929,6 +4886,11 @@ provider.IDL{
 				Name: "MAX_COMMISSION_RATE_BPS",
 				Type: "u64",
 				Value: 10000,
+			},
+			provider.Constant{
+				Name: "MAX_DELAY",
+				Type: "u64",
+				Value: 64,
 			},
 		},
 	},
@@ -6656,6 +6618,23 @@ provider.IDL{
 				Message: "VC attestation is not frozen",
 				Name: "VcAttestationNotFrozen",
 			},
+			provider.ErrorDef{
+				Code: 1075,
+				Message: "Disclosed VC count exceeds the limit",
+				Name: "TooManyDisclosedVcs",
+			},
+		},
+		Constants: []provider.Constant{
+			provider.Constant{
+				Name: "MAX_DISCLOSED_VCS_PER_SUBJECT",
+				Type: "usize",
+				Value: 64,
+			},
+			provider.Constant{
+				Name: "MAX_CREDENTIAL_SCHEMAS",
+				Type: "usize",
+				Value: 32,
+			},
 		},
 	},
 provider.IDL{
@@ -7409,6 +7388,37 @@ provider.IDL{
 						Role: "input",
 						Type: "Address",
 					},
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 34242,
+				Handler: "backfill_total_balance",
+				Kind: "entry",
+				Name: "BackfillTotalBalance",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 63205,
+				Handler: "backfill_total_supply",
+				Kind: "entry",
+				Name: "BackfillTotalSupply",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
 				},
 				Discriminator: 46443,
 				Handler: "sft_owner_of",
@@ -7686,8 +7696,101 @@ provider.IDL{
 					Type: "Address",
 				},
 			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 32597,
+				Handler: "total_balance_of",
+				Kind: "view",
+				Name: "TotalBalanceOf",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 56878,
+				Handler: "total_balance_status",
+				Kind: "view",
+				Name: "TotalBalanceStatus",
+				Returns: provider.ReturnValue{
+					Type: "SftBalanceState",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 35462,
+				Handler: "total_supply",
+				Kind: "view",
+				Name: "TotalSupply",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sft",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 30765,
+				Handler: "total_supply_status",
+				Kind: "view",
+				Name: "TotalSupplyStatus",
+				Returns: provider.ReturnValue{
+					Type: "SftBalanceState",
+				},
+			},
 		},
 		Types: []provider.IDLType{
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "next_token_id",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "ready",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "SftBalanceState",
+				TypeTag: 5332615791021347137,
+			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
@@ -7806,6 +7909,21 @@ provider.IDL{
 			},
 		},
 		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_SftBalanceTracking",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_SftBalance",
+				Type: "SftBalanceState",
+				TypeTag: 5332615791021347137,
+			},
+			provider.Resource{
+				Name: "_SftTotalSupply",
+				Type: "SftBalanceState",
+				TypeTag: 5332615791021347137,
+			},
 			provider.Resource{
 				Name: "_SftOwner",
 				Type: "Address",
@@ -8155,6 +8273,23 @@ provider.IDL{
 				Code: 1296,
 				Message: "insufficient approval (token: {0}, owner: {1:?}, spender: {2:?}, available: {3}, required: {4})",
 				Name: "InsufficientApproval",
+			},
+			provider.ErrorDef{
+				Code: 1297,
+				Message: "SFT total balance is not initialized: {0:?}",
+				Name: "TotalBalanceNotReady",
+			},
+			provider.ErrorDef{
+				Code: 1298,
+				Message: "SFT total supply is not initialized",
+				Name: "TotalSupplyNotReady",
+			},
+		},
+		Constants: []provider.Constant{
+			provider.Constant{
+				Name: "SFT_BALANCE_BACKFILL_BATCH",
+				Type: "u64",
+				Value: 64,
 			},
 		},
 	},
@@ -10557,7 +10692,7 @@ provider.IDL{
 				Kind: "entry",
 				Name: "RegisterValidator",
 				Returns: provider.ReturnValue{
-					Type: "ValidatorId",
+					Type: "B256",
 				},
 			},
 			provider.Instruction{
@@ -10570,7 +10705,7 @@ provider.IDL{
 					provider.Arg{
 						Name: "validator",
 						Role: "input",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 					provider.Arg{
 						Name: "stake_asset",
@@ -10593,7 +10728,7 @@ provider.IDL{
 				Kind: "entry",
 				Name: "CreateValidatorPool",
 				Returns: provider.ReturnValue{
-					Type: "PoolId",
+					Type: "B256",
 				},
 			},
 			provider.Instruction{
@@ -10606,7 +10741,182 @@ provider.IDL{
 					provider.Arg{
 						Name: "validator",
 						Role: "input",
-						Type: "ValidatorId",
+						Type: "B256",
+					},
+				},
+				Discriminator: 9233,
+				Handler: "pause_pool",
+				Kind: "entry",
+				Name: "PausePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 38150,
+				Handler: "resume_pool",
+				Kind: "entry",
+				Name: "ResumePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 12323,
+				Handler: "close_pool",
+				Kind: "entry",
+				Name: "ClosePool",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "config",
+						Role: "input",
+						Type: "PoolRewardConfig",
+					},
+				},
+				Discriminator: 17593,
+				Handler: "request_pool_reward_config",
+				Kind: "entry",
+				Name: "RequestPoolRewardConfig",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 50141,
+				Handler: "claim_pool_commission",
+				Kind: "entry",
+				Name: "ClaimPoolCommission",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 61791,
+				Handler: "sweep_pool_residual",
+				Kind: "entry",
+				Name: "SweepPoolResidual",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "stake_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_per_validator",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 57544,
+				Handler: "configure_validator_reward_policy",
+				Kind: "entry",
+				Name: "ConfigureValidatorRewardPolicy",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "funder",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "stake_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "amount",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 17047,
+				Handler: "fund_validator_reward_policy",
+				Kind: "entry",
+				Name: "FundValidatorRewardPolicy",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "controller",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "B256",
 					},
 				},
 				Discriminator: 45033,
@@ -10624,7 +10934,7 @@ provider.IDL{
 					provider.Arg{
 						Name: "validator",
 						Role: "input",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 				},
 				Discriminator: 52192,
@@ -10642,13 +10952,44 @@ provider.IDL{
 					provider.Arg{
 						Name: "validator",
 						Role: "input",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 				},
 				Discriminator: 43639,
 				Handler: "declare_validator_availability",
 				Kind: "entry",
 				Name: "DeclareValidatorAvailability",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "stake_asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "reward_asset",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 57655,
+				Handler: "validator_reward_policy",
+				Kind: "view",
+				Name: "ValidatorRewardPolicy",
+				Returns: provider.ReturnValue{
+					Type: "ValidatorRewardPolicy",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 27560,
+				Handler: "validator_reward_policy_configured",
+				Kind: "view",
+				Name: "ValidatorRewardPolicyConfigured",
+				Returns: provider.ReturnValue{
+					Type: "bool",
+				},
 			},
 			provider.Instruction{
 				Args: nil,
@@ -10691,7 +11032,7 @@ provider.IDL{
 					provider.Arg{
 						Name: "validator",
 						Role: "input",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 				},
 				Discriminator: 37544,
@@ -10715,7 +11056,7 @@ provider.IDL{
 				Kind: "view",
 				Name: "ValidatorForController",
 				Returns: provider.ReturnValue{
-					Type: "ValidatorId",
+					Type: "B256",
 				},
 			},
 			provider.Instruction{
@@ -10793,7 +11134,7 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "validator",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 					provider.StructField{
 						Name: "controller",
@@ -10809,7 +11150,7 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "pool_id",
-						Type: "option<PoolId>",
+						Type: "option<B256>",
 					},
 				},
 				Kind: "struct",
@@ -10820,7 +11161,7 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "validators",
-						Type: "vec<ValidatorId>",
+						Type: "vec<B256>",
 					},
 				},
 				Kind: "struct",
@@ -10831,7 +11172,7 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "validator",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 					provider.StructField{
 						Name: "consensus_account",
@@ -10846,7 +11187,7 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "validator",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 					provider.StructField{
 						Name: "consensus_account",
@@ -10854,7 +11195,7 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "pool_id",
-						Type: "PoolId",
+						Type: "B256",
 					},
 					provider.StructField{
 						Name: "stake_asset",
@@ -10873,7 +11214,7 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "active_staker_count",
+						Name: "position_count",
 						Type: "u64",
 					},
 				},
@@ -10908,7 +11249,7 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "validator",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 					provider.StructField{
 						Name: "controller",
@@ -10918,6 +11259,44 @@ provider.IDL{
 				Kind: "struct",
 				Name: "AvailabilityDeclaration",
 				TypeTag: 9892382822654520502,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "stake_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "reward_asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "reward_per_validator",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "available",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "ValidatorRewardPolicy",
+				TypeTag: 5457600749461134614,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "initialized",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "last_settled_epoch",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "RewardCursor",
+				TypeTag: 13878982144518937538,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -10932,7 +11311,7 @@ provider.IDL{
 				},
 				Kind: "struct",
 				Name: "PoolRewardConfig",
-				TypeTag: 1255043119785956927,
+				TypeTag: 12365982797053730650,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -10946,13 +11325,8 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
-				Name: "PoolId",
-				TypeTag: 10033863623731171282,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "ValidatorId",
-				TypeTag: 14542707920151212342,
+				Name: "bool",
+				TypeTag: 14785269867199075517,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -10962,13 +11336,23 @@ provider.IDL{
 		},
 		Resources: []provider.Resource{
 			provider.Resource{
+				Name: "_ValidatorRewardPolicy",
+				Type: "ValidatorRewardPolicy",
+				TypeTag: 5457600749461134614,
+			},
+			provider.Resource{
+				Name: "_RewardCursor",
+				Type: "RewardCursor",
+				TypeTag: 13878982144518937538,
+			},
+			provider.Resource{
 				Name: "_ValidatorRecord",
 				Type: "ValidatorProfile",
 				TypeTag: 13667524927300449050,
 			},
 			provider.Resource{
 				Name: "_ValidatorByController",
-				Type: "ValidatorId",
+				Type: "B256",
 				TypeTag: 14542707920151212342,
 			},
 			provider.Resource{
@@ -11025,16 +11409,26 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 1799,
+				Message: "Reward reserve backing mismatch: {0}, {1}",
+				Name: "RewardTreasuryBackingMismatch",
+			},
+			provider.ErrorDef{
+				Code: 1800,
+				Message: "Transparent Token",
+				Name: "Token",
+			},
+			provider.ErrorDef{
+				Code: 1801,
 				Message: "Transparent Staking",
 				Name: "Staking",
 			},
 			provider.ErrorDef{
-				Code: 1800,
+				Code: 1802,
 				Message: "Transparent Context",
 				Name: "Context",
 			},
 			provider.ErrorDef{
-				Code: 1801,
+				Code: 1803,
 				Message: "validator set unavailable: {0}",
 				Name: "ValidatorSetUnavailable",
 			},
@@ -11133,19 +11527,9 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "provider_id",
+						Name: "auth",
 						Role: "input",
-						Type: "B256",
-					},
-					provider.Arg{
-						Name: "jwt",
-						Role: "input",
-						Type: "bytes",
-					},
-					provider.Arg{
-						Name: "ephemeral_pk",
-						Role: "input",
-						Type: "PublicKey",
+						Type: "Groth16Auth",
 					},
 				},
 				Discriminator: 21310,
@@ -11161,30 +11545,6 @@ provider.IDL{
 						Role: "input",
 						Type: "Groth16Auth",
 					},
-				},
-				Discriminator: 7424,
-				Handler: "authenticate_zk",
-				Kind: "entry",
-				Name: "AuthenticateZk",
-				Sponsor: true,
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "provider_id",
-						Role: "input",
-						Type: "B256",
-					},
-					provider.Arg{
-						Name: "jwt",
-						Role: "input",
-						Type: "bytes",
-					},
-					provider.Arg{
-						Name: "ephemeral_pk",
-						Role: "input",
-						Type: "PublicKey",
-					},
 					provider.Arg{
 						Name: "owner",
 						Role: "signer",
@@ -11195,24 +11555,6 @@ provider.IDL{
 				Handler: "bind",
 				Kind: "entry",
 				Name: "Bind",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "auth",
-						Role: "input",
-						Type: "Groth16Auth",
-					},
-					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-				},
-				Discriminator: 3098,
-				Handler: "bind_zk",
-				Kind: "entry",
-				Name: "BindZk",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -11413,7 +11755,7 @@ provider.IDL{
 					provider.Arg{
 						Name: "validator",
 						Role: "input",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 					provider.Arg{
 						Name: "provider_id",
@@ -11882,7 +12224,7 @@ provider.IDL{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "validator",
-						Type: "ValidatorId",
+						Type: "B256",
 					},
 					provider.StructField{
 						Name: "keys",
@@ -11967,36 +12309,78 @@ provider.IDL{
 				TypeTag: 7938151067451673625,
 			},
 			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
-						Name: "Jwt",
-						Kind: "tuple",
-						Fields: []provider.StructField{
-							provider.StructField{
-								Name: "0",
-								Type: "Error",
-							},
-						},
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "circuit_id",
+						Type: "u32",
 					},
-					provider.EnumVariant{
-						Name: "Mismatch",
-						Kind: "tuple",
-						Fields: []provider.StructField{
-							provider.StructField{
-								Name: "0",
-								Type: "str",
-							},
-						},
+					provider.StructField{
+						Name: "claim",
+						Type: "ZkAuthClaim",
 					},
-					provider.EnumVariant{
-						Name: "AmbiguousJson",
-						Kind: "unit",
-						Fields: nil,
+					provider.StructField{
+						Name: "proof",
+						Type: "bytes",
 					},
 				},
-				Kind: "enum",
-				Name: "ZkStatementError",
-				TypeTag: 9974183095189200918,
+				Kind: "struct",
+				Name: "Groth16Auth",
+				TypeTag: 16964812385002816684,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "chain_id",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "provider_id",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "issuer",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "algorithm",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "kid",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "jwk_thumbprint",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "audience_hash",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "address_seed",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "ephemeral_pk",
+						Type: "PublicKey",
+					},
+					provider.StructField{
+						Name: "iat_s",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "exp_s",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "session_expiry_ms",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "ZkAuthClaim",
+				TypeTag: 4485551589117502468,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -12017,11 +12401,6 @@ provider.IDL{
 				Kind: "builtin",
 				Name: "String",
 				TypeTag: 8566531010829758022,
-			},
-			provider.IDLType{
-				Kind: "builtin",
-				Name: "ValidatorId",
-				TypeTag: 14542707920151212342,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -12670,6 +13049,31 @@ provider.IDL{
 				Value: 4,
 			},
 			provider.Constant{
+				Name: "TRUSTED_PREPARED_CIRCUIT_ID",
+				Type: "u32",
+				Value: 9,
+			},
+			provider.Constant{
+				Name: "TRUSTED_PREPARED_PUBLIC_INPUT_COUNT",
+				Type: "u16",
+				Value: 21,
+			},
+			provider.Constant{
+				Name: "TRUSTED_PREPARED_R1CS_HASH",
+				Type: "B256",
+				Value: "[0xAE , 0x93 , 0x09 , 0x88 , 0xC5 , 0xC7 , 0x71 , 0xF5 , 0x75 , 0xF1 , 0x96 , 0xDE , 0x48 , 0x5F , 0x3B , 0xE5 , 0x5F , 0xEF , 0x6B , 0xE2 , 0x6F , 0x06 , 0xCF , 0x10 , 0xBE , 0xD0 , 0x24 , 0x3C , 0x3E , 0x87 , 0x6D , 0x56 ,]",
+			},
+			provider.Constant{
+				Name: "TRUSTED_PREPARED_VK_ACTIVATION_SHA256",
+				Type: "B256",
+				Value: "[0x08 , 0x7D , 0xEE , 0x33 , 0xF1 , 0xCD , 0xF0 , 0x9A , 0x6D , 0xB3 , 0x9E , 0xF7 , 0xE9 , 0xCD , 0xC7 , 0x89 , 0x96 , 0x1B , 0xA2 , 0x19 , 0xD3 , 0x12 , 0x17 , 0x03 , 0x4F , 0x3E , 0xA7 , 0x46 , 0xCE , 0x7E , 0x85 , 0x7C ,]",
+			},
+			provider.Constant{
+				Name: "TRUSTED_PREPARED_VK_BYTES",
+				Type: "bytes",
+				Value: "& [0xC6 , 0x8D , 0xB3 , 0x53 , 0xC9 , 0x77 , 0xD6 , 0xFD , 0x17 , 0x72 , 0x40 , 0xDE , 0x8C , 0xD0 , 0xC6 , 0x06 , 0xD3 , 0x7A , 0xD0 , 0x7B , 0x9C , 0xC9 , 0x67 , 0xF6 , 0xDE , 0xD6 , 0x04 , 0x80 , 0x16 , 0x85 , 0x66 , 0x99 , 0x50 , 0xDB , 0x59 , 0x4C , 0x05 , 0x64 , 0x83 , 0x5B , 0xFA , 0xED , 0xE7 , 0xD1 , 0x80 , 0xBB , 0x63 , 0x1B , 0xE9 , 0x2D , 0x5A , 0xDA , 0xEC , 0x62 , 0xCD , 0xB6 , 0x96 , 0x8C , 0xE0 , 0x20 , 0x24 , 0x18 , 0x3F , 0x1A , 0x99 , 0x25 , 0x97 , 0xA6 , 0x0B , 0x68 , 0x92 , 0xB8 , 0x31 , 0x2B , 0x88 , 0x26 , 0xF9 , 0x6F , 0x51 , 0x68 , 0x51 , 0x67 , 0x88 , 0x39 , 0x67 , 0x8F , 0xE7 , 0xC9 , 0xD7 , 0x90 , 0xFE , 0x4C , 0xBE , 0xB5 , 0x33 , 0x9C , 0xED , 0xF6 , 0x92 , 0xD9 , 0x5C , 0xBD , 0xDE , 0x46 , 0xDD , 0xDA , 0x5E , 0xF7 , 0xD4 , 0x22 , 0x43 , 0x67 , 0x79 , 0x44 , 0x5C , 0x5E , 0x66 , 0x00 , 0x6A , 0x42 , 0x76 , 0x1E , 0x1F , 0x12 , 0xEF , 0xDE , 0x00 , 0x18 , 0xC2 , 0x12 , 0xF3 , 0xAE , 0xB7 , 0x85 , 0xE4 , 0x97 , 0x12 , 0xE7 , 0xA9 , 0x35 , 0x33 , 0x49 , 0xAA , 0xF1 , 0x25 , 0x5D , 0xFB , 0x31 , 0xB7 , 0xBF , 0x60 , 0x72 , 0x3A , 0x48 , 0x0D , 0x92 , 0x93 , 0x93 , 0x8E , 0x19 , 0x11 , 0xA8 , 0xF7 , 0x27 , 0x53 , 0x17 , 0xD7 , 0x1A , 0x8E , 0x67 , 0x83 , 0x49 , 0x04 , 0x91 , 0xCB , 0xC4 , 0xE5 , 0xDF , 0x0B , 0xB3 , 0x1F , 0x80 , 0x7B , 0xA4 , 0xD6 , 0x77 , 0xDD , 0xAE , 0x47 , 0x0C , 0x58 , 0x30 , 0x1E , 0x3B , 0x6C , 0xA9 , 0x80 , 0xF3 , 0x07 , 0x8C , 0x22 , 0xE4 , 0x9A , 0x3C , 0x02 , 0x9B , 0x5B , 0x3E , 0xCD , 0x25 , 0x03 , 0xC2 , 0xDA , 0xE0 , 0x29 , 0xA8 , 0x19 , 0x75 , 0xB2 , 0xBB , 0x93 , 0x41 , 0x03 , 0x2F , 0x16 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x0D , 0xCD , 0x5C , 0x4B , 0x0E , 0xEE , 0x87 , 0xDF , 0xEE , 0xC5 , 0x11 , 0x0E , 0x57 , 0x92 , 0x9D , 0x30 , 0xED , 0xFD , 0x21 , 0xEF , 0x3A , 0x44 , 0xD2 , 0xD1 , 0xD6 , 0x27 , 0x34 , 0xB2 , 0x6F , 0xDD , 0xB0 , 0x2B , 0xE5 , 0xEA , 0x2E , 0xEB , 0xC7 , 0x3F , 0xBA , 0x45 , 0xFC , 0xEA , 0x0E , 0xAE , 0xC3 , 0x13 , 0x10 , 0xDD , 0xC9 , 0xD5 , 0x84 , 0x16 , 0x7E , 0x3D , 0xE1 , 0x70 , 0x1A , 0x22 , 0x4A , 0xA6 , 0x25 , 0x8A , 0x85 , 0xAC , 0xAF , 0x5E , 0xE1 , 0x50 , 0x4E , 0x2D , 0xB9 , 0x05 , 0xCC , 0x02 , 0x7F , 0x18 , 0xE7 , 0xC2 , 0xB1 , 0x74 , 0x7D , 0xBE , 0x04 , 0xA6 , 0xFF , 0x41 , 0x0D , 0x67 , 0xE6 , 0xE6 , 0x7E , 0x7C , 0xE0 , 0xED , 0x90 , 0x17 , 0x97 , 0x67 , 0x09 , 0x0E , 0x98 , 0xF8 , 0x1E , 0xE1 , 0x48 , 0x32 , 0xD8 , 0xC5 , 0x74 , 0xD0 , 0x7E , 0x68 , 0x22 , 0xC0 , 0xFC , 0x7D , 0x3B , 0x38 , 0xAA , 0x5C , 0xC0 , 0x65 , 0x5F , 0x79 , 0x61 , 0xF1 , 0xBD , 0x17 , 0x01 , 0x58 , 0xC8 , 0xFD , 0x38 , 0x06 , 0xD2 , 0x74 , 0xC9 , 0x48 , 0x52 , 0x93 , 0xF0 , 0x31 , 0x3E , 0x56 , 0xD8 , 0x8B , 0x07 , 0xD3 , 0x43 , 0x9B , 0xCE , 0x0A , 0xDB , 0xFD , 0xC9 , 0xC8 , 0xE9 , 0xD8 , 0x2E , 0x2E , 0xD6 , 0x06 , 0x95 , 0x27 , 0xD2 , 0x95 , 0x7D , 0xE7 , 0x18 , 0x9B , 0x4C , 0x60 , 0x0D , 0x8E , 0xE9 , 0xFB , 0xD4 , 0xEC , 0x6D , 0x3C , 0x11 , 0x5F , 0x18 , 0xE0 , 0x68 , 0x66 , 0x5E , 0xD3 , 0x42 , 0x30 , 0x48 , 0x83 , 0x77 , 0xDC , 0x7E , 0x0E , 0xC4 , 0x1E , 0xBD , 0xBA , 0xD1 , 0xE3 , 0xB1 , 0x8D , 0xB1 , 0x92 , 0xF9 , 0x0F , 0x68 , 0xE4 , 0xC2 , 0xB4 , 0x34 , 0xDD , 0x4F , 0xA7 , 0x58 , 0x64 , 0xF9 , 0x21 , 0xB2 , 0x99 , 0x68 , 0x95 , 0xEF , 0xC1 , 0x66 , 0xDF , 0xA6 , 0x6A , 0xAD , 0xEA , 0xBB , 0x2D , 0x6B , 0xB6 , 0x3B , 0xF1 , 0x28 , 0xF5 , 0x3B , 0x04 , 0xE8 , 0xBF , 0xBF , 0x17 , 0xA6 , 0xD4 , 0xCC , 0xB7 , 0xDB , 0x3D , 0x3D , 0x1B , 0x21 , 0xAB , 0x2D , 0x98 , 0x9E , 0x29 , 0x2A , 0x50 , 0x99 , 0xC1 , 0x41 , 0x22 , 0xB0 , 0x2E , 0xA7 , 0xF3 , 0x73 , 0x7F , 0x8D , 0x95 , 0xCF , 0x9A , 0xC5 , 0x5E , 0x0B , 0x8F , 0x64 , 0x5C , 0x97 , 0x73 , 0x07 , 0xB7 , 0x1E , 0x82 , 0x3B , 0x19 , 0x64 , 0xAD , 0x2F , 0xC3 , 0x5A , 0xF1 , 0xA8 , 0x8C , 0xCA , 0xCF , 0x24 , 0x8C , 0xCA , 0x23 , 0x30 , 0xFD , 0x70 , 0x65 , 0x49 , 0x8B , 0xA0 , 0x2E , 0x3F , 0xA0 , 0x2B , 0xE1 , 0x91 , 0x78 , 0x4E , 0x85 , 0x1E , 0x79 , 0xB5 , 0x15 , 0x5A , 0x3D , 0xB8 , 0x2A , 0x69 , 0xC7 , 0xEF , 0xE3 , 0xC6 , 0x33 , 0xAA , 0x1B , 0xA0 , 0x66 , 0x83 , 0x9C , 0xE2 , 0x53 , 0x31 , 0x3E , 0x57 , 0x2B , 0xC7 , 0xB1 , 0x21 , 0xB6 , 0x23 , 0x9D , 0x16 , 0x44 , 0x30 , 0x2E , 0x64 , 0xA9 , 0x30 , 0xFE , 0x2F , 0xF1 , 0x34 , 0xD0 , 0x51 , 0x25 , 0x49 , 0x93 , 0x87 , 0x5A , 0x5A , 0xFE , 0x0F , 0x95 , 0x1D , 0x95 , 0x6B , 0x14 , 0x2B , 0xE7 , 0x24 , 0x70 , 0x75 , 0x2C , 0xAF , 0xFA , 0x2D , 0xE2 , 0xE5 , 0xD0 , 0x93 , 0xB7 , 0x21 , 0x11 , 0xEE , 0x91 , 0xE4 , 0x71 , 0x56 , 0x5D , 0x45 , 0x8A , 0x28 , 0xA1 , 0x3F , 0xE3 , 0xAB , 0x65 , 0x84 , 0xFC , 0xA1 , 0xF7 , 0x8B , 0x79 , 0xDF , 0x15 , 0xC4 , 0xE8 , 0x5B , 0x81 , 0x7A , 0x61 , 0x5C , 0x70 , 0xD5 , 0x53 , 0x95 , 0xB7 , 0x69 , 0xDA , 0xD2 , 0x6F , 0xEA , 0xEC , 0xDE , 0x00 , 0x5F , 0xD5 , 0xCB , 0xE8 , 0x1C , 0x5E , 0xB3 , 0x41 , 0x17 , 0x73 , 0x4A , 0x23 , 0x13 , 0xBE , 0xA8 , 0x7B , 0xAB , 0x41 , 0x5C , 0x30 , 0x44 , 0xC1 , 0x1C , 0xBD , 0x7F , 0x29 , 0x0C , 0x7F , 0x59 , 0x95 , 0x1A , 0xB9 , 0x41 , 0x7C , 0x99 , 0x8B , 0x3A , 0x4C , 0x3F , 0x8A , 0x3D , 0xF8 , 0x90 , 0x8A , 0xB3 , 0x02 , 0x04 , 0xDC , 0x77 , 0x8E , 0x3A , 0x06 , 0xE3 , 0x49 , 0x24 , 0x05 , 0xDE , 0xA4 , 0x12 , 0xA7 , 0xA4 , 0x86 , 0x82 , 0xD7 , 0x24 , 0x24 , 0xB9 , 0xC4 , 0xAF , 0x4C , 0x4C , 0x67 , 0xF9 , 0x34 , 0x06 , 0x06 , 0xA6 , 0x62 , 0xD7 , 0x25 , 0x1F , 0xBA , 0x05 , 0x33 , 0x3D , 0xAF , 0x04 , 0x01 , 0x8B , 0x55 , 0x73 , 0xC5 , 0x6D , 0x99 , 0x67 , 0x7B , 0x87 , 0xB8 , 0xE8 , 0x20 , 0x7F , 0x28 , 0xE3 , 0x6C , 0x47 , 0x34 , 0x8C , 0x80 , 0xBF , 0xCF , 0x8C , 0x5F , 0xB0 , 0x22 , 0x46 , 0x5C , 0x72 , 0x41 , 0x37 , 0x00 , 0x9F , 0x70 , 0x54 , 0x1A , 0x0A , 0x7B , 0xF3 , 0xFD , 0x96 , 0x5A , 0x64 , 0x93 , 0x97 , 0x4E , 0xEA , 0x36 , 0xB6 , 0x4A , 0xED , 0x11 , 0x46 , 0xD6 , 0xA7 , 0xE9 , 0x12 , 0x78 , 0x30 , 0x03 , 0xF7 , 0x80 , 0x8C , 0x60 , 0x7F , 0xF8 , 0xE1 , 0x81 , 0x0A , 0x24 , 0x2E , 0xBC , 0x81 , 0x12 , 0x33 , 0x09 , 0x60 , 0xDB , 0xE0 , 0x91 , 0x60 , 0x12 , 0x60 , 0x10 , 0x08 , 0xA5 , 0x27 , 0xF6 , 0x0B , 0x25 , 0x72 , 0x1E , 0xD9 , 0x35 , 0x94 , 0x33 , 0x55 , 0x6C , 0x42 , 0x34 , 0xAA , 0xBC , 0xDF , 0xDE , 0x67 , 0x49 , 0xF3 , 0x81 , 0xD3 , 0xA4 , 0x5A , 0xFD , 0x5E , 0x70 , 0x51 , 0x9F , 0xE0 , 0xC9 , 0x81 , 0xB8 , 0x1E , 0xF5 , 0x9F , 0x39 , 0xCA , 0x44 , 0x6B , 0xA9 , 0x8C , 0x72 , 0x5A , 0x03 , 0x03 , 0x99 , 0x97 , 0x8E , 0x3A , 0x6C , 0xB5 , 0x32 , 0x74 , 0x7C , 0x0C , 0x7B , 0xA1 , 0xEE , 0xBF , 0xA4 , 0x54 , 0x95 , 0x52 , 0x3C , 0xB5 , 0x2A , 0x54 , 0x79 , 0x22 , 0xB8 , 0x84 , 0x44 , 0xF1 , 0x13 , 0x90 , 0xBF , 0x5A , 0xE1 , 0x8E , 0x3E , 0xD1 , 0x90 , 0xC5 , 0x95 , 0x23 , 0xF6 , 0x84 , 0xE5 , 0x33 , 0x06 , 0xF1 , 0x2B ,]",
+			},
+			provider.Constant{
 				Name: "STAGED_JWT_RS256_CIRCUIT_ID",
 				Type: "u32",
 				Value: 7,
@@ -12728,6 +13132,161 @@ provider.IDL{
 			Description: "Milon social app IDL",
 		},
 		Instructions: []provider.Instruction{
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "follower",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "target",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 1031,
+				Handler: "follow",
+				Kind: "entry",
+				Name: "Follow",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "follower",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "target",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 62356,
+				Handler: "unfollow",
+				Kind: "entry",
+				Name: "Unfollow",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "amount",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 12987,
+				Handler: "create_follow_sponsor",
+				Kind: "entry",
+				Name: "CreateFollowSponsor",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "sponsor",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 63283,
+				Handler: "close_follow_sponsor",
+				Kind: "entry",
+				Name: "CloseFollowSponsor",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "follower",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "target",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "sponsor",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 14127,
+				Handler: "follow_sponsored",
+				Kind: "entry",
+				Name: "FollowSponsored",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "follower",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "target",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 49754,
+				Handler: "is_following",
+				Kind: "view",
+				Name: "IsFollowing",
+				Returns: provider.ReturnValue{
+					Type: "bool",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "target",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 17041,
+				Handler: "follow_sponsor_address",
+				Kind: "view",
+				Name: "FollowSponsorAddress",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "sponsor",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 13614,
+				Handler: "follow_sponsor",
+				Kind: "view",
+				Name: "FollowSponsor",
+				Returns: provider.ReturnValue{
+					Type: "FollowSponsor",
+				},
+			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
@@ -13063,6 +13622,47 @@ provider.IDL{
 						Role: "input",
 						Type: "u32",
 					},
+				},
+				Discriminator: 12783,
+				Handler: "dissolve_community",
+				Kind: "entry",
+				Name: "DissolveCommunity",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "admin",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "community_id",
+						Role: "input",
+						Type: "u32",
+					},
+					provider.Arg{
+						Name: "member",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 15042,
+				Handler: "add_community_member",
+				Kind: "entry",
+				Name: "AddCommunityMember",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "community_id",
+						Role: "input",
+						Type: "u32",
+					},
 					provider.Arg{
 						Name: "admin",
 						Role: "input",
@@ -13268,18 +13868,23 @@ provider.IDL{
 					provider.Arg{
 						Name: "allocation",
 						Role: "input",
-						Type: "GiftAllocation",
+						Type: "HongbaoAllocation",
 					},
 					provider.Arg{
 						Name: "expires_at_ms",
 						Role: "input",
 						Type: "option<u64>",
 					},
+					provider.Arg{
+						Name: "message",
+						Role: "input",
+						Type: "option<String>",
+					},
 				},
-				Discriminator: 36253,
-				Handler: "create_gift",
+				Discriminator: 7621,
+				Handler: "create_hongbao",
 				Kind: "entry",
-				Name: "CreateGift",
+				Name: "CreateHongbao",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
@@ -13289,15 +13894,15 @@ provider.IDL{
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 30437,
-				Handler: "claim_gift",
+				Discriminator: 40045,
+				Handler: "claim_hongbao",
 				Kind: "entry",
-				Name: "ClaimGift",
+				Name: "ClaimHongbao",
 				Sponsor: true,
 			},
 			provider.Instruction{
@@ -13402,6 +14007,22 @@ provider.IDL{
 						Role: "input",
 						Type: "u32",
 					},
+				},
+				Discriminator: 23214,
+				Handler: "is_community_dissolved",
+				Kind: "view",
+				Name: "IsCommunityDissolved",
+				Returns: provider.ReturnValue{
+					Type: "bool",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "community_id",
+						Role: "input",
+						Type: "u32",
+					},
 					provider.Arg{
 						Name: "admin",
 						Role: "input",
@@ -13461,7 +14082,7 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Role: "input",
 						Type: "Address",
 					},
@@ -13471,10 +14092,10 @@ provider.IDL{
 						Type: "Address",
 					},
 				},
-				Discriminator: 62612,
-				Handler: "can_claim_community_gift",
+				Discriminator: 16618,
+				Handler: "can_claim_community_hongbao",
 				Kind: "view",
-				Name: "CanClaimCommunityGift",
+				Name: "CanClaimCommunityHongbao",
 				Returns: provider.ReturnValue{
 					Type: "bool",
 				},
@@ -13482,15 +14103,15 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "gift_id",
+						Name: "hongbao_id",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 46934,
-				Handler: "gift_community",
+				Discriminator: 54956,
+				Handler: "hongbao_community",
 				Kind: "view",
-				Name: "GiftCommunity",
+				Name: "HongbaoCommunity",
 				Returns: provider.ReturnValue{
 					Type: "u32",
 				},
@@ -13633,6 +14254,25 @@ provider.IDL{
 				TypeTag: 9957587179171262664,
 			},
 			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "owner",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "target",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "active",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "FollowSponsor",
+				TypeTag: 14805218812742557103,
+			},
+			provider.IDLType{
 				Variants: []provider.EnumVariant{
 					provider.EnumVariant{
 						Name: "Equal",
@@ -13646,8 +14286,8 @@ provider.IDL{
 					},
 				},
 				Kind: "enum",
-				Name: "GiftAllocation",
-				TypeTag: 12211908797870093821,
+				Name: "HongbaoAllocation",
+				TypeTag: 12559390919027217581,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -13737,9 +14377,29 @@ provider.IDL{
 				TypeTag: 5560783464435099345,
 			},
 			provider.Resource{
-				Name: "_CommunityGift",
+				Name: "_CommunityHongbao",
 				Type: "u32",
 				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_CommunityDissolved",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_Follow",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.Resource{
+				Name: "_FollowSponsor",
+				Type: "FollowSponsor",
+				TypeTag: 14805218812742557103,
+			},
+			provider.Resource{
+				Name: "_SponsoredFollowUsed",
+				Type: "bool",
+				TypeTag: 14785269867199075517,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -13925,13 +14585,63 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 2596,
-				Message: "community gift not found: {0:?}",
-				Name: "CommunityGiftNotFound",
+				Message: "community hongbao not found: {0:?}",
+				Name: "CommunityHongbaoNotFound",
 			},
 			provider.ErrorDef{
 				Code: 2597,
 				Message: "the community owner cannot leave",
 				Name: "CannotLeaveCommunityOwner",
+			},
+			provider.ErrorDef{
+				Code: 2598,
+				Message: "community is dissolved: {0}",
+				Name: "CommunityDissolved",
+			},
+			provider.ErrorDef{
+				Code: 2599,
+				Message: "cannot follow yourself",
+				Name: "CannotFollowSelf",
+			},
+			provider.ErrorDef{
+				Code: 2600,
+				Message: "already following: {0:?}",
+				Name: "AlreadyFollowing",
+			},
+			provider.ErrorDef{
+				Code: 2601,
+				Message: "not following: {0:?}",
+				Name: "NotFollowing",
+			},
+			provider.ErrorDef{
+				Code: 2602,
+				Message: "follow sponsor funding amount must be positive",
+				Name: "InvalidFollowSponsorAmount",
+			},
+			provider.ErrorDef{
+				Code: 2603,
+				Message: "invalid follow sponsor address: {0:?}",
+				Name: "InvalidFollowSponsor",
+			},
+			provider.ErrorDef{
+				Code: 2604,
+				Message: "follow sponsor not found: {0:?}",
+				Name: "FollowSponsorNotFound",
+			},
+			provider.ErrorDef{
+				Code: 2605,
+				Message: "follow sponsorship has already been used for this pair",
+				Name: "FollowSponsorshipAlreadyUsed",
+			},
+			provider.ErrorDef{
+				Code: 2606,
+				Message: "follow sponsor owner required: {0:?}",
+				Name: "FollowSponsorOwnerRequired",
+			},
+			provider.ErrorDef{
+				Code: 2607,
+				Message: "follow sponsor is closed: {0:?}",
+				Name: "FollowSponsorClosed",
 			},
 		},
 		Constants: []provider.Constant{
@@ -15038,7 +15748,7 @@ type SystemProposal struct {
 	ProposedHeight uint64
 	VoteEndTime uint64
 	FastPass bool
-	ProposerValidator any
+	ProposerValidator [32]byte
 }
 
 // ToValue converts SystemProposal into the provider wire value (map[string]any).
@@ -15066,7 +15776,7 @@ func (v SystemProposal) ToValue() (map[string]any, error) {
 	out["vote_end_time"] = v.VoteEndTime
 	// fast_pass: bool
 	out["fast_pass"] = v.FastPass
-	// proposer_validator: ValidatorId
+	// proposer_validator: B256
 	out["proposer_validator"] = v.ProposerValidator
 	return out, nil
 }
@@ -15336,7 +16046,7 @@ func (v SystemAvailableMethod) ToValue() (map[string]any, error) {
 
 // SystemConsensusValidatorIdentity matches the IDL struct ConsensusValidatorIdentity.
 type SystemConsensusValidatorIdentity struct {
-	Validator any
+	Validator [32]byte
 	ConsensusAccount *crypto.Address
 	ConsensusPubkey []byte
 	BlsPubkey []byte
@@ -15346,7 +16056,7 @@ type SystemConsensusValidatorIdentity struct {
 // ToValue converts SystemConsensusValidatorIdentity into the provider wire value (map[string]any).
 func (v SystemConsensusValidatorIdentity) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 5)
-	// validator: ValidatorId
+	// validator: B256
 	out["validator"] = v.Validator
 	// consensus_account: Address
 	out["consensus_account"] = v.ConsensusAccount
@@ -15577,17 +16287,17 @@ func (v TokenCompliance) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// TokenGiftAllocation matches the IDL enum GiftAllocation.
-type TokenGiftAllocation struct {
+// TokenHongbaoAllocation matches the IDL enum HongbaoAllocation.
+type TokenHongbaoAllocation struct {
 	Variant string // Active variant name
 	Index   uint64 // Active variant index
 	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
 }
 
-// ToValue converts TokenGiftAllocation into the provider wire value (map[string]any).
-func (v TokenGiftAllocation) ToValue() (map[string]any, error) {
+// ToValue converts TokenHongbaoAllocation into the provider wire value (map[string]any).
+func (v TokenHongbaoAllocation) ToValue() (map[string]any, error) {
 	if v.Variant == "" {
-		return nil, fmt.Errorf("enum GiftAllocation: empty variant")
+		return nil, fmt.Errorf("enum HongbaoAllocation: empty variant")
 	}
 	switch v.Variant {
 	case "Equal":
@@ -15598,22 +16308,22 @@ func (v TokenGiftAllocation) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// TokenGiftEligibility matches the IDL enum GiftEligibility.
-type TokenGiftEligibility struct {
+// TokenHongbaoEligibility matches the IDL enum HongbaoEligibility.
+type TokenHongbaoEligibility struct {
 	Variant string // Active variant name
 	Index   uint64 // Active variant index
 	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
 }
 
-// ToValue converts TokenGiftEligibility into the provider wire value (map[string]any).
-func (v TokenGiftEligibility) ToValue() (map[string]any, error) {
+// ToValue converts TokenHongbaoEligibility into the provider wire value (map[string]any).
+func (v TokenHongbaoEligibility) ToValue() (map[string]any, error) {
 	if v.Variant == "" {
-		return nil, fmt.Errorf("enum GiftEligibility: empty variant")
+		return nil, fmt.Errorf("enum HongbaoEligibility: empty variant")
 	}
 	switch v.Variant {
 	case "Credential":
 		if len(v.Fields) != 1 {
-			return nil, fmt.Errorf("enum GiftEligibility: variant Credential expects %d fields", len(v.Fields))
+			return nil, fmt.Errorf("enum HongbaoEligibility: variant Credential expects %d fields", len(v.Fields))
 		}
 		record := make(map[string]any, 1)
 		// credential_id: String
@@ -15621,7 +16331,7 @@ func (v TokenGiftEligibility) ToValue() (map[string]any, error) {
 		return map[string]any{"variant": "Credential", "fields": record}, nil
 	case "Recipients":
 		if len(v.Fields) != 1 {
-			return nil, fmt.Errorf("enum GiftEligibility: variant Recipients expects %d fields", len(v.Fields))
+			return nil, fmt.Errorf("enum HongbaoEligibility: variant Recipients expects %d fields", len(v.Fields))
 		}
 		record := make(map[string]any, 1)
 		// addresses: vec<Address>
@@ -15635,19 +16345,45 @@ func (v TokenGiftEligibility) ToValue() (map[string]any, error) {
 		}
 		record["addresses"] = v1
 		return map[string]any{"variant": "Recipients", "fields": record}, nil
+	case "SftHolding":
+		if len(v.Fields) != 2 {
+			return nil, fmt.Errorf("enum HongbaoEligibility: variant SftHolding expects %d fields", len(v.Fields))
+		}
+		record := make(map[string]any, 2)
+		// sft: Address
+		record["sft"] = v.Fields[0]
+		// min_amount: u64
+		record["min_amount"] = v.Fields[1]
+		return map[string]any{"variant": "SftHolding", "fields": record}, nil
+	case "Credentials":
+		if len(v.Fields) != 1 {
+			return nil, fmt.Errorf("enum HongbaoEligibility: variant Credentials expects %d fields", len(v.Fields))
+		}
+		record := make(map[string]any, 1)
+		// credential_ids: vec<String>
+		v0, ok := v.Fields[0].([]any)
+		if !ok {
+			return nil, fmt.Errorf("expected []any, got %T", v.Fields[0])
+		}
+		v1 := make([]any, len(v0))
+		for v2, v3 := range v0 {
+			v1[v2] = v3
+		}
+		record["credential_ids"] = v1
+		return map[string]any{"variant": "Credentials", "fields": record}, nil
 	}
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// TokenGiftRules matches the IDL struct GiftRules.
-type TokenGiftRules struct {
+// TokenHongbaoRules matches the IDL struct HongbaoRules.
+type TokenHongbaoRules struct {
 	CredentialId *string
 	Recipients []*crypto.Address
 	ExpiresAtMs *uint64
 }
 
-// ToValue converts TokenGiftRules into the provider wire value (map[string]any).
-func (v TokenGiftRules) ToValue() (map[string]any, error) {
+// ToValue converts TokenHongbaoRules into the provider wire value (map[string]any).
+func (v TokenHongbaoRules) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 3)
 	// credential_id: option<String>
 	if v.CredentialId == nil {
@@ -15670,28 +16406,28 @@ func (v TokenGiftRules) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// TokenGiftState matches the IDL struct GiftState.
-type TokenGiftState struct {
+// TokenHongbaoState matches the IDL struct HongbaoState.
+type TokenHongbaoState struct {
 	Creator *crypto.Address
-	GiftId *crypto.Address
+	HongbaoId *crypto.Address
 	Token *crypto.Address
 	TotalAmount uint64
 	RemainingAmount uint64
 	ClaimCount uint64
 	ClaimedCount uint64
 	ExpiresAtMs uint64
-	Allocation TokenGiftAllocation
-	Eligibility TokenGiftEligibility
+	Allocation TokenHongbaoAllocation
+	Eligibility TokenHongbaoEligibility
 	ClaimedRecipients uint32
 }
 
-// ToValue converts TokenGiftState into the provider wire value (map[string]any).
-func (v TokenGiftState) ToValue() (map[string]any, error) {
+// ToValue converts TokenHongbaoState into the provider wire value (map[string]any).
+func (v TokenHongbaoState) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 11)
 	// creator: Address
 	out["creator"] = v.Creator
-	// gift_id: Address
-	out["gift_id"] = v.GiftId
+	// hongbao_id: Address
+	out["hongbao_id"] = v.HongbaoId
 	// token: Address
 	out["token"] = v.Token
 	// total_amount: u64
@@ -15704,14 +16440,14 @@ func (v TokenGiftState) ToValue() (map[string]any, error) {
 	out["claimed_count"] = v.ClaimedCount
 	// expires_at_ms: u64
 	out["expires_at_ms"] = v.ExpiresAtMs
-	// allocation: GiftAllocation
-	v0, err := toTokenGiftAllocationValue(v.Allocation)
+	// allocation: HongbaoAllocation
+	v0, err := toTokenHongbaoAllocationValue(v.Allocation)
 	if err != nil {
 		return nil, err
 	}
 	out["allocation"] = v0
-	// eligibility: GiftEligibility
-	v1, err := toTokenGiftEligibilityValue(v.Eligibility)
+	// eligibility: HongbaoEligibility
+	v1, err := toTokenHongbaoEligibilityValue(v.Eligibility)
 	if err != nil {
 		return nil, err
 	}
@@ -15721,16 +16457,16 @@ func (v TokenGiftState) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// TokenGiftSettlement matches the IDL struct GiftSettlement.
-type TokenGiftSettlement struct {
+// TokenHongbaoSettlement matches the IDL struct HongbaoSettlement.
+type TokenHongbaoSettlement struct {
 	Creator *crypto.Address
 	Status uint8
 	ClaimRecords uint64
 	CleanupCursor uint64
 }
 
-// ToValue converts TokenGiftSettlement into the provider wire value (map[string]any).
-func (v TokenGiftSettlement) ToValue() (map[string]any, error) {
+// ToValue converts TokenHongbaoSettlement into the provider wire value (map[string]any).
+func (v TokenHongbaoSettlement) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 4)
 	// creator: Address
 	out["creator"] = v.Creator
@@ -15743,14 +16479,14 @@ func (v TokenGiftSettlement) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// TokenGiftCleanupQueueState matches the IDL struct GiftCleanupQueueState.
-type TokenGiftCleanupQueueState struct {
+// TokenHongbaoCleanupQueueState matches the IDL struct HongbaoCleanupQueueState.
+type TokenHongbaoCleanupQueueState struct {
 	Head *crypto.Address
 	Tail *crypto.Address
 }
 
-// ToValue converts TokenGiftCleanupQueueState into the provider wire value (map[string]any).
-func (v TokenGiftCleanupQueueState) ToValue() (map[string]any, error) {
+// ToValue converts TokenHongbaoCleanupQueueState into the provider wire value (map[string]any).
+func (v TokenHongbaoCleanupQueueState) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 2)
 	// head: Address
 	out["head"] = v.Head
@@ -15862,33 +16598,10 @@ func (v StakingPoolStatus) ToValue() (map[string]any, error) {
 		return map[string]any{"variant": "Open"}, nil
 	case "Paused":
 		return map[string]any{"variant": "Paused"}, nil
-	case "Frozen":
-		return map[string]any{"variant": "Frozen"}, nil
 	case "Closing":
 		return map[string]any{"variant": "Closing"}, nil
 	case "Drained":
 		return map[string]any{"variant": "Drained"}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
-}
-
-// StakingSlashingMode matches the IDL enum SlashingMode.
-type StakingSlashingMode struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
-}
-
-// ToValue converts StakingSlashingMode into the provider wire value (map[string]any).
-func (v StakingSlashingMode) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum SlashingMode: empty variant")
-	}
-	switch v.Variant {
-	case "Disabled":
-		return map[string]any{"variant": "Disabled"}, nil
-	case "System":
-		return map[string]any{"variant": "System"}, nil
 	}
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
@@ -15937,13 +16650,12 @@ type StakingPoolCycleConfig struct {
 	Basis StakingCycleBasis
 	StakeActivationDelay uint64
 	UnstakeActivationDelay uint64
-	RewardDistributionDelay uint64
 	CommissionChangeDelay uint64
 }
 
 // ToValue converts StakingPoolCycleConfig into the provider wire value (map[string]any).
 func (v StakingPoolCycleConfig) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 5)
+	out := make(map[string]any, 4)
 	// basis: CycleBasis
 	v0, err := toStakingCycleBasisValue(v.Basis)
 	if err != nil {
@@ -15954,10 +16666,244 @@ func (v StakingPoolCycleConfig) ToValue() (map[string]any, error) {
 	out["stake_activation_delay"] = v.StakeActivationDelay
 	// unstake_activation_delay: u64
 	out["unstake_activation_delay"] = v.UnstakeActivationDelay
-	// reward_distribution_delay: u64
-	out["reward_distribution_delay"] = v.RewardDistributionDelay
 	// commission_change_delay: u64
 	out["commission_change_delay"] = v.CommissionChangeDelay
+	return out, nil
+}
+
+// StakingPoolAppPermissions matches the IDL struct PoolAppPermissions.
+type StakingPoolAppPermissions struct {
+	ManageStatus bool
+	ManageRewards bool
+}
+
+// ToValue converts StakingPoolAppPermissions into the provider wire value (map[string]any).
+func (v StakingPoolAppPermissions) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// manage_status: bool
+	out["manage_status"] = v.ManageStatus
+	// manage_rewards: bool
+	out["manage_rewards"] = v.ManageRewards
+	return out, nil
+}
+
+// StakingPoolDefinition matches the IDL struct PoolDefinition.
+type StakingPoolDefinition struct {
+	PoolId [32]byte
+	Owner *crypto.Address
+	ManagerApp *uint8
+	AppPermissions StakingPoolAppPermissions
+	StakeAsset *crypto.Address
+	RewardAsset *crypto.Address
+	CycleConfig StakingPoolCycleConfig
+}
+
+// ToValue converts StakingPoolDefinition into the provider wire value (map[string]any).
+func (v StakingPoolDefinition) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 7)
+	// pool_id: B256
+	out["pool_id"] = v.PoolId
+	// owner: Address
+	out["owner"] = v.Owner
+	// manager_app: option<u8>
+	if v.ManagerApp == nil {
+		out["manager_app"] = nil
+	} else {
+		out["manager_app"] = *v.ManagerApp
+	}
+	// app_permissions: PoolAppPermissions
+	v0, err := toStakingPoolAppPermissionsValue(v.AppPermissions)
+	if err != nil {
+		return nil, err
+	}
+	out["app_permissions"] = v0
+	// stake_asset: Address
+	out["stake_asset"] = v.StakeAsset
+	// reward_asset: Address
+	out["reward_asset"] = v.RewardAsset
+	// cycle_config: PoolCycleConfig
+	v1, err := toStakingPoolCycleConfigValue(v.CycleConfig)
+	if err != nil {
+		return nil, err
+	}
+	out["cycle_config"] = v1
+	return out, nil
+}
+
+// StakingPoolControl matches the IDL struct PoolControl.
+type StakingPoolControl struct {
+	Status StakingPoolStatus
+	ClosingCycle *uint64
+}
+
+// ToValue converts StakingPoolControl into the provider wire value (map[string]any).
+func (v StakingPoolControl) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// status: PoolStatus
+	v0, err := toStakingPoolStatusValue(v.Status)
+	if err != nil {
+		return nil, err
+	}
+	out["status"] = v0
+	// closing_cycle: option<u64>
+	if v.ClosingCycle == nil {
+		out["closing_cycle"] = nil
+	} else {
+		out["closing_cycle"] = *v.ClosingCycle
+	}
+	return out, nil
+}
+
+// StakingPool matches the IDL struct Pool.
+type StakingPool struct {
+	PoolId [32]byte
+	Owner *crypto.Address
+	ManagerApp *uint8
+	AppPermissions StakingPoolAppPermissions
+	StakeAsset *crypto.Address
+	RewardAsset *crypto.Address
+	CycleConfig StakingPoolCycleConfig
+	Status StakingPoolStatus
+	ActivePrincipal uint64
+	RewardIndex *big.Int
+	RewardConfig StakingPoolRewardConfig
+	HeldPrincipal uint64
+	PendingPrincipal uint64
+	RewardLiability uint64
+	CommissionLiability uint64
+	PositionCount uint64
+	SettlementCursor uint64
+}
+
+// ToValue converts StakingPool into the provider wire value (map[string]any).
+func (v StakingPool) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 17)
+	// pool_id: B256
+	out["pool_id"] = v.PoolId
+	// owner: Address
+	out["owner"] = v.Owner
+	// manager_app: option<u8>
+	if v.ManagerApp == nil {
+		out["manager_app"] = nil
+	} else {
+		out["manager_app"] = *v.ManagerApp
+	}
+	// app_permissions: PoolAppPermissions
+	v0, err := toStakingPoolAppPermissionsValue(v.AppPermissions)
+	if err != nil {
+		return nil, err
+	}
+	out["app_permissions"] = v0
+	// stake_asset: Address
+	out["stake_asset"] = v.StakeAsset
+	// reward_asset: Address
+	out["reward_asset"] = v.RewardAsset
+	// cycle_config: PoolCycleConfig
+	v1, err := toStakingPoolCycleConfigValue(v.CycleConfig)
+	if err != nil {
+		return nil, err
+	}
+	out["cycle_config"] = v1
+	// status: PoolStatus
+	v2, err := toStakingPoolStatusValue(v.Status)
+	if err != nil {
+		return nil, err
+	}
+	out["status"] = v2
+	// active_principal: u64
+	out["active_principal"] = v.ActivePrincipal
+	// reward_index: u128
+	out["reward_index"] = v.RewardIndex
+	// reward_config: PoolRewardConfig
+	v3, err := toStakingPoolRewardConfigValue(v.RewardConfig)
+	if err != nil {
+		return nil, err
+	}
+	out["reward_config"] = v3
+	// held_principal: u64
+	out["held_principal"] = v.HeldPrincipal
+	// pending_principal: u64
+	out["pending_principal"] = v.PendingPrincipal
+	// reward_liability: u64
+	out["reward_liability"] = v.RewardLiability
+	// commission_liability: u64
+	out["commission_liability"] = v.CommissionLiability
+	// position_count: u64
+	out["position_count"] = v.PositionCount
+	// settlement_cursor: u64
+	out["settlement_cursor"] = v.SettlementCursor
+	return out, nil
+}
+
+// StakingPendingAmount matches the IDL struct PendingAmount.
+type StakingPendingAmount struct {
+	Cycle uint64
+	Amount uint64
+}
+
+// ToValue converts StakingPendingAmount into the provider wire value (map[string]any).
+func (v StakingPendingAmount) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// cycle: u64
+	out["cycle"] = v.Cycle
+	// amount: u64
+	out["amount"] = v.Amount
+	return out, nil
+}
+
+// StakingPosition matches the IDL struct Position.
+type StakingPosition struct {
+	Owner *crypto.Address
+	PoolId [32]byte
+	ActivePrincipal uint64
+	RewardCheckpoint *big.Int
+	RewardFraction uint64
+	ClaimableRewards uint64
+	ClaimablePrincipal uint64
+	Deposits []StakingPendingAmount
+	Exits []StakingPendingAmount
+	Tracked bool
+}
+
+// ToValue converts StakingPosition into the provider wire value (map[string]any).
+func (v StakingPosition) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 10)
+	// owner: Address
+	out["owner"] = v.Owner
+	// pool_id: B256
+	out["pool_id"] = v.PoolId
+	// active_principal: u64
+	out["active_principal"] = v.ActivePrincipal
+	// reward_checkpoint: u128
+	out["reward_checkpoint"] = v.RewardCheckpoint
+	// reward_fraction: u64
+	out["reward_fraction"] = v.RewardFraction
+	// claimable_rewards: u64
+	out["claimable_rewards"] = v.ClaimableRewards
+	// claimable_principal: u64
+	out["claimable_principal"] = v.ClaimablePrincipal
+	// deposits: vec<PendingAmount>
+	v0 := make([]any, len(v.Deposits))
+	for v1, v2 := range v.Deposits {
+		v3, err := toStakingPendingAmountValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v0[v1] = v3
+	}
+	out["deposits"] = v0
+	// exits: vec<PendingAmount>
+	v4 := make([]any, len(v.Exits))
+	for v5, v6 := range v.Exits {
+		v7, err := toStakingPendingAmountValue(v6)
+		if err != nil {
+			return nil, err
+		}
+		v4[v5] = v7
+	}
+	out["exits"] = v4
+	// tracked: bool
+	out["tracked"] = v.Tracked
 	return out, nil
 }
 
@@ -15977,15 +16923,15 @@ func (v StakingPoolRewardConfig) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// StakingPendingRewardConfig matches the IDL struct PendingRewardConfig.
-type StakingPendingRewardConfig struct {
+// StakingRewardTerms matches the IDL struct RewardTerms.
+type StakingRewardTerms struct {
 	Config StakingPoolRewardConfig
-	RequestedCycle uint64
+	Pending *StakingPoolRewardConfig
 	EffectiveCycle uint64
 }
 
-// ToValue converts StakingPendingRewardConfig into the provider wire value (map[string]any).
-func (v StakingPendingRewardConfig) ToValue() (map[string]any, error) {
+// ToValue converts StakingRewardTerms into the provider wire value (map[string]any).
+func (v StakingRewardTerms) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 3)
 	// config: PoolRewardConfig
 	v0, err := toStakingPoolRewardConfigValue(v.Config)
@@ -15993,370 +16939,56 @@ func (v StakingPendingRewardConfig) ToValue() (map[string]any, error) {
 		return nil, err
 	}
 	out["config"] = v0
-	// requested_cycle: u64
-	out["requested_cycle"] = v.RequestedCycle
+	// pending: option<PoolRewardConfig>
+	if v.Pending == nil {
+		out["pending"] = nil
+	} else {
+		v1, err := toStakingPoolRewardConfigValue(*v.Pending)
+		if err != nil {
+			return nil, err
+		}
+		out["pending"] = v1
+	}
 	// effective_cycle: u64
 	out["effective_cycle"] = v.EffectiveCycle
 	return out, nil
 }
 
-// StakingPool matches the IDL struct Pool.
-type StakingPool struct {
-	PoolId any
-	Owner *crypto.Address
-	StakeAsset *crypto.Address
-	RewardAsset *crypto.Address
-	Status StakingPoolStatus
-	SlashingMode StakingSlashingMode
-	CycleConfig StakingPoolCycleConfig
-	TotalShares uint64
-	PrincipalAssets uint64
-	HeldPrincipal uint64
+// StakingPoolIndex matches the IDL struct PoolIndex.
+type StakingPoolIndex struct {
+	Cursor uint64
+	ActivePrincipal uint64
 	RewardIndex *big.Int
-	ScaledRewardRemainder *big.Int
-	RewardConfig StakingPoolRewardConfig
-	PendingRewardConfig *StakingPendingRewardConfig
-	ClaimableCommission uint64
-	RewardLiability uint64
-	SettlementCursor uint64
-	PendingStakeCount uint64
-	PendingUnstakeCount uint64
-	ClosingCycle *uint64
-	ScheduledCycles []uint64
+	ScaledRewardRemainder uint64
 }
 
-// ToValue converts StakingPool into the provider wire value (map[string]any).
-func (v StakingPool) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 21)
-	// pool_id: PoolId
-	out["pool_id"] = v.PoolId
-	// owner: Address
-	out["owner"] = v.Owner
-	// stake_asset: Address
-	out["stake_asset"] = v.StakeAsset
-	// reward_asset: Address
-	out["reward_asset"] = v.RewardAsset
-	// status: PoolStatus
-	v0, err := toStakingPoolStatusValue(v.Status)
-	if err != nil {
-		return nil, err
-	}
-	out["status"] = v0
-	// slashing_mode: SlashingMode
-	v1, err := toStakingSlashingModeValue(v.SlashingMode)
-	if err != nil {
-		return nil, err
-	}
-	out["slashing_mode"] = v1
-	// cycle_config: PoolCycleConfig
-	v2, err := toStakingPoolCycleConfigValue(v.CycleConfig)
-	if err != nil {
-		return nil, err
-	}
-	out["cycle_config"] = v2
-	// total_shares: u64
-	out["total_shares"] = v.TotalShares
-	// principal_assets: u64
-	out["principal_assets"] = v.PrincipalAssets
-	// held_principal: u64
-	out["held_principal"] = v.HeldPrincipal
+// ToValue converts StakingPoolIndex into the provider wire value (map[string]any).
+func (v StakingPoolIndex) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// cursor: u64
+	out["cursor"] = v.Cursor
+	// active_principal: u64
+	out["active_principal"] = v.ActivePrincipal
 	// reward_index: u128
 	out["reward_index"] = v.RewardIndex
-	// scaled_reward_remainder: u128
+	// scaled_reward_remainder: u64
 	out["scaled_reward_remainder"] = v.ScaledRewardRemainder
-	// reward_config: PoolRewardConfig
-	v3, err := toStakingPoolRewardConfigValue(v.RewardConfig)
-	if err != nil {
-		return nil, err
-	}
-	out["reward_config"] = v3
-	// pending_reward_config: option<PendingRewardConfig>
-	if v.PendingRewardConfig == nil {
-		out["pending_reward_config"] = nil
-	} else {
-		v4, err := toStakingPendingRewardConfigValue(*v.PendingRewardConfig)
-		if err != nil {
-			return nil, err
-		}
-		out["pending_reward_config"] = v4
-	}
-	// claimable_commission: u64
-	out["claimable_commission"] = v.ClaimableCommission
-	// reward_liability: u64
-	out["reward_liability"] = v.RewardLiability
-	// settlement_cursor: u64
-	out["settlement_cursor"] = v.SettlementCursor
-	// pending_stake_count: u64
-	out["pending_stake_count"] = v.PendingStakeCount
-	// pending_unstake_count: u64
-	out["pending_unstake_count"] = v.PendingUnstakeCount
-	// closing_cycle: option<u64>
-	if v.ClosingCycle == nil {
-		out["closing_cycle"] = nil
-	} else {
-		out["closing_cycle"] = *v.ClosingCycle
-	}
-	// scheduled_cycles: vec<u64>
-	v5 := make([]any, len(v.ScheduledCycles))
-	for v6, v7 := range v.ScheduledCycles {
-		v5[v6] = v7
-	}
-	out["scheduled_cycles"] = v5
 	return out, nil
 }
 
-// StakingStakeStatus matches the IDL enum StakeStatus.
-type StakingStakeStatus struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
-}
-
-// ToValue converts StakingStakeStatus into the provider wire value (map[string]any).
-func (v StakingStakeStatus) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum StakeStatus: empty variant")
-	}
-	switch v.Variant {
-	case "Pending":
-		return map[string]any{"variant": "Pending"}, nil
-	case "Active":
-		return map[string]any{"variant": "Active"}, nil
-	case "Closed":
-		return map[string]any{"variant": "Closed"}, nil
-	case "Cancelled":
-		return map[string]any{"variant": "Cancelled"}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
-}
-
-// StakingPendingUnstake matches the IDL struct PendingUnstake.
-type StakingPendingUnstake struct {
-	Shares uint64
-	SubmittedCycle uint64
-	EffectiveCycle uint64
-}
-
-// ToValue converts StakingPendingUnstake into the provider wire value (map[string]any).
-func (v StakingPendingUnstake) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 3)
-	// shares: u64
-	out["shares"] = v.Shares
-	// submitted_cycle: u64
-	out["submitted_cycle"] = v.SubmittedCycle
-	// effective_cycle: u64
-	out["effective_cycle"] = v.EffectiveCycle
-	return out, nil
-}
-
-// StakingStake matches the IDL struct Stake.
-type StakingStake struct {
-	StakeId [32]byte
-	Owner *crypto.Address
-	PoolId any
-	Shares uint64
-	Principal uint64
-	RewardDebt *big.Int
-	ClaimableRewards uint64
-	SubmittedCycle uint64
-	EffectiveCycle uint64
-	Status StakingStakeStatus
-	PendingUnstake *StakingPendingUnstake
-}
-
-// ToValue converts StakingStake into the provider wire value (map[string]any).
-func (v StakingStake) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 11)
-	// stake_id: B256
-	out["stake_id"] = v.StakeId
-	// owner: Address
-	out["owner"] = v.Owner
-	// pool_id: PoolId
-	out["pool_id"] = v.PoolId
-	// shares: u64
-	out["shares"] = v.Shares
-	// principal: u64
-	out["principal"] = v.Principal
-	// reward_debt: u128
-	out["reward_debt"] = v.RewardDebt
-	// claimable_rewards: u64
-	out["claimable_rewards"] = v.ClaimableRewards
-	// submitted_cycle: u64
-	out["submitted_cycle"] = v.SubmittedCycle
-	// effective_cycle: u64
-	out["effective_cycle"] = v.EffectiveCycle
-	// status: StakeStatus
-	v0, err := toStakingStakeStatusValue(v.Status)
-	if err != nil {
-		return nil, err
-	}
-	out["status"] = v0
-	// pending_unstake: option<PendingUnstake>
-	if v.PendingUnstake == nil {
-		out["pending_unstake"] = nil
-	} else {
-		v1, err := toStakingPendingUnstakeValue(*v.PendingUnstake)
-		if err != nil {
-			return nil, err
-		}
-		out["pending_unstake"] = v1
-	}
-	return out, nil
-}
-
-// StakingPoolStakePosition matches the IDL struct PoolStakePosition.
-type StakingPoolStakePosition struct {
-	Owner *crypto.Address
-	PoolId any
-	Shares uint64
-	RewardDebt *big.Int
-	ClaimableRewards uint64
-}
-
-// ToValue converts StakingPoolStakePosition into the provider wire value (map[string]any).
-func (v StakingPoolStakePosition) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 5)
-	// owner: Address
-	out["owner"] = v.Owner
-	// pool_id: PoolId
-	out["pool_id"] = v.PoolId
-	// shares: u64
-	out["shares"] = v.Shares
-	// reward_debt: u128
-	out["reward_debt"] = v.RewardDebt
-	// claimable_rewards: u64
-	out["claimable_rewards"] = v.ClaimableRewards
-	return out, nil
-}
-
-// StakingCycleBucket matches the IDL struct CycleBucket.
-type StakingCycleBucket struct {
-	StakeShares uint64
-	UnstakeShares uint64
-	Reward uint64
-}
-
-// ToValue converts StakingCycleBucket into the provider wire value (map[string]any).
-func (v StakingCycleBucket) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 3)
-	// stake_shares: u64
-	out["stake_shares"] = v.StakeShares
-	// unstake_shares: u64
-	out["unstake_shares"] = v.UnstakeShares
-	// reward: u64
-	out["reward"] = v.Reward
-	return out, nil
-}
-
-// StakingCycleRecord matches the IDL struct CycleRecord.
-type StakingCycleRecord struct {
+// StakingCheckpoint matches the IDL struct Checkpoint.
+type StakingCheckpoint struct {
 	Written bool
 	RewardIndex *big.Int
 }
 
-// ToValue converts StakingCycleRecord into the provider wire value (map[string]any).
-func (v StakingCycleRecord) ToValue() (map[string]any, error) {
+// ToValue converts StakingCheckpoint into the provider wire value (map[string]any).
+func (v StakingCheckpoint) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 2)
 	// written: bool
 	out["written"] = v.Written
 	// reward_index: u128
 	out["reward_index"] = v.RewardIndex
-	return out, nil
-}
-
-// StakingSlashReceipt matches the IDL struct SlashReceipt.
-type StakingSlashReceipt struct {
-	PoolId any
-	Amount uint64
-	EffectiveCycle uint64
-	EvidenceId [32]byte
-}
-
-// ToValue converts StakingSlashReceipt into the provider wire value (map[string]any).
-func (v StakingSlashReceipt) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// pool_id: PoolId
-	out["pool_id"] = v.PoolId
-	// amount: u64
-	out["amount"] = v.Amount
-	// effective_cycle: u64
-	out["effective_cycle"] = v.EffectiveCycle
-	// evidence_id: B256
-	out["evidence_id"] = v.EvidenceId
-	return out, nil
-}
-
-// StakingStakeIds matches the IDL struct StakeIds.
-type StakingStakeIds struct {
-	Ids [][32]byte
-}
-
-// ToValue converts StakingStakeIds into the provider wire value (map[string]any).
-func (v StakingStakeIds) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 1)
-	// ids: vec<B256>
-	v0 := make([]any, len(v.Ids))
-	for v1, v2 := range v.Ids {
-		v0[v1] = v2
-	}
-	out["ids"] = v0
-	return out, nil
-}
-
-// StakingValidatorRewardPolicy matches the IDL struct ValidatorRewardPolicy.
-type StakingValidatorRewardPolicy struct {
-	StakeAsset *crypto.Address
-	RewardAsset *crypto.Address
-	RewardPerValidator uint64
-	Available uint64
-}
-
-// ToValue converts StakingValidatorRewardPolicy into the provider wire value (map[string]any).
-func (v StakingValidatorRewardPolicy) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// stake_asset: Address
-	out["stake_asset"] = v.StakeAsset
-	// reward_asset: Address
-	out["reward_asset"] = v.RewardAsset
-	// reward_per_validator: u64
-	out["reward_per_validator"] = v.RewardPerValidator
-	// available: u64
-	out["available"] = v.Available
-	return out, nil
-}
-
-// StakingPolicyAssets matches the IDL struct PolicyAssets.
-type StakingPolicyAssets struct {
-	Assets [][]any
-}
-
-// ToValue converts StakingPolicyAssets into the provider wire value (map[string]any).
-func (v StakingPolicyAssets) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 1)
-	// assets: vec<tuple<Address,Address>>
-	v0 := make([]any, len(v.Assets))
-	for v1, v2 := range v.Assets {
-		v3 := make([]any, 1)
-		v3[0] = v2[0]
-		v0[v1] = v3
-	}
-	out["assets"] = v0
-	return out, nil
-}
-
-// StakingRewardCursor matches the IDL struct RewardCursor.
-type StakingRewardCursor struct {
-	Initialized bool
-	LastSettledEpoch uint64
-}
-
-// ToValue converts StakingRewardCursor into the provider wire value (map[string]any).
-func (v StakingRewardCursor) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 2)
-	// initialized: bool
-	out["initialized"] = v.Initialized
-	// last_settled_epoch: u64
-	out["last_settled_epoch"] = v.LastSettledEpoch
 	return out, nil
 }
 
@@ -16916,6 +17548,25 @@ func (v IdentityCredentialDefinition) ToValue() (map[string]any, error) {
 	out["issuer"] = v.Issuer
 	// credential_schema: String
 	out["credential_schema"] = v.CredentialSchema
+	return out, nil
+}
+
+// SftokenSftBalanceState matches the IDL struct SftBalanceState.
+type SftokenSftBalanceState struct {
+	Amount uint64
+	NextTokenId uint64
+	Ready bool
+}
+
+// ToValue converts SftokenSftBalanceState into the provider wire value (map[string]any).
+func (v SftokenSftBalanceState) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// amount: u64
+	out["amount"] = v.Amount
+	// next_token_id: u64
+	out["next_token_id"] = v.NextTokenId
+	// ready: bool
+	out["ready"] = v.Ready
 	return out, nil
 }
 
@@ -17895,17 +18546,17 @@ func (v ValidatorValidatorSelectionStatus) ToValue() (map[string]any, error) {
 
 // ValidatorValidatorProfile matches the IDL struct ValidatorProfile.
 type ValidatorValidatorProfile struct {
-	Validator any
+	Validator [32]byte
 	Controller *crypto.Address
 	IdentityStatus ValidatorValidatorIdentityStatus
 	SelectionStatus ValidatorValidatorSelectionStatus
-	PoolId *any
+	PoolId *[32]byte
 }
 
 // ToValue converts ValidatorValidatorProfile into the provider wire value (map[string]any).
 func (v ValidatorValidatorProfile) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 5)
-	// validator: ValidatorId
+	// validator: B256
 	out["validator"] = v.Validator
 	// controller: Address
 	out["controller"] = v.Controller
@@ -17921,7 +18572,7 @@ func (v ValidatorValidatorProfile) ToValue() (map[string]any, error) {
 		return nil, err
 	}
 	out["selection_status"] = v1
-	// pool_id: option<PoolId>
+	// pool_id: option<B256>
 	if v.PoolId == nil {
 		out["pool_id"] = nil
 	} else {
@@ -17932,13 +18583,13 @@ func (v ValidatorValidatorProfile) ToValue() (map[string]any, error) {
 
 // ValidatorCandidatePool matches the IDL struct CandidatePool.
 type ValidatorCandidatePool struct {
-	Validators []any
+	Validators [][32]byte
 }
 
 // ToValue converts ValidatorCandidatePool into the provider wire value (map[string]any).
 func (v ValidatorCandidatePool) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 1)
-	// validators: vec<ValidatorId>
+	// validators: vec<B256>
 	v0 := make([]any, len(v.Validators))
 	for v1, v2 := range v.Validators {
 		v0[v1] = v2
@@ -17949,14 +18600,14 @@ func (v ValidatorCandidatePool) ToValue() (map[string]any, error) {
 
 // ValidatorCandidateValidator matches the IDL struct CandidateValidator.
 type ValidatorCandidateValidator struct {
-	Validator any
+	Validator [32]byte
 	ConsensusAccount *crypto.Address
 }
 
 // ToValue converts ValidatorCandidateValidator into the provider wire value (map[string]any).
 func (v ValidatorCandidateValidator) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 2)
-	// validator: ValidatorId
+	// validator: B256
 	out["validator"] = v.Validator
 	// consensus_account: Address
 	out["consensus_account"] = v.ConsensusAccount
@@ -17965,24 +18616,24 @@ func (v ValidatorCandidateValidator) ToValue() (map[string]any, error) {
 
 // ValidatorValidatorPoolOverview matches the IDL struct ValidatorPoolOverview.
 type ValidatorValidatorPoolOverview struct {
-	Validator any
+	Validator [32]byte
 	ConsensusAccount *crypto.Address
-	PoolId any
+	PoolId [32]byte
 	StakeAsset *crypto.Address
 	RewardAsset *crypto.Address
 	TotalStake uint64
 	CommissionRateBps uint64
-	ActiveStakerCount uint64
+	PositionCount uint64
 }
 
 // ToValue converts ValidatorValidatorPoolOverview into the provider wire value (map[string]any).
 func (v ValidatorValidatorPoolOverview) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 8)
-	// validator: ValidatorId
+	// validator: B256
 	out["validator"] = v.Validator
 	// consensus_account: Address
 	out["consensus_account"] = v.ConsensusAccount
-	// pool_id: PoolId
+	// pool_id: B256
 	out["pool_id"] = v.PoolId
 	// stake_asset: Address
 	out["stake_asset"] = v.StakeAsset
@@ -17992,8 +18643,8 @@ func (v ValidatorValidatorPoolOverview) ToValue() (map[string]any, error) {
 	out["total_stake"] = v.TotalStake
 	// commission_rate_bps: u64
 	out["commission_rate_bps"] = v.CommissionRateBps
-	// active_staker_count: u64
-	out["active_staker_count"] = v.ActiveStakerCount
+	// position_count: u64
+	out["position_count"] = v.PositionCount
 	return out, nil
 }
 
@@ -18031,7 +18682,7 @@ func (v ValidatorValidatorPoolList) ToValue() (map[string]any, error) {
 // ValidatorAvailabilityDeclaration matches the IDL struct AvailabilityDeclaration.
 type ValidatorAvailabilityDeclaration struct {
 	TargetEpoch uint64
-	Validator any
+	Validator [32]byte
 	Controller *crypto.Address
 }
 
@@ -18040,10 +18691,48 @@ func (v ValidatorAvailabilityDeclaration) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 3)
 	// target_epoch: u64
 	out["target_epoch"] = v.TargetEpoch
-	// validator: ValidatorId
+	// validator: B256
 	out["validator"] = v.Validator
 	// controller: Address
 	out["controller"] = v.Controller
+	return out, nil
+}
+
+// ValidatorValidatorRewardPolicy matches the IDL struct ValidatorRewardPolicy.
+type ValidatorValidatorRewardPolicy struct {
+	StakeAsset *crypto.Address
+	RewardAsset *crypto.Address
+	RewardPerValidator uint64
+	Available uint64
+}
+
+// ToValue converts ValidatorValidatorRewardPolicy into the provider wire value (map[string]any).
+func (v ValidatorValidatorRewardPolicy) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// stake_asset: Address
+	out["stake_asset"] = v.StakeAsset
+	// reward_asset: Address
+	out["reward_asset"] = v.RewardAsset
+	// reward_per_validator: u64
+	out["reward_per_validator"] = v.RewardPerValidator
+	// available: u64
+	out["available"] = v.Available
+	return out, nil
+}
+
+// ValidatorRewardCursor matches the IDL struct RewardCursor.
+type ValidatorRewardCursor struct {
+	Initialized bool
+	LastSettledEpoch uint64
+}
+
+// ToValue converts ValidatorRewardCursor into the provider wire value (map[string]any).
+func (v ValidatorRewardCursor) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// initialized: bool
+	out["initialized"] = v.Initialized
+	// last_settled_epoch: u64
+	out["last_settled_epoch"] = v.LastSettledEpoch
 	return out, nil
 }
 
@@ -18470,14 +19159,14 @@ func (v KeylessProviderIndex) ToValue() (map[string]any, error) {
 
 // KeylessValidatorJwkReport matches the IDL struct ValidatorJwkReport.
 type KeylessValidatorJwkReport struct {
-	Validator any
+	Validator [32]byte
 	Keys []string
 }
 
 // ToValue converts KeylessValidatorJwkReport into the provider wire value (map[string]any).
 func (v KeylessValidatorJwkReport) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 2)
-	// validator: ValidatorId
+	// validator: B256
 	out["validator"] = v.Validator
 	// keys: vec<String>
 	v0 := make([]any, len(v.Keys))
@@ -18569,37 +19258,73 @@ func (v KeylessPublicStatementError) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// KeylessZkStatementError matches the IDL enum ZkStatementError.
-type KeylessZkStatementError struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+// KeylessGroth16Auth matches the IDL struct Groth16Auth.
+type KeylessGroth16Auth struct {
+	CircuitId uint32
+	Claim KeylessZkAuthClaim
+	Proof []byte
 }
 
-// ToValue converts KeylessZkStatementError into the provider wire value (map[string]any).
-func (v KeylessZkStatementError) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum ZkStatementError: empty variant")
+// ToValue converts KeylessGroth16Auth into the provider wire value (map[string]any).
+func (v KeylessGroth16Auth) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// circuit_id: u32
+	out["circuit_id"] = v.CircuitId
+	// claim: ZkAuthClaim
+	v0, err := toKeylessZkAuthClaimValue(v.Claim)
+	if err != nil {
+		return nil, err
 	}
-	switch v.Variant {
-	case "Jwt":
-		if len(v.Fields) != 1 {
-			return nil, fmt.Errorf("enum ZkStatementError: variant Jwt expects %d fields", len(v.Fields))
-		}
-		var v0 any
-		v0 = v.Fields[0]
-		return map[string]any{"variant": "Jwt", "fields": []any{v0}}, nil
-	case "Mismatch":
-		if len(v.Fields) != 1 {
-			return nil, fmt.Errorf("enum ZkStatementError: variant Mismatch expects %d fields", len(v.Fields))
-		}
-		var v0 any
-		v0 = v.Fields[0]
-		return map[string]any{"variant": "Mismatch", "fields": []any{v0}}, nil
-	case "AmbiguousJson":
-		return map[string]any{"variant": "AmbiguousJson"}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+	out["claim"] = v0
+	// proof: bytes
+	out["proof"] = v.Proof
+	return out, nil
+}
+
+// KeylessZkAuthClaim matches the IDL struct ZkAuthClaim.
+type KeylessZkAuthClaim struct {
+	ChainId uint64
+	ProviderId [32]byte
+	Issuer string
+	Algorithm string
+	Kid string
+	JwkThumbprint string
+	AudienceHash [32]byte
+	AddressSeed [32]byte
+	EphemeralPk *crypto.PublicKey
+	IatS uint64
+	ExpS uint64
+	SessionExpiryMs uint64
+}
+
+// ToValue converts KeylessZkAuthClaim into the provider wire value (map[string]any).
+func (v KeylessZkAuthClaim) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 12)
+	// chain_id: u64
+	out["chain_id"] = v.ChainId
+	// provider_id: B256
+	out["provider_id"] = v.ProviderId
+	// issuer: String
+	out["issuer"] = v.Issuer
+	// algorithm: String
+	out["algorithm"] = v.Algorithm
+	// kid: String
+	out["kid"] = v.Kid
+	// jwk_thumbprint: String
+	out["jwk_thumbprint"] = v.JwkThumbprint
+	// audience_hash: B256
+	out["audience_hash"] = v.AudienceHash
+	// address_seed: B256
+	out["address_seed"] = v.AddressSeed
+	// ephemeral_pk: PublicKey
+	out["ephemeral_pk"] = v.EphemeralPk
+	// iat_s: u64
+	out["iat_s"] = v.IatS
+	// exp_s: u64
+	out["exp_s"] = v.ExpS
+	// session_expiry_ms: u64
+	out["session_expiry_ms"] = v.SessionExpiryMs
+	return out, nil
 }
 
 // SocialObjectType matches the IDL enum ObjectType.
@@ -18745,17 +19470,36 @@ func (v SocialCommunityControl) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// SocialGiftAllocation matches the IDL enum GiftAllocation.
-type SocialGiftAllocation struct {
+// SocialFollowSponsor matches the IDL struct FollowSponsor.
+type SocialFollowSponsor struct {
+	Owner *crypto.Address
+	Target *crypto.Address
+	Active bool
+}
+
+// ToValue converts SocialFollowSponsor into the provider wire value (map[string]any).
+func (v SocialFollowSponsor) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// owner: Address
+	out["owner"] = v.Owner
+	// target: Address
+	out["target"] = v.Target
+	// active: bool
+	out["active"] = v.Active
+	return out, nil
+}
+
+// SocialHongbaoAllocation matches the IDL enum HongbaoAllocation.
+type SocialHongbaoAllocation struct {
 	Variant string // Active variant name
 	Index   uint64 // Active variant index
 	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
 }
 
-// ToValue converts SocialGiftAllocation into the provider wire value (map[string]any).
-func (v SocialGiftAllocation) ToValue() (map[string]any, error) {
+// ToValue converts SocialHongbaoAllocation into the provider wire value (map[string]any).
+func (v SocialHongbaoAllocation) ToValue() (map[string]any, error) {
 	if v.Variant == "" {
-		return nil, fmt.Errorf("enum GiftAllocation: empty variant")
+		return nil, fmt.Errorf("enum HongbaoAllocation: empty variant")
 	}
 	switch v.Variant {
 	case "Equal":
@@ -18961,9 +19705,13 @@ func fromSystemProposal(v any) (out SystemProposal, err error) {
 		}
 		out.FastPass = v8
 	}
-	// proposer_validator: ValidatorId
+	// proposer_validator: B256
 	{
-		out.ProposerValidator = m["proposer_validator"]
+		v9, err := toFixed32(m["proposer_validator"])
+		if err != nil {
+			return out, err
+		}
+		out.ProposerValidator = v9
 	}
 	return out, nil
 }
@@ -19358,41 +20106,45 @@ func fromSystemConsensusValidatorIdentity(v any) (out SystemConsensusValidatorId
 	if err != nil {
 		return out, err
 	}
-	// validator: ValidatorId
+	// validator: B256
 	{
-		out.Validator = m["validator"]
+		v0, err := toFixed32(m["validator"])
+		if err != nil {
+			return out, err
+		}
+		out.Validator = v0
 	}
 	// consensus_account: Address
 	{
-		v0, err := toAddress(m["consensus_account"])
+		v1, err := toAddress(m["consensus_account"])
 		if err != nil {
 			return out, err
 		}
-		out.ConsensusAccount = v0
+		out.ConsensusAccount = v1
 	}
 	// consensus_pubkey: bytes
 	{
-		v1, err := toBytes(m["consensus_pubkey"])
+		v2, err := toBytes(m["consensus_pubkey"])
 		if err != nil {
 			return out, err
 		}
-		out.ConsensusPubkey = v1
+		out.ConsensusPubkey = v2
 	}
 	// bls_pubkey: bytes
 	{
-		v2, err := toBytes(m["bls_pubkey"])
+		v3, err := toBytes(m["bls_pubkey"])
 		if err != nil {
 			return out, err
 		}
-		out.BlsPubkey = v2
+		out.BlsPubkey = v3
 	}
 	// ed25519_pubkey: bytes
 	{
-		v3, err := toBytes(m["ed25519_pubkey"])
+		v4, err := toBytes(m["ed25519_pubkey"])
 		if err != nil {
 			return out, err
 		}
-		out.Ed25519Pubkey = v3
+		out.Ed25519Pubkey = v4
 	}
 	return out, nil
 }
@@ -19742,15 +20494,15 @@ func fromTokenCompliance(v any) (out TokenCompliance, err error) {
 	return out, nil
 }
 
-// fromTokenGiftAllocation converts a decoded IDL value into TokenGiftAllocation.
-func fromTokenGiftAllocation(v any) (out TokenGiftAllocation, err error) {
+// fromTokenHongbaoAllocation converts a decoded IDL value into TokenHongbaoAllocation.
+func fromTokenHongbaoAllocation(v any) (out TokenHongbaoAllocation, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
 	s, ok := m["variant"].(string)
 	if !ok {
-		return out, fmt.Errorf("enum GiftAllocation: missing variant")
+		return out, fmt.Errorf("enum HongbaoAllocation: missing variant")
 	}
 	out.Variant = s
 	n, err := toUint(m["index"])
@@ -19761,15 +20513,15 @@ func fromTokenGiftAllocation(v any) (out TokenGiftAllocation, err error) {
 	return out, nil
 }
 
-// fromTokenGiftEligibility converts a decoded IDL value into TokenGiftEligibility.
-func fromTokenGiftEligibility(v any) (out TokenGiftEligibility, err error) {
+// fromTokenHongbaoEligibility converts a decoded IDL value into TokenHongbaoEligibility.
+func fromTokenHongbaoEligibility(v any) (out TokenHongbaoEligibility, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
 	s, ok := m["variant"].(string)
 	if !ok {
-		return out, fmt.Errorf("enum GiftEligibility: missing variant")
+		return out, fmt.Errorf("enum HongbaoEligibility: missing variant")
 	}
 	out.Variant = s
 	n, err := toUint(m["index"])
@@ -19786,12 +20538,21 @@ func fromTokenGiftEligibility(v any) (out TokenGiftEligibility, err error) {
 		out.Fields = []any{
 			m["addresses"],
 		}
+	case "SftHolding":
+		out.Fields = []any{
+			m["sft"],
+			m["min_amount"],
+		}
+	case "Credentials":
+		out.Fields = []any{
+			m["credential_ids"],
+		}
 	}
 	return out, nil
 }
 
-// fromTokenGiftRules converts a decoded IDL value into TokenGiftRules.
-func fromTokenGiftRules(v any) (out TokenGiftRules, err error) {
+// fromTokenHongbaoRules converts a decoded IDL value into TokenHongbaoRules.
+func fromTokenHongbaoRules(v any) (out TokenHongbaoRules, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
@@ -19842,8 +20603,8 @@ func fromTokenGiftRules(v any) (out TokenGiftRules, err error) {
 	return out, nil
 }
 
-// fromTokenGiftState converts a decoded IDL value into TokenGiftState.
-func fromTokenGiftState(v any) (out TokenGiftState, err error) {
+// fromTokenHongbaoState converts a decoded IDL value into TokenHongbaoState.
+func fromTokenHongbaoState(v any) (out TokenHongbaoState, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
@@ -19856,13 +20617,13 @@ func fromTokenGiftState(v any) (out TokenGiftState, err error) {
 		}
 		out.Creator = v0
 	}
-	// gift_id: Address
+	// hongbao_id: Address
 	{
-		v1, err := toAddress(m["gift_id"])
+		v1, err := toAddress(m["hongbao_id"])
 		if err != nil {
 			return out, err
 		}
-		out.GiftId = v1
+		out.HongbaoId = v1
 	}
 	// token: Address
 	{
@@ -19912,17 +20673,17 @@ func fromTokenGiftState(v any) (out TokenGiftState, err error) {
 		}
 		out.ExpiresAtMs = v7
 	}
-	// allocation: GiftAllocation
+	// allocation: HongbaoAllocation
 	{
-		v8, err := fromTokenGiftAllocation(m["allocation"])
+		v8, err := fromTokenHongbaoAllocation(m["allocation"])
 		if err != nil {
 			return out, err
 		}
 		out.Allocation = v8
 	}
-	// eligibility: GiftEligibility
+	// eligibility: HongbaoEligibility
 	{
-		v9, err := fromTokenGiftEligibility(m["eligibility"])
+		v9, err := fromTokenHongbaoEligibility(m["eligibility"])
 		if err != nil {
 			return out, err
 		}
@@ -19939,8 +20700,8 @@ func fromTokenGiftState(v any) (out TokenGiftState, err error) {
 	return out, nil
 }
 
-// fromTokenGiftSettlement converts a decoded IDL value into TokenGiftSettlement.
-func fromTokenGiftSettlement(v any) (out TokenGiftSettlement, err error) {
+// fromTokenHongbaoSettlement converts a decoded IDL value into TokenHongbaoSettlement.
+func fromTokenHongbaoSettlement(v any) (out TokenHongbaoSettlement, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
@@ -19980,8 +20741,8 @@ func fromTokenGiftSettlement(v any) (out TokenGiftSettlement, err error) {
 	return out, nil
 }
 
-// fromTokenGiftCleanupQueueState converts a decoded IDL value into TokenGiftCleanupQueueState.
-func fromTokenGiftCleanupQueueState(v any) (out TokenGiftCleanupQueueState, err error) {
+// fromTokenHongbaoCleanupQueueState converts a decoded IDL value into TokenHongbaoCleanupQueueState.
+func fromTokenHongbaoCleanupQueueState(v any) (out TokenHongbaoCleanupQueueState, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
@@ -20200,25 +20961,6 @@ func fromStakingPoolStatus(v any) (out StakingPoolStatus, err error) {
 	return out, nil
 }
 
-// fromStakingSlashingMode converts a decoded IDL value into StakingSlashingMode.
-func fromStakingSlashingMode(v any) (out StakingSlashingMode, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum SlashingMode: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	return out, nil
-}
-
 // fromStakingCycleBasis converts a decoded IDL value into StakingCycleBasis.
 func fromStakingCycleBasis(v any) (out StakingCycleBasis, err error) {
 	m, err := toRecord(v)
@@ -20280,21 +21022,419 @@ func fromStakingPoolCycleConfig(v any) (out StakingPoolCycleConfig, err error) {
 		}
 		out.UnstakeActivationDelay = v2
 	}
-	// reward_distribution_delay: u64
-	{
-		v3, err := toUint64(m["reward_distribution_delay"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardDistributionDelay = v3
-	}
 	// commission_change_delay: u64
 	{
-		v4, err := toUint64(m["commission_change_delay"])
+		v3, err := toUint64(m["commission_change_delay"])
 		if err != nil {
 			return out, err
 		}
-		out.CommissionChangeDelay = v4
+		out.CommissionChangeDelay = v3
+	}
+	return out, nil
+}
+
+// fromStakingPoolAppPermissions converts a decoded IDL value into StakingPoolAppPermissions.
+func fromStakingPoolAppPermissions(v any) (out StakingPoolAppPermissions, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// manage_status: bool
+	{
+		v0, err := toBool(m["manage_status"])
+		if err != nil {
+			return out, err
+		}
+		out.ManageStatus = v0
+	}
+	// manage_rewards: bool
+	{
+		v1, err := toBool(m["manage_rewards"])
+		if err != nil {
+			return out, err
+		}
+		out.ManageRewards = v1
+	}
+	return out, nil
+}
+
+// fromStakingPoolDefinition converts a decoded IDL value into StakingPoolDefinition.
+func fromStakingPoolDefinition(v any) (out StakingPoolDefinition, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// pool_id: B256
+	{
+		v0, err := toFixed32(m["pool_id"])
+		if err != nil {
+			return out, err
+		}
+		out.PoolId = v0
+	}
+	// owner: Address
+	{
+		v1, err := toAddress(m["owner"])
+		if err != nil {
+			return out, err
+		}
+		out.Owner = v1
+	}
+	// manager_app: option<u8>
+	{
+		if m["manager_app"] == nil {
+			out.ManagerApp = nil
+		} else {
+			var v2 uint8
+			v3, err := toUint8(m["manager_app"])
+			if err != nil {
+				return out, err
+			}
+			v2 = v3
+			out.ManagerApp = &v2
+		}
+	}
+	// app_permissions: PoolAppPermissions
+	{
+		v4, err := fromStakingPoolAppPermissions(m["app_permissions"])
+		if err != nil {
+			return out, err
+		}
+		out.AppPermissions = v4
+	}
+	// stake_asset: Address
+	{
+		v5, err := toAddress(m["stake_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.StakeAsset = v5
+	}
+	// reward_asset: Address
+	{
+		v6, err := toAddress(m["reward_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardAsset = v6
+	}
+	// cycle_config: PoolCycleConfig
+	{
+		v7, err := fromStakingPoolCycleConfig(m["cycle_config"])
+		if err != nil {
+			return out, err
+		}
+		out.CycleConfig = v7
+	}
+	return out, nil
+}
+
+// fromStakingPoolControl converts a decoded IDL value into StakingPoolControl.
+func fromStakingPoolControl(v any) (out StakingPoolControl, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// status: PoolStatus
+	{
+		v0, err := fromStakingPoolStatus(m["status"])
+		if err != nil {
+			return out, err
+		}
+		out.Status = v0
+	}
+	// closing_cycle: option<u64>
+	{
+		if m["closing_cycle"] == nil {
+			out.ClosingCycle = nil
+		} else {
+			var v1 uint64
+			v2, err := toUint64(m["closing_cycle"])
+			if err != nil {
+				return out, err
+			}
+			v1 = v2
+			out.ClosingCycle = &v1
+		}
+	}
+	return out, nil
+}
+
+// fromStakingPool converts a decoded IDL value into StakingPool.
+func fromStakingPool(v any) (out StakingPool, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// pool_id: B256
+	{
+		v0, err := toFixed32(m["pool_id"])
+		if err != nil {
+			return out, err
+		}
+		out.PoolId = v0
+	}
+	// owner: Address
+	{
+		v1, err := toAddress(m["owner"])
+		if err != nil {
+			return out, err
+		}
+		out.Owner = v1
+	}
+	// manager_app: option<u8>
+	{
+		if m["manager_app"] == nil {
+			out.ManagerApp = nil
+		} else {
+			var v2 uint8
+			v3, err := toUint8(m["manager_app"])
+			if err != nil {
+				return out, err
+			}
+			v2 = v3
+			out.ManagerApp = &v2
+		}
+	}
+	// app_permissions: PoolAppPermissions
+	{
+		v4, err := fromStakingPoolAppPermissions(m["app_permissions"])
+		if err != nil {
+			return out, err
+		}
+		out.AppPermissions = v4
+	}
+	// stake_asset: Address
+	{
+		v5, err := toAddress(m["stake_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.StakeAsset = v5
+	}
+	// reward_asset: Address
+	{
+		v6, err := toAddress(m["reward_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardAsset = v6
+	}
+	// cycle_config: PoolCycleConfig
+	{
+		v7, err := fromStakingPoolCycleConfig(m["cycle_config"])
+		if err != nil {
+			return out, err
+		}
+		out.CycleConfig = v7
+	}
+	// status: PoolStatus
+	{
+		v8, err := fromStakingPoolStatus(m["status"])
+		if err != nil {
+			return out, err
+		}
+		out.Status = v8
+	}
+	// active_principal: u64
+	{
+		v9, err := toUint64(m["active_principal"])
+		if err != nil {
+			return out, err
+		}
+		out.ActivePrincipal = v9
+	}
+	// reward_index: u128
+	{
+		v10, err := toBigInt(m["reward_index"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardIndex = v10
+	}
+	// reward_config: PoolRewardConfig
+	{
+		v11, err := fromStakingPoolRewardConfig(m["reward_config"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardConfig = v11
+	}
+	// held_principal: u64
+	{
+		v12, err := toUint64(m["held_principal"])
+		if err != nil {
+			return out, err
+		}
+		out.HeldPrincipal = v12
+	}
+	// pending_principal: u64
+	{
+		v13, err := toUint64(m["pending_principal"])
+		if err != nil {
+			return out, err
+		}
+		out.PendingPrincipal = v13
+	}
+	// reward_liability: u64
+	{
+		v14, err := toUint64(m["reward_liability"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardLiability = v14
+	}
+	// commission_liability: u64
+	{
+		v15, err := toUint64(m["commission_liability"])
+		if err != nil {
+			return out, err
+		}
+		out.CommissionLiability = v15
+	}
+	// position_count: u64
+	{
+		v16, err := toUint64(m["position_count"])
+		if err != nil {
+			return out, err
+		}
+		out.PositionCount = v16
+	}
+	// settlement_cursor: u64
+	{
+		v17, err := toUint64(m["settlement_cursor"])
+		if err != nil {
+			return out, err
+		}
+		out.SettlementCursor = v17
+	}
+	return out, nil
+}
+
+// fromStakingPendingAmount converts a decoded IDL value into StakingPendingAmount.
+func fromStakingPendingAmount(v any) (out StakingPendingAmount, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// cycle: u64
+	{
+		v0, err := toUint64(m["cycle"])
+		if err != nil {
+			return out, err
+		}
+		out.Cycle = v0
+	}
+	// amount: u64
+	{
+		v1, err := toUint64(m["amount"])
+		if err != nil {
+			return out, err
+		}
+		out.Amount = v1
+	}
+	return out, nil
+}
+
+// fromStakingPosition converts a decoded IDL value into StakingPosition.
+func fromStakingPosition(v any) (out StakingPosition, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// owner: Address
+	{
+		v0, err := toAddress(m["owner"])
+		if err != nil {
+			return out, err
+		}
+		out.Owner = v0
+	}
+	// pool_id: B256
+	{
+		v1, err := toFixed32(m["pool_id"])
+		if err != nil {
+			return out, err
+		}
+		out.PoolId = v1
+	}
+	// active_principal: u64
+	{
+		v2, err := toUint64(m["active_principal"])
+		if err != nil {
+			return out, err
+		}
+		out.ActivePrincipal = v2
+	}
+	// reward_checkpoint: u128
+	{
+		v3, err := toBigInt(m["reward_checkpoint"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardCheckpoint = v3
+	}
+	// reward_fraction: u64
+	{
+		v4, err := toUint64(m["reward_fraction"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardFraction = v4
+	}
+	// claimable_rewards: u64
+	{
+		v5, err := toUint64(m["claimable_rewards"])
+		if err != nil {
+			return out, err
+		}
+		out.ClaimableRewards = v5
+	}
+	// claimable_principal: u64
+	{
+		v6, err := toUint64(m["claimable_principal"])
+		if err != nil {
+			return out, err
+		}
+		out.ClaimablePrincipal = v6
+	}
+	// deposits: vec<PendingAmount>
+	{
+		v7, err := toSlice(m["deposits"])
+		if err != nil {
+			return out, err
+		}
+		out.Deposits = make([]StakingPendingAmount, len(v7))
+		for v8, v9 := range v7 {
+			v10, err := fromStakingPendingAmount(v9)
+			if err != nil {
+				return out, err
+			}
+			out.Deposits[v8] = v10
+		}
+	}
+	// exits: vec<PendingAmount>
+	{
+		v11, err := toSlice(m["exits"])
+		if err != nil {
+			return out, err
+		}
+		out.Exits = make([]StakingPendingAmount, len(v11))
+		for v12, v13 := range v11 {
+			v14, err := fromStakingPendingAmount(v13)
+			if err != nil {
+				return out, err
+			}
+			out.Exits[v12] = v14
+		}
+	}
+	// tracked: bool
+	{
+		v15, err := toBool(m["tracked"])
+		if err != nil {
+			return out, err
+		}
+		out.Tracked = v15
 	}
 	return out, nil
 }
@@ -20324,8 +21464,8 @@ func fromStakingPoolRewardConfig(v any) (out StakingPoolRewardConfig, err error)
 	return out, nil
 }
 
-// fromStakingPendingRewardConfig converts a decoded IDL value into StakingPendingRewardConfig.
-func fromStakingPendingRewardConfig(v any) (out StakingPendingRewardConfig, err error) {
+// fromStakingRewardTerms converts a decoded IDL value into StakingRewardTerms.
+func fromStakingRewardTerms(v any) (out StakingRewardTerms, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
@@ -20338,448 +21478,74 @@ func fromStakingPendingRewardConfig(v any) (out StakingPendingRewardConfig, err 
 		}
 		out.Config = v0
 	}
-	// requested_cycle: u64
+	// pending: option<PoolRewardConfig>
 	{
-		v1, err := toUint64(m["requested_cycle"])
-		if err != nil {
-			return out, err
+		if m["pending"] == nil {
+			out.Pending = nil
+		} else {
+			var v1 StakingPoolRewardConfig
+			v2, err := fromStakingPoolRewardConfig(m["pending"])
+			if err != nil {
+				return out, err
+			}
+			v1 = v2
+			out.Pending = &v1
 		}
-		out.RequestedCycle = v1
 	}
 	// effective_cycle: u64
 	{
-		v2, err := toUint64(m["effective_cycle"])
+		v3, err := toUint64(m["effective_cycle"])
 		if err != nil {
 			return out, err
 		}
-		out.EffectiveCycle = v2
+		out.EffectiveCycle = v3
 	}
 	return out, nil
 }
 
-// fromStakingPool converts a decoded IDL value into StakingPool.
-func fromStakingPool(v any) (out StakingPool, err error) {
+// fromStakingPoolIndex converts a decoded IDL value into StakingPoolIndex.
+func fromStakingPoolIndex(v any) (out StakingPoolIndex, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// pool_id: PoolId
+	// cursor: u64
 	{
-		out.PoolId = m["pool_id"]
-	}
-	// owner: Address
-	{
-		v0, err := toAddress(m["owner"])
+		v0, err := toUint64(m["cursor"])
 		if err != nil {
 			return out, err
 		}
-		out.Owner = v0
+		out.Cursor = v0
 	}
-	// stake_asset: Address
+	// active_principal: u64
 	{
-		v1, err := toAddress(m["stake_asset"])
+		v1, err := toUint64(m["active_principal"])
 		if err != nil {
 			return out, err
 		}
-		out.StakeAsset = v1
-	}
-	// reward_asset: Address
-	{
-		v2, err := toAddress(m["reward_asset"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardAsset = v2
-	}
-	// status: PoolStatus
-	{
-		v3, err := fromStakingPoolStatus(m["status"])
-		if err != nil {
-			return out, err
-		}
-		out.Status = v3
-	}
-	// slashing_mode: SlashingMode
-	{
-		v4, err := fromStakingSlashingMode(m["slashing_mode"])
-		if err != nil {
-			return out, err
-		}
-		out.SlashingMode = v4
-	}
-	// cycle_config: PoolCycleConfig
-	{
-		v5, err := fromStakingPoolCycleConfig(m["cycle_config"])
-		if err != nil {
-			return out, err
-		}
-		out.CycleConfig = v5
-	}
-	// total_shares: u64
-	{
-		v6, err := toUint64(m["total_shares"])
-		if err != nil {
-			return out, err
-		}
-		out.TotalShares = v6
-	}
-	// principal_assets: u64
-	{
-		v7, err := toUint64(m["principal_assets"])
-		if err != nil {
-			return out, err
-		}
-		out.PrincipalAssets = v7
-	}
-	// held_principal: u64
-	{
-		v8, err := toUint64(m["held_principal"])
-		if err != nil {
-			return out, err
-		}
-		out.HeldPrincipal = v8
+		out.ActivePrincipal = v1
 	}
 	// reward_index: u128
 	{
-		v9, err := toBigInt(m["reward_index"])
+		v2, err := toBigInt(m["reward_index"])
 		if err != nil {
 			return out, err
 		}
-		out.RewardIndex = v9
+		out.RewardIndex = v2
 	}
-	// scaled_reward_remainder: u128
+	// scaled_reward_remainder: u64
 	{
-		v10, err := toBigInt(m["scaled_reward_remainder"])
+		v3, err := toUint64(m["scaled_reward_remainder"])
 		if err != nil {
 			return out, err
 		}
-		out.ScaledRewardRemainder = v10
-	}
-	// reward_config: PoolRewardConfig
-	{
-		v11, err := fromStakingPoolRewardConfig(m["reward_config"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardConfig = v11
-	}
-	// pending_reward_config: option<PendingRewardConfig>
-	{
-		if m["pending_reward_config"] == nil {
-			out.PendingRewardConfig = nil
-		} else {
-			var v12 StakingPendingRewardConfig
-			v13, err := fromStakingPendingRewardConfig(m["pending_reward_config"])
-			if err != nil {
-				return out, err
-			}
-			v12 = v13
-			out.PendingRewardConfig = &v12
-		}
-	}
-	// claimable_commission: u64
-	{
-		v14, err := toUint64(m["claimable_commission"])
-		if err != nil {
-			return out, err
-		}
-		out.ClaimableCommission = v14
-	}
-	// reward_liability: u64
-	{
-		v15, err := toUint64(m["reward_liability"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardLiability = v15
-	}
-	// settlement_cursor: u64
-	{
-		v16, err := toUint64(m["settlement_cursor"])
-		if err != nil {
-			return out, err
-		}
-		out.SettlementCursor = v16
-	}
-	// pending_stake_count: u64
-	{
-		v17, err := toUint64(m["pending_stake_count"])
-		if err != nil {
-			return out, err
-		}
-		out.PendingStakeCount = v17
-	}
-	// pending_unstake_count: u64
-	{
-		v18, err := toUint64(m["pending_unstake_count"])
-		if err != nil {
-			return out, err
-		}
-		out.PendingUnstakeCount = v18
-	}
-	// closing_cycle: option<u64>
-	{
-		if m["closing_cycle"] == nil {
-			out.ClosingCycle = nil
-		} else {
-			var v19 uint64
-			v20, err := toUint64(m["closing_cycle"])
-			if err != nil {
-				return out, err
-			}
-			v19 = v20
-			out.ClosingCycle = &v19
-		}
-	}
-	// scheduled_cycles: vec<u64>
-	{
-		v21, err := toSlice(m["scheduled_cycles"])
-		if err != nil {
-			return out, err
-		}
-		out.ScheduledCycles = make([]uint64, len(v21))
-		for v22, v23 := range v21 {
-			v24, err := toUint64(v23)
-			if err != nil {
-				return out, err
-			}
-			out.ScheduledCycles[v22] = v24
-		}
+		out.ScaledRewardRemainder = v3
 	}
 	return out, nil
 }
 
-// fromStakingStakeStatus converts a decoded IDL value into StakingStakeStatus.
-func fromStakingStakeStatus(v any) (out StakingStakeStatus, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum StakeStatus: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	return out, nil
-}
-
-// fromStakingPendingUnstake converts a decoded IDL value into StakingPendingUnstake.
-func fromStakingPendingUnstake(v any) (out StakingPendingUnstake, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// shares: u64
-	{
-		v0, err := toUint64(m["shares"])
-		if err != nil {
-			return out, err
-		}
-		out.Shares = v0
-	}
-	// submitted_cycle: u64
-	{
-		v1, err := toUint64(m["submitted_cycle"])
-		if err != nil {
-			return out, err
-		}
-		out.SubmittedCycle = v1
-	}
-	// effective_cycle: u64
-	{
-		v2, err := toUint64(m["effective_cycle"])
-		if err != nil {
-			return out, err
-		}
-		out.EffectiveCycle = v2
-	}
-	return out, nil
-}
-
-// fromStakingStake converts a decoded IDL value into StakingStake.
-func fromStakingStake(v any) (out StakingStake, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// stake_id: B256
-	{
-		v0, err := toFixed32(m["stake_id"])
-		if err != nil {
-			return out, err
-		}
-		out.StakeId = v0
-	}
-	// owner: Address
-	{
-		v1, err := toAddress(m["owner"])
-		if err != nil {
-			return out, err
-		}
-		out.Owner = v1
-	}
-	// pool_id: PoolId
-	{
-		out.PoolId = m["pool_id"]
-	}
-	// shares: u64
-	{
-		v2, err := toUint64(m["shares"])
-		if err != nil {
-			return out, err
-		}
-		out.Shares = v2
-	}
-	// principal: u64
-	{
-		v3, err := toUint64(m["principal"])
-		if err != nil {
-			return out, err
-		}
-		out.Principal = v3
-	}
-	// reward_debt: u128
-	{
-		v4, err := toBigInt(m["reward_debt"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardDebt = v4
-	}
-	// claimable_rewards: u64
-	{
-		v5, err := toUint64(m["claimable_rewards"])
-		if err != nil {
-			return out, err
-		}
-		out.ClaimableRewards = v5
-	}
-	// submitted_cycle: u64
-	{
-		v6, err := toUint64(m["submitted_cycle"])
-		if err != nil {
-			return out, err
-		}
-		out.SubmittedCycle = v6
-	}
-	// effective_cycle: u64
-	{
-		v7, err := toUint64(m["effective_cycle"])
-		if err != nil {
-			return out, err
-		}
-		out.EffectiveCycle = v7
-	}
-	// status: StakeStatus
-	{
-		v8, err := fromStakingStakeStatus(m["status"])
-		if err != nil {
-			return out, err
-		}
-		out.Status = v8
-	}
-	// pending_unstake: option<PendingUnstake>
-	{
-		if m["pending_unstake"] == nil {
-			out.PendingUnstake = nil
-		} else {
-			var v9 StakingPendingUnstake
-			v10, err := fromStakingPendingUnstake(m["pending_unstake"])
-			if err != nil {
-				return out, err
-			}
-			v9 = v10
-			out.PendingUnstake = &v9
-		}
-	}
-	return out, nil
-}
-
-// fromStakingPoolStakePosition converts a decoded IDL value into StakingPoolStakePosition.
-func fromStakingPoolStakePosition(v any) (out StakingPoolStakePosition, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// owner: Address
-	{
-		v0, err := toAddress(m["owner"])
-		if err != nil {
-			return out, err
-		}
-		out.Owner = v0
-	}
-	// pool_id: PoolId
-	{
-		out.PoolId = m["pool_id"]
-	}
-	// shares: u64
-	{
-		v1, err := toUint64(m["shares"])
-		if err != nil {
-			return out, err
-		}
-		out.Shares = v1
-	}
-	// reward_debt: u128
-	{
-		v2, err := toBigInt(m["reward_debt"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardDebt = v2
-	}
-	// claimable_rewards: u64
-	{
-		v3, err := toUint64(m["claimable_rewards"])
-		if err != nil {
-			return out, err
-		}
-		out.ClaimableRewards = v3
-	}
-	return out, nil
-}
-
-// fromStakingCycleBucket converts a decoded IDL value into StakingCycleBucket.
-func fromStakingCycleBucket(v any) (out StakingCycleBucket, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// stake_shares: u64
-	{
-		v0, err := toUint64(m["stake_shares"])
-		if err != nil {
-			return out, err
-		}
-		out.StakeShares = v0
-	}
-	// unstake_shares: u64
-	{
-		v1, err := toUint64(m["unstake_shares"])
-		if err != nil {
-			return out, err
-		}
-		out.UnstakeShares = v1
-	}
-	// reward: u64
-	{
-		v2, err := toUint64(m["reward"])
-		if err != nil {
-			return out, err
-		}
-		out.Reward = v2
-	}
-	return out, nil
-}
-
-// fromStakingCycleRecord converts a decoded IDL value into StakingCycleRecord.
-func fromStakingCycleRecord(v any) (out StakingCycleRecord, err error) {
+// fromStakingCheckpoint converts a decoded IDL value into StakingCheckpoint.
+func fromStakingCheckpoint(v any) (out StakingCheckpoint, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
@@ -20799,157 +21565,6 @@ func fromStakingCycleRecord(v any) (out StakingCycleRecord, err error) {
 			return out, err
 		}
 		out.RewardIndex = v1
-	}
-	return out, nil
-}
-
-// fromStakingSlashReceipt converts a decoded IDL value into StakingSlashReceipt.
-func fromStakingSlashReceipt(v any) (out StakingSlashReceipt, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// pool_id: PoolId
-	{
-		out.PoolId = m["pool_id"]
-	}
-	// amount: u64
-	{
-		v0, err := toUint64(m["amount"])
-		if err != nil {
-			return out, err
-		}
-		out.Amount = v0
-	}
-	// effective_cycle: u64
-	{
-		v1, err := toUint64(m["effective_cycle"])
-		if err != nil {
-			return out, err
-		}
-		out.EffectiveCycle = v1
-	}
-	// evidence_id: B256
-	{
-		v2, err := toFixed32(m["evidence_id"])
-		if err != nil {
-			return out, err
-		}
-		out.EvidenceId = v2
-	}
-	return out, nil
-}
-
-// fromStakingStakeIds converts a decoded IDL value into StakingStakeIds.
-func fromStakingStakeIds(v any) (out StakingStakeIds, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// ids: vec<B256>
-	{
-		v0, err := toSlice(m["ids"])
-		if err != nil {
-			return out, err
-		}
-		out.Ids = make([][32]byte, len(v0))
-		for v1, v2 := range v0 {
-			v3, err := toFixed32(v2)
-			if err != nil {
-				return out, err
-			}
-			out.Ids[v1] = v3
-		}
-	}
-	return out, nil
-}
-
-// fromStakingValidatorRewardPolicy converts a decoded IDL value into StakingValidatorRewardPolicy.
-func fromStakingValidatorRewardPolicy(v any) (out StakingValidatorRewardPolicy, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// stake_asset: Address
-	{
-		v0, err := toAddress(m["stake_asset"])
-		if err != nil {
-			return out, err
-		}
-		out.StakeAsset = v0
-	}
-	// reward_asset: Address
-	{
-		v1, err := toAddress(m["reward_asset"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardAsset = v1
-	}
-	// reward_per_validator: u64
-	{
-		v2, err := toUint64(m["reward_per_validator"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardPerValidator = v2
-	}
-	// available: u64
-	{
-		v3, err := toUint64(m["available"])
-		if err != nil {
-			return out, err
-		}
-		out.Available = v3
-	}
-	return out, nil
-}
-
-// fromStakingPolicyAssets converts a decoded IDL value into StakingPolicyAssets.
-func fromStakingPolicyAssets(v any) (out StakingPolicyAssets, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// assets: vec<tuple<Address,Address>>
-	{
-		v0, err := toSlice(m["assets"])
-		if err != nil {
-			return out, err
-		}
-		out.Assets = make([][]any, len(v0))
-		for v1, v2 := range v0 {
-			v3, err := toSlice(v2)
-			if err != nil {
-				return out, err
-			}
-			out.Assets[v1] = v3
-		}
-	}
-	return out, nil
-}
-
-// fromStakingRewardCursor converts a decoded IDL value into StakingRewardCursor.
-func fromStakingRewardCursor(v any) (out StakingRewardCursor, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// initialized: bool
-	{
-		v0, err := toBool(m["initialized"])
-		if err != nil {
-			return out, err
-		}
-		out.Initialized = v0
-	}
-	// last_settled_epoch: u64
-	{
-		v1, err := toUint64(m["last_settled_epoch"])
-		if err != nil {
-			return out, err
-		}
-		out.LastSettledEpoch = v1
 	}
 	return out, nil
 }
@@ -21724,6 +22339,39 @@ func fromIdentityCredentialDefinition(v any) (out IdentityCredentialDefinition, 
 			return out, err
 		}
 		out.CredentialSchema = v1
+	}
+	return out, nil
+}
+
+// fromSftokenSftBalanceState converts a decoded IDL value into SftokenSftBalanceState.
+func fromSftokenSftBalanceState(v any) (out SftokenSftBalanceState, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// amount: u64
+	{
+		v0, err := toUint64(m["amount"])
+		if err != nil {
+			return out, err
+		}
+		out.Amount = v0
+	}
+	// next_token_id: u64
+	{
+		v1, err := toUint64(m["next_token_id"])
+		if err != nil {
+			return out, err
+		}
+		out.NextTokenId = v1
+	}
+	// ready: bool
+	{
+		v2, err := toBool(m["ready"])
+		if err != nil {
+			return out, err
+		}
+		out.Ready = v2
 	}
 	return out, nil
 }
@@ -23258,42 +23906,50 @@ func fromValidatorValidatorProfile(v any) (out ValidatorValidatorProfile, err er
 	if err != nil {
 		return out, err
 	}
-	// validator: ValidatorId
+	// validator: B256
 	{
-		out.Validator = m["validator"]
+		v0, err := toFixed32(m["validator"])
+		if err != nil {
+			return out, err
+		}
+		out.Validator = v0
 	}
 	// controller: Address
 	{
-		v0, err := toAddress(m["controller"])
+		v1, err := toAddress(m["controller"])
 		if err != nil {
 			return out, err
 		}
-		out.Controller = v0
+		out.Controller = v1
 	}
 	// identity_status: ValidatorIdentityStatus
 	{
-		v1, err := fromValidatorValidatorIdentityStatus(m["identity_status"])
+		v2, err := fromValidatorValidatorIdentityStatus(m["identity_status"])
 		if err != nil {
 			return out, err
 		}
-		out.IdentityStatus = v1
+		out.IdentityStatus = v2
 	}
 	// selection_status: ValidatorSelectionStatus
 	{
-		v2, err := fromValidatorValidatorSelectionStatus(m["selection_status"])
+		v3, err := fromValidatorValidatorSelectionStatus(m["selection_status"])
 		if err != nil {
 			return out, err
 		}
-		out.SelectionStatus = v2
+		out.SelectionStatus = v3
 	}
-	// pool_id: option<PoolId>
+	// pool_id: option<B256>
 	{
 		if m["pool_id"] == nil {
 			out.PoolId = nil
 		} else {
-			var v3 any
-			v3 = m["pool_id"]
-			out.PoolId = &v3
+			var v4 [32]byte
+			v5, err := toFixed32(m["pool_id"])
+			if err != nil {
+				return out, err
+			}
+			v4 = v5
+			out.PoolId = &v4
 		}
 	}
 	return out, nil
@@ -23305,15 +23961,19 @@ func fromValidatorCandidatePool(v any) (out ValidatorCandidatePool, err error) {
 	if err != nil {
 		return out, err
 	}
-	// validators: vec<ValidatorId>
+	// validators: vec<B256>
 	{
 		v0, err := toSlice(m["validators"])
 		if err != nil {
 			return out, err
 		}
-		out.Validators = make([]any, len(v0))
+		out.Validators = make([][32]byte, len(v0))
 		for v1, v2 := range v0 {
-			out.Validators[v1] = v2
+			v3, err := toFixed32(v2)
+			if err != nil {
+				return out, err
+			}
+			out.Validators[v1] = v3
 		}
 	}
 	return out, nil
@@ -23325,17 +23985,21 @@ func fromValidatorCandidateValidator(v any) (out ValidatorCandidateValidator, er
 	if err != nil {
 		return out, err
 	}
-	// validator: ValidatorId
+	// validator: B256
 	{
-		out.Validator = m["validator"]
-	}
-	// consensus_account: Address
-	{
-		v0, err := toAddress(m["consensus_account"])
+		v0, err := toFixed32(m["validator"])
 		if err != nil {
 			return out, err
 		}
-		out.ConsensusAccount = v0
+		out.Validator = v0
+	}
+	// consensus_account: Address
+	{
+		v1, err := toAddress(m["consensus_account"])
+		if err != nil {
+			return out, err
+		}
+		out.ConsensusAccount = v1
 	}
 	return out, nil
 }
@@ -23346,61 +24010,69 @@ func fromValidatorValidatorPoolOverview(v any) (out ValidatorValidatorPoolOvervi
 	if err != nil {
 		return out, err
 	}
-	// validator: ValidatorId
+	// validator: B256
 	{
-		out.Validator = m["validator"]
+		v0, err := toFixed32(m["validator"])
+		if err != nil {
+			return out, err
+		}
+		out.Validator = v0
 	}
 	// consensus_account: Address
 	{
-		v0, err := toAddress(m["consensus_account"])
+		v1, err := toAddress(m["consensus_account"])
 		if err != nil {
 			return out, err
 		}
-		out.ConsensusAccount = v0
+		out.ConsensusAccount = v1
 	}
-	// pool_id: PoolId
+	// pool_id: B256
 	{
-		out.PoolId = m["pool_id"]
+		v2, err := toFixed32(m["pool_id"])
+		if err != nil {
+			return out, err
+		}
+		out.PoolId = v2
 	}
 	// stake_asset: Address
 	{
-		v1, err := toAddress(m["stake_asset"])
+		v3, err := toAddress(m["stake_asset"])
 		if err != nil {
 			return out, err
 		}
-		out.StakeAsset = v1
+		out.StakeAsset = v3
 	}
 	// reward_asset: Address
 	{
-		v2, err := toAddress(m["reward_asset"])
+		v4, err := toAddress(m["reward_asset"])
 		if err != nil {
 			return out, err
 		}
-		out.RewardAsset = v2
+		out.RewardAsset = v4
 	}
 	// total_stake: u64
 	{
-		v3, err := toUint64(m["total_stake"])
+		v5, err := toUint64(m["total_stake"])
 		if err != nil {
 			return out, err
 		}
-		out.TotalStake = v3
+		out.TotalStake = v5
 	}
 	// commission_rate_bps: u64
 	{
-		v4, err := toUint64(m["commission_rate_bps"])
+		v6, err := toUint64(m["commission_rate_bps"])
 		if err != nil {
 			return out, err
 		}
-		out.CommissionRateBps = v4
+		out.CommissionRateBps = v6
 	}
-	// active_staker_count: u64
+	// position_count: u64
 	{
-		v5, err := toUint64(m["active_staker_count"])
+		v7, err := toUint64(m["position_count"])
 		if err != nil {
 			return out, err
 		}
-		out.ActiveStakerCount = v5
+		out.PositionCount = v7
 	}
 	return out, nil
 }
@@ -23465,17 +24137,87 @@ func fromValidatorAvailabilityDeclaration(v any) (out ValidatorAvailabilityDecla
 		}
 		out.TargetEpoch = v0
 	}
-	// validator: ValidatorId
+	// validator: B256
 	{
-		out.Validator = m["validator"]
-	}
-	// controller: Address
-	{
-		v1, err := toAddress(m["controller"])
+		v1, err := toFixed32(m["validator"])
 		if err != nil {
 			return out, err
 		}
-		out.Controller = v1
+		out.Validator = v1
+	}
+	// controller: Address
+	{
+		v2, err := toAddress(m["controller"])
+		if err != nil {
+			return out, err
+		}
+		out.Controller = v2
+	}
+	return out, nil
+}
+
+// fromValidatorValidatorRewardPolicy converts a decoded IDL value into ValidatorValidatorRewardPolicy.
+func fromValidatorValidatorRewardPolicy(v any) (out ValidatorValidatorRewardPolicy, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// stake_asset: Address
+	{
+		v0, err := toAddress(m["stake_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.StakeAsset = v0
+	}
+	// reward_asset: Address
+	{
+		v1, err := toAddress(m["reward_asset"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardAsset = v1
+	}
+	// reward_per_validator: u64
+	{
+		v2, err := toUint64(m["reward_per_validator"])
+		if err != nil {
+			return out, err
+		}
+		out.RewardPerValidator = v2
+	}
+	// available: u64
+	{
+		v3, err := toUint64(m["available"])
+		if err != nil {
+			return out, err
+		}
+		out.Available = v3
+	}
+	return out, nil
+}
+
+// fromValidatorRewardCursor converts a decoded IDL value into ValidatorRewardCursor.
+func fromValidatorRewardCursor(v any) (out ValidatorRewardCursor, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// initialized: bool
+	{
+		v0, err := toBool(m["initialized"])
+		if err != nil {
+			return out, err
+		}
+		out.Initialized = v0
+	}
+	// last_settled_epoch: u64
+	{
+		v1, err := toUint64(m["last_settled_epoch"])
+		if err != nil {
+			return out, err
+		}
+		out.LastSettledEpoch = v1
 	}
 	return out, nil
 }
@@ -24061,23 +24803,27 @@ func fromKeylessValidatorJwkReport(v any) (out KeylessValidatorJwkReport, err er
 	if err != nil {
 		return out, err
 	}
-	// validator: ValidatorId
+	// validator: B256
 	{
-		out.Validator = m["validator"]
-	}
-	// keys: vec<String>
-	{
-		v0, err := toSlice(m["keys"])
+		v0, err := toFixed32(m["validator"])
 		if err != nil {
 			return out, err
 		}
-		out.Keys = make([]string, len(v0))
-		for v1, v2 := range v0 {
-			v3, err := toString(v2)
+		out.Validator = v0
+	}
+	// keys: vec<String>
+	{
+		v1, err := toSlice(m["keys"])
+		if err != nil {
+			return out, err
+		}
+		out.Keys = make([]string, len(v1))
+		for v2, v3 := range v1 {
+			v4, err := toString(v3)
 			if err != nil {
 				return out, err
 			}
-			out.Keys[v1] = v3
+			out.Keys[v2] = v4
 		}
 	}
 	return out, nil
@@ -24198,31 +24944,140 @@ func fromKeylessPublicStatementError(v any) (out KeylessPublicStatementError, er
 	return out, nil
 }
 
-// fromKeylessZkStatementError converts a decoded IDL value into KeylessZkStatementError.
-func fromKeylessZkStatementError(v any) (out KeylessZkStatementError, err error) {
+// fromKeylessGroth16Auth converts a decoded IDL value into KeylessGroth16Auth.
+func fromKeylessGroth16Auth(v any) (out KeylessGroth16Auth, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum ZkStatementError: missing variant")
+	// circuit_id: u32
+	{
+		v0, err := toUint32(m["circuit_id"])
+		if err != nil {
+			return out, err
+		}
+		out.CircuitId = v0
 	}
-	out.Variant = s
-	n, err := toUint(m["index"])
+	// claim: ZkAuthClaim
+	{
+		v1, err := fromKeylessZkAuthClaim(m["claim"])
+		if err != nil {
+			return out, err
+		}
+		out.Claim = v1
+	}
+	// proof: bytes
+	{
+		v2, err := toBytes(m["proof"])
+		if err != nil {
+			return out, err
+		}
+		out.Proof = v2
+	}
+	return out, nil
+}
+
+// fromKeylessZkAuthClaim converts a decoded IDL value into KeylessZkAuthClaim.
+func fromKeylessZkAuthClaim(v any) (out KeylessZkAuthClaim, err error) {
+	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	out.Index = n
-	switch out.Variant {
-	case "Jwt":
-		if f, ok := m["fields"].([]any); ok {
-			out.Fields = f
+	// chain_id: u64
+	{
+		v0, err := toUint64(m["chain_id"])
+		if err != nil {
+			return out, err
 		}
-	case "Mismatch":
-		if f, ok := m["fields"].([]any); ok {
-			out.Fields = f
+		out.ChainId = v0
+	}
+	// provider_id: B256
+	{
+		v1, err := toFixed32(m["provider_id"])
+		if err != nil {
+			return out, err
 		}
+		out.ProviderId = v1
+	}
+	// issuer: String
+	{
+		v2, err := toString(m["issuer"])
+		if err != nil {
+			return out, err
+		}
+		out.Issuer = v2
+	}
+	// algorithm: String
+	{
+		v3, err := toString(m["algorithm"])
+		if err != nil {
+			return out, err
+		}
+		out.Algorithm = v3
+	}
+	// kid: String
+	{
+		v4, err := toString(m["kid"])
+		if err != nil {
+			return out, err
+		}
+		out.Kid = v4
+	}
+	// jwk_thumbprint: String
+	{
+		v5, err := toString(m["jwk_thumbprint"])
+		if err != nil {
+			return out, err
+		}
+		out.JwkThumbprint = v5
+	}
+	// audience_hash: B256
+	{
+		v6, err := toFixed32(m["audience_hash"])
+		if err != nil {
+			return out, err
+		}
+		out.AudienceHash = v6
+	}
+	// address_seed: B256
+	{
+		v7, err := toFixed32(m["address_seed"])
+		if err != nil {
+			return out, err
+		}
+		out.AddressSeed = v7
+	}
+	// ephemeral_pk: PublicKey
+	{
+		v8, err := toPublicKey(m["ephemeral_pk"])
+		if err != nil {
+			return out, err
+		}
+		out.EphemeralPk = v8
+	}
+	// iat_s: u64
+	{
+		v9, err := toUint64(m["iat_s"])
+		if err != nil {
+			return out, err
+		}
+		out.IatS = v9
+	}
+	// exp_s: u64
+	{
+		v10, err := toUint64(m["exp_s"])
+		if err != nil {
+			return out, err
+		}
+		out.ExpS = v10
+	}
+	// session_expiry_ms: u64
+	{
+		v11, err := toUint64(m["session_expiry_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.SessionExpiryMs = v11
 	}
 	return out, nil
 }
@@ -24407,15 +25262,48 @@ func fromSocialCommunityControl(v any) (out SocialCommunityControl, err error) {
 	return out, nil
 }
 
-// fromSocialGiftAllocation converts a decoded IDL value into SocialGiftAllocation.
-func fromSocialGiftAllocation(v any) (out SocialGiftAllocation, err error) {
+// fromSocialFollowSponsor converts a decoded IDL value into SocialFollowSponsor.
+func fromSocialFollowSponsor(v any) (out SocialFollowSponsor, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// owner: Address
+	{
+		v0, err := toAddress(m["owner"])
+		if err != nil {
+			return out, err
+		}
+		out.Owner = v0
+	}
+	// target: Address
+	{
+		v1, err := toAddress(m["target"])
+		if err != nil {
+			return out, err
+		}
+		out.Target = v1
+	}
+	// active: bool
+	{
+		v2, err := toBool(m["active"])
+		if err != nil {
+			return out, err
+		}
+		out.Active = v2
+	}
+	return out, nil
+}
+
+// fromSocialHongbaoAllocation converts a decoded IDL value into SocialHongbaoAllocation.
+func fromSocialHongbaoAllocation(v any) (out SocialHongbaoAllocation, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
 	s, ok := m["variant"].(string)
 	if !ok {
-		return out, fmt.Errorf("enum GiftAllocation: missing variant")
+		return out, fmt.Errorf("enum HongbaoAllocation: missing variant")
 	}
 	out.Variant = s
 	n, err := toUint(m["index"])
@@ -24970,93 +25858,93 @@ func toTokenComplianceValue(v any) (map[string]any, error) {
 	}
 }
 
-// toTokenGiftAllocationValue converts any into TokenGiftAllocation for provider serialization.
-func toTokenGiftAllocationValue(v any) (map[string]any, error) {
+// toTokenHongbaoAllocationValue converts any into TokenHongbaoAllocation for provider serialization.
+func toTokenHongbaoAllocationValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case TokenGiftAllocation:
+	case TokenHongbaoAllocation:
 		return x.ToValue()
-	case *TokenGiftAllocation:
+	case *TokenHongbaoAllocation:
 		if x == nil {
-			return nil, fmt.Errorf("nil TokenGiftAllocation")
+			return nil, fmt.Errorf("nil TokenHongbaoAllocation")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected TokenGiftAllocation, got %T", v)
+		return nil, fmt.Errorf("expected TokenHongbaoAllocation, got %T", v)
 	}
 }
 
-// toTokenGiftEligibilityValue converts any into TokenGiftEligibility for provider serialization.
-func toTokenGiftEligibilityValue(v any) (map[string]any, error) {
+// toTokenHongbaoEligibilityValue converts any into TokenHongbaoEligibility for provider serialization.
+func toTokenHongbaoEligibilityValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case TokenGiftEligibility:
+	case TokenHongbaoEligibility:
 		return x.ToValue()
-	case *TokenGiftEligibility:
+	case *TokenHongbaoEligibility:
 		if x == nil {
-			return nil, fmt.Errorf("nil TokenGiftEligibility")
+			return nil, fmt.Errorf("nil TokenHongbaoEligibility")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected TokenGiftEligibility, got %T", v)
+		return nil, fmt.Errorf("expected TokenHongbaoEligibility, got %T", v)
 	}
 }
 
-// toTokenGiftRulesValue converts any into TokenGiftRules for provider serialization.
-func toTokenGiftRulesValue(v any) (map[string]any, error) {
+// toTokenHongbaoRulesValue converts any into TokenHongbaoRules for provider serialization.
+func toTokenHongbaoRulesValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case TokenGiftRules:
+	case TokenHongbaoRules:
 		return x.ToValue()
-	case *TokenGiftRules:
+	case *TokenHongbaoRules:
 		if x == nil {
-			return nil, fmt.Errorf("nil TokenGiftRules")
+			return nil, fmt.Errorf("nil TokenHongbaoRules")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected TokenGiftRules, got %T", v)
+		return nil, fmt.Errorf("expected TokenHongbaoRules, got %T", v)
 	}
 }
 
-// toTokenGiftStateValue converts any into TokenGiftState for provider serialization.
-func toTokenGiftStateValue(v any) (map[string]any, error) {
+// toTokenHongbaoStateValue converts any into TokenHongbaoState for provider serialization.
+func toTokenHongbaoStateValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case TokenGiftState:
+	case TokenHongbaoState:
 		return x.ToValue()
-	case *TokenGiftState:
+	case *TokenHongbaoState:
 		if x == nil {
-			return nil, fmt.Errorf("nil TokenGiftState")
+			return nil, fmt.Errorf("nil TokenHongbaoState")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected TokenGiftState, got %T", v)
+		return nil, fmt.Errorf("expected TokenHongbaoState, got %T", v)
 	}
 }
 
-// toTokenGiftSettlementValue converts any into TokenGiftSettlement for provider serialization.
-func toTokenGiftSettlementValue(v any) (map[string]any, error) {
+// toTokenHongbaoSettlementValue converts any into TokenHongbaoSettlement for provider serialization.
+func toTokenHongbaoSettlementValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case TokenGiftSettlement:
+	case TokenHongbaoSettlement:
 		return x.ToValue()
-	case *TokenGiftSettlement:
+	case *TokenHongbaoSettlement:
 		if x == nil {
-			return nil, fmt.Errorf("nil TokenGiftSettlement")
+			return nil, fmt.Errorf("nil TokenHongbaoSettlement")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected TokenGiftSettlement, got %T", v)
+		return nil, fmt.Errorf("expected TokenHongbaoSettlement, got %T", v)
 	}
 }
 
-// toTokenGiftCleanupQueueStateValue converts any into TokenGiftCleanupQueueState for provider serialization.
-func toTokenGiftCleanupQueueStateValue(v any) (map[string]any, error) {
+// toTokenHongbaoCleanupQueueStateValue converts any into TokenHongbaoCleanupQueueState for provider serialization.
+func toTokenHongbaoCleanupQueueStateValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case TokenGiftCleanupQueueState:
+	case TokenHongbaoCleanupQueueState:
 		return x.ToValue()
-	case *TokenGiftCleanupQueueState:
+	case *TokenHongbaoCleanupQueueState:
 		if x == nil {
-			return nil, fmt.Errorf("nil TokenGiftCleanupQueueState")
+			return nil, fmt.Errorf("nil TokenHongbaoCleanupQueueState")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected TokenGiftCleanupQueueState, got %T", v)
+		return nil, fmt.Errorf("expected TokenHongbaoCleanupQueueState, got %T", v)
 	}
 }
 
@@ -25105,21 +25993,6 @@ func toStakingPoolStatusValue(v any) (map[string]any, error) {
 	}
 }
 
-// toStakingSlashingModeValue converts any into StakingSlashingMode for provider serialization.
-func toStakingSlashingModeValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingSlashingMode:
-		return x.ToValue()
-	case *StakingSlashingMode:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingSlashingMode")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingSlashingMode, got %T", v)
-	}
-}
-
 // toStakingCycleBasisValue converts any into StakingCycleBasis for provider serialization.
 func toStakingCycleBasisValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -25150,33 +26023,48 @@ func toStakingPoolCycleConfigValue(v any) (map[string]any, error) {
 	}
 }
 
-// toStakingPoolRewardConfigValue converts any into StakingPoolRewardConfig for provider serialization.
-func toStakingPoolRewardConfigValue(v any) (map[string]any, error) {
+// toStakingPoolAppPermissionsValue converts any into StakingPoolAppPermissions for provider serialization.
+func toStakingPoolAppPermissionsValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingPoolRewardConfig:
+	case StakingPoolAppPermissions:
 		return x.ToValue()
-	case *StakingPoolRewardConfig:
+	case *StakingPoolAppPermissions:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingPoolRewardConfig")
+			return nil, fmt.Errorf("nil StakingPoolAppPermissions")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingPoolRewardConfig, got %T", v)
+		return nil, fmt.Errorf("expected StakingPoolAppPermissions, got %T", v)
 	}
 }
 
-// toStakingPendingRewardConfigValue converts any into StakingPendingRewardConfig for provider serialization.
-func toStakingPendingRewardConfigValue(v any) (map[string]any, error) {
+// toStakingPoolDefinitionValue converts any into StakingPoolDefinition for provider serialization.
+func toStakingPoolDefinitionValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingPendingRewardConfig:
+	case StakingPoolDefinition:
 		return x.ToValue()
-	case *StakingPendingRewardConfig:
+	case *StakingPoolDefinition:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingPendingRewardConfig")
+			return nil, fmt.Errorf("nil StakingPoolDefinition")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingPendingRewardConfig, got %T", v)
+		return nil, fmt.Errorf("expected StakingPoolDefinition, got %T", v)
+	}
+}
+
+// toStakingPoolControlValue converts any into StakingPoolControl for provider serialization.
+func toStakingPoolControlValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case StakingPoolControl:
+		return x.ToValue()
+	case *StakingPoolControl:
+		if x == nil {
+			return nil, fmt.Errorf("nil StakingPoolControl")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected StakingPoolControl, got %T", v)
 	}
 }
 
@@ -25195,168 +26083,93 @@ func toStakingPoolValue(v any) (map[string]any, error) {
 	}
 }
 
-// toStakingStakeStatusValue converts any into StakingStakeStatus for provider serialization.
-func toStakingStakeStatusValue(v any) (map[string]any, error) {
+// toStakingPendingAmountValue converts any into StakingPendingAmount for provider serialization.
+func toStakingPendingAmountValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingStakeStatus:
+	case StakingPendingAmount:
 		return x.ToValue()
-	case *StakingStakeStatus:
+	case *StakingPendingAmount:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingStakeStatus")
+			return nil, fmt.Errorf("nil StakingPendingAmount")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingStakeStatus, got %T", v)
+		return nil, fmt.Errorf("expected StakingPendingAmount, got %T", v)
 	}
 }
 
-// toStakingPendingUnstakeValue converts any into StakingPendingUnstake for provider serialization.
-func toStakingPendingUnstakeValue(v any) (map[string]any, error) {
+// toStakingPositionValue converts any into StakingPosition for provider serialization.
+func toStakingPositionValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingPendingUnstake:
+	case StakingPosition:
 		return x.ToValue()
-	case *StakingPendingUnstake:
+	case *StakingPosition:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingPendingUnstake")
+			return nil, fmt.Errorf("nil StakingPosition")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingPendingUnstake, got %T", v)
+		return nil, fmt.Errorf("expected StakingPosition, got %T", v)
 	}
 }
 
-// toStakingStakeValue converts any into StakingStake for provider serialization.
-func toStakingStakeValue(v any) (map[string]any, error) {
+// toStakingPoolRewardConfigValue converts any into StakingPoolRewardConfig for provider serialization.
+func toStakingPoolRewardConfigValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingStake:
+	case StakingPoolRewardConfig:
 		return x.ToValue()
-	case *StakingStake:
+	case *StakingPoolRewardConfig:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingStake")
+			return nil, fmt.Errorf("nil StakingPoolRewardConfig")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingStake, got %T", v)
+		return nil, fmt.Errorf("expected StakingPoolRewardConfig, got %T", v)
 	}
 }
 
-// toStakingPoolStakePositionValue converts any into StakingPoolStakePosition for provider serialization.
-func toStakingPoolStakePositionValue(v any) (map[string]any, error) {
+// toStakingRewardTermsValue converts any into StakingRewardTerms for provider serialization.
+func toStakingRewardTermsValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingPoolStakePosition:
+	case StakingRewardTerms:
 		return x.ToValue()
-	case *StakingPoolStakePosition:
+	case *StakingRewardTerms:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingPoolStakePosition")
+			return nil, fmt.Errorf("nil StakingRewardTerms")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingPoolStakePosition, got %T", v)
+		return nil, fmt.Errorf("expected StakingRewardTerms, got %T", v)
 	}
 }
 
-// toStakingCycleBucketValue converts any into StakingCycleBucket for provider serialization.
-func toStakingCycleBucketValue(v any) (map[string]any, error) {
+// toStakingPoolIndexValue converts any into StakingPoolIndex for provider serialization.
+func toStakingPoolIndexValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingCycleBucket:
+	case StakingPoolIndex:
 		return x.ToValue()
-	case *StakingCycleBucket:
+	case *StakingPoolIndex:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingCycleBucket")
+			return nil, fmt.Errorf("nil StakingPoolIndex")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingCycleBucket, got %T", v)
+		return nil, fmt.Errorf("expected StakingPoolIndex, got %T", v)
 	}
 }
 
-// toStakingCycleRecordValue converts any into StakingCycleRecord for provider serialization.
-func toStakingCycleRecordValue(v any) (map[string]any, error) {
+// toStakingCheckpointValue converts any into StakingCheckpoint for provider serialization.
+func toStakingCheckpointValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case StakingCycleRecord:
+	case StakingCheckpoint:
 		return x.ToValue()
-	case *StakingCycleRecord:
+	case *StakingCheckpoint:
 		if x == nil {
-			return nil, fmt.Errorf("nil StakingCycleRecord")
+			return nil, fmt.Errorf("nil StakingCheckpoint")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected StakingCycleRecord, got %T", v)
-	}
-}
-
-// toStakingSlashReceiptValue converts any into StakingSlashReceipt for provider serialization.
-func toStakingSlashReceiptValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingSlashReceipt:
-		return x.ToValue()
-	case *StakingSlashReceipt:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingSlashReceipt")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingSlashReceipt, got %T", v)
-	}
-}
-
-// toStakingStakeIdsValue converts any into StakingStakeIds for provider serialization.
-func toStakingStakeIdsValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingStakeIds:
-		return x.ToValue()
-	case *StakingStakeIds:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingStakeIds")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingStakeIds, got %T", v)
-	}
-}
-
-// toStakingValidatorRewardPolicyValue converts any into StakingValidatorRewardPolicy for provider serialization.
-func toStakingValidatorRewardPolicyValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingValidatorRewardPolicy:
-		return x.ToValue()
-	case *StakingValidatorRewardPolicy:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingValidatorRewardPolicy")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingValidatorRewardPolicy, got %T", v)
-	}
-}
-
-// toStakingPolicyAssetsValue converts any into StakingPolicyAssets for provider serialization.
-func toStakingPolicyAssetsValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingPolicyAssets:
-		return x.ToValue()
-	case *StakingPolicyAssets:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingPolicyAssets")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingPolicyAssets, got %T", v)
-	}
-}
-
-// toStakingRewardCursorValue converts any into StakingRewardCursor for provider serialization.
-func toStakingRewardCursorValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case StakingRewardCursor:
-		return x.ToValue()
-	case *StakingRewardCursor:
-		if x == nil {
-			return nil, fmt.Errorf("nil StakingRewardCursor")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected StakingRewardCursor, got %T", v)
+		return nil, fmt.Errorf("expected StakingCheckpoint, got %T", v)
 	}
 }
 
@@ -25717,6 +26530,21 @@ func toIdentityCredentialDefinitionValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected IdentityCredentialDefinition, got %T", v)
+	}
+}
+
+// toSftokenSftBalanceStateValue converts any into SftokenSftBalanceState for provider serialization.
+func toSftokenSftBalanceStateValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SftokenSftBalanceState:
+		return x.ToValue()
+	case *SftokenSftBalanceState:
+		if x == nil {
+			return nil, fmt.Errorf("nil SftokenSftBalanceState")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SftokenSftBalanceState, got %T", v)
 	}
 }
 
@@ -26395,6 +27223,36 @@ func toValidatorAvailabilityDeclarationValue(v any) (map[string]any, error) {
 	}
 }
 
+// toValidatorValidatorRewardPolicyValue converts any into ValidatorValidatorRewardPolicy for provider serialization.
+func toValidatorValidatorRewardPolicyValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorValidatorRewardPolicy:
+		return x.ToValue()
+	case *ValidatorValidatorRewardPolicy:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorValidatorRewardPolicy")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorValidatorRewardPolicy, got %T", v)
+	}
+}
+
+// toValidatorRewardCursorValue converts any into ValidatorRewardCursor for provider serialization.
+func toValidatorRewardCursorValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorRewardCursor:
+		return x.ToValue()
+	case *ValidatorRewardCursor:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorRewardCursor")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorRewardCursor, got %T", v)
+	}
+}
+
 // toValidatorPoolRewardConfigValue converts any into ValidatorPoolRewardConfig for provider serialization.
 func toValidatorPoolRewardConfigValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -26695,18 +27553,33 @@ func toKeylessPublicStatementErrorValue(v any) (map[string]any, error) {
 	}
 }
 
-// toKeylessZkStatementErrorValue converts any into KeylessZkStatementError for provider serialization.
-func toKeylessZkStatementErrorValue(v any) (map[string]any, error) {
+// toKeylessGroth16AuthValue converts any into KeylessGroth16Auth for provider serialization.
+func toKeylessGroth16AuthValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case KeylessZkStatementError:
+	case KeylessGroth16Auth:
 		return x.ToValue()
-	case *KeylessZkStatementError:
+	case *KeylessGroth16Auth:
 		if x == nil {
-			return nil, fmt.Errorf("nil KeylessZkStatementError")
+			return nil, fmt.Errorf("nil KeylessGroth16Auth")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected KeylessZkStatementError, got %T", v)
+		return nil, fmt.Errorf("expected KeylessGroth16Auth, got %T", v)
+	}
+}
+
+// toKeylessZkAuthClaimValue converts any into KeylessZkAuthClaim for provider serialization.
+func toKeylessZkAuthClaimValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessZkAuthClaim:
+		return x.ToValue()
+	case *KeylessZkAuthClaim:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessZkAuthClaim")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessZkAuthClaim, got %T", v)
 	}
 }
 
@@ -26800,18 +27673,33 @@ func toSocialCommunityControlValue(v any) (map[string]any, error) {
 	}
 }
 
-// toSocialGiftAllocationValue converts any into SocialGiftAllocation for provider serialization.
-func toSocialGiftAllocationValue(v any) (map[string]any, error) {
+// toSocialFollowSponsorValue converts any into SocialFollowSponsor for provider serialization.
+func toSocialFollowSponsorValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case SocialGiftAllocation:
+	case SocialFollowSponsor:
 		return x.ToValue()
-	case *SocialGiftAllocation:
+	case *SocialFollowSponsor:
 		if x == nil {
-			return nil, fmt.Errorf("nil SocialGiftAllocation")
+			return nil, fmt.Errorf("nil SocialFollowSponsor")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected SocialGiftAllocation, got %T", v)
+		return nil, fmt.Errorf("expected SocialFollowSponsor, got %T", v)
+	}
+}
+
+// toSocialHongbaoAllocationValue converts any into SocialHongbaoAllocation for provider serialization.
+func toSocialHongbaoAllocationValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SocialHongbaoAllocation:
+		return x.ToValue()
+	case *SocialHongbaoAllocation:
+		if x == nil {
+			return nil, fmt.Errorf("nil SocialHongbaoAllocation")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SocialHongbaoAllocation, got %T", v)
 	}
 }
 
@@ -27081,7 +27969,7 @@ type SystemRegisterValidatorIdentityIx struct {
 }
 
 type SystemRegisterValidatorIdentityArgs struct {
-	validator any
+	validator [32]byte
 	controller *crypto.Address
 	consensus_account *crypto.Address
 	consensus_pubkey []byte
@@ -27091,7 +27979,7 @@ type SystemRegisterValidatorIdentityArgs struct {
 }
 
 // Args builds the IDL arguments of RegisterValidatorIdentity.
-func (ix *SystemRegisterValidatorIdentityIx) Args(validator any, controller *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, ed25519_pubkey []byte) *SystemRegisterValidatorIdentityArgs {
+func (ix *SystemRegisterValidatorIdentityIx) Args(validator [32]byte, controller *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, ed25519_pubkey []byte) *SystemRegisterValidatorIdentityArgs {
 	return &SystemRegisterValidatorIdentityArgs{
 		validator: validator,
 		controller: controller,
@@ -27109,7 +27997,7 @@ func (a *SystemRegisterValidatorIdentityArgs) Encode() (api.PackedInstruction, e
 		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// validator: ValidatorId
+	// validator: B256
 	args["validator"] = a.validator
 	// controller: Signer
 	args["controller"] = a.controller
@@ -27521,12 +28409,9 @@ func (ix *SystemUpgradeStatusIx) DecodeView(body []byte) (out SystemUpgradeStatu
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("UpgradeStatus", body)
+	v, err := ix.pd.DecodeViewValue("UpgradeStatus", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view UpgradeStatus failed: %s", failure)
 	}
 	v0, err := fromSystemUpgradeStatus(v)
 	if err != nil {
@@ -27577,12 +28462,9 @@ func (ix *SystemProposalHistoryIx) DecodeView(body []byte) (out []SystemProposal
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ProposalHistory", body)
+	v, err := ix.pd.DecodeViewValue("ProposalHistory", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ProposalHistory failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -27632,12 +28514,9 @@ func (ix *SystemAvailableMethodsIx) DecodeView(body []byte) (out []SystemAppMeth
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("AvailableMethods", body)
+	v, err := ix.pd.DecodeViewValue("AvailableMethods", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view AvailableMethods failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -27695,12 +28574,9 @@ func (ix *SystemProposalOutcomeIx) DecodeView(body []byte) (out *SystemProposalO
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ProposalOutcome", body)
+	v, err := ix.pd.DecodeViewValue("ProposalOutcome", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ProposalOutcome failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -28331,12 +29207,9 @@ func (ix *AccountGetAccountIx) DecodeView(body []byte) (out AccountAccount, err 
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app account is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetAccount", body)
+	v, err := ix.pd.DecodeViewValue("GetAccount", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetAccount failed: %s", failure)
 	}
 	v0, err := fromAccountAccount(v)
 	if err != nil {
@@ -28383,12 +29256,9 @@ func (ix *AccountListSignersIx) DecodeView(body []byte) (out []any, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app account is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ListSigners", body)
+	v, err := ix.pd.DecodeViewValue("ListSigners", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ListSigners failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -28447,12 +29317,9 @@ func (ix *AccountResolveSignersIx) DecodeView(body []byte) (out []*crypto.Public
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app account is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ResolveSigners", body)
+	v, err := ix.pd.DecodeViewValue("ResolveSigners", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ResolveSigners failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -28510,12 +29377,9 @@ func (ix *AccountGetVoteIx) DecodeView(body []byte) (out []any, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app account is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetVote", body)
+	v, err := ix.pd.DecodeViewValue("GetVote", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetVote failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -28562,12 +29426,9 @@ func (ix *AccountListActiveVotesIx) DecodeView(body []byte) (out [][]any, err er
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app account is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ListActiveVotes", body)
+	v, err := ix.pd.DecodeViewValue("ListActiveVotes", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ListActiveVotes failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -28616,18 +29477,21 @@ type TokenApp struct {
 	ClearComplianceRequirements *TokenClearComplianceRequirementsIx
 	DiscloseTokenVcAttestation *TokenDiscloseTokenVcAttestationIx
 	ClaimFaucet *TokenClaimFaucetIx
-	CreateEqualGift *TokenCreateEqualGiftIx
-	CreateLuckyGift *TokenCreateLuckyGiftIx
-	ClaimGift *TokenClaimGiftIx
-	RefundGift *TokenRefundGiftIx
-	RunGiftCleanup *TokenRunGiftCleanupIx
+	CreateEqualHongbao *TokenCreateEqualHongbaoIx
+	CreateLuckyHongbao *TokenCreateLuckyHongbaoIx
+	CreateCredentialHongbao *TokenCreateCredentialHongbaoIx
+	CreateSftHongbao *TokenCreateSftHongbaoIx
+	ClaimHongbao *TokenClaimHongbaoIx
+	RefundHongbao *TokenRefundHongbaoIx
+	RunHongbaoCleanup *TokenRunHongbaoCleanupIx
 	CreateVesting *TokenCreateVestingIx
 	ClaimVesting *TokenClaimVestingIx
 	Compliance *TokenComplianceIx
 	FaucetCooldownRemaining *TokenFaucetCooldownRemainingIx
-	GiftInfo *TokenGiftInfoIx
-	GiftSettlement *TokenGiftSettlementIx
-	CanClaimGift *TokenCanClaimGiftIx
+	HongbaoMessage *TokenHongbaoMessageIx
+	HongbaoInfo *TokenHongbaoInfoIx
+	HongbaoSettlement *TokenHongbaoSettlementIx
+	CanClaimHongbao *TokenCanClaimHongbaoIx
 	VestingInfo *TokenVestingInfoIx
 	VestingClaimable *TokenVestingClaimableIx
 }
@@ -28662,18 +29526,21 @@ var Token = &TokenApp{
 	ClearComplianceRequirements: &TokenClearComplianceRequirementsIx{},
 	DiscloseTokenVcAttestation: &TokenDiscloseTokenVcAttestationIx{},
 	ClaimFaucet: &TokenClaimFaucetIx{},
-	CreateEqualGift: &TokenCreateEqualGiftIx{},
-	CreateLuckyGift: &TokenCreateLuckyGiftIx{},
-	ClaimGift: &TokenClaimGiftIx{},
-	RefundGift: &TokenRefundGiftIx{},
-	RunGiftCleanup: &TokenRunGiftCleanupIx{},
+	CreateEqualHongbao: &TokenCreateEqualHongbaoIx{},
+	CreateLuckyHongbao: &TokenCreateLuckyHongbaoIx{},
+	CreateCredentialHongbao: &TokenCreateCredentialHongbaoIx{},
+	CreateSftHongbao: &TokenCreateSftHongbaoIx{},
+	ClaimHongbao: &TokenClaimHongbaoIx{},
+	RefundHongbao: &TokenRefundHongbaoIx{},
+	RunHongbaoCleanup: &TokenRunHongbaoCleanupIx{},
 	CreateVesting: &TokenCreateVestingIx{},
 	ClaimVesting: &TokenClaimVestingIx{},
 	Compliance: &TokenComplianceIx{},
 	FaucetCooldownRemaining: &TokenFaucetCooldownRemainingIx{},
-	GiftInfo: &TokenGiftInfoIx{},
-	GiftSettlement: &TokenGiftSettlementIx{},
-	CanClaimGift: &TokenCanClaimGiftIx{},
+	HongbaoMessage: &TokenHongbaoMessageIx{},
+	HongbaoInfo: &TokenHongbaoInfoIx{},
+	HongbaoSettlement: &TokenHongbaoSettlementIx{},
+	CanClaimHongbao: &TokenCanClaimHongbaoIx{},
 	VestingInfo: &TokenVestingInfoIx{},
 	VestingClaimable: &TokenVestingClaimableIx{},
 }
@@ -28709,18 +29576,21 @@ func (a *TokenApp) bind(pd *provider.Provider) {
 	a.ClearComplianceRequirements.pd = pd
 	a.DiscloseTokenVcAttestation.pd = pd
 	a.ClaimFaucet.pd = pd
-	a.CreateEqualGift.pd = pd
-	a.CreateLuckyGift.pd = pd
-	a.ClaimGift.pd = pd
-	a.RefundGift.pd = pd
-	a.RunGiftCleanup.pd = pd
+	a.CreateEqualHongbao.pd = pd
+	a.CreateLuckyHongbao.pd = pd
+	a.CreateCredentialHongbao.pd = pd
+	a.CreateSftHongbao.pd = pd
+	a.ClaimHongbao.pd = pd
+	a.RefundHongbao.pd = pd
+	a.RunHongbaoCleanup.pd = pd
 	a.CreateVesting.pd = pd
 	a.ClaimVesting.pd = pd
 	a.Compliance.pd = pd
 	a.FaucetCooldownRemaining.pd = pd
-	a.GiftInfo.pd = pd
-	a.GiftSettlement.pd = pd
-	a.CanClaimGift.pd = pd
+	a.HongbaoMessage.pd = pd
+	a.HongbaoInfo.pd = pd
+	a.HongbaoSettlement.pd = pd
+	a.CanClaimHongbao.pd = pd
 	a.VestingInfo.pd = pd
 	a.VestingClaimable.pd = pd
 }
@@ -29450,12 +30320,9 @@ func (ix *TokenBalanceOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("BalanceOf", body)
+	v, err := ix.pd.DecodeViewValue("BalanceOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view BalanceOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -29506,12 +30373,9 @@ func (ix *TokenFrozenOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("FrozenOf", body)
+	v, err := ix.pd.DecodeViewValue("FrozenOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view FrozenOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -29566,12 +30430,9 @@ func (ix *TokenApprovalOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ApprovalOf", body)
+	v, err := ix.pd.DecodeViewValue("ApprovalOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ApprovalOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -29618,12 +30479,9 @@ func (ix *TokenTotalSupplyIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("TotalSupply", body)
+	v, err := ix.pd.DecodeViewValue("TotalSupply", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view TotalSupply failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -29670,12 +30528,9 @@ func (ix *TokenMetadataIx) DecodeView(body []byte) (out TokenMetadata, err error
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Metadata", body)
+	v, err := ix.pd.DecodeViewValue("Metadata", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Metadata failed: %s", failure)
 	}
 	v0, err := fromTokenMetadata(v)
 	if err != nil {
@@ -29977,33 +30832,35 @@ func (a *TokenClaimFaucetArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-type TokenCreateEqualGiftIx struct {
+type TokenCreateEqualHongbaoIx struct {
 	pd *provider.Provider
 }
 
-type TokenCreateEqualGiftArgs struct {
+type TokenCreateEqualHongbaoArgs struct {
 	creator *crypto.Address
 	token *crypto.Address
 	total_amount uint64
 	claim_count uint64
-	rules TokenGiftRules
+	rules TokenHongbaoRules
+	message *string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CreateEqualGift.
-func (ix *TokenCreateEqualGiftIx) Args(creator *crypto.Address, token *crypto.Address, total_amount uint64, claim_count uint64, rules TokenGiftRules) *TokenCreateEqualGiftArgs {
-	return &TokenCreateEqualGiftArgs{
+// Args builds the IDL arguments of CreateEqualHongbao.
+func (ix *TokenCreateEqualHongbaoIx) Args(creator *crypto.Address, token *crypto.Address, total_amount uint64, claim_count uint64, rules TokenHongbaoRules, message *string) *TokenCreateEqualHongbaoArgs {
+	return &TokenCreateEqualHongbaoArgs{
 		creator: creator,
 		token: token,
 		total_amount: total_amount,
 		claim_count: claim_count,
 		rules: rules,
+		message: message,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *TokenCreateEqualGiftArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenCreateEqualHongbaoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
@@ -30016,46 +30873,54 @@ func (a *TokenCreateEqualGiftArgs) Encode() (api.PackedInstruction, error) {
 	args["total_amount"] = a.total_amount
 	// claim_count: u64
 	args["claim_count"] = a.claim_count
-	// rules: GiftRules
-	v0, err := toTokenGiftRulesValue(a.rules)
+	// rules: HongbaoRules
+	v0, err := toTokenHongbaoRulesValue(a.rules)
 	if err != nil {
 		return nil, err
 	}
 	args["rules"] = v0
-	wire, err := a.pd.Encode("CreateEqualGift", args)
+	// message: option<String>
+	if a.message == nil {
+		args["message"] = nil
+	} else {
+		args["message"] = *a.message
+	}
+	wire, err := a.pd.Encode("CreateEqualHongbao", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type TokenCreateLuckyGiftIx struct {
+type TokenCreateLuckyHongbaoIx struct {
 	pd *provider.Provider
 }
 
-type TokenCreateLuckyGiftArgs struct {
+type TokenCreateLuckyHongbaoArgs struct {
 	creator *crypto.Address
 	token *crypto.Address
 	total_amount uint64
 	claim_count uint64
-	rules TokenGiftRules
+	rules TokenHongbaoRules
+	message *string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CreateLuckyGift.
-func (ix *TokenCreateLuckyGiftIx) Args(creator *crypto.Address, token *crypto.Address, total_amount uint64, claim_count uint64, rules TokenGiftRules) *TokenCreateLuckyGiftArgs {
-	return &TokenCreateLuckyGiftArgs{
+// Args builds the IDL arguments of CreateLuckyHongbao.
+func (ix *TokenCreateLuckyHongbaoIx) Args(creator *crypto.Address, token *crypto.Address, total_amount uint64, claim_count uint64, rules TokenHongbaoRules, message *string) *TokenCreateLuckyHongbaoArgs {
+	return &TokenCreateLuckyHongbaoArgs{
 		creator: creator,
 		token: token,
 		total_amount: total_amount,
 		claim_count: claim_count,
 		rules: rules,
+		message: message,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *TokenCreateLuckyGiftArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenCreateLuckyHongbaoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
@@ -30068,113 +30933,271 @@ func (a *TokenCreateLuckyGiftArgs) Encode() (api.PackedInstruction, error) {
 	args["total_amount"] = a.total_amount
 	// claim_count: u64
 	args["claim_count"] = a.claim_count
-	// rules: GiftRules
-	v0, err := toTokenGiftRulesValue(a.rules)
+	// rules: HongbaoRules
+	v0, err := toTokenHongbaoRulesValue(a.rules)
 	if err != nil {
 		return nil, err
 	}
 	args["rules"] = v0
-	wire, err := a.pd.Encode("CreateLuckyGift", args)
+	// message: option<String>
+	if a.message == nil {
+		args["message"] = nil
+	} else {
+		args["message"] = *a.message
+	}
+	wire, err := a.pd.Encode("CreateLuckyHongbao", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type TokenClaimGiftIx struct {
+type TokenCreateCredentialHongbaoIx struct {
 	pd *provider.Provider
 }
 
-type TokenClaimGiftArgs struct {
+type TokenCreateCredentialHongbaoArgs struct {
+	creator *crypto.Address
+	token *crypto.Address
+	total_amount uint64
+	claim_count uint64
+	allocation TokenHongbaoAllocation
+	credential_ids []string
+	expires_at_ms *uint64
+	message *string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateCredentialHongbao.
+func (ix *TokenCreateCredentialHongbaoIx) Args(creator *crypto.Address, token *crypto.Address, total_amount uint64, claim_count uint64, allocation TokenHongbaoAllocation, credential_ids []string, expires_at_ms *uint64, message *string) *TokenCreateCredentialHongbaoArgs {
+	return &TokenCreateCredentialHongbaoArgs{
+		creator: creator,
+		token: token,
+		total_amount: total_amount,
+		claim_count: claim_count,
+		allocation: allocation,
+		credential_ids: credential_ids,
+		expires_at_ms: expires_at_ms,
+		message: message,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenCreateCredentialHongbaoArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// creator: Signer
+	args["creator"] = a.creator
+	// token: Address
+	args["token"] = a.token
+	// total_amount: u64
+	args["total_amount"] = a.total_amount
+	// claim_count: u64
+	args["claim_count"] = a.claim_count
+	// allocation: HongbaoAllocation
+	v0, err := toTokenHongbaoAllocationValue(a.allocation)
+	if err != nil {
+		return nil, err
+	}
+	args["allocation"] = v0
+	// credential_ids: vec<String>
+	v1 := make([]any, len(a.credential_ids))
+	for v2, v3 := range a.credential_ids {
+		v1[v2] = v3
+	}
+	args["credential_ids"] = v1
+	// expires_at_ms: option<u64>
+	if a.expires_at_ms == nil {
+		args["expires_at_ms"] = nil
+	} else {
+		args["expires_at_ms"] = *a.expires_at_ms
+	}
+	// message: option<String>
+	if a.message == nil {
+		args["message"] = nil
+	} else {
+		args["message"] = *a.message
+	}
+	wire, err := a.pd.Encode("CreateCredentialHongbao", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type TokenCreateSftHongbaoIx struct {
+	pd *provider.Provider
+}
+
+type TokenCreateSftHongbaoArgs struct {
+	creator *crypto.Address
+	token *crypto.Address
+	total_amount uint64
+	claim_count uint64
+	allocation TokenHongbaoAllocation
+	sft *crypto.Address
+	min_amount uint64
+	expires_at_ms *uint64
+	message *string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateSftHongbao.
+func (ix *TokenCreateSftHongbaoIx) Args(creator *crypto.Address, token *crypto.Address, total_amount uint64, claim_count uint64, allocation TokenHongbaoAllocation, sft *crypto.Address, min_amount uint64, expires_at_ms *uint64, message *string) *TokenCreateSftHongbaoArgs {
+	return &TokenCreateSftHongbaoArgs{
+		creator: creator,
+		token: token,
+		total_amount: total_amount,
+		claim_count: claim_count,
+		allocation: allocation,
+		sft: sft,
+		min_amount: min_amount,
+		expires_at_ms: expires_at_ms,
+		message: message,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenCreateSftHongbaoArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// creator: Signer
+	args["creator"] = a.creator
+	// token: Address
+	args["token"] = a.token
+	// total_amount: u64
+	args["total_amount"] = a.total_amount
+	// claim_count: u64
+	args["claim_count"] = a.claim_count
+	// allocation: HongbaoAllocation
+	v0, err := toTokenHongbaoAllocationValue(a.allocation)
+	if err != nil {
+		return nil, err
+	}
+	args["allocation"] = v0
+	// sft: Address
+	args["sft"] = a.sft
+	// min_amount: u64
+	args["min_amount"] = a.min_amount
+	// expires_at_ms: option<u64>
+	if a.expires_at_ms == nil {
+		args["expires_at_ms"] = nil
+	} else {
+		args["expires_at_ms"] = *a.expires_at_ms
+	}
+	// message: option<String>
+	if a.message == nil {
+		args["message"] = nil
+	} else {
+		args["message"] = *a.message
+	}
+	wire, err := a.pd.Encode("CreateSftHongbao", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type TokenClaimHongbaoIx struct {
+	pd *provider.Provider
+}
+
+type TokenClaimHongbaoArgs struct {
 	claimant *crypto.Address
-	gift_id *crypto.Address
+	hongbao_id *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ClaimGift.
-func (ix *TokenClaimGiftIx) Args(claimant *crypto.Address, gift_id *crypto.Address) *TokenClaimGiftArgs {
-	return &TokenClaimGiftArgs{
+// Args builds the IDL arguments of ClaimHongbao.
+func (ix *TokenClaimHongbaoIx) Args(claimant *crypto.Address, hongbao_id *crypto.Address) *TokenClaimHongbaoArgs {
+	return &TokenClaimHongbaoArgs{
 		claimant: claimant,
-		gift_id: gift_id,
+		hongbao_id: hongbao_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *TokenClaimGiftArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenClaimHongbaoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// claimant: Signer
 	args["claimant"] = a.claimant
-	// gift_id: Address
-	args["gift_id"] = a.gift_id
-	wire, err := a.pd.Encode("ClaimGift", args)
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("ClaimHongbao", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type TokenRefundGiftIx struct {
+type TokenRefundHongbaoIx struct {
 	pd *provider.Provider
 }
 
-type TokenRefundGiftArgs struct {
-	gift_id *crypto.Address
+type TokenRefundHongbaoArgs struct {
+	hongbao_id *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of RefundGift.
-func (ix *TokenRefundGiftIx) Args(gift_id *crypto.Address) *TokenRefundGiftArgs {
-	return &TokenRefundGiftArgs{
-		gift_id: gift_id,
+// Args builds the IDL arguments of RefundHongbao.
+func (ix *TokenRefundHongbaoIx) Args(hongbao_id *crypto.Address) *TokenRefundHongbaoArgs {
+	return &TokenRefundHongbaoArgs{
+		hongbao_id: hongbao_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *TokenRefundGiftArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenRefundHongbaoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// gift_id: Address
-	args["gift_id"] = a.gift_id
-	wire, err := a.pd.Encode("RefundGift", args)
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("RefundHongbao", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type TokenRunGiftCleanupIx struct {
+type TokenRunHongbaoCleanupIx struct {
 	pd *provider.Provider
 }
 
-type TokenRunGiftCleanupArgs struct {
-	gift_id *crypto.Address
+type TokenRunHongbaoCleanupArgs struct {
+	hongbao_id *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of RunGiftCleanup.
-func (ix *TokenRunGiftCleanupIx) Args(gift_id *crypto.Address) *TokenRunGiftCleanupArgs {
-	return &TokenRunGiftCleanupArgs{
-		gift_id: gift_id,
+// Args builds the IDL arguments of RunHongbaoCleanup.
+func (ix *TokenRunHongbaoCleanupIx) Args(hongbao_id *crypto.Address) *TokenRunHongbaoCleanupArgs {
+	return &TokenRunHongbaoCleanupArgs{
+		hongbao_id: hongbao_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *TokenRunGiftCleanupArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenRunHongbaoCleanupArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// gift_id: Address
-	args["gift_id"] = a.gift_id
-	wire, err := a.pd.Encode("RunGiftCleanup", args)
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("RunHongbaoCleanup", args)
 	if err != nil {
 		return nil, err
 	}
@@ -30306,12 +31329,9 @@ func (ix *TokenComplianceIx) DecodeView(body []byte) (out TokenCompliance, err e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Compliance", body)
+	v, err := ix.pd.DecodeViewValue("Compliance", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Compliance failed: %s", failure)
 	}
 	v0, err := fromTokenCompliance(v)
 	if err != nil {
@@ -30358,12 +31378,9 @@ func (ix *TokenFaucetCooldownRemainingIx) DecodeView(body []byte) (out uint64, e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("FaucetCooldownRemaining", body)
+	v, err := ix.pd.DecodeViewValue("FaucetCooldownRemaining", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view FaucetCooldownRemaining failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -30373,51 +31390,48 @@ func (ix *TokenFaucetCooldownRemainingIx) DecodeView(body []byte) (out uint64, e
 	return out, nil
 }
 
-type TokenGiftInfoIx struct {
+type TokenHongbaoMessageIx struct {
 	pd *provider.Provider
 }
 
-type TokenGiftInfoArgs struct {
-	gift_id *crypto.Address
+type TokenHongbaoMessageArgs struct {
+	hongbao_id *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of GiftInfo.
-func (ix *TokenGiftInfoIx) Args(gift_id *crypto.Address) *TokenGiftInfoArgs {
-	return &TokenGiftInfoArgs{
-		gift_id: gift_id,
+// Args builds the IDL arguments of HongbaoMessage.
+func (ix *TokenHongbaoMessageIx) Args(hongbao_id *crypto.Address) *TokenHongbaoMessageArgs {
+	return &TokenHongbaoMessageArgs{
+		hongbao_id: hongbao_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *TokenGiftInfoArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenHongbaoMessageArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// gift_id: Address
-	args["gift_id"] = a.gift_id
-	wire, err := a.pd.Encode("GiftInfo", args)
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("HongbaoMessage", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of GiftInfo into TokenGiftState.
-func (ix *TokenGiftInfoIx) DecodeView(body []byte) (out TokenGiftState, err error) {
+// DecodeView decodes the raw view response body of HongbaoMessage into string.
+func (ix *TokenHongbaoMessageIx) DecodeView(body []byte) (out string, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GiftInfo", body)
+	v, err := ix.pd.DecodeViewValue("HongbaoMessage", body)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GiftInfo failed: %s", failure)
-	}
-	v0, err := fromTokenGiftState(v)
+	v0, err := toString(v)
 	if err != nil {
 		return out, err
 	}
@@ -30425,51 +31439,48 @@ func (ix *TokenGiftInfoIx) DecodeView(body []byte) (out TokenGiftState, err erro
 	return out, nil
 }
 
-type TokenGiftSettlementIx struct {
+type TokenHongbaoInfoIx struct {
 	pd *provider.Provider
 }
 
-type TokenGiftSettlementArgs struct {
-	gift_id *crypto.Address
+type TokenHongbaoInfoArgs struct {
+	hongbao_id *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of GiftSettlement.
-func (ix *TokenGiftSettlementIx) Args(gift_id *crypto.Address) *TokenGiftSettlementArgs {
-	return &TokenGiftSettlementArgs{
-		gift_id: gift_id,
+// Args builds the IDL arguments of HongbaoInfo.
+func (ix *TokenHongbaoInfoIx) Args(hongbao_id *crypto.Address) *TokenHongbaoInfoArgs {
+	return &TokenHongbaoInfoArgs{
+		hongbao_id: hongbao_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *TokenGiftSettlementArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenHongbaoInfoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// gift_id: Address
-	args["gift_id"] = a.gift_id
-	wire, err := a.pd.Encode("GiftSettlement", args)
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("HongbaoInfo", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of GiftSettlement into TokenGiftSettlement.
-func (ix *TokenGiftSettlementIx) DecodeView(body []byte) (out TokenGiftSettlement, err error) {
+// DecodeView decodes the raw view response body of HongbaoInfo into TokenHongbaoState.
+func (ix *TokenHongbaoInfoIx) DecodeView(body []byte) (out TokenHongbaoState, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GiftSettlement", body)
+	v, err := ix.pd.DecodeViewValue("HongbaoInfo", body)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GiftSettlement failed: %s", failure)
-	}
-	v0, err := fromTokenGiftSettlement(v)
+	v0, err := fromTokenHongbaoState(v)
 	if err != nil {
 		return out, err
 	}
@@ -30477,53 +31488,99 @@ func (ix *TokenGiftSettlementIx) DecodeView(body []byte) (out TokenGiftSettlemen
 	return out, nil
 }
 
-type TokenCanClaimGiftIx struct {
+type TokenHongbaoSettlementIx struct {
 	pd *provider.Provider
 }
 
-type TokenCanClaimGiftArgs struct {
-	gift_id *crypto.Address
+type TokenHongbaoSettlementArgs struct {
+	hongbao_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of HongbaoSettlement.
+func (ix *TokenHongbaoSettlementIx) Args(hongbao_id *crypto.Address) *TokenHongbaoSettlementArgs {
+	return &TokenHongbaoSettlementArgs{
+		hongbao_id: hongbao_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenHongbaoSettlementArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("HongbaoSettlement", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of HongbaoSettlement into TokenHongbaoSettlement.
+func (ix *TokenHongbaoSettlementIx) DecodeView(body []byte) (out TokenHongbaoSettlement, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("HongbaoSettlement", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := fromTokenHongbaoSettlement(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type TokenCanClaimHongbaoIx struct {
+	pd *provider.Provider
+}
+
+type TokenCanClaimHongbaoArgs struct {
+	hongbao_id *crypto.Address
 	claimant *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CanClaimGift.
-func (ix *TokenCanClaimGiftIx) Args(gift_id *crypto.Address, claimant *crypto.Address) *TokenCanClaimGiftArgs {
-	return &TokenCanClaimGiftArgs{
-		gift_id: gift_id,
+// Args builds the IDL arguments of CanClaimHongbao.
+func (ix *TokenCanClaimHongbaoIx) Args(hongbao_id *crypto.Address, claimant *crypto.Address) *TokenCanClaimHongbaoArgs {
+	return &TokenCanClaimHongbaoArgs{
+		hongbao_id: hongbao_id,
 		claimant: claimant,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *TokenCanClaimGiftArgs) Encode() (api.PackedInstruction, error) {
+func (a *TokenCanClaimHongbaoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// gift_id: Address
-	args["gift_id"] = a.gift_id
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
 	// claimant: Address
 	args["claimant"] = a.claimant
-	wire, err := a.pd.Encode("CanClaimGift", args)
+	wire, err := a.pd.Encode("CanClaimHongbao", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of CanClaimGift into bool.
-func (ix *TokenCanClaimGiftIx) DecodeView(body []byte) (out bool, err error) {
+// DecodeView decodes the raw view response body of CanClaimHongbao into bool.
+func (ix *TokenCanClaimHongbaoIx) DecodeView(body []byte) (out bool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("CanClaimGift", body)
+	v, err := ix.pd.DecodeViewValue("CanClaimHongbao", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CanClaimGift failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -30570,12 +31627,9 @@ func (ix *TokenVestingInfoIx) DecodeView(body []byte) (out TokenVestingState, er
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("VestingInfo", body)
+	v, err := ix.pd.DecodeViewValue("VestingInfo", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view VestingInfo failed: %s", failure)
 	}
 	v0, err := fromTokenVestingState(v)
 	if err != nil {
@@ -30626,12 +31680,9 @@ func (ix *TokenVestingClaimableIx) DecodeView(body []byte) (out uint64, err erro
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("VestingClaimable", body)
+	v, err := ix.pd.DecodeViewValue("VestingClaimable", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view VestingClaimable failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -30645,96 +31696,72 @@ func (ix *TokenVestingClaimableIx) DecodeView(body []byte) (out uint64, err erro
 type StakingApp struct {
 	Pd *provider.Provider
 	CreatePool *StakingCreatePoolIx
-	StakeIntoPool *StakingStakeIntoPoolIx
-	CancelStakeById *StakingCancelStakeByIdIx
-	RequestUnstakeById *StakingRequestUnstakeByIdIx
-	CancelUnstakeById *StakingCancelUnstakeByIdIx
-	ClaimRewardsById *StakingClaimRewardsByIdIx
-	AccruePoolReward *StakingAccruePoolRewardIx
-	RequestPoolRewardConfig *StakingRequestPoolRewardConfigIx
-	ClaimPoolCommission *StakingClaimPoolCommissionIx
 	PausePool *StakingPausePoolIx
 	ResumePool *StakingResumePoolIx
-	FreezePool *StakingFreezePoolIx
-	UnfreezePool *StakingUnfreezePoolIx
 	ClosePool *StakingClosePoolIx
 	SweepPoolResidual *StakingSweepPoolResidualIx
-	ConfigureValidatorRewardPolicy *StakingConfigureValidatorRewardPolicyIx
-	FundValidatorRewardPolicy *StakingFundValidatorRewardPolicyIx
+	StakeIntoPool *StakingStakeIntoPoolIx
+	CancelPendingStake *StakingCancelPendingStakeIx
+	RequestUnstake *StakingRequestUnstakeIx
+	CancelUnstake *StakingCancelUnstakeIx
+	ClaimPrincipal *StakingClaimPrincipalIx
+	ClaimRewards *StakingClaimRewardsIx
+	AccruePoolReward *StakingAccruePoolRewardIx
+	ClaimCommission *StakingClaimCommissionIx
+	ClaimPoolCommission *StakingClaimPoolCommissionIx
+	RequestPoolRewardConfig *StakingRequestPoolRewardConfigIx
 	Pool *StakingPoolIx
-	StakeById *StakingStakeByIdIx
-	PoolTreasuryBalance *StakingPoolTreasuryBalanceIx
-	StakeIds *StakingStakeIdsIx
-	StakePositionByPool *StakingStakePositionByPoolIx
-	PendingStakes *StakingPendingStakesIx
-	TotalShares *StakingTotalSharesIx
 	TotalStake *StakingTotalStakeIx
-	RewardIndex *StakingRewardIndexIx
-	ValidatorRewardPolicy *StakingValidatorRewardPolicyIx
-	ValidatorRewardPolicyConfigured *StakingValidatorRewardPolicyConfiguredIx
+	Position *StakingPositionIx
+	PoolTreasuryBalance *StakingPoolTreasuryBalanceIx
+	CommissionBalance *StakingCommissionBalanceIx
 }
 
 var Staking = &StakingApp{
 	CreatePool: &StakingCreatePoolIx{},
-	StakeIntoPool: &StakingStakeIntoPoolIx{},
-	CancelStakeById: &StakingCancelStakeByIdIx{},
-	RequestUnstakeById: &StakingRequestUnstakeByIdIx{},
-	CancelUnstakeById: &StakingCancelUnstakeByIdIx{},
-	ClaimRewardsById: &StakingClaimRewardsByIdIx{},
-	AccruePoolReward: &StakingAccruePoolRewardIx{},
-	RequestPoolRewardConfig: &StakingRequestPoolRewardConfigIx{},
-	ClaimPoolCommission: &StakingClaimPoolCommissionIx{},
 	PausePool: &StakingPausePoolIx{},
 	ResumePool: &StakingResumePoolIx{},
-	FreezePool: &StakingFreezePoolIx{},
-	UnfreezePool: &StakingUnfreezePoolIx{},
 	ClosePool: &StakingClosePoolIx{},
 	SweepPoolResidual: &StakingSweepPoolResidualIx{},
-	ConfigureValidatorRewardPolicy: &StakingConfigureValidatorRewardPolicyIx{},
-	FundValidatorRewardPolicy: &StakingFundValidatorRewardPolicyIx{},
+	StakeIntoPool: &StakingStakeIntoPoolIx{},
+	CancelPendingStake: &StakingCancelPendingStakeIx{},
+	RequestUnstake: &StakingRequestUnstakeIx{},
+	CancelUnstake: &StakingCancelUnstakeIx{},
+	ClaimPrincipal: &StakingClaimPrincipalIx{},
+	ClaimRewards: &StakingClaimRewardsIx{},
+	AccruePoolReward: &StakingAccruePoolRewardIx{},
+	ClaimCommission: &StakingClaimCommissionIx{},
+	ClaimPoolCommission: &StakingClaimPoolCommissionIx{},
+	RequestPoolRewardConfig: &StakingRequestPoolRewardConfigIx{},
 	Pool: &StakingPoolIx{},
-	StakeById: &StakingStakeByIdIx{},
-	PoolTreasuryBalance: &StakingPoolTreasuryBalanceIx{},
-	StakeIds: &StakingStakeIdsIx{},
-	StakePositionByPool: &StakingStakePositionByPoolIx{},
-	PendingStakes: &StakingPendingStakesIx{},
-	TotalShares: &StakingTotalSharesIx{},
 	TotalStake: &StakingTotalStakeIx{},
-	RewardIndex: &StakingRewardIndexIx{},
-	ValidatorRewardPolicy: &StakingValidatorRewardPolicyIx{},
-	ValidatorRewardPolicyConfigured: &StakingValidatorRewardPolicyConfiguredIx{},
+	Position: &StakingPositionIx{},
+	PoolTreasuryBalance: &StakingPoolTreasuryBalanceIx{},
+	CommissionBalance: &StakingCommissionBalanceIx{},
 }
 
 func (a *StakingApp) bind(pd *provider.Provider) {
 	a.Pd = pd
 	a.CreatePool.pd = pd
-	a.StakeIntoPool.pd = pd
-	a.CancelStakeById.pd = pd
-	a.RequestUnstakeById.pd = pd
-	a.CancelUnstakeById.pd = pd
-	a.ClaimRewardsById.pd = pd
-	a.AccruePoolReward.pd = pd
-	a.RequestPoolRewardConfig.pd = pd
-	a.ClaimPoolCommission.pd = pd
 	a.PausePool.pd = pd
 	a.ResumePool.pd = pd
-	a.FreezePool.pd = pd
-	a.UnfreezePool.pd = pd
 	a.ClosePool.pd = pd
 	a.SweepPoolResidual.pd = pd
-	a.ConfigureValidatorRewardPolicy.pd = pd
-	a.FundValidatorRewardPolicy.pd = pd
+	a.StakeIntoPool.pd = pd
+	a.CancelPendingStake.pd = pd
+	a.RequestUnstake.pd = pd
+	a.CancelUnstake.pd = pd
+	a.ClaimPrincipal.pd = pd
+	a.ClaimRewards.pd = pd
+	a.AccruePoolReward.pd = pd
+	a.ClaimCommission.pd = pd
+	a.ClaimPoolCommission.pd = pd
+	a.RequestPoolRewardConfig.pd = pd
 	a.Pool.pd = pd
-	a.StakeById.pd = pd
-	a.PoolTreasuryBalance.pd = pd
-	a.StakeIds.pd = pd
-	a.StakePositionByPool.pd = pd
-	a.PendingStakes.pd = pd
-	a.TotalShares.pd = pd
 	a.TotalStake.pd = pd
-	a.RewardIndex.pd = pd
-	a.ValidatorRewardPolicy.pd = pd
-	a.ValidatorRewardPolicyConfigured.pd = pd
+	a.Position.pd = pd
+	a.PoolTreasuryBalance.pd = pd
+	a.CommissionBalance.pd = pd
 }
 
 type StakingCreatePoolIx struct {
@@ -30797,19 +31824,163 @@ func (a *StakingCreatePoolArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type StakingPausePoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingPausePoolArgs struct {
+	owner *crypto.Address
+	pool_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of PausePool.
+func (ix *StakingPausePoolIx) Args(owner *crypto.Address, pool_id [32]byte) *StakingPausePoolArgs {
+	return &StakingPausePoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingPausePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("PausePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingResumePoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingResumePoolArgs struct {
+	owner *crypto.Address
+	pool_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ResumePool.
+func (ix *StakingResumePoolIx) Args(owner *crypto.Address, pool_id [32]byte) *StakingResumePoolArgs {
+	return &StakingResumePoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingResumePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("ResumePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingClosePoolIx struct {
+	pd *provider.Provider
+}
+
+type StakingClosePoolArgs struct {
+	owner *crypto.Address
+	pool_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClosePool.
+func (ix *StakingClosePoolIx) Args(owner *crypto.Address, pool_id [32]byte) *StakingClosePoolArgs {
+	return &StakingClosePoolArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingClosePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("ClosePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingSweepPoolResidualIx struct {
+	pd *provider.Provider
+}
+
+type StakingSweepPoolResidualArgs struct {
+	owner *crypto.Address
+	pool_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SweepPoolResidual.
+func (ix *StakingSweepPoolResidualIx) Args(owner *crypto.Address, pool_id [32]byte) *StakingSweepPoolResidualArgs {
+	return &StakingSweepPoolResidualArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingSweepPoolResidualArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("SweepPoolResidual", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type StakingStakeIntoPoolIx struct {
 	pd *provider.Provider
 }
 
 type StakingStakeIntoPoolArgs struct {
 	owner *crypto.Address
-	pool_id any
+	pool_id [32]byte
 	amount uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of StakeIntoPool.
-func (ix *StakingStakeIntoPoolIx) Args(owner *crypto.Address, pool_id any, amount uint64) *StakingStakeIntoPoolArgs {
+func (ix *StakingStakeIntoPoolIx) Args(owner *crypto.Address, pool_id [32]byte, amount uint64) *StakingStakeIntoPoolArgs {
 	return &StakingStakeIntoPoolArgs{
 		owner: owner,
 		pool_id: pool_id,
@@ -30826,7 +31997,7 @@ func (a *StakingStakeIntoPoolArgs) Encode() (api.PackedInstruction, error) {
 	args := provider.Args{}
 	// owner: Signer
 	args["owner"] = a.owner
-	// pool_id: PoolId
+	// pool_id: B256
 	args["pool_id"] = a.pool_id
 	// amount: u64
 	args["amount"] = a.amount
@@ -30837,148 +32008,192 @@ func (a *StakingStakeIntoPoolArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
-type StakingCancelStakeByIdIx struct {
+type StakingCancelPendingStakeIx struct {
 	pd *provider.Provider
 }
 
-type StakingCancelStakeByIdArgs struct {
+type StakingCancelPendingStakeArgs struct {
 	owner *crypto.Address
-	stake_id [32]byte
+	pool_id [32]byte
+	effective_cycle uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CancelStakeById.
-func (ix *StakingCancelStakeByIdIx) Args(owner *crypto.Address, stake_id [32]byte) *StakingCancelStakeByIdArgs {
-	return &StakingCancelStakeByIdArgs{
+// Args builds the IDL arguments of CancelPendingStake.
+func (ix *StakingCancelPendingStakeIx) Args(owner *crypto.Address, pool_id [32]byte, effective_cycle uint64) *StakingCancelPendingStakeArgs {
+	return &StakingCancelPendingStakeArgs{
 		owner: owner,
-		stake_id: stake_id,
+		pool_id: pool_id,
+		effective_cycle: effective_cycle,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingCancelStakeByIdArgs) Encode() (api.PackedInstruction, error) {
+func (a *StakingCancelPendingStakeArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// owner: Signer
 	args["owner"] = a.owner
-	// stake_id: B256
-	args["stake_id"] = a.stake_id
-	wire, err := a.pd.Encode("CancelStakeById", args)
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	// effective_cycle: u64
+	args["effective_cycle"] = a.effective_cycle
+	wire, err := a.pd.Encode("CancelPendingStake", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type StakingRequestUnstakeByIdIx struct {
+type StakingRequestUnstakeIx struct {
 	pd *provider.Provider
 }
 
-type StakingRequestUnstakeByIdArgs struct {
+type StakingRequestUnstakeArgs struct {
 	owner *crypto.Address
-	stake_id [32]byte
-	shares uint64
+	pool_id [32]byte
+	amount uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of RequestUnstakeById.
-func (ix *StakingRequestUnstakeByIdIx) Args(owner *crypto.Address, stake_id [32]byte, shares uint64) *StakingRequestUnstakeByIdArgs {
-	return &StakingRequestUnstakeByIdArgs{
+// Args builds the IDL arguments of RequestUnstake.
+func (ix *StakingRequestUnstakeIx) Args(owner *crypto.Address, pool_id [32]byte, amount uint64) *StakingRequestUnstakeArgs {
+	return &StakingRequestUnstakeArgs{
 		owner: owner,
-		stake_id: stake_id,
-		shares: shares,
+		pool_id: pool_id,
+		amount: amount,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingRequestUnstakeByIdArgs) Encode() (api.PackedInstruction, error) {
+func (a *StakingRequestUnstakeArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// owner: Signer
 	args["owner"] = a.owner
-	// stake_id: B256
-	args["stake_id"] = a.stake_id
-	// shares: u64
-	args["shares"] = a.shares
-	wire, err := a.pd.Encode("RequestUnstakeById", args)
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("RequestUnstake", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type StakingCancelUnstakeByIdIx struct {
+type StakingCancelUnstakeIx struct {
 	pd *provider.Provider
 }
 
-type StakingCancelUnstakeByIdArgs struct {
+type StakingCancelUnstakeArgs struct {
 	owner *crypto.Address
-	stake_id [32]byte
+	pool_id [32]byte
+	effective_cycle uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CancelUnstakeById.
-func (ix *StakingCancelUnstakeByIdIx) Args(owner *crypto.Address, stake_id [32]byte) *StakingCancelUnstakeByIdArgs {
-	return &StakingCancelUnstakeByIdArgs{
+// Args builds the IDL arguments of CancelUnstake.
+func (ix *StakingCancelUnstakeIx) Args(owner *crypto.Address, pool_id [32]byte, effective_cycle uint64) *StakingCancelUnstakeArgs {
+	return &StakingCancelUnstakeArgs{
 		owner: owner,
-		stake_id: stake_id,
+		pool_id: pool_id,
+		effective_cycle: effective_cycle,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingCancelUnstakeByIdArgs) Encode() (api.PackedInstruction, error) {
+func (a *StakingCancelUnstakeArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// owner: Signer
 	args["owner"] = a.owner
-	// stake_id: B256
-	args["stake_id"] = a.stake_id
-	wire, err := a.pd.Encode("CancelUnstakeById", args)
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	// effective_cycle: u64
+	args["effective_cycle"] = a.effective_cycle
+	wire, err := a.pd.Encode("CancelUnstake", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type StakingClaimRewardsByIdIx struct {
+type StakingClaimPrincipalIx struct {
 	pd *provider.Provider
 }
 
-type StakingClaimRewardsByIdArgs struct {
+type StakingClaimPrincipalArgs struct {
 	owner *crypto.Address
-	stake_id [32]byte
+	pool_id [32]byte
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ClaimRewardsById.
-func (ix *StakingClaimRewardsByIdIx) Args(owner *crypto.Address, stake_id [32]byte) *StakingClaimRewardsByIdArgs {
-	return &StakingClaimRewardsByIdArgs{
+// Args builds the IDL arguments of ClaimPrincipal.
+func (ix *StakingClaimPrincipalIx) Args(owner *crypto.Address, pool_id [32]byte) *StakingClaimPrincipalArgs {
+	return &StakingClaimPrincipalArgs{
 		owner: owner,
-		stake_id: stake_id,
+		pool_id: pool_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingClaimRewardsByIdArgs) Encode() (api.PackedInstruction, error) {
+func (a *StakingClaimPrincipalArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// owner: Signer
 	args["owner"] = a.owner
-	// stake_id: B256
-	args["stake_id"] = a.stake_id
-	wire, err := a.pd.Encode("ClaimRewardsById", args)
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("ClaimPrincipal", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingClaimRewardsIx struct {
+	pd *provider.Provider
+}
+
+type StakingClaimRewardsArgs struct {
+	owner *crypto.Address
+	pool_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimRewards.
+func (ix *StakingClaimRewardsIx) Args(owner *crypto.Address, pool_id [32]byte) *StakingClaimRewardsArgs {
+	return &StakingClaimRewardsArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingClaimRewardsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("ClaimRewards", args)
 	if err != nil {
 		return nil, err
 	}
@@ -30991,13 +32206,13 @@ type StakingAccruePoolRewardIx struct {
 
 type StakingAccruePoolRewardArgs struct {
 	funder *crypto.Address
-	pool_id any
+	pool_id [32]byte
 	amount uint64
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of AccruePoolReward.
-func (ix *StakingAccruePoolRewardIx) Args(funder *crypto.Address, pool_id any, amount uint64) *StakingAccruePoolRewardArgs {
+func (ix *StakingAccruePoolRewardIx) Args(funder *crypto.Address, pool_id [32]byte, amount uint64) *StakingAccruePoolRewardArgs {
 	return &StakingAccruePoolRewardArgs{
 		funder: funder,
 		pool_id: pool_id,
@@ -31014,11 +32229,83 @@ func (a *StakingAccruePoolRewardArgs) Encode() (api.PackedInstruction, error) {
 	args := provider.Args{}
 	// funder: Signer
 	args["funder"] = a.funder
-	// pool_id: PoolId
+	// pool_id: B256
 	args["pool_id"] = a.pool_id
 	// amount: u64
 	args["amount"] = a.amount
 	wire, err := a.pd.Encode("AccruePoolReward", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingClaimCommissionIx struct {
+	pd *provider.Provider
+}
+
+type StakingClaimCommissionArgs struct {
+	recipient *crypto.Address
+	pool_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimCommission.
+func (ix *StakingClaimCommissionIx) Args(recipient *crypto.Address, pool_id [32]byte) *StakingClaimCommissionArgs {
+	return &StakingClaimCommissionArgs{
+		recipient: recipient,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingClaimCommissionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// recipient: Signer
+	args["recipient"] = a.recipient
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("ClaimCommission", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type StakingClaimPoolCommissionIx struct {
+	pd *provider.Provider
+}
+
+type StakingClaimPoolCommissionArgs struct {
+	owner *crypto.Address
+	pool_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimPoolCommission.
+func (ix *StakingClaimPoolCommissionIx) Args(owner *crypto.Address, pool_id [32]byte) *StakingClaimPoolCommissionArgs {
+	return &StakingClaimPoolCommissionArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingClaimPoolCommissionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("ClaimPoolCommission", args)
 	if err != nil {
 		return nil, err
 	}
@@ -31031,13 +32318,13 @@ type StakingRequestPoolRewardConfigIx struct {
 
 type StakingRequestPoolRewardConfigArgs struct {
 	owner *crypto.Address
-	pool_id any
+	pool_id [32]byte
 	config StakingPoolRewardConfig
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of RequestPoolRewardConfig.
-func (ix *StakingRequestPoolRewardConfigIx) Args(owner *crypto.Address, pool_id any, config StakingPoolRewardConfig) *StakingRequestPoolRewardConfigArgs {
+func (ix *StakingRequestPoolRewardConfigIx) Args(owner *crypto.Address, pool_id [32]byte, config StakingPoolRewardConfig) *StakingRequestPoolRewardConfigArgs {
 	return &StakingRequestPoolRewardConfigArgs{
 		owner: owner,
 		pool_id: pool_id,
@@ -31054,7 +32341,7 @@ func (a *StakingRequestPoolRewardConfigArgs) Encode() (api.PackedInstruction, er
 	args := provider.Args{}
 	// owner: Signer
 	args["owner"] = a.owner
-	// pool_id: PoolId
+	// pool_id: B256
 	args["pool_id"] = a.pool_id
 	// config: PoolRewardConfig
 	v0, err := toStakingPoolRewardConfigValue(a.config)
@@ -31069,357 +32356,17 @@ func (a *StakingRequestPoolRewardConfigArgs) Encode() (api.PackedInstruction, er
 	return api.PackedInstruction(wire), nil
 }
 
-type StakingClaimPoolCommissionIx struct {
-	pd *provider.Provider
-}
-
-type StakingClaimPoolCommissionArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ClaimPoolCommission.
-func (ix *StakingClaimPoolCommissionIx) Args(owner *crypto.Address, pool_id any) *StakingClaimPoolCommissionArgs {
-	return &StakingClaimPoolCommissionArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingClaimPoolCommissionArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("ClaimPoolCommission", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingPausePoolIx struct {
-	pd *provider.Provider
-}
-
-type StakingPausePoolArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of PausePool.
-func (ix *StakingPausePoolIx) Args(owner *crypto.Address, pool_id any) *StakingPausePoolArgs {
-	return &StakingPausePoolArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingPausePoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("PausePool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingResumePoolIx struct {
-	pd *provider.Provider
-}
-
-type StakingResumePoolArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ResumePool.
-func (ix *StakingResumePoolIx) Args(owner *crypto.Address, pool_id any) *StakingResumePoolArgs {
-	return &StakingResumePoolArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingResumePoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("ResumePool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingFreezePoolIx struct {
-	pd *provider.Provider
-}
-
-type StakingFreezePoolArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of FreezePool.
-func (ix *StakingFreezePoolIx) Args(owner *crypto.Address, pool_id any) *StakingFreezePoolArgs {
-	return &StakingFreezePoolArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingFreezePoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("FreezePool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingUnfreezePoolIx struct {
-	pd *provider.Provider
-}
-
-type StakingUnfreezePoolArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of UnfreezePool.
-func (ix *StakingUnfreezePoolIx) Args(owner *crypto.Address, pool_id any) *StakingUnfreezePoolArgs {
-	return &StakingUnfreezePoolArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingUnfreezePoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("UnfreezePool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingClosePoolIx struct {
-	pd *provider.Provider
-}
-
-type StakingClosePoolArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ClosePool.
-func (ix *StakingClosePoolIx) Args(owner *crypto.Address, pool_id any) *StakingClosePoolArgs {
-	return &StakingClosePoolArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingClosePoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("ClosePool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingSweepPoolResidualIx struct {
-	pd *provider.Provider
-}
-
-type StakingSweepPoolResidualArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SweepPoolResidual.
-func (ix *StakingSweepPoolResidualIx) Args(owner *crypto.Address, pool_id any) *StakingSweepPoolResidualArgs {
-	return &StakingSweepPoolResidualArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingSweepPoolResidualArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("SweepPoolResidual", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingConfigureValidatorRewardPolicyIx struct {
-	pd *provider.Provider
-}
-
-type StakingConfigureValidatorRewardPolicyArgs struct {
-	owner *crypto.Address
-	stake_asset *crypto.Address
-	reward_asset *crypto.Address
-	reward_per_validator uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ConfigureValidatorRewardPolicy.
-func (ix *StakingConfigureValidatorRewardPolicyIx) Args(owner *crypto.Address, stake_asset *crypto.Address, reward_asset *crypto.Address, reward_per_validator uint64) *StakingConfigureValidatorRewardPolicyArgs {
-	return &StakingConfigureValidatorRewardPolicyArgs{
-		owner: owner,
-		stake_asset: stake_asset,
-		reward_asset: reward_asset,
-		reward_per_validator: reward_per_validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingConfigureValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// stake_asset: Address
-	args["stake_asset"] = a.stake_asset
-	// reward_asset: Address
-	args["reward_asset"] = a.reward_asset
-	// reward_per_validator: u64
-	args["reward_per_validator"] = a.reward_per_validator
-	wire, err := a.pd.Encode("ConfigureValidatorRewardPolicy", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type StakingFundValidatorRewardPolicyIx struct {
-	pd *provider.Provider
-}
-
-type StakingFundValidatorRewardPolicyArgs struct {
-	funder *crypto.Address
-	stake_asset *crypto.Address
-	reward_asset *crypto.Address
-	amount uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of FundValidatorRewardPolicy.
-func (ix *StakingFundValidatorRewardPolicyIx) Args(funder *crypto.Address, stake_asset *crypto.Address, reward_asset *crypto.Address, amount uint64) *StakingFundValidatorRewardPolicyArgs {
-	return &StakingFundValidatorRewardPolicyArgs{
-		funder: funder,
-		stake_asset: stake_asset,
-		reward_asset: reward_asset,
-		amount: amount,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingFundValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// funder: Signer
-	args["funder"] = a.funder
-	// stake_asset: Address
-	args["stake_asset"] = a.stake_asset
-	// reward_asset: Address
-	args["reward_asset"] = a.reward_asset
-	// amount: u64
-	args["amount"] = a.amount
-	wire, err := a.pd.Encode("FundValidatorRewardPolicy", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
 type StakingPoolIx struct {
 	pd *provider.Provider
 }
 
 type StakingPoolArgs struct {
-	pool_id any
+	pool_id [32]byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Pool.
-func (ix *StakingPoolIx) Args(pool_id any) *StakingPoolArgs {
+func (ix *StakingPoolIx) Args(pool_id [32]byte) *StakingPoolArgs {
 	return &StakingPoolArgs{
 		pool_id: pool_id,
 		pd: ix.pd,
@@ -31432,7 +32379,7 @@ func (a *StakingPoolArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// pool_id: PoolId
+	// pool_id: B256
 	args["pool_id"] = a.pool_id
 	wire, err := a.pd.Encode("Pool", args)
 	if err != nil {
@@ -31446,352 +32393,11 @@ func (ix *StakingPoolIx) DecodeView(body []byte) (out StakingPool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Pool", body)
+	v, err := ix.pd.DecodeViewValue("Pool", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Pool failed: %s", failure)
 	}
 	v0, err := fromStakingPool(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingStakeByIdIx struct {
-	pd *provider.Provider
-}
-
-type StakingStakeByIdArgs struct {
-	stake_id [32]byte
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of StakeById.
-func (ix *StakingStakeByIdIx) Args(stake_id [32]byte) *StakingStakeByIdArgs {
-	return &StakingStakeByIdArgs{
-		stake_id: stake_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingStakeByIdArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// stake_id: B256
-	args["stake_id"] = a.stake_id
-	wire, err := a.pd.Encode("StakeById", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of StakeById into StakingStake.
-func (ix *StakingStakeByIdIx) DecodeView(body []byte) (out StakingStake, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("StakeById", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view StakeById failed: %s", failure)
-	}
-	v0, err := fromStakingStake(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingPoolTreasuryBalanceIx struct {
-	pd *provider.Provider
-}
-
-type StakingPoolTreasuryBalanceArgs struct {
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of PoolTreasuryBalance.
-func (ix *StakingPoolTreasuryBalanceIx) Args(pool_id any) *StakingPoolTreasuryBalanceArgs {
-	return &StakingPoolTreasuryBalanceArgs{
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingPoolTreasuryBalanceArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("PoolTreasuryBalance", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of PoolTreasuryBalance into uint64.
-func (ix *StakingPoolTreasuryBalanceIx) DecodeView(body []byte) (out uint64, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("PoolTreasuryBalance", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view PoolTreasuryBalance failed: %s", failure)
-	}
-	v0, err := toUint64(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingStakeIdsIx struct {
-	pd *provider.Provider
-}
-
-type StakingStakeIdsArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of StakeIds.
-func (ix *StakingStakeIdsIx) Args(owner *crypto.Address, pool_id any) *StakingStakeIdsArgs {
-	return &StakingStakeIdsArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingStakeIdsArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Address
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("StakeIds", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of StakeIds into [][32]byte.
-func (ix *StakingStakeIdsIx) DecodeView(body []byte) (out [][32]byte, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("StakeIds", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view StakeIds failed: %s", failure)
-	}
-	v0, err := toSlice(v)
-	if err != nil {
-		return out, err
-	}
-	out = make([][32]byte, len(v0))
-	for v1, v2 := range v0 {
-		v3, err := toFixed32(v2)
-		if err != nil {
-			return out, err
-		}
-		out[v1] = v3
-	}
-	return out, nil
-}
-
-type StakingStakePositionByPoolIx struct {
-	pd *provider.Provider
-}
-
-type StakingStakePositionByPoolArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of StakePositionByPool.
-func (ix *StakingStakePositionByPoolIx) Args(owner *crypto.Address, pool_id any) *StakingStakePositionByPoolArgs {
-	return &StakingStakePositionByPoolArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingStakePositionByPoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Address
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("StakePositionByPool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of StakePositionByPool into StakingPoolStakePosition.
-func (ix *StakingStakePositionByPoolIx) DecodeView(body []byte) (out StakingPoolStakePosition, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("StakePositionByPool", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view StakePositionByPool failed: %s", failure)
-	}
-	v0, err := fromStakingPoolStakePosition(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type StakingPendingStakesIx struct {
-	pd *provider.Provider
-}
-
-type StakingPendingStakesArgs struct {
-	owner *crypto.Address
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of PendingStakes.
-func (ix *StakingPendingStakesIx) Args(owner *crypto.Address, pool_id any) *StakingPendingStakesArgs {
-	return &StakingPendingStakesArgs{
-		owner: owner,
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingPendingStakesArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Address
-	args["owner"] = a.owner
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("PendingStakes", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of PendingStakes into [][32]byte.
-func (ix *StakingPendingStakesIx) DecodeView(body []byte) (out [][32]byte, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("PendingStakes", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view PendingStakes failed: %s", failure)
-	}
-	v0, err := toSlice(v)
-	if err != nil {
-		return out, err
-	}
-	out = make([][32]byte, len(v0))
-	for v1, v2 := range v0 {
-		v3, err := toFixed32(v2)
-		if err != nil {
-			return out, err
-		}
-		out[v1] = v3
-	}
-	return out, nil
-}
-
-type StakingTotalSharesIx struct {
-	pd *provider.Provider
-}
-
-type StakingTotalSharesArgs struct {
-	pool_id any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of TotalShares.
-func (ix *StakingTotalSharesIx) Args(pool_id any) *StakingTotalSharesArgs {
-	return &StakingTotalSharesArgs{
-		pool_id: pool_id,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *StakingTotalSharesArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// pool_id: PoolId
-	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("TotalShares", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of TotalShares into uint64.
-func (ix *StakingTotalSharesIx) DecodeView(body []byte) (out uint64, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewData("TotalShares", body)
-	if err != nil {
-		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view TotalShares failed: %s", failure)
-	}
-	v0, err := toUint64(v)
 	if err != nil {
 		return out, err
 	}
@@ -31804,12 +32410,12 @@ type StakingTotalStakeIx struct {
 }
 
 type StakingTotalStakeArgs struct {
-	pool_id any
+	pool_id [32]byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of TotalStake.
-func (ix *StakingTotalStakeIx) Args(pool_id any) *StakingTotalStakeArgs {
+func (ix *StakingTotalStakeIx) Args(pool_id [32]byte) *StakingTotalStakeArgs {
 	return &StakingTotalStakeArgs{
 		pool_id: pool_id,
 		pd: ix.pd,
@@ -31822,7 +32428,7 @@ func (a *StakingTotalStakeArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// pool_id: PoolId
+	// pool_id: B256
 	args["pool_id"] = a.pool_id
 	wire, err := a.pd.Encode("TotalStake", args)
 	if err != nil {
@@ -31836,12 +32442,9 @@ func (ix *StakingTotalStakeIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("TotalStake", body)
+	v, err := ix.pd.DecodeViewValue("TotalStake", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view TotalStake failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -31851,51 +32454,52 @@ func (ix *StakingTotalStakeIx) DecodeView(body []byte) (out uint64, err error) {
 	return out, nil
 }
 
-type StakingRewardIndexIx struct {
+type StakingPositionIx struct {
 	pd *provider.Provider
 }
 
-type StakingRewardIndexArgs struct {
-	pool_id any
+type StakingPositionArgs struct {
+	owner *crypto.Address
+	pool_id [32]byte
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of RewardIndex.
-func (ix *StakingRewardIndexIx) Args(pool_id any) *StakingRewardIndexArgs {
-	return &StakingRewardIndexArgs{
+// Args builds the IDL arguments of Position.
+func (ix *StakingPositionIx) Args(owner *crypto.Address, pool_id [32]byte) *StakingPositionArgs {
+	return &StakingPositionArgs{
+		owner: owner,
 		pool_id: pool_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingRewardIndexArgs) Encode() (api.PackedInstruction, error) {
+func (a *StakingPositionArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// pool_id: PoolId
+	// owner: Address
+	args["owner"] = a.owner
+	// pool_id: B256
 	args["pool_id"] = a.pool_id
-	wire, err := a.pd.Encode("RewardIndex", args)
+	wire, err := a.pd.Encode("Position", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of RewardIndex into *big.Int.
-func (ix *StakingRewardIndexIx) DecodeView(body []byte) (out *big.Int, err error) {
+// DecodeView decodes the raw view response body of Position into StakingPosition.
+func (ix *StakingPositionIx) DecodeView(body []byte) (out StakingPosition, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("RewardIndex", body)
+	v, err := ix.pd.DecodeViewValue("Position", body)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view RewardIndex failed: %s", failure)
-	}
-	v0, err := toBigInt(v)
+	v0, err := fromStakingPosition(v)
 	if err != nil {
 		return out, err
 	}
@@ -31903,55 +32507,48 @@ func (ix *StakingRewardIndexIx) DecodeView(body []byte) (out *big.Int, err error
 	return out, nil
 }
 
-type StakingValidatorRewardPolicyIx struct {
+type StakingPoolTreasuryBalanceIx struct {
 	pd *provider.Provider
 }
 
-type StakingValidatorRewardPolicyArgs struct {
-	stake_asset *crypto.Address
-	reward_asset *crypto.Address
+type StakingPoolTreasuryBalanceArgs struct {
+	pool_id [32]byte
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ValidatorRewardPolicy.
-func (ix *StakingValidatorRewardPolicyIx) Args(stake_asset *crypto.Address, reward_asset *crypto.Address) *StakingValidatorRewardPolicyArgs {
-	return &StakingValidatorRewardPolicyArgs{
-		stake_asset: stake_asset,
-		reward_asset: reward_asset,
+// Args builds the IDL arguments of PoolTreasuryBalance.
+func (ix *StakingPoolTreasuryBalanceIx) Args(pool_id [32]byte) *StakingPoolTreasuryBalanceArgs {
+	return &StakingPoolTreasuryBalanceArgs{
+		pool_id: pool_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
+func (a *StakingPoolTreasuryBalanceArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// stake_asset: Address
-	args["stake_asset"] = a.stake_asset
-	// reward_asset: Address
-	args["reward_asset"] = a.reward_asset
-	wire, err := a.pd.Encode("ValidatorRewardPolicy", args)
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("PoolTreasuryBalance", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of ValidatorRewardPolicy into StakingValidatorRewardPolicy.
-func (ix *StakingValidatorRewardPolicyIx) DecodeView(body []byte) (out StakingValidatorRewardPolicy, err error) {
+// DecodeView decodes the raw view response body of PoolTreasuryBalance into uint64.
+func (ix *StakingPoolTreasuryBalanceIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ValidatorRewardPolicy", body)
+	v, err := ix.pd.DecodeViewValue("PoolTreasuryBalance", body)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ValidatorRewardPolicy failed: %s", failure)
-	}
-	v0, err := fromStakingValidatorRewardPolicy(v)
+	v0, err := toUint64(v)
 	if err != nil {
 		return out, err
 	}
@@ -31959,47 +32556,52 @@ func (ix *StakingValidatorRewardPolicyIx) DecodeView(body []byte) (out StakingVa
 	return out, nil
 }
 
-type StakingValidatorRewardPolicyConfiguredIx struct {
+type StakingCommissionBalanceIx struct {
 	pd *provider.Provider
 }
 
-type StakingValidatorRewardPolicyConfiguredArgs struct {
+type StakingCommissionBalanceArgs struct {
+	pool_id [32]byte
+	recipient *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ValidatorRewardPolicyConfigured.
-func (ix *StakingValidatorRewardPolicyConfiguredIx) Args() *StakingValidatorRewardPolicyConfiguredArgs {
-	return &StakingValidatorRewardPolicyConfiguredArgs{
+// Args builds the IDL arguments of CommissionBalance.
+func (ix *StakingCommissionBalanceIx) Args(pool_id [32]byte, recipient *crypto.Address) *StakingCommissionBalanceArgs {
+	return &StakingCommissionBalanceArgs{
+		pool_id: pool_id,
+		recipient: recipient,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *StakingValidatorRewardPolicyConfiguredArgs) Encode() (api.PackedInstruction, error) {
+func (a *StakingCommissionBalanceArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	wire, err := a.pd.Encode("ValidatorRewardPolicyConfigured", args)
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	// recipient: Address
+	args["recipient"] = a.recipient
+	wire, err := a.pd.Encode("CommissionBalance", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of ValidatorRewardPolicyConfigured into bool.
-func (ix *StakingValidatorRewardPolicyConfiguredIx) DecodeView(body []byte) (out bool, err error) {
+// DecodeView decodes the raw view response body of CommissionBalance into uint64.
+func (ix *StakingCommissionBalanceIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ValidatorRewardPolicyConfigured", body)
+	v, err := ix.pd.DecodeViewValue("CommissionBalance", body)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ValidatorRewardPolicyConfigured failed: %s", failure)
-	}
-	v0, err := toBool(v)
+	v0, err := toUint64(v)
 	if err != nil {
 		return out, err
 	}
@@ -32988,12 +33590,9 @@ func (ix *IdentityVcAttestationCoreIx) DecodeView(body []byte) (out IdentityVcAt
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("VcAttestationCore", body)
+	v, err := ix.pd.DecodeViewValue("VcAttestationCore", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view VcAttestationCore failed: %s", failure)
 	}
 	v0, err := fromIdentityVcAttestationCore(v)
 	if err != nil {
@@ -33048,12 +33647,9 @@ func (ix *IdentityVcAttestationLifecycleIx) DecodeView(body []byte) (out Identit
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("VcAttestationLifecycle", body)
+	v, err := ix.pd.DecodeViewValue("VcAttestationLifecycle", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view VcAttestationLifecycle failed: %s", failure)
 	}
 	v0, err := fromIdentityVcAttestationLifecycle(v)
 	if err != nil {
@@ -33104,12 +33700,9 @@ func (ix *IdentityAcceptedVcIssuerIndexMetaIx) DecodeView(body []byte) (out stri
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("AcceptedVcIssuerIndexMeta", body)
+	v, err := ix.pd.DecodeViewValue("AcceptedVcIssuerIndexMeta", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view AcceptedVcIssuerIndexMeta failed: %s", failure)
 	}
 	v0, err := toString(v)
 	if err != nil {
@@ -33160,12 +33753,9 @@ func (ix *IdentityAcceptedVcIssuersIx) DecodeView(body []byte) (out []IdentityAc
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("AcceptedVcIssuers", body)
+	v, err := ix.pd.DecodeViewValue("AcceptedVcIssuers", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view AcceptedVcIssuers failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -33219,12 +33809,9 @@ func (ix *IdentityDisclosedVcSchemasIx) DecodeView(body []byte) (out []string, e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("DisclosedVcSchemas", body)
+	v, err := ix.pd.DecodeViewValue("DisclosedVcSchemas", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view DisclosedVcSchemas failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -33286,12 +33873,9 @@ func (ix *IdentityDisclosedVcsIx) DecodeView(body []byte) (out []IdentityDisclos
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("DisclosedVcs", body)
+	v, err := ix.pd.DecodeViewValue("DisclosedVcs", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view DisclosedVcs failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -33353,12 +33937,9 @@ func (ix *IdentityHasValidVcFromIssuerIx) DecodeView(body []byte) (out bool, err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("HasValidVcFromIssuer", body)
+	v, err := ix.pd.DecodeViewValue("HasValidVcFromIssuer", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view HasValidVcFromIssuer failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -33405,12 +33986,9 @@ func (ix *IdentityCoreIx) DecodeView(body []byte) (out IdentityDidCoreState, err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Core", body)
+	v, err := ix.pd.DecodeViewValue("Core", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Core failed: %s", failure)
 	}
 	v0, err := fromIdentityDidCoreState(v)
 	if err != nil {
@@ -33457,12 +34035,9 @@ func (ix *IdentityDocumentIx) DecodeView(body []byte) (out IdentityDidDocumentSt
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Document", body)
+	v, err := ix.pd.DecodeViewValue("Document", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Document failed: %s", failure)
 	}
 	v0, err := fromIdentityDidDocumentState(v)
 	if err != nil {
@@ -33509,12 +34084,9 @@ func (ix *IdentityKeyIndexIx) DecodeView(body []byte) (out IdentityDidKeyIndexSt
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("KeyIndex", body)
+	v, err := ix.pd.DecodeViewValue("KeyIndex", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view KeyIndex failed: %s", failure)
 	}
 	v0, err := fromIdentityDidKeyIndexState(v)
 	if err != nil {
@@ -33561,12 +34133,9 @@ func (ix *IdentityKeysIx) DecodeView(body []byte) (out []IdentityDidKey, err err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Keys", body)
+	v, err := ix.pd.DecodeViewValue("Keys", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Keys failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -33624,12 +34193,9 @@ func (ix *IdentityKeyIx) DecodeView(body []byte) (out IdentityDidKey, err error)
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Key", body)
+	v, err := ix.pd.DecodeViewValue("Key", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Key failed: %s", failure)
 	}
 	v0, err := fromIdentityDidKey(v)
 	if err != nil {
@@ -33676,12 +34242,9 @@ func (ix *IdentityServiceIndexIx) DecodeView(body []byte) (out IdentityDidServic
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ServiceIndex", body)
+	v, err := ix.pd.DecodeViewValue("ServiceIndex", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ServiceIndex failed: %s", failure)
 	}
 	v0, err := fromIdentityDidServiceIndexState(v)
 	if err != nil {
@@ -33728,12 +34291,9 @@ func (ix *IdentityServicesIx) DecodeView(body []byte) (out []IdentityDidService,
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Services", body)
+	v, err := ix.pd.DecodeViewValue("Services", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Services failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -33791,12 +34351,9 @@ func (ix *IdentityServiceIx) DecodeView(body []byte) (out IdentityDidService, er
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Service", body)
+	v, err := ix.pd.DecodeViewValue("Service", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Service failed: %s", failure)
 	}
 	v0, err := fromIdentityDidService(v)
 	if err != nil {
@@ -33843,12 +34400,9 @@ func (ix *IdentityAliasIx) DecodeView(body []byte) (out IdentityDidAliasState, e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Alias", body)
+	v, err := ix.pd.DecodeViewValue("Alias", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Alias failed: %s", failure)
 	}
 	v0, err := fromIdentityDidAliasState(v)
 	if err != nil {
@@ -33895,12 +34449,9 @@ func (ix *IdentityAvatarIx) DecodeView(body []byte) (out IdentityDidAvatarState,
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Avatar", body)
+	v, err := ix.pd.DecodeViewValue("Avatar", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Avatar failed: %s", failure)
 	}
 	v0, err := fromIdentityDidAvatarState(v)
 	if err != nil {
@@ -33947,12 +34498,9 @@ func (ix *IdentityUpdatedAtIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("UpdatedAt", body)
+	v, err := ix.pd.DecodeViewValue("UpdatedAt", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view UpdatedAt failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -33999,12 +34547,9 @@ func (ix *IdentityDeactivatedIx) DecodeView(body []byte) (out bool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Deactivated", body)
+	v, err := ix.pd.DecodeViewValue("Deactivated", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Deactivated failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -34055,12 +34600,9 @@ func (ix *IdentityNameBindingIx) DecodeView(body []byte) (out IdentityDidNameBin
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("NameBinding", body)
+	v, err := ix.pd.DecodeViewValue("NameBinding", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view NameBinding failed: %s", failure)
 	}
 	v0, err := fromIdentityDidNameBinding(v)
 	if err != nil {
@@ -34107,12 +34649,9 @@ func (ix *IdentityCredentialDefinitionIx) DecodeView(body []byte) (out IdentityC
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("CredentialDefinition", body)
+	v, err := ix.pd.DecodeViewValue("CredentialDefinition", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CredentialDefinition failed: %s", failure)
 	}
 	v0, err := fromIdentityCredentialDefinition(v)
 	if err != nil {
@@ -34159,12 +34698,9 @@ func (ix *IdentityOrganizationCapabilitiesIx) DecodeView(body []byte) (out Ident
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("OrganizationCapabilities", body)
+	v, err := ix.pd.DecodeViewValue("OrganizationCapabilities", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view OrganizationCapabilities failed: %s", failure)
 	}
 	v0, err := fromIdentityOrganizationCapabilities(v)
 	if err != nil {
@@ -34211,12 +34747,9 @@ func (ix *IdentityOrganizationStatusIx) DecodeView(body []byte) (out IdentityOrg
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("OrganizationStatus", body)
+	v, err := ix.pd.DecodeViewValue("OrganizationStatus", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view OrganizationStatus failed: %s", failure)
 	}
 	v0, err := fromIdentityOrganizationStatus(v)
 	if err != nil {
@@ -34263,12 +34796,9 @@ func (ix *IdentityOrganizationUpdatedAtIx) DecodeView(body []byte) (out uint64, 
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("OrganizationUpdatedAt", body)
+	v, err := ix.pd.DecodeViewValue("OrganizationUpdatedAt", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view OrganizationUpdatedAt failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -34319,12 +34849,9 @@ func (ix *IdentityCredentialIdIx) DecodeView(body []byte) (out string, err error
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app identity is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("CredentialId", body)
+	v, err := ix.pd.DecodeViewValue("CredentialId", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CredentialId failed: %s", failure)
 	}
 	v0, err := toString(v)
 	if err != nil {
@@ -34363,6 +34890,8 @@ type SftokenApp struct {
 	Merge *SftokenMergeIx
 	Transfer *SftokenTransferIx
 	TransferFrom *SftokenTransferFromIx
+	BackfillTotalBalance *SftokenBackfillTotalBalanceIx
+	BackfillTotalSupply *SftokenBackfillTotalSupplyIx
 	SftOwnerOf *SftokenSftOwnerOfIx
 	SftMetadata *SftokenSftMetadataIx
 	SlotInfo *SftokenSlotInfoIx
@@ -34377,6 +34906,10 @@ type SftokenApp struct {
 	MintAuthority *SftokenMintAuthorityIx
 	UpdateAuthor *SftokenUpdateAuthorIx
 	FreezeAuthority *SftokenFreezeAuthorityIx
+	TotalBalanceOf *SftokenTotalBalanceOfIx
+	TotalBalanceStatus *SftokenTotalBalanceStatusIx
+	TotalSupply *SftokenTotalSupplyIx
+	TotalSupplyStatus *SftokenTotalSupplyStatusIx
 }
 
 var Sftoken = &SftokenApp{
@@ -34406,6 +34939,8 @@ var Sftoken = &SftokenApp{
 	Merge: &SftokenMergeIx{},
 	Transfer: &SftokenTransferIx{},
 	TransferFrom: &SftokenTransferFromIx{},
+	BackfillTotalBalance: &SftokenBackfillTotalBalanceIx{},
+	BackfillTotalSupply: &SftokenBackfillTotalSupplyIx{},
 	SftOwnerOf: &SftokenSftOwnerOfIx{},
 	SftMetadata: &SftokenSftMetadataIx{},
 	SlotInfo: &SftokenSlotInfoIx{},
@@ -34420,6 +34955,10 @@ var Sftoken = &SftokenApp{
 	MintAuthority: &SftokenMintAuthorityIx{},
 	UpdateAuthor: &SftokenUpdateAuthorIx{},
 	FreezeAuthority: &SftokenFreezeAuthorityIx{},
+	TotalBalanceOf: &SftokenTotalBalanceOfIx{},
+	TotalBalanceStatus: &SftokenTotalBalanceStatusIx{},
+	TotalSupply: &SftokenTotalSupplyIx{},
+	TotalSupplyStatus: &SftokenTotalSupplyStatusIx{},
 }
 
 func (a *SftokenApp) bind(pd *provider.Provider) {
@@ -34450,6 +34989,8 @@ func (a *SftokenApp) bind(pd *provider.Provider) {
 	a.Merge.pd = pd
 	a.Transfer.pd = pd
 	a.TransferFrom.pd = pd
+	a.BackfillTotalBalance.pd = pd
+	a.BackfillTotalSupply.pd = pd
 	a.SftOwnerOf.pd = pd
 	a.SftMetadata.pd = pd
 	a.SlotInfo.pd = pd
@@ -34464,6 +35005,10 @@ func (a *SftokenApp) bind(pd *provider.Provider) {
 	a.MintAuthority.pd = pd
 	a.UpdateAuthor.pd = pd
 	a.FreezeAuthority.pd = pd
+	a.TotalBalanceOf.pd = pd
+	a.TotalBalanceStatus.pd = pd
+	a.TotalSupply.pd = pd
+	a.TotalSupplyStatus.pd = pd
 }
 
 type SftokenCreateSftIx struct {
@@ -35626,6 +36171,74 @@ func (a *SftokenTransferFromArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type SftokenBackfillTotalBalanceIx struct {
+	pd *provider.Provider
+}
+
+type SftokenBackfillTotalBalanceArgs struct {
+	sft *crypto.Address
+	owner *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of BackfillTotalBalance.
+func (ix *SftokenBackfillTotalBalanceIx) Args(sft *crypto.Address, owner *crypto.Address) *SftokenBackfillTotalBalanceArgs {
+	return &SftokenBackfillTotalBalanceArgs{
+		sft: sft,
+		owner: owner,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenBackfillTotalBalanceArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// owner: Address
+	args["owner"] = a.owner
+	wire, err := a.pd.Encode("BackfillTotalBalance", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SftokenBackfillTotalSupplyIx struct {
+	pd *provider.Provider
+}
+
+type SftokenBackfillTotalSupplyArgs struct {
+	sft *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of BackfillTotalSupply.
+func (ix *SftokenBackfillTotalSupplyIx) Args(sft *crypto.Address) *SftokenBackfillTotalSupplyArgs {
+	return &SftokenBackfillTotalSupplyArgs{
+		sft: sft,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenBackfillTotalSupplyArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	wire, err := a.pd.Encode("BackfillTotalSupply", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type SftokenSftOwnerOfIx struct {
 	pd *provider.Provider
 }
@@ -35663,12 +36276,9 @@ func (ix *SftokenSftOwnerOfIx) DecodeView(body []byte) (out *crypto.Address, err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SftOwnerOf", body)
+	v, err := ix.pd.DecodeViewValue("SftOwnerOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view SftOwnerOf failed: %s", failure)
 	}
 	v0, err := toAddress(v)
 	if err != nil {
@@ -35715,12 +36325,9 @@ func (ix *SftokenSftMetadataIx) DecodeView(body []byte) (out SftokenMetadata, er
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SftMetadata", body)
+	v, err := ix.pd.DecodeViewValue("SftMetadata", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view SftMetadata failed: %s", failure)
 	}
 	v0, err := fromSftokenMetadata(v)
 	if err != nil {
@@ -35771,12 +36378,9 @@ func (ix *SftokenSlotInfoIx) DecodeView(body []byte) (out SftokenSlotData, err e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SlotInfo", body)
+	v, err := ix.pd.DecodeViewValue("SlotInfo", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view SlotInfo failed: %s", failure)
 	}
 	v0, err := fromSftokenSlotData(v)
 	if err != nil {
@@ -35827,12 +36431,9 @@ func (ix *SftokenSlotMetadataIx) DecodeView(body []byte) (out SftokenMetadata, e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SlotMetadata", body)
+	v, err := ix.pd.DecodeViewValue("SlotMetadata", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view SlotMetadata failed: %s", failure)
 	}
 	v0, err := fromSftokenMetadata(v)
 	if err != nil {
@@ -35883,12 +36484,9 @@ func (ix *SftokenIsSlotTransferableIx) DecodeView(body []byte) (out bool, err er
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("IsSlotTransferable", body)
+	v, err := ix.pd.DecodeViewValue("IsSlotTransferable", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view IsSlotTransferable failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -35939,12 +36537,9 @@ func (ix *SftokenTokenIx) DecodeView(body []byte) (out SftokenMetadata, err erro
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Token", body)
+	v, err := ix.pd.DecodeViewValue("Token", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Token failed: %s", failure)
 	}
 	v0, err := fromSftokenMetadata(v)
 	if err != nil {
@@ -35995,12 +36590,9 @@ func (ix *SftokenSlotOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SlotOf", body)
+	v, err := ix.pd.DecodeViewValue("SlotOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view SlotOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -36055,12 +36647,9 @@ func (ix *SftokenBalanceOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("BalanceOf", body)
+	v, err := ix.pd.DecodeViewValue("BalanceOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view BalanceOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -36115,12 +36704,9 @@ func (ix *SftokenFrozenOfIx) DecodeView(body []byte) (out bool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("FrozenOf", body)
+	v, err := ix.pd.DecodeViewValue("FrozenOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view FrozenOf failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -36179,12 +36765,9 @@ func (ix *SftokenApprovalOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ApprovalOf", body)
+	v, err := ix.pd.DecodeViewValue("ApprovalOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ApprovalOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -36231,12 +36814,9 @@ func (ix *SftokenRoyaltyInfoIx) DecodeView(body []byte) (out SftokenRoyalty, err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("RoyaltyInfo", body)
+	v, err := ix.pd.DecodeViewValue("RoyaltyInfo", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view RoyaltyInfo failed: %s", failure)
 	}
 	v0, err := fromSftokenRoyalty(v)
 	if err != nil {
@@ -36283,12 +36863,9 @@ func (ix *SftokenMintAuthorityIx) DecodeView(body []byte) (out *crypto.Address, 
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("MintAuthority", body)
+	v, err := ix.pd.DecodeViewValue("MintAuthority", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view MintAuthority failed: %s", failure)
 	}
 	v0, err := toAddress(v)
 	if err != nil {
@@ -36335,12 +36912,9 @@ func (ix *SftokenUpdateAuthorIx) DecodeView(body []byte) (out *crypto.Address, e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("UpdateAuthor", body)
+	v, err := ix.pd.DecodeViewValue("UpdateAuthor", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view UpdateAuthor failed: %s", failure)
 	}
 	v0, err := toAddress(v)
 	if err != nil {
@@ -36387,14 +36961,215 @@ func (ix *SftokenFreezeAuthorityIx) DecodeView(body []byte) (out *crypto.Address
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("FreezeAuthority", body)
+	v, err := ix.pd.DecodeViewValue("FreezeAuthority", body)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view FreezeAuthority failed: %s", failure)
-	}
 	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenTotalBalanceOfIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTotalBalanceOfArgs struct {
+	sft *crypto.Address
+	owner *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TotalBalanceOf.
+func (ix *SftokenTotalBalanceOfIx) Args(sft *crypto.Address, owner *crypto.Address) *SftokenTotalBalanceOfArgs {
+	return &SftokenTotalBalanceOfArgs{
+		sft: sft,
+		owner: owner,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTotalBalanceOfArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// owner: Address
+	args["owner"] = a.owner
+	wire, err := a.pd.Encode("TotalBalanceOf", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of TotalBalanceOf into uint64.
+func (ix *SftokenTotalBalanceOfIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("TotalBalanceOf", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenTotalBalanceStatusIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTotalBalanceStatusArgs struct {
+	sft *crypto.Address
+	owner *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TotalBalanceStatus.
+func (ix *SftokenTotalBalanceStatusIx) Args(sft *crypto.Address, owner *crypto.Address) *SftokenTotalBalanceStatusArgs {
+	return &SftokenTotalBalanceStatusArgs{
+		sft: sft,
+		owner: owner,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTotalBalanceStatusArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	// owner: Address
+	args["owner"] = a.owner
+	wire, err := a.pd.Encode("TotalBalanceStatus", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of TotalBalanceStatus into SftokenSftBalanceState.
+func (ix *SftokenTotalBalanceStatusIx) DecodeView(body []byte) (out SftokenSftBalanceState, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("TotalBalanceStatus", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := fromSftokenSftBalanceState(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenTotalSupplyIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTotalSupplyArgs struct {
+	sft *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TotalSupply.
+func (ix *SftokenTotalSupplyIx) Args(sft *crypto.Address) *SftokenTotalSupplyArgs {
+	return &SftokenTotalSupplyArgs{
+		sft: sft,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTotalSupplyArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	wire, err := a.pd.Encode("TotalSupply", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of TotalSupply into uint64.
+func (ix *SftokenTotalSupplyIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("TotalSupply", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SftokenTotalSupplyStatusIx struct {
+	pd *provider.Provider
+}
+
+type SftokenTotalSupplyStatusArgs struct {
+	sft *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TotalSupplyStatus.
+func (ix *SftokenTotalSupplyStatusIx) Args(sft *crypto.Address) *SftokenTotalSupplyStatusArgs {
+	return &SftokenTotalSupplyStatusArgs{
+		sft: sft,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SftokenTotalSupplyStatusArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sft: Address
+	args["sft"] = a.sft
+	wire, err := a.pd.Encode("TotalSupplyStatus", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of TotalSupplyStatus into SftokenSftBalanceState.
+func (ix *SftokenTotalSupplyStatusIx) DecodeView(body []byte) (out SftokenSftBalanceState, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app sftoken is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("TotalSupplyStatus", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := fromSftokenSftBalanceState(v)
 	if err != nil {
 		return out, err
 	}
@@ -36756,12 +37531,9 @@ func (ix *DexAmmPoolInfoIx) DecodeView(body []byte) (out DexAmmPoolInfo, err err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("AmmPoolInfo", body)
+	v, err := ix.pd.DecodeViewValue("AmmPoolInfo", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view AmmPoolInfo failed: %s", failure)
 	}
 	v0, err := fromDexAmmPoolInfo(v)
 	if err != nil {
@@ -36812,12 +37584,9 @@ func (ix *DexAmmLpBalanceIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("AmmLpBalance", body)
+	v, err := ix.pd.DecodeViewValue("AmmLpBalance", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view AmmLpBalance failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -36928,12 +37697,9 @@ func (ix *DexAmmSwapEnabledIx) DecodeView(body []byte) (out bool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("AmmSwapEnabled", body)
+	v, err := ix.pd.DecodeViewValue("AmmSwapEnabled", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view AmmSwapEnabled failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -37400,12 +38166,9 @@ func (ix *DexMarketInfoIx) DecodeView(body []byte) (out DexMarket, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("MarketInfo", body)
+	v, err := ix.pd.DecodeViewValue("MarketInfo", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view MarketInfo failed: %s", failure)
 	}
 	v0, err := fromDexMarket(v)
 	if err != nil {
@@ -37456,12 +38219,9 @@ func (ix *DexOrderInfoViewIx) DecodeView(body []byte) (out DexOrderInfo, err err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("OrderInfoView", body)
+	v, err := ix.pd.DecodeViewValue("OrderInfoView", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view OrderInfoView failed: %s", failure)
 	}
 	v0, err := fromDexOrderInfo(v)
 	if err != nil {
@@ -37508,12 +38268,9 @@ func (ix *DexBestBidAskIx) DecodeView(body []byte) (out DexBestBidAsk, err error
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("BestBidAsk", body)
+	v, err := ix.pd.DecodeViewValue("BestBidAsk", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view BestBidAsk failed: %s", failure)
 	}
 	v0, err := fromDexBestBidAsk(v)
 	if err != nil {
@@ -37564,12 +38321,9 @@ func (ix *DexOrderbookDepthIx) DecodeView(body []byte) (out DexOrderbookDepth, e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("OrderbookDepth", body)
+	v, err := ix.pd.DecodeViewValue("OrderbookDepth", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view OrderbookDepth failed: %s", failure)
 	}
 	v0, err := fromDexOrderbookDepth(v)
 	if err != nil {
@@ -37636,12 +38390,9 @@ func (ix *DexOrdersAtLevelIx) DecodeView(body []byte) (out DexLevelOrderPage, er
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("OrdersAtLevel", body)
+	v, err := ix.pd.DecodeViewValue("OrdersAtLevel", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view OrdersAtLevel failed: %s", failure)
 	}
 	v0, err := fromDexLevelOrderPage(v)
 	if err != nil {
@@ -37692,12 +38443,9 @@ func (ix *DexVaultLiabilityIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app dex is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("VaultLiability", body)
+	v, err := ix.pd.DecodeViewValue("VaultLiability", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view VaultLiability failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -37712,9 +38460,19 @@ type ValidatorApp struct {
 	Pd *provider.Provider
 	RegisterValidator *ValidatorRegisterValidatorIx
 	CreateValidatorPool *ValidatorCreateValidatorPoolIx
+	PausePool *ValidatorPausePoolIx
+	ResumePool *ValidatorResumePoolIx
+	ClosePool *ValidatorClosePoolIx
+	RequestPoolRewardConfig *ValidatorRequestPoolRewardConfigIx
+	ClaimPoolCommission *ValidatorClaimPoolCommissionIx
+	SweepPoolResidual *ValidatorSweepPoolResidualIx
+	ConfigureValidatorRewardPolicy *ValidatorConfigureValidatorRewardPolicyIx
+	FundValidatorRewardPolicy *ValidatorFundValidatorRewardPolicyIx
 	JoinCandidatePool *ValidatorJoinCandidatePoolIx
 	LeaveCandidatePool *ValidatorLeaveCandidatePoolIx
 	DeclareValidatorAvailability *ValidatorDeclareValidatorAvailabilityIx
+	ValidatorRewardPolicy *ValidatorValidatorRewardPolicyIx
+	ValidatorRewardPolicyConfigured *ValidatorValidatorRewardPolicyConfiguredIx
 	CandidatePool *ValidatorCandidatePoolIx
 	CandidateValidators *ValidatorCandidateValidatorsIx
 	DeclaredValidators *ValidatorDeclaredValidatorsIx
@@ -37727,9 +38485,19 @@ type ValidatorApp struct {
 var Validator = &ValidatorApp{
 	RegisterValidator: &ValidatorRegisterValidatorIx{},
 	CreateValidatorPool: &ValidatorCreateValidatorPoolIx{},
+	PausePool: &ValidatorPausePoolIx{},
+	ResumePool: &ValidatorResumePoolIx{},
+	ClosePool: &ValidatorClosePoolIx{},
+	RequestPoolRewardConfig: &ValidatorRequestPoolRewardConfigIx{},
+	ClaimPoolCommission: &ValidatorClaimPoolCommissionIx{},
+	SweepPoolResidual: &ValidatorSweepPoolResidualIx{},
+	ConfigureValidatorRewardPolicy: &ValidatorConfigureValidatorRewardPolicyIx{},
+	FundValidatorRewardPolicy: &ValidatorFundValidatorRewardPolicyIx{},
 	JoinCandidatePool: &ValidatorJoinCandidatePoolIx{},
 	LeaveCandidatePool: &ValidatorLeaveCandidatePoolIx{},
 	DeclareValidatorAvailability: &ValidatorDeclareValidatorAvailabilityIx{},
+	ValidatorRewardPolicy: &ValidatorValidatorRewardPolicyIx{},
+	ValidatorRewardPolicyConfigured: &ValidatorValidatorRewardPolicyConfiguredIx{},
 	CandidatePool: &ValidatorCandidatePoolIx{},
 	CandidateValidators: &ValidatorCandidateValidatorsIx{},
 	DeclaredValidators: &ValidatorDeclaredValidatorsIx{},
@@ -37743,9 +38511,19 @@ func (a *ValidatorApp) bind(pd *provider.Provider) {
 	a.Pd = pd
 	a.RegisterValidator.pd = pd
 	a.CreateValidatorPool.pd = pd
+	a.PausePool.pd = pd
+	a.ResumePool.pd = pd
+	a.ClosePool.pd = pd
+	a.RequestPoolRewardConfig.pd = pd
+	a.ClaimPoolCommission.pd = pd
+	a.SweepPoolResidual.pd = pd
+	a.ConfigureValidatorRewardPolicy.pd = pd
+	a.FundValidatorRewardPolicy.pd = pd
 	a.JoinCandidatePool.pd = pd
 	a.LeaveCandidatePool.pd = pd
 	a.DeclareValidatorAvailability.pd = pd
+	a.ValidatorRewardPolicy.pd = pd
+	a.ValidatorRewardPolicyConfigured.pd = pd
 	a.CandidatePool.pd = pd
 	a.CandidateValidators.pd = pd
 	a.DeclaredValidators.pd = pd
@@ -37793,7 +38571,7 @@ type ValidatorCreateValidatorPoolIx struct {
 
 type ValidatorCreateValidatorPoolArgs struct {
 	controller *crypto.Address
-	validator any
+	validator [32]byte
 	stake_asset *crypto.Address
 	reward_asset *crypto.Address
 	reward_config ValidatorPoolRewardConfig
@@ -37801,7 +38579,7 @@ type ValidatorCreateValidatorPoolArgs struct {
 }
 
 // Args builds the IDL arguments of CreateValidatorPool.
-func (ix *ValidatorCreateValidatorPoolIx) Args(controller *crypto.Address, validator any, stake_asset *crypto.Address, reward_asset *crypto.Address, reward_config ValidatorPoolRewardConfig) *ValidatorCreateValidatorPoolArgs {
+func (ix *ValidatorCreateValidatorPoolIx) Args(controller *crypto.Address, validator [32]byte, stake_asset *crypto.Address, reward_asset *crypto.Address, reward_config ValidatorPoolRewardConfig) *ValidatorCreateValidatorPoolArgs {
 	return &ValidatorCreateValidatorPoolArgs{
 		controller: controller,
 		validator: validator,
@@ -37820,7 +38598,7 @@ func (a *ValidatorCreateValidatorPoolArgs) Encode() (api.PackedInstruction, erro
 	args := provider.Args{}
 	// controller: Signer
 	args["controller"] = a.controller
-	// validator: ValidatorId
+	// validator: B256
 	args["validator"] = a.validator
 	// stake_asset: Address
 	args["stake_asset"] = a.stake_asset
@@ -37839,18 +38617,330 @@ func (a *ValidatorCreateValidatorPoolArgs) Encode() (api.PackedInstruction, erro
 	return api.PackedInstruction(wire), nil
 }
 
+type ValidatorPausePoolIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorPausePoolArgs struct {
+	controller *crypto.Address
+	validator [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of PausePool.
+func (ix *ValidatorPausePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorPausePoolArgs {
+	return &ValidatorPausePoolArgs{
+		controller: controller,
+		validator: validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorPausePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: B256
+	args["validator"] = a.validator
+	wire, err := a.pd.Encode("PausePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorResumePoolIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorResumePoolArgs struct {
+	controller *crypto.Address
+	validator [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ResumePool.
+func (ix *ValidatorResumePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorResumePoolArgs {
+	return &ValidatorResumePoolArgs{
+		controller: controller,
+		validator: validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorResumePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: B256
+	args["validator"] = a.validator
+	wire, err := a.pd.Encode("ResumePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorClosePoolIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorClosePoolArgs struct {
+	controller *crypto.Address
+	validator [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClosePool.
+func (ix *ValidatorClosePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorClosePoolArgs {
+	return &ValidatorClosePoolArgs{
+		controller: controller,
+		validator: validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorClosePoolArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: B256
+	args["validator"] = a.validator
+	wire, err := a.pd.Encode("ClosePool", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorRequestPoolRewardConfigIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorRequestPoolRewardConfigArgs struct {
+	controller *crypto.Address
+	validator [32]byte
+	config ValidatorPoolRewardConfig
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RequestPoolRewardConfig.
+func (ix *ValidatorRequestPoolRewardConfigIx) Args(controller *crypto.Address, validator [32]byte, config ValidatorPoolRewardConfig) *ValidatorRequestPoolRewardConfigArgs {
+	return &ValidatorRequestPoolRewardConfigArgs{
+		controller: controller,
+		validator: validator,
+		config: config,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorRequestPoolRewardConfigArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: B256
+	args["validator"] = a.validator
+	// config: PoolRewardConfig
+	v0, err := toValidatorPoolRewardConfigValue(a.config)
+	if err != nil {
+		return nil, err
+	}
+	args["config"] = v0
+	wire, err := a.pd.Encode("RequestPoolRewardConfig", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorClaimPoolCommissionIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorClaimPoolCommissionArgs struct {
+	controller *crypto.Address
+	validator [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimPoolCommission.
+func (ix *ValidatorClaimPoolCommissionIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorClaimPoolCommissionArgs {
+	return &ValidatorClaimPoolCommissionArgs{
+		controller: controller,
+		validator: validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorClaimPoolCommissionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: B256
+	args["validator"] = a.validator
+	wire, err := a.pd.Encode("ClaimPoolCommission", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorSweepPoolResidualIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorSweepPoolResidualArgs struct {
+	controller *crypto.Address
+	validator [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SweepPoolResidual.
+func (ix *ValidatorSweepPoolResidualIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorSweepPoolResidualArgs {
+	return &ValidatorSweepPoolResidualArgs{
+		controller: controller,
+		validator: validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorSweepPoolResidualArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// controller: Signer
+	args["controller"] = a.controller
+	// validator: B256
+	args["validator"] = a.validator
+	wire, err := a.pd.Encode("SweepPoolResidual", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorConfigureValidatorRewardPolicyIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorConfigureValidatorRewardPolicyArgs struct {
+	owner *crypto.Address
+	stake_asset *crypto.Address
+	reward_asset *crypto.Address
+	reward_per_validator uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ConfigureValidatorRewardPolicy.
+func (ix *ValidatorConfigureValidatorRewardPolicyIx) Args(owner *crypto.Address, stake_asset *crypto.Address, reward_asset *crypto.Address, reward_per_validator uint64) *ValidatorConfigureValidatorRewardPolicyArgs {
+	return &ValidatorConfigureValidatorRewardPolicyArgs{
+		owner: owner,
+		stake_asset: stake_asset,
+		reward_asset: reward_asset,
+		reward_per_validator: reward_per_validator,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorConfigureValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// stake_asset: Address
+	args["stake_asset"] = a.stake_asset
+	// reward_asset: Address
+	args["reward_asset"] = a.reward_asset
+	// reward_per_validator: u64
+	args["reward_per_validator"] = a.reward_per_validator
+	wire, err := a.pd.Encode("ConfigureValidatorRewardPolicy", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorFundValidatorRewardPolicyIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorFundValidatorRewardPolicyArgs struct {
+	funder *crypto.Address
+	stake_asset *crypto.Address
+	reward_asset *crypto.Address
+	amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of FundValidatorRewardPolicy.
+func (ix *ValidatorFundValidatorRewardPolicyIx) Args(funder *crypto.Address, stake_asset *crypto.Address, reward_asset *crypto.Address, amount uint64) *ValidatorFundValidatorRewardPolicyArgs {
+	return &ValidatorFundValidatorRewardPolicyArgs{
+		funder: funder,
+		stake_asset: stake_asset,
+		reward_asset: reward_asset,
+		amount: amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorFundValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// funder: Signer
+	args["funder"] = a.funder
+	// stake_asset: Address
+	args["stake_asset"] = a.stake_asset
+	// reward_asset: Address
+	args["reward_asset"] = a.reward_asset
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("FundValidatorRewardPolicy", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type ValidatorJoinCandidatePoolIx struct {
 	pd *provider.Provider
 }
 
 type ValidatorJoinCandidatePoolArgs struct {
 	controller *crypto.Address
-	validator any
+	validator [32]byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of JoinCandidatePool.
-func (ix *ValidatorJoinCandidatePoolIx) Args(controller *crypto.Address, validator any) *ValidatorJoinCandidatePoolArgs {
+func (ix *ValidatorJoinCandidatePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorJoinCandidatePoolArgs {
 	return &ValidatorJoinCandidatePoolArgs{
 		controller: controller,
 		validator: validator,
@@ -37866,7 +38956,7 @@ func (a *ValidatorJoinCandidatePoolArgs) Encode() (api.PackedInstruction, error)
 	args := provider.Args{}
 	// controller: Signer
 	args["controller"] = a.controller
-	// validator: ValidatorId
+	// validator: B256
 	args["validator"] = a.validator
 	wire, err := a.pd.Encode("JoinCandidatePool", args)
 	if err != nil {
@@ -37881,12 +38971,12 @@ type ValidatorLeaveCandidatePoolIx struct {
 
 type ValidatorLeaveCandidatePoolArgs struct {
 	controller *crypto.Address
-	validator any
+	validator [32]byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of LeaveCandidatePool.
-func (ix *ValidatorLeaveCandidatePoolIx) Args(controller *crypto.Address, validator any) *ValidatorLeaveCandidatePoolArgs {
+func (ix *ValidatorLeaveCandidatePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorLeaveCandidatePoolArgs {
 	return &ValidatorLeaveCandidatePoolArgs{
 		controller: controller,
 		validator: validator,
@@ -37902,7 +38992,7 @@ func (a *ValidatorLeaveCandidatePoolArgs) Encode() (api.PackedInstruction, error
 	args := provider.Args{}
 	// controller: Signer
 	args["controller"] = a.controller
-	// validator: ValidatorId
+	// validator: B256
 	args["validator"] = a.validator
 	wire, err := a.pd.Encode("LeaveCandidatePool", args)
 	if err != nil {
@@ -37917,12 +39007,12 @@ type ValidatorDeclareValidatorAvailabilityIx struct {
 
 type ValidatorDeclareValidatorAvailabilityArgs struct {
 	controller *crypto.Address
-	validator any
+	validator [32]byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of DeclareValidatorAvailability.
-func (ix *ValidatorDeclareValidatorAvailabilityIx) Args(controller *crypto.Address, validator any) *ValidatorDeclareValidatorAvailabilityArgs {
+func (ix *ValidatorDeclareValidatorAvailabilityIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorDeclareValidatorAvailabilityArgs {
 	return &ValidatorDeclareValidatorAvailabilityArgs{
 		controller: controller,
 		validator: validator,
@@ -37938,13 +39028,111 @@ func (a *ValidatorDeclareValidatorAvailabilityArgs) Encode() (api.PackedInstruct
 	args := provider.Args{}
 	// controller: Signer
 	args["controller"] = a.controller
-	// validator: ValidatorId
+	// validator: B256
 	args["validator"] = a.validator
 	wire, err := a.pd.Encode("DeclareValidatorAvailability", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorValidatorRewardPolicyIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorValidatorRewardPolicyArgs struct {
+	stake_asset *crypto.Address
+	reward_asset *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ValidatorRewardPolicy.
+func (ix *ValidatorValidatorRewardPolicyIx) Args(stake_asset *crypto.Address, reward_asset *crypto.Address) *ValidatorValidatorRewardPolicyArgs {
+	return &ValidatorValidatorRewardPolicyArgs{
+		stake_asset: stake_asset,
+		reward_asset: reward_asset,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// stake_asset: Address
+	args["stake_asset"] = a.stake_asset
+	// reward_asset: Address
+	args["reward_asset"] = a.reward_asset
+	wire, err := a.pd.Encode("ValidatorRewardPolicy", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ValidatorRewardPolicy into ValidatorValidatorRewardPolicy.
+func (ix *ValidatorValidatorRewardPolicyIx) DecodeView(body []byte) (out ValidatorValidatorRewardPolicy, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("ValidatorRewardPolicy", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := fromValidatorValidatorRewardPolicy(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type ValidatorValidatorRewardPolicyConfiguredIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorValidatorRewardPolicyConfiguredArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ValidatorRewardPolicyConfigured.
+func (ix *ValidatorValidatorRewardPolicyConfiguredIx) Args() *ValidatorValidatorRewardPolicyConfiguredArgs {
+	return &ValidatorValidatorRewardPolicyConfiguredArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorValidatorRewardPolicyConfiguredArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("ValidatorRewardPolicyConfigured", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ValidatorRewardPolicyConfigured into bool.
+func (ix *ValidatorValidatorRewardPolicyConfiguredIx) DecodeView(body []byte) (out bool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("ValidatorRewardPolicyConfigured", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toBool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
 }
 
 type ValidatorCandidatePoolIx struct {
@@ -37980,12 +39168,9 @@ func (ix *ValidatorCandidatePoolIx) DecodeView(body []byte) (out ValidatorCandid
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("CandidatePool", body)
+	v, err := ix.pd.DecodeViewValue("CandidatePool", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CandidatePool failed: %s", failure)
 	}
 	v0, err := fromValidatorCandidatePool(v)
 	if err != nil {
@@ -38028,12 +39213,9 @@ func (ix *ValidatorCandidateValidatorsIx) DecodeView(body []byte) (out []Validat
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("CandidateValidators", body)
+	v, err := ix.pd.DecodeViewValue("CandidateValidators", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CandidateValidators failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -38087,12 +39269,9 @@ func (ix *ValidatorDeclaredValidatorsIx) DecodeView(body []byte) (out ValidatorC
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("DeclaredValidators", body)
+	v, err := ix.pd.DecodeViewValue("DeclaredValidators", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view DeclaredValidators failed: %s", failure)
 	}
 	v0, err := fromValidatorCandidatePool(v)
 	if err != nil {
@@ -38107,12 +39286,12 @@ type ValidatorValidatorProfileIx struct {
 }
 
 type ValidatorValidatorProfileArgs struct {
-	validator any
+	validator [32]byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of ValidatorProfile.
-func (ix *ValidatorValidatorProfileIx) Args(validator any) *ValidatorValidatorProfileArgs {
+func (ix *ValidatorValidatorProfileIx) Args(validator [32]byte) *ValidatorValidatorProfileArgs {
 	return &ValidatorValidatorProfileArgs{
 		validator: validator,
 		pd: ix.pd,
@@ -38125,7 +39304,7 @@ func (a *ValidatorValidatorProfileArgs) Encode() (api.PackedInstruction, error) 
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// validator: ValidatorId
+	// validator: B256
 	args["validator"] = a.validator
 	wire, err := a.pd.Encode("ValidatorProfile", args)
 	if err != nil {
@@ -38139,12 +39318,9 @@ func (ix *ValidatorValidatorProfileIx) DecodeView(body []byte) (out ValidatorVal
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ValidatorProfile", body)
+	v, err := ix.pd.DecodeViewValue("ValidatorProfile", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ValidatorProfile failed: %s", failure)
 	}
 	v0, err := fromValidatorValidatorProfile(v)
 	if err != nil {
@@ -38186,19 +39362,20 @@ func (a *ValidatorValidatorForControllerArgs) Encode() (api.PackedInstruction, e
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of ValidatorForController into any.
-func (ix *ValidatorValidatorForControllerIx) DecodeView(body []byte) (out any, err error) {
+// DecodeView decodes the raw view response body of ValidatorForController into [32]byte.
+func (ix *ValidatorValidatorForControllerIx) DecodeView(body []byte) (out [32]byte, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ValidatorForController", body)
+	v, err := ix.pd.DecodeViewValue("ValidatorForController", body)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ValidatorForController failed: %s", failure)
+	v0, err := toFixed32(v)
+	if err != nil {
+		return out, err
 	}
-	out = v
+	out = v0
 	return out, nil
 }
 
@@ -38235,12 +39412,9 @@ func (ix *ValidatorCurrentValidatorPoolsIx) DecodeView(body []byte) (out Validat
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("CurrentValidatorPools", body)
+	v, err := ix.pd.DecodeViewValue("CurrentValidatorPools", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CurrentValidatorPools failed: %s", failure)
 	}
 	v0, err := fromValidatorValidatorPoolList(v)
 	if err != nil {
@@ -38283,12 +39457,9 @@ func (ix *ValidatorCandidateValidatorPoolsIx) DecodeView(body []byte) (out Valid
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("CandidateValidatorPools", body)
+	v, err := ix.pd.DecodeViewValue("CandidateValidatorPools", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CandidateValidatorPools failed: %s", failure)
 	}
 	v0, err := fromValidatorValidatorPoolList(v)
 	if err != nil {
@@ -38306,9 +39477,7 @@ type KeylessApp struct {
 	UpdateJwkReport *KeylessUpdateJwkReportIx
 	PruneInactiveJwkReports *KeylessPruneInactiveJwkReportsIx
 	Authenticate *KeylessAuthenticateIx
-	AuthenticateZk *KeylessAuthenticateZkIx
 	Bind *KeylessBindIx
-	BindZk *KeylessBindZkIx
 	Unbind *KeylessUnbindIx
 	RevokeSession *KeylessRevokeSessionIx
 	RegisterAudience *KeylessRegisterAudienceIx
@@ -38332,9 +39501,7 @@ var Keyless = &KeylessApp{
 	UpdateJwkReport: &KeylessUpdateJwkReportIx{},
 	PruneInactiveJwkReports: &KeylessPruneInactiveJwkReportsIx{},
 	Authenticate: &KeylessAuthenticateIx{},
-	AuthenticateZk: &KeylessAuthenticateZkIx{},
 	Bind: &KeylessBindIx{},
-	BindZk: &KeylessBindZkIx{},
 	Unbind: &KeylessUnbindIx{},
 	RevokeSession: &KeylessRevokeSessionIx{},
 	RegisterAudience: &KeylessRegisterAudienceIx{},
@@ -38359,9 +39526,7 @@ func (a *KeylessApp) bind(pd *provider.Provider) {
 	a.UpdateJwkReport.pd = pd
 	a.PruneInactiveJwkReports.pd = pd
 	a.Authenticate.pd = pd
-	a.AuthenticateZk.pd = pd
 	a.Bind.pd = pd
-	a.BindZk.pd = pd
 	a.Unbind.pd = pd
 	a.RevokeSession.pd = pd
 	a.RegisterAudience.pd = pd
@@ -38540,18 +39705,14 @@ type KeylessAuthenticateIx struct {
 }
 
 type KeylessAuthenticateArgs struct {
-	provider_id [32]byte
-	jwt []byte
-	ephemeral_pk *crypto.PublicKey
+	auth KeylessGroth16Auth
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Authenticate.
-func (ix *KeylessAuthenticateIx) Args(provider_id [32]byte, jwt []byte, ephemeral_pk *crypto.PublicKey) *KeylessAuthenticateArgs {
+func (ix *KeylessAuthenticateIx) Args(auth KeylessGroth16Auth) *KeylessAuthenticateArgs {
 	return &KeylessAuthenticateArgs{
-		provider_id: provider_id,
-		jwt: jwt,
-		ephemeral_pk: ephemeral_pk,
+		auth: auth,
 		pd: ix.pd,
 	}
 }
@@ -38562,45 +39723,13 @@ func (a *KeylessAuthenticateArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// provider_id: B256
-	args["provider_id"] = a.provider_id
-	// jwt: bytes
-	args["jwt"] = a.jwt
-	// ephemeral_pk: PublicKey
-	args["ephemeral_pk"] = a.ephemeral_pk
-	wire, err := a.pd.Encode("Authenticate", args)
+	// auth: Groth16Auth
+	v0, err := toKeylessGroth16AuthValue(a.auth)
 	if err != nil {
 		return nil, err
 	}
-	return api.PackedInstruction(wire), nil
-}
-
-type KeylessAuthenticateZkIx struct {
-	pd *provider.Provider
-}
-
-type KeylessAuthenticateZkArgs struct {
-	auth any
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of AuthenticateZk.
-func (ix *KeylessAuthenticateZkIx) Args(auth any) *KeylessAuthenticateZkArgs {
-	return &KeylessAuthenticateZkArgs{
-		auth: auth,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *KeylessAuthenticateZkArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// auth: Groth16Auth
-	args["auth"] = a.auth
-	wire, err := a.pd.Encode("AuthenticateZk", args)
+	args["auth"] = v0
+	wire, err := a.pd.Encode("Authenticate", args)
 	if err != nil {
 		return nil, err
 	}
@@ -38612,19 +39741,15 @@ type KeylessBindIx struct {
 }
 
 type KeylessBindArgs struct {
-	provider_id [32]byte
-	jwt []byte
-	ephemeral_pk *crypto.PublicKey
+	auth KeylessGroth16Auth
 	owner *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Bind.
-func (ix *KeylessBindIx) Args(provider_id [32]byte, jwt []byte, ephemeral_pk *crypto.PublicKey, owner *crypto.Address) *KeylessBindArgs {
+func (ix *KeylessBindIx) Args(auth KeylessGroth16Auth, owner *crypto.Address) *KeylessBindArgs {
 	return &KeylessBindArgs{
-		provider_id: provider_id,
-		jwt: jwt,
-		ephemeral_pk: ephemeral_pk,
+		auth: auth,
 		owner: owner,
 		pd: ix.pd,
 	}
@@ -38636,51 +39761,15 @@ func (a *KeylessBindArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// provider_id: B256
-	args["provider_id"] = a.provider_id
-	// jwt: bytes
-	args["jwt"] = a.jwt
-	// ephemeral_pk: PublicKey
-	args["ephemeral_pk"] = a.ephemeral_pk
-	// owner: Signer
-	args["owner"] = a.owner
-	wire, err := a.pd.Encode("Bind", args)
+	// auth: Groth16Auth
+	v0, err := toKeylessGroth16AuthValue(a.auth)
 	if err != nil {
 		return nil, err
 	}
-	return api.PackedInstruction(wire), nil
-}
-
-type KeylessBindZkIx struct {
-	pd *provider.Provider
-}
-
-type KeylessBindZkArgs struct {
-	auth any
-	owner *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of BindZk.
-func (ix *KeylessBindZkIx) Args(auth any, owner *crypto.Address) *KeylessBindZkArgs {
-	return &KeylessBindZkArgs{
-		auth: auth,
-		owner: owner,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *KeylessBindZkArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// auth: Groth16Auth
-	args["auth"] = a.auth
+	args["auth"] = v0
 	// owner: Signer
 	args["owner"] = a.owner
-	wire, err := a.pd.Encode("BindZk", args)
+	wire, err := a.pd.Encode("Bind", args)
 	if err != nil {
 		return nil, err
 	}
@@ -38944,12 +40033,9 @@ func (ix *KeylessGetSessionsIx) DecodeView(body []byte) (out []KeylessSessionEnt
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetSessions", body)
+	v, err := ix.pd.DecodeViewValue("GetSessions", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetSessions failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -39003,12 +40089,9 @@ func (ix *KeylessGetBindingIx) DecodeView(body []byte) (out *KeylessKeylessBindi
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetBinding", body)
+	v, err := ix.pd.DecodeViewValue("GetBinding", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetBinding failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -39057,12 +40140,9 @@ func (ix *KeylessListProvidersIx) DecodeView(body []byte) (out []KeylessKeylessP
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ListProviders", body)
+	v, err := ix.pd.DecodeViewValue("ListProviders", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ListProviders failed: %s", failure)
 	}
 	v0, err := toSlice(v)
 	if err != nil {
@@ -39116,12 +40196,9 @@ func (ix *KeylessGetProviderIx) DecodeView(body []byte) (out *KeylessKeylessProv
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetProvider", body)
+	v, err := ix.pd.DecodeViewValue("GetProvider", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetProvider failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -39174,12 +40251,9 @@ func (ix *KeylessGetProviderStatusIx) DecodeView(body []byte) (out *KeylessKeyle
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetProviderStatus", body)
+	v, err := ix.pd.DecodeViewValue("GetProviderStatus", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetProviderStatus failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -39200,13 +40274,13 @@ type KeylessGetJwkReportIx struct {
 }
 
 type KeylessGetJwkReportArgs struct {
-	validator any
+	validator [32]byte
 	provider_id [32]byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of GetJwkReport.
-func (ix *KeylessGetJwkReportIx) Args(validator any, provider_id [32]byte) *KeylessGetJwkReportArgs {
+func (ix *KeylessGetJwkReportIx) Args(validator [32]byte, provider_id [32]byte) *KeylessGetJwkReportArgs {
 	return &KeylessGetJwkReportArgs{
 		validator: validator,
 		provider_id: provider_id,
@@ -39220,7 +40294,7 @@ func (a *KeylessGetJwkReportArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// validator: ValidatorId
+	// validator: B256
 	args["validator"] = a.validator
 	// provider_id: B256
 	args["provider_id"] = a.provider_id
@@ -39236,12 +40310,9 @@ func (ix *KeylessGetJwkReportIx) DecodeView(body []byte) (out *KeylessValidatorJ
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetJwkReport", body)
+	v, err := ix.pd.DecodeViewValue("GetJwkReport", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetJwkReport failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -39306,12 +40377,9 @@ func (ix *KeylessGetSelectedJwkIx) DecodeView(body []byte) (out *string, err err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetSelectedJwk", body)
+	v, err := ix.pd.DecodeViewValue("GetSelectedJwk", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetSelectedJwk failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -39368,12 +40436,9 @@ func (ix *KeylessGetAudienceIx) DecodeView(body []byte) (out *KeylessKeylessAudi
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetAudience", body)
+	v, err := ix.pd.DecodeViewValue("GetAudience", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetAudience failed: %s", failure)
 	}
 	if v == nil {
 		out = nil
@@ -39422,12 +40487,9 @@ func (ix *KeylessGetParamsIx) DecodeView(body []byte) (out KeylessKeylessParams,
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetParams", body)
+	v, err := ix.pd.DecodeViewValue("GetParams", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetParams failed: %s", failure)
 	}
 	v0, err := fromKeylessKeylessParams(v)
 	if err != nil {
@@ -39474,12 +40536,9 @@ func (ix *KeylessIsKeylessAccountIx) DecodeView(body []byte) (out bool, err erro
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("IsKeylessAccount", body)
+	v, err := ix.pd.DecodeViewValue("IsKeylessAccount", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view IsKeylessAccount failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -39492,6 +40551,14 @@ func (ix *KeylessIsKeylessAccountIx) DecodeView(body []byte) (out bool, err erro
 // SocialApp exposes type-safe instruction builders for IDL app "social".
 type SocialApp struct {
 	Pd *provider.Provider
+	Follow *SocialFollowIx
+	Unfollow *SocialUnfollowIx
+	CreateFollowSponsor *SocialCreateFollowSponsorIx
+	CloseFollowSponsor *SocialCloseFollowSponsorIx
+	FollowSponsored *SocialFollowSponsoredIx
+	IsFollowing *SocialIsFollowingIx
+	FollowSponsorAddress *SocialFollowSponsorAddressIx
+	FollowSponsor *SocialFollowSponsorIx
 	UpsertSocialProfile *SocialUpsertSocialProfileIx
 	RegisterSourceApp *SocialRegisterSourceAppIx
 	AddSourceAppPublisher *SocialAddSourceAppPublisherIx
@@ -39506,6 +40573,8 @@ type SocialApp struct {
 	SetCommunityJoinMode *SocialSetCommunityJoinModeIx
 	TransferCommunityOwner *SocialTransferCommunityOwnerIx
 	DeactivateCommunity *SocialDeactivateCommunityIx
+	DissolveCommunity *SocialDissolveCommunityIx
+	AddCommunityMember *SocialAddCommunityMemberIx
 	GrantCommunityAdmin *SocialGrantCommunityAdminIx
 	RevokeCommunityAdmin *SocialRevokeCommunityAdminIx
 	JoinCommunity *SocialJoinCommunityIx
@@ -39515,21 +40584,30 @@ type SocialApp struct {
 	RejectJoinRequest *SocialRejectJoinRequestIx
 	LeaveCommunity *SocialLeaveCommunityIx
 	RemoveCommunityMember *SocialRemoveCommunityMemberIx
-	CreateGift *SocialCreateGiftIx
-	ClaimGift *SocialClaimGiftIx
+	CreateHongbao *SocialCreateHongbaoIx
+	ClaimHongbao *SocialClaimHongbaoIx
 	SocialProfile *SocialSocialProfileIx
 	SourceApp *SocialSourceAppIx
 	IsSourceAppPublisher *SocialIsSourceAppPublisherIx
 	GetReference *SocialGetReferenceIx
 	Community *SocialCommunityIx
+	IsCommunityDissolved *SocialIsCommunityDissolvedIx
 	IsCommunityAdmin *SocialIsCommunityAdminIx
 	JoinRequest *SocialJoinRequestIx
 	CommunityMembership *SocialCommunityMembershipIx
-	CanClaimCommunityGift *SocialCanClaimCommunityGiftIx
-	GiftCommunity *SocialGiftCommunityIx
+	CanClaimCommunityHongbao *SocialCanClaimCommunityHongbaoIx
+	HongbaoCommunity *SocialHongbaoCommunityIx
 }
 
 var Social = &SocialApp{
+	Follow: &SocialFollowIx{},
+	Unfollow: &SocialUnfollowIx{},
+	CreateFollowSponsor: &SocialCreateFollowSponsorIx{},
+	CloseFollowSponsor: &SocialCloseFollowSponsorIx{},
+	FollowSponsored: &SocialFollowSponsoredIx{},
+	IsFollowing: &SocialIsFollowingIx{},
+	FollowSponsorAddress: &SocialFollowSponsorAddressIx{},
+	FollowSponsor: &SocialFollowSponsorIx{},
 	UpsertSocialProfile: &SocialUpsertSocialProfileIx{},
 	RegisterSourceApp: &SocialRegisterSourceAppIx{},
 	AddSourceAppPublisher: &SocialAddSourceAppPublisherIx{},
@@ -39544,6 +40622,8 @@ var Social = &SocialApp{
 	SetCommunityJoinMode: &SocialSetCommunityJoinModeIx{},
 	TransferCommunityOwner: &SocialTransferCommunityOwnerIx{},
 	DeactivateCommunity: &SocialDeactivateCommunityIx{},
+	DissolveCommunity: &SocialDissolveCommunityIx{},
+	AddCommunityMember: &SocialAddCommunityMemberIx{},
 	GrantCommunityAdmin: &SocialGrantCommunityAdminIx{},
 	RevokeCommunityAdmin: &SocialRevokeCommunityAdminIx{},
 	JoinCommunity: &SocialJoinCommunityIx{},
@@ -39553,22 +40633,31 @@ var Social = &SocialApp{
 	RejectJoinRequest: &SocialRejectJoinRequestIx{},
 	LeaveCommunity: &SocialLeaveCommunityIx{},
 	RemoveCommunityMember: &SocialRemoveCommunityMemberIx{},
-	CreateGift: &SocialCreateGiftIx{},
-	ClaimGift: &SocialClaimGiftIx{},
+	CreateHongbao: &SocialCreateHongbaoIx{},
+	ClaimHongbao: &SocialClaimHongbaoIx{},
 	SocialProfile: &SocialSocialProfileIx{},
 	SourceApp: &SocialSourceAppIx{},
 	IsSourceAppPublisher: &SocialIsSourceAppPublisherIx{},
 	GetReference: &SocialGetReferenceIx{},
 	Community: &SocialCommunityIx{},
+	IsCommunityDissolved: &SocialIsCommunityDissolvedIx{},
 	IsCommunityAdmin: &SocialIsCommunityAdminIx{},
 	JoinRequest: &SocialJoinRequestIx{},
 	CommunityMembership: &SocialCommunityMembershipIx{},
-	CanClaimCommunityGift: &SocialCanClaimCommunityGiftIx{},
-	GiftCommunity: &SocialGiftCommunityIx{},
+	CanClaimCommunityHongbao: &SocialCanClaimCommunityHongbaoIx{},
+	HongbaoCommunity: &SocialHongbaoCommunityIx{},
 }
 
 func (a *SocialApp) bind(pd *provider.Provider) {
 	a.Pd = pd
+	a.Follow.pd = pd
+	a.Unfollow.pd = pd
+	a.CreateFollowSponsor.pd = pd
+	a.CloseFollowSponsor.pd = pd
+	a.FollowSponsored.pd = pd
+	a.IsFollowing.pd = pd
+	a.FollowSponsorAddress.pd = pd
+	a.FollowSponsor.pd = pd
 	a.UpsertSocialProfile.pd = pd
 	a.RegisterSourceApp.pd = pd
 	a.AddSourceAppPublisher.pd = pd
@@ -39583,6 +40672,8 @@ func (a *SocialApp) bind(pd *provider.Provider) {
 	a.SetCommunityJoinMode.pd = pd
 	a.TransferCommunityOwner.pd = pd
 	a.DeactivateCommunity.pd = pd
+	a.DissolveCommunity.pd = pd
+	a.AddCommunityMember.pd = pd
 	a.GrantCommunityAdmin.pd = pd
 	a.RevokeCommunityAdmin.pd = pd
 	a.JoinCommunity.pd = pd
@@ -39592,18 +40683,354 @@ func (a *SocialApp) bind(pd *provider.Provider) {
 	a.RejectJoinRequest.pd = pd
 	a.LeaveCommunity.pd = pd
 	a.RemoveCommunityMember.pd = pd
-	a.CreateGift.pd = pd
-	a.ClaimGift.pd = pd
+	a.CreateHongbao.pd = pd
+	a.ClaimHongbao.pd = pd
 	a.SocialProfile.pd = pd
 	a.SourceApp.pd = pd
 	a.IsSourceAppPublisher.pd = pd
 	a.GetReference.pd = pd
 	a.Community.pd = pd
+	a.IsCommunityDissolved.pd = pd
 	a.IsCommunityAdmin.pd = pd
 	a.JoinRequest.pd = pd
 	a.CommunityMembership.pd = pd
-	a.CanClaimCommunityGift.pd = pd
-	a.GiftCommunity.pd = pd
+	a.CanClaimCommunityHongbao.pd = pd
+	a.HongbaoCommunity.pd = pd
+}
+
+type SocialFollowIx struct {
+	pd *provider.Provider
+}
+
+type SocialFollowArgs struct {
+	follower *crypto.Address
+	target *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Follow.
+func (ix *SocialFollowIx) Args(follower *crypto.Address, target *crypto.Address) *SocialFollowArgs {
+	return &SocialFollowArgs{
+		follower: follower,
+		target: target,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialFollowArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// follower: Signer
+	args["follower"] = a.follower
+	// target: Address
+	args["target"] = a.target
+	wire, err := a.pd.Encode("Follow", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SocialUnfollowIx struct {
+	pd *provider.Provider
+}
+
+type SocialUnfollowArgs struct {
+	follower *crypto.Address
+	target *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Unfollow.
+func (ix *SocialUnfollowIx) Args(follower *crypto.Address, target *crypto.Address) *SocialUnfollowArgs {
+	return &SocialUnfollowArgs{
+		follower: follower,
+		target: target,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialUnfollowArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// follower: Signer
+	args["follower"] = a.follower
+	// target: Address
+	args["target"] = a.target
+	wire, err := a.pd.Encode("Unfollow", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SocialCreateFollowSponsorIx struct {
+	pd *provider.Provider
+}
+
+type SocialCreateFollowSponsorArgs struct {
+	owner *crypto.Address
+	amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateFollowSponsor.
+func (ix *SocialCreateFollowSponsorIx) Args(owner *crypto.Address, amount uint64) *SocialCreateFollowSponsorArgs {
+	return &SocialCreateFollowSponsorArgs{
+		owner: owner,
+		amount: amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialCreateFollowSponsorArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("CreateFollowSponsor", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SocialCloseFollowSponsorIx struct {
+	pd *provider.Provider
+}
+
+type SocialCloseFollowSponsorArgs struct {
+	owner *crypto.Address
+	sponsor *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CloseFollowSponsor.
+func (ix *SocialCloseFollowSponsorIx) Args(owner *crypto.Address, sponsor *crypto.Address) *SocialCloseFollowSponsorArgs {
+	return &SocialCloseFollowSponsorArgs{
+		owner: owner,
+		sponsor: sponsor,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialCloseFollowSponsorArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// sponsor: Address
+	args["sponsor"] = a.sponsor
+	wire, err := a.pd.Encode("CloseFollowSponsor", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SocialFollowSponsoredIx struct {
+	pd *provider.Provider
+}
+
+type SocialFollowSponsoredArgs struct {
+	follower *crypto.Address
+	target *crypto.Address
+	sponsor *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of FollowSponsored.
+func (ix *SocialFollowSponsoredIx) Args(follower *crypto.Address, target *crypto.Address, sponsor *crypto.Address) *SocialFollowSponsoredArgs {
+	return &SocialFollowSponsoredArgs{
+		follower: follower,
+		target: target,
+		sponsor: sponsor,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialFollowSponsoredArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// follower: Signer
+	args["follower"] = a.follower
+	// target: Address
+	args["target"] = a.target
+	// sponsor: Address
+	args["sponsor"] = a.sponsor
+	wire, err := a.pd.Encode("FollowSponsored", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SocialIsFollowingIx struct {
+	pd *provider.Provider
+}
+
+type SocialIsFollowingArgs struct {
+	follower *crypto.Address
+	target *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of IsFollowing.
+func (ix *SocialIsFollowingIx) Args(follower *crypto.Address, target *crypto.Address) *SocialIsFollowingArgs {
+	return &SocialIsFollowingArgs{
+		follower: follower,
+		target: target,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialIsFollowingArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// follower: Address
+	args["follower"] = a.follower
+	// target: Address
+	args["target"] = a.target
+	wire, err := a.pd.Encode("IsFollowing", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of IsFollowing into bool.
+func (ix *SocialIsFollowingIx) DecodeView(body []byte) (out bool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("IsFollowing", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toBool(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SocialFollowSponsorAddressIx struct {
+	pd *provider.Provider
+}
+
+type SocialFollowSponsorAddressArgs struct {
+	target *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of FollowSponsorAddress.
+func (ix *SocialFollowSponsorAddressIx) Args(target *crypto.Address) *SocialFollowSponsorAddressArgs {
+	return &SocialFollowSponsorAddressArgs{
+		target: target,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialFollowSponsorAddressArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// target: Address
+	args["target"] = a.target
+	wire, err := a.pd.Encode("FollowSponsorAddress", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of FollowSponsorAddress into *crypto.Address.
+func (ix *SocialFollowSponsorAddressIx) DecodeView(body []byte) (out *crypto.Address, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("FollowSponsorAddress", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SocialFollowSponsorIx struct {
+	pd *provider.Provider
+}
+
+type SocialFollowSponsorArgs struct {
+	sponsor *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of FollowSponsor.
+func (ix *SocialFollowSponsorIx) Args(sponsor *crypto.Address) *SocialFollowSponsorArgs {
+	return &SocialFollowSponsorArgs{
+		sponsor: sponsor,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialFollowSponsorArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// sponsor: Address
+	args["sponsor"] = a.sponsor
+	wire, err := a.pd.Encode("FollowSponsor", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of FollowSponsor into SocialFollowSponsor.
+func (ix *SocialFollowSponsorIx) DecodeView(body []byte) (out SocialFollowSponsor, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("FollowSponsor", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := fromSocialFollowSponsor(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
 }
 
 type SocialUpsertSocialProfileIx struct {
@@ -40178,6 +41605,82 @@ func (a *SocialDeactivateCommunityArgs) Encode() (api.PackedInstruction, error) 
 	return api.PackedInstruction(wire), nil
 }
 
+type SocialDissolveCommunityIx struct {
+	pd *provider.Provider
+}
+
+type SocialDissolveCommunityArgs struct {
+	owner *crypto.Address
+	community_id uint32
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of DissolveCommunity.
+func (ix *SocialDissolveCommunityIx) Args(owner *crypto.Address, community_id uint32) *SocialDissolveCommunityArgs {
+	return &SocialDissolveCommunityArgs{
+		owner: owner,
+		community_id: community_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialDissolveCommunityArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// community_id: u32
+	args["community_id"] = a.community_id
+	wire, err := a.pd.Encode("DissolveCommunity", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type SocialAddCommunityMemberIx struct {
+	pd *provider.Provider
+}
+
+type SocialAddCommunityMemberArgs struct {
+	admin *crypto.Address
+	community_id uint32
+	member *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AddCommunityMember.
+func (ix *SocialAddCommunityMemberIx) Args(admin *crypto.Address, community_id uint32, member *crypto.Address) *SocialAddCommunityMemberArgs {
+	return &SocialAddCommunityMemberArgs{
+		admin: admin,
+		community_id: community_id,
+		member: member,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialAddCommunityMemberArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// admin: Signer
+	args["admin"] = a.admin
+	// community_id: u32
+	args["community_id"] = a.community_id
+	// member: Address
+	args["member"] = a.member
+	wire, err := a.pd.Encode("AddCommunityMember", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type SocialGrantCommunityAdminIx struct {
 	pd *provider.Provider
 }
@@ -40522,24 +42025,25 @@ func (a *SocialRemoveCommunityMemberArgs) Encode() (api.PackedInstruction, error
 	return api.PackedInstruction(wire), nil
 }
 
-type SocialCreateGiftIx struct {
+type SocialCreateHongbaoIx struct {
 	pd *provider.Provider
 }
 
-type SocialCreateGiftArgs struct {
+type SocialCreateHongbaoArgs struct {
 	creator *crypto.Address
 	community_id uint32
 	token *crypto.Address
 	total_amount uint64
 	claim_count uint64
-	allocation SocialGiftAllocation
+	allocation SocialHongbaoAllocation
 	expires_at_ms *uint64
+	message *string
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CreateGift.
-func (ix *SocialCreateGiftIx) Args(creator *crypto.Address, community_id uint32, token *crypto.Address, total_amount uint64, claim_count uint64, allocation SocialGiftAllocation, expires_at_ms *uint64) *SocialCreateGiftArgs {
-	return &SocialCreateGiftArgs{
+// Args builds the IDL arguments of CreateHongbao.
+func (ix *SocialCreateHongbaoIx) Args(creator *crypto.Address, community_id uint32, token *crypto.Address, total_amount uint64, claim_count uint64, allocation SocialHongbaoAllocation, expires_at_ms *uint64, message *string) *SocialCreateHongbaoArgs {
+	return &SocialCreateHongbaoArgs{
 		creator: creator,
 		community_id: community_id,
 		token: token,
@@ -40547,12 +42051,13 @@ func (ix *SocialCreateGiftIx) Args(creator *crypto.Address, community_id uint32,
 		claim_count: claim_count,
 		allocation: allocation,
 		expires_at_ms: expires_at_ms,
+		message: message,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SocialCreateGiftArgs) Encode() (api.PackedInstruction, error) {
+func (a *SocialCreateHongbaoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
@@ -40567,8 +42072,8 @@ func (a *SocialCreateGiftArgs) Encode() (api.PackedInstruction, error) {
 	args["total_amount"] = a.total_amount
 	// claim_count: u64
 	args["claim_count"] = a.claim_count
-	// allocation: GiftAllocation
-	v0, err := toSocialGiftAllocationValue(a.allocation)
+	// allocation: HongbaoAllocation
+	v0, err := toSocialHongbaoAllocationValue(a.allocation)
 	if err != nil {
 		return nil, err
 	}
@@ -40579,43 +42084,49 @@ func (a *SocialCreateGiftArgs) Encode() (api.PackedInstruction, error) {
 	} else {
 		args["expires_at_ms"] = *a.expires_at_ms
 	}
-	wire, err := a.pd.Encode("CreateGift", args)
+	// message: option<String>
+	if a.message == nil {
+		args["message"] = nil
+	} else {
+		args["message"] = *a.message
+	}
+	wire, err := a.pd.Encode("CreateHongbao", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type SocialClaimGiftIx struct {
+type SocialClaimHongbaoIx struct {
 	pd *provider.Provider
 }
 
-type SocialClaimGiftArgs struct {
+type SocialClaimHongbaoArgs struct {
 	claimant *crypto.Address
-	gift_id *crypto.Address
+	hongbao_id *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ClaimGift.
-func (ix *SocialClaimGiftIx) Args(claimant *crypto.Address, gift_id *crypto.Address) *SocialClaimGiftArgs {
-	return &SocialClaimGiftArgs{
+// Args builds the IDL arguments of ClaimHongbao.
+func (ix *SocialClaimHongbaoIx) Args(claimant *crypto.Address, hongbao_id *crypto.Address) *SocialClaimHongbaoArgs {
+	return &SocialClaimHongbaoArgs{
 		claimant: claimant,
-		gift_id: gift_id,
+		hongbao_id: hongbao_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SocialClaimGiftArgs) Encode() (api.PackedInstruction, error) {
+func (a *SocialClaimHongbaoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// claimant: Signer
 	args["claimant"] = a.claimant
-	// gift_id: Address
-	args["gift_id"] = a.gift_id
-	wire, err := a.pd.Encode("ClaimGift", args)
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("ClaimHongbao", args)
 	if err != nil {
 		return nil, err
 	}
@@ -40659,12 +42170,9 @@ func (ix *SocialSocialProfileIx) DecodeView(body []byte) (out string, err error)
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SocialProfile", body)
+	v, err := ix.pd.DecodeViewValue("SocialProfile", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view SocialProfile failed: %s", failure)
 	}
 	v0, err := toString(v)
 	if err != nil {
@@ -40711,12 +42219,9 @@ func (ix *SocialSourceAppIx) DecodeView(body []byte) (out SocialSourceApp, err e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SourceApp", body)
+	v, err := ix.pd.DecodeViewValue("SourceApp", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view SourceApp failed: %s", failure)
 	}
 	v0, err := fromSocialSourceApp(v)
 	if err != nil {
@@ -40767,12 +42272,9 @@ func (ix *SocialIsSourceAppPublisherIx) DecodeView(body []byte) (out bool, err e
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("IsSourceAppPublisher", body)
+	v, err := ix.pd.DecodeViewValue("IsSourceAppPublisher", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view IsSourceAppPublisher failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -40831,12 +42333,9 @@ func (ix *SocialGetReferenceIx) DecodeView(body []byte) (out SocialReference, er
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GetReference", body)
+	v, err := ix.pd.DecodeViewValue("GetReference", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GetReference failed: %s", failure)
 	}
 	v0, err := fromSocialReference(v)
 	if err != nil {
@@ -40883,14 +42382,60 @@ func (ix *SocialCommunityIx) DecodeView(body []byte) (out SocialCommunityControl
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("Community", body)
+	v, err := ix.pd.DecodeViewValue("Community", body)
 	if err != nil {
 		return out, err
 	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view Community failed: %s", failure)
-	}
 	v0, err := fromSocialCommunityControl(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type SocialIsCommunityDissolvedIx struct {
+	pd *provider.Provider
+}
+
+type SocialIsCommunityDissolvedArgs struct {
+	community_id uint32
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of IsCommunityDissolved.
+func (ix *SocialIsCommunityDissolvedIx) Args(community_id uint32) *SocialIsCommunityDissolvedArgs {
+	return &SocialIsCommunityDissolvedArgs{
+		community_id: community_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *SocialIsCommunityDissolvedArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// community_id: u32
+	args["community_id"] = a.community_id
+	wire, err := a.pd.Encode("IsCommunityDissolved", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of IsCommunityDissolved into bool.
+func (ix *SocialIsCommunityDissolvedIx) DecodeView(body []byte) (out bool, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("IsCommunityDissolved", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toBool(v)
 	if err != nil {
 		return out, err
 	}
@@ -40939,12 +42484,9 @@ func (ix *SocialIsCommunityAdminIx) DecodeView(body []byte) (out bool, err error
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("IsCommunityAdmin", body)
+	v, err := ix.pd.DecodeViewValue("IsCommunityAdmin", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view IsCommunityAdmin failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -40995,12 +42537,9 @@ func (ix *SocialJoinRequestIx) DecodeView(body []byte) (out bool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("JoinRequest", body)
+	v, err := ix.pd.DecodeViewValue("JoinRequest", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view JoinRequest failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -41051,12 +42590,9 @@ func (ix *SocialCommunityMembershipIx) DecodeView(body []byte) (out bool, err er
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("CommunityMembership", body)
+	v, err := ix.pd.DecodeViewValue("CommunityMembership", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CommunityMembership failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -41066,53 +42602,50 @@ func (ix *SocialCommunityMembershipIx) DecodeView(body []byte) (out bool, err er
 	return out, nil
 }
 
-type SocialCanClaimCommunityGiftIx struct {
+type SocialCanClaimCommunityHongbaoIx struct {
 	pd *provider.Provider
 }
 
-type SocialCanClaimCommunityGiftArgs struct {
-	gift_id *crypto.Address
+type SocialCanClaimCommunityHongbaoArgs struct {
+	hongbao_id *crypto.Address
 	claimant *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CanClaimCommunityGift.
-func (ix *SocialCanClaimCommunityGiftIx) Args(gift_id *crypto.Address, claimant *crypto.Address) *SocialCanClaimCommunityGiftArgs {
-	return &SocialCanClaimCommunityGiftArgs{
-		gift_id: gift_id,
+// Args builds the IDL arguments of CanClaimCommunityHongbao.
+func (ix *SocialCanClaimCommunityHongbaoIx) Args(hongbao_id *crypto.Address, claimant *crypto.Address) *SocialCanClaimCommunityHongbaoArgs {
+	return &SocialCanClaimCommunityHongbaoArgs{
+		hongbao_id: hongbao_id,
 		claimant: claimant,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SocialCanClaimCommunityGiftArgs) Encode() (api.PackedInstruction, error) {
+func (a *SocialCanClaimCommunityHongbaoArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// gift_id: Address
-	args["gift_id"] = a.gift_id
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
 	// claimant: Address
 	args["claimant"] = a.claimant
-	wire, err := a.pd.Encode("CanClaimCommunityGift", args)
+	wire, err := a.pd.Encode("CanClaimCommunityHongbao", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of CanClaimCommunityGift into bool.
-func (ix *SocialCanClaimCommunityGiftIx) DecodeView(body []byte) (out bool, err error) {
+// DecodeView decodes the raw view response body of CanClaimCommunityHongbao into bool.
+func (ix *SocialCanClaimCommunityHongbaoIx) DecodeView(body []byte) (out bool, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("CanClaimCommunityGift", body)
+	v, err := ix.pd.DecodeViewValue("CanClaimCommunityHongbao", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view CanClaimCommunityGift failed: %s", failure)
 	}
 	v0, err := toBool(v)
 	if err != nil {
@@ -41122,49 +42655,46 @@ func (ix *SocialCanClaimCommunityGiftIx) DecodeView(body []byte) (out bool, err 
 	return out, nil
 }
 
-type SocialGiftCommunityIx struct {
+type SocialHongbaoCommunityIx struct {
 	pd *provider.Provider
 }
 
-type SocialGiftCommunityArgs struct {
-	gift_id *crypto.Address
+type SocialHongbaoCommunityArgs struct {
+	hongbao_id *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of GiftCommunity.
-func (ix *SocialGiftCommunityIx) Args(gift_id *crypto.Address) *SocialGiftCommunityArgs {
-	return &SocialGiftCommunityArgs{
-		gift_id: gift_id,
+// Args builds the IDL arguments of HongbaoCommunity.
+func (ix *SocialHongbaoCommunityIx) Args(hongbao_id *crypto.Address) *SocialHongbaoCommunityArgs {
+	return &SocialHongbaoCommunityArgs{
+		hongbao_id: hongbao_id,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SocialGiftCommunityArgs) Encode() (api.PackedInstruction, error) {
+func (a *SocialHongbaoCommunityArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// gift_id: Address
-	args["gift_id"] = a.gift_id
-	wire, err := a.pd.Encode("GiftCommunity", args)
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("HongbaoCommunity", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of GiftCommunity into uint32.
-func (ix *SocialGiftCommunityIx) DecodeView(body []byte) (out uint32, err error) {
+// DecodeView decodes the raw view response body of HongbaoCommunity into uint32.
+func (ix *SocialHongbaoCommunityIx) DecodeView(body []byte) (out uint32, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app social is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("GiftCommunity", body)
+	v, err := ix.pd.DecodeViewValue("HongbaoCommunity", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view GiftCommunity failed: %s", failure)
 	}
 	v0, err := toUint32(v)
 	if err != nil {
@@ -42063,12 +43593,9 @@ func (ix *DemoTierCapDetailIx) DecodeView(body []byte) (out DemoTierCap, err err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("TierCapDetail", body)
+	v, err := ix.pd.DecodeViewValue("TierCapDetail", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view TierCapDetail failed: %s", failure)
 	}
 	v0, err := fromDemoTierCap(v)
 	if err != nil {
@@ -42115,12 +43642,9 @@ func (ix *DemoLabelChangesOfIx) DecodeView(body []byte) (out uint64, err error) 
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("LabelChangesOf", body)
+	v, err := ix.pd.DecodeViewValue("LabelChangesOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view LabelChangesOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -42167,12 +43691,9 @@ func (ix *DemoOrderVaultIx) DecodeView(body []byte) (out *crypto.Address, err er
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("OrderVault", body)
+	v, err := ix.pd.DecodeViewValue("OrderVault", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view OrderVault failed: %s", failure)
 	}
 	v0, err := toAddress(v)
 	if err != nil {
@@ -42219,12 +43740,9 @@ func (ix *DemoOrderLastInboundIx) DecodeView(body []byte) (out DemoLastInbound, 
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("OrderLastInbound", body)
+	v, err := ix.pd.DecodeViewValue("OrderLastInbound", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view OrderLastInbound failed: %s", failure)
 	}
 	v0, err := fromDemoLastInbound(v)
 	if err != nil {
@@ -42275,12 +43793,9 @@ func (ix *DemoOrderBalanceIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("OrderBalance", body)
+	v, err := ix.pd.DecodeViewValue("OrderBalance", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view OrderBalance failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -42327,12 +43842,9 @@ func (ix *DemoLabelOfIx) DecodeView(body []byte) (out DemoLabel, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("LabelOf", body)
+	v, err := ix.pd.DecodeViewValue("LabelOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view LabelOf failed: %s", failure)
 	}
 	v0, err := fromDemoLabel(v)
 	if err != nil {
@@ -42383,12 +43895,9 @@ func (ix *DemoScoreOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ScoreOf", body)
+	v, err := ix.pd.DecodeViewValue("ScoreOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ScoreOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -42439,12 +43948,9 @@ func (ix *DemoTierCapOfIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("TierCapOf", body)
+	v, err := ix.pd.DecodeViewValue("TierCapOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view TierCapOf failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {
@@ -42495,12 +44001,9 @@ func (ix *DemoEchoModeIx) DecodeView(body []byte) (out DemoDemoMode, err error) 
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("EchoMode", body)
+	v, err := ix.pd.DecodeViewValue("EchoMode", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view EchoMode failed: %s", failure)
 	}
 	v0, err := fromDemoDemoMode(v)
 	if err != nil {
@@ -42555,12 +44058,9 @@ func (ix *DemoLabelTotalIx) DecodeView(body []byte) (out uint32, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("LabelTotal", body)
+	v, err := ix.pd.DecodeViewValue("LabelTotal", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view LabelTotal failed: %s", failure)
 	}
 	v0, err := toUint32(v)
 	if err != nil {
@@ -42645,12 +44145,9 @@ func (ix *DemoSpecialTypesIx) DecodeView(body []byte) (out uint32, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SpecialTypes", body)
+	v, err := ix.pd.DecodeViewValue("SpecialTypes", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view SpecialTypes failed: %s", failure)
 	}
 	v0, err := toUint32(v)
 	if err != nil {
@@ -42697,12 +44194,9 @@ func (ix *DemoSponsorPoolOfIx) DecodeView(body []byte) (out *crypto.Address, err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("SponsorPoolOf", body)
+	v, err := ix.pd.DecodeViewValue("SponsorPoolOf", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view SponsorPoolOf failed: %s", failure)
 	}
 	v0, err := toAddress(v)
 	if err != nil {
@@ -42745,12 +44239,9 @@ func (ix *DemoScheduledWakeCountIx) DecodeView(body []byte) (out uint64, err err
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app demo is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewData("ScheduledWakeCount", body)
+	v, err := ix.pd.DecodeViewValue("ScheduledWakeCount", body)
 	if err != nil {
 		return out, err
-	}
-	if failure, ok := v.(*api.ApiFailure); ok {
-		return out, fmt.Errorf("view ScheduledWakeCount failed: %s", failure)
 	}
 	v0, err := toUint64(v)
 	if err != nil {

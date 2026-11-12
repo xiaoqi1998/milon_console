@@ -9,8 +9,7 @@ type GetTxHistoryProof struct {
 	Block    Block
 	Index    uint32
 	Siblings []TxHash
-	//History  TxHistory
-	History []byte
+	History  []byte
 }
 
 func (e *GetTxHistoryProof) MarshalPostcard(serializer *postcard.Serializer) error {
@@ -27,10 +26,6 @@ func (e *GetTxHistoryProof) MarshalPostcard(serializer *postcard.Serializer) err
 		return fmt.Errorf("failed to serialize Siblings: %w", err)
 	}
 
-	//todo----
-	//if err := e.History.MarshalPostcard(serializer); err != nil {
-	//	return fmt.Errorf("failed to serialize History: %w", err)
-	//}
 	if err := serializer.SerializeBytes(e.History); err != nil {
 		return fmt.Errorf("failed to serialize History: %w", err)
 	}
@@ -68,14 +63,7 @@ func (e *GetTxHistoryProof) UnmarshalPostcard(deserializer *postcard.Deserialize
 	}
 	e.Siblings = siblings
 
-	//todo----
-	// 4. History (TxHistory)
-	//var history TxHistory
-	//if err = history.UnmarshalPostcard(deserializer); err != nil {
-	//	return fmt.Errorf("failed to deserialize History: %w", err)
-	//}
-	//e.History = history
-
+	// 4. History
 	history, err := deserializer.DeserializeBytes()
 	if err != nil {
 		return fmt.Errorf("failed to deserialize History: %w", err)

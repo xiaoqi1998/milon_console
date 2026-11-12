@@ -81,7 +81,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	client := milon.NewClient(network)
+	client, err := milon.NewClient(network)
+	if err != nil {
+		fmt.Printf("create client: %v\n", err)
+		os.Exit(1)
+	}
 	allPd := client.GetAllPd()
 
 	// 按 appId 排序，保证输出稳定

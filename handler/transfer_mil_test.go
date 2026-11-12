@@ -140,7 +140,7 @@ func newTransferMilWaitRouter(t *testing.T) *gin.Engine {
 			}, false); err == nil {
 				requestID = uint64(preq.RequestId)
 			}
-			rsp := lib.RpcResponse{RequestId: requestID, Status: 0}
+			rsp := lib.RpcResponse{RequestId: requestID, Status: 0, Body: make([]byte, api.TxHashLen)} // 新版 SDK 解码裸 32B tx hash
 			ser := postcard.NewSerializerWithCap(64)
 			if err := rsp.MarshalPostcard(ser); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)

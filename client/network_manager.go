@@ -139,8 +139,8 @@ func (nm *NetworkManager) getOrCreateClient(networkName string) (*milon.Client, 
 }
 
 // createClient builds a MilonClient for the given network. Caller must hold the lock.
-// Note: NewClient does not return an error (IDL load failure panics), so we recover
-// any panic and convert it into a readable error to keep the existing error flow.
+// We still recover any panic during creation and convert it into a readable error
+// to keep the existing error flow.
 func (nm *NetworkManager) createClient(networkName string) (client *milon.Client, err error) {
 	cfg, ok := nm.networks[networkName]
 	if !ok {
@@ -154,7 +154,12 @@ func (nm *NetworkManager) createClient(networkName string) (client *milon.Client
 		}
 	}()
 
-	client = milon.NewClient(cfg)
+	client, err = milon.NewClient(cfg)
+	if err != nil {
+		client = nil
+		err = fmt.Errorf("failed to create MilonClient for network %s: %w", networkName, err)
+		return nil, err
+	}
 
 	nm.clients[networkName] = client
 	return client, nil

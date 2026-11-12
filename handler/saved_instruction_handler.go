@@ -559,7 +559,7 @@ func (h *SavedInstructionHandler) executeRead(c *gin.Context, mc *milon.Client, 
 		return
 	}
 
-	result, err := mc.View([]api.PackedInstruction{wire}, milon.WithRequestID(requestId))
+	result, err := mc.BatchView([]api.PackedInstruction{wire}, milon.WithRequestID(requestId))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to execute view: "+withChainErrorHintFor(c, err.Error()), nil))
 		return
@@ -697,7 +697,7 @@ func (h *SavedInstructionHandler) executeSend(c *gin.Context, mc *milon.Client, 
 		return
 	}
 
-	if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+	if _, err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to submit tx: "+withChainErrorHintFor(c, err.Error()), nil))
 		return
 	}

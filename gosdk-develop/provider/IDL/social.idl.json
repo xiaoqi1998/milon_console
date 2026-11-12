@@ -8,6 +8,161 @@
     {
       "args": [
         {
+          "name": "follower",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "target",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 1031,
+      "handler": "follow",
+      "kind": "entry",
+      "name": "Follow"
+    },
+    {
+      "args": [
+        {
+          "name": "follower",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "target",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 62356,
+      "handler": "unfollow",
+      "kind": "entry",
+      "name": "Unfollow"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 12987,
+      "handler": "create_follow_sponsor",
+      "kind": "entry",
+      "name": "CreateFollowSponsor",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "sponsor",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 63283,
+      "handler": "close_follow_sponsor",
+      "kind": "entry",
+      "name": "CloseFollowSponsor",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "follower",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "target",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "sponsor",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 14127,
+      "handler": "follow_sponsored",
+      "kind": "entry",
+      "name": "FollowSponsored",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "follower",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "target",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 49754,
+      "handler": "is_following",
+      "kind": "view",
+      "name": "IsFollowing",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "target",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 17041,
+      "handler": "follow_sponsor_address",
+      "kind": "view",
+      "name": "FollowSponsorAddress",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sponsor",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 13614,
+      "handler": "follow_sponsor",
+      "kind": "view",
+      "name": "FollowSponsor",
+      "returns": {
+        "type": "FollowSponsor"
+      }
+    },
+    {
+      "args": [
+        {
           "name": "subject",
           "role": "signer",
           "type": "Signer"
@@ -339,6 +494,47 @@
           "name": "community_id",
           "role": "input",
           "type": "u32"
+        }
+      ],
+      "discriminator": 12783,
+      "handler": "dissolve_community",
+      "kind": "entry",
+      "name": "DissolveCommunity"
+    },
+    {
+      "args": [
+        {
+          "name": "admin",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
+        },
+        {
+          "name": "member",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 15042,
+      "handler": "add_community_member",
+      "kind": "entry",
+      "name": "AddCommunityMember"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
         },
         {
           "name": "admin",
@@ -545,18 +741,23 @@
         {
           "name": "allocation",
           "role": "input",
-          "type": "GiftAllocation"
+          "type": "HongbaoAllocation"
         },
         {
           "name": "expires_at_ms",
           "role": "input",
           "type": "option<u64>"
+        },
+        {
+          "name": "message",
+          "role": "input",
+          "type": "option<String>"
         }
       ],
-      "discriminator": 36253,
-      "handler": "create_gift",
+      "discriminator": 7621,
+      "handler": "create_hongbao",
       "kind": "entry",
-      "name": "CreateGift"
+      "name": "CreateHongbao"
     },
     {
       "args": [
@@ -566,15 +767,15 @@
           "type": "Signer"
         },
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 30437,
-      "handler": "claim_gift",
+      "discriminator": 40045,
+      "handler": "claim_hongbao",
       "kind": "entry",
-      "name": "ClaimGift",
+      "name": "ClaimHongbao",
       "sponsor": true
     },
     {
@@ -678,6 +879,22 @@
           "name": "community_id",
           "role": "input",
           "type": "u32"
+        }
+      ],
+      "discriminator": 23214,
+      "handler": "is_community_dissolved",
+      "kind": "view",
+      "name": "IsCommunityDissolved",
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "community_id",
+          "role": "input",
+          "type": "u32"
         },
         {
           "name": "admin",
@@ -738,7 +955,7 @@
     {
       "args": [
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
           "role": "input",
           "type": "Address"
         },
@@ -748,10 +965,10 @@
           "type": "Address"
         }
       ],
-      "discriminator": 62612,
-      "handler": "can_claim_community_gift",
+      "discriminator": 16618,
+      "handler": "can_claim_community_hongbao",
       "kind": "view",
-      "name": "CanClaimCommunityGift",
+      "name": "CanClaimCommunityHongbao",
       "returns": {
         "type": "bool"
       }
@@ -759,15 +976,15 @@
     {
       "args": [
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 46934,
-      "handler": "gift_community",
+      "discriminator": 54956,
+      "handler": "hongbao_community",
       "kind": "view",
-      "name": "GiftCommunity",
+      "name": "HongbaoCommunity",
       "returns": {
         "type": "u32"
       }
@@ -910,9 +1127,28 @@
       "typeTag": 9957587179171262664
     },
     {
+      "fields": [
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "target",
+          "type": "Address"
+        },
+        {
+          "name": "active",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "FollowSponsor",
+      "typeTag": 14805218812742557103
+    },
+    {
       "kind": "enum",
-      "name": "GiftAllocation",
-      "typeTag": 12211908797870093821,
+      "name": "HongbaoAllocation",
+      "typeTag": 12559390919027217581,
       "variants": [
         {
           "fields": [],
@@ -1014,9 +1250,29 @@
       "typeTag": 5560783464435099345
     },
     {
-      "name": "_CommunityGift",
+      "name": "_CommunityHongbao",
       "type": "u32",
       "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_CommunityDissolved",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_Follow",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_FollowSponsor",
+      "type": "FollowSponsor",
+      "typeTag": 14805218812742557103
+    },
+    {
+      "name": "_SponsoredFollowUsed",
+      "type": "bool",
+      "typeTag": 14785269867199075517
     }
   ],
   "constants": [
@@ -1216,13 +1472,63 @@
     },
     {
       "code": 2596,
-      "message": "community gift not found: {0:?}",
-      "name": "CommunityGiftNotFound"
+      "message": "community hongbao not found: {0:?}",
+      "name": "CommunityHongbaoNotFound"
     },
     {
       "code": 2597,
       "message": "the community owner cannot leave",
       "name": "CannotLeaveCommunityOwner"
+    },
+    {
+      "code": 2598,
+      "message": "community is dissolved: {0}",
+      "name": "CommunityDissolved"
+    },
+    {
+      "code": 2599,
+      "message": "cannot follow yourself",
+      "name": "CannotFollowSelf"
+    },
+    {
+      "code": 2600,
+      "message": "already following: {0:?}",
+      "name": "AlreadyFollowing"
+    },
+    {
+      "code": 2601,
+      "message": "not following: {0:?}",
+      "name": "NotFollowing"
+    },
+    {
+      "code": 2602,
+      "message": "follow sponsor funding amount must be positive",
+      "name": "InvalidFollowSponsorAmount"
+    },
+    {
+      "code": 2603,
+      "message": "invalid follow sponsor address: {0:?}",
+      "name": "InvalidFollowSponsor"
+    },
+    {
+      "code": 2604,
+      "message": "follow sponsor not found: {0:?}",
+      "name": "FollowSponsorNotFound"
+    },
+    {
+      "code": 2605,
+      "message": "follow sponsorship has already been used for this pair",
+      "name": "FollowSponsorshipAlreadyUsed"
+    },
+    {
+      "code": 2606,
+      "message": "follow sponsor owner required: {0:?}",
+      "name": "FollowSponsorOwnerRequired"
+    },
+    {
+      "code": 2607,
+      "message": "follow sponsor is closed: {0:?}",
+      "name": "FollowSponsorClosed"
     }
   ]
 }

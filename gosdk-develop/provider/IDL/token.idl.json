@@ -788,13 +788,18 @@
         {
           "name": "rules",
           "role": "input",
-          "type": "GiftRules"
+          "type": "HongbaoRules"
+        },
+        {
+          "name": "message",
+          "role": "input",
+          "type": "option<String>"
         }
       ],
-      "discriminator": 15225,
-      "handler": "create_equal_gift",
+      "discriminator": 56849,
+      "handler": "create_equal_hongbao",
       "kind": "entry",
-      "name": "CreateEqualGift"
+      "name": "CreateEqualHongbao"
     },
     {
       "args": [
@@ -821,13 +826,119 @@
         {
           "name": "rules",
           "role": "input",
-          "type": "GiftRules"
+          "type": "HongbaoRules"
+        },
+        {
+          "name": "message",
+          "role": "input",
+          "type": "option<String>"
         }
       ],
-      "discriminator": 4265,
-      "handler": "create_lucky_gift",
+      "discriminator": 32577,
+      "handler": "create_lucky_hongbao",
       "kind": "entry",
-      "name": "CreateLuckyGift"
+      "name": "CreateLuckyHongbao"
+    },
+    {
+      "args": [
+        {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "total_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "claim_count",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "allocation",
+          "role": "input",
+          "type": "HongbaoAllocation"
+        },
+        {
+          "name": "credential_ids",
+          "role": "input",
+          "type": "vec<String>"
+        },
+        {
+          "name": "expires_at_ms",
+          "role": "input",
+          "type": "option<u64>"
+        },
+        {
+          "name": "message",
+          "role": "input",
+          "type": "option<String>"
+        }
+      ],
+      "discriminator": 38296,
+      "handler": "create_credential_hongbao",
+      "kind": "entry",
+      "name": "CreateCredentialHongbao"
+    },
+    {
+      "args": [
+        {
+          "name": "creator",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "token",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "total_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "claim_count",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "allocation",
+          "role": "input",
+          "type": "HongbaoAllocation"
+        },
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "min_amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "expires_at_ms",
+          "role": "input",
+          "type": "option<u64>"
+        },
+        {
+          "name": "message",
+          "role": "input",
+          "type": "option<String>"
+        }
+      ],
+      "discriminator": 18018,
+      "handler": "create_sft_hongbao",
+      "kind": "entry",
+      "name": "CreateSftHongbao"
     },
     {
       "args": [
@@ -837,42 +948,42 @@
           "type": "Signer"
         },
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 5582,
-      "handler": "claim_gift",
+      "discriminator": 46748,
+      "handler": "claim_hongbao",
       "kind": "entry",
-      "name": "ClaimGift",
+      "name": "ClaimHongbao",
       "sponsor": true
     },
     {
       "args": [
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 44430,
-      "handler": "refund_gift",
+      "discriminator": 51292,
+      "handler": "refund_hongbao",
       "kind": "entry",
-      "name": "RefundGift"
+      "name": "RefundHongbao"
     },
     {
       "args": [
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 27946,
-      "handler": "run_gift_cleanup",
+      "discriminator": 43410,
+      "handler": "run_hongbao_cleanup",
       "kind": "entry",
-      "name": "RunGiftCleanup",
+      "name": "RunHongbaoCleanup",
       "sponsor": true
     },
     {
@@ -957,39 +1068,55 @@
     {
       "args": [
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 11780,
-      "handler": "gift_info",
+      "discriminator": 30775,
+      "handler": "hongbao_message",
       "kind": "view",
-      "name": "GiftInfo",
+      "name": "HongbaoMessage",
       "returns": {
-        "type": "GiftState"
+        "type": "String"
       }
     },
     {
       "args": [
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 57835,
-      "handler": "gift_settlement",
+      "discriminator": 4156,
+      "handler": "hongbao_info",
       "kind": "view",
-      "name": "GiftSettlement",
+      "name": "HongbaoInfo",
       "returns": {
-        "type": "GiftSettlement"
+        "type": "HongbaoState"
       }
     },
     {
       "args": [
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 56611,
+      "handler": "hongbao_settlement",
+      "kind": "view",
+      "name": "HongbaoSettlement",
+      "returns": {
+        "type": "HongbaoSettlement"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "hongbao_id",
           "role": "input",
           "type": "Address"
         },
@@ -999,10 +1126,10 @@
           "type": "Address"
         }
       ],
-      "discriminator": 8017,
-      "handler": "can_claim_gift",
+      "discriminator": 5289,
+      "handler": "can_claim_hongbao",
       "kind": "view",
-      "name": "CanClaimGift",
+      "name": "CanClaimHongbao",
       "returns": {
         "type": "bool"
       }
@@ -1107,8 +1234,8 @@
     },
     {
       "kind": "enum",
-      "name": "GiftAllocation",
-      "typeTag": 12211908797870093821,
+      "name": "HongbaoAllocation",
+      "typeTag": 12559390919027217581,
       "variants": [
         {
           "fields": [],
@@ -1124,8 +1251,8 @@
     },
     {
       "kind": "enum",
-      "name": "GiftEligibility",
-      "typeTag": 8046041254037002544,
+      "name": "HongbaoEligibility",
+      "typeTag": 7147486567772066656,
       "variants": [
         {
           "fields": [
@@ -1146,6 +1273,30 @@
           ],
           "kind": "struct",
           "name": "Recipients"
+        },
+        {
+          "fields": [
+            {
+              "name": "sft",
+              "type": "Address"
+            },
+            {
+              "name": "min_amount",
+              "type": "u64"
+            }
+          ],
+          "kind": "struct",
+          "name": "SftHolding"
+        },
+        {
+          "fields": [
+            {
+              "name": "credential_ids",
+              "type": "vec<String>"
+            }
+          ],
+          "kind": "struct",
+          "name": "Credentials"
         }
       ]
     },
@@ -1165,7 +1316,7 @@
         }
       ],
       "kind": "struct",
-      "name": "GiftRules",
+      "name": "HongbaoRules",
       "typeTag": 15766145922554532178
     },
     {
@@ -1175,7 +1326,7 @@
           "type": "Address"
         },
         {
-          "name": "gift_id",
+          "name": "hongbao_id",
           "type": "Address"
         },
         {
@@ -1204,11 +1355,11 @@
         },
         {
           "name": "allocation",
-          "type": "GiftAllocation"
+          "type": "HongbaoAllocation"
         },
         {
           "name": "eligibility",
-          "type": "GiftEligibility"
+          "type": "HongbaoEligibility"
         },
         {
           "name": "claimed_recipients",
@@ -1216,7 +1367,7 @@
         }
       ],
       "kind": "struct",
-      "name": "GiftState",
+      "name": "HongbaoState",
       "typeTag": 8047344484983905260
     },
     {
@@ -1239,7 +1390,7 @@
         }
       ],
       "kind": "struct",
-      "name": "GiftSettlement",
+      "name": "HongbaoSettlement",
       "typeTag": 373282345846871664
     },
     {
@@ -1254,7 +1405,7 @@
         }
       ],
       "kind": "struct",
-      "name": "GiftCleanupQueueState",
+      "name": "HongbaoCleanupQueueState",
       "typeTag": 5496675755488506181
     },
     {
@@ -1436,42 +1587,47 @@
       "typeTag": 5563585020063213298
     },
     {
-      "name": "_Gift",
-      "type": "GiftState",
+      "name": "_HongbaoMessage",
+      "type": "String",
+      "typeTag": 8566531010829758022
+    },
+    {
+      "name": "_Hongbao",
+      "type": "HongbaoState",
       "typeTag": 8047344484983905260
     },
     {
-      "name": "_GiftUsed",
+      "name": "_HongbaoUsed",
       "type": "B256",
       "typeTag": 12016729314829497160
     },
     {
-      "name": "_GiftClaimed",
+      "name": "_HongbaoClaimed",
       "type": "bool",
       "typeTag": 14785269867199075517
     },
     {
-      "name": "_GiftClaimIndex",
+      "name": "_HongbaoClaimIndex",
       "type": "Address",
       "typeTag": 17438174819379414968
     },
     {
-      "name": "_GiftSettlement",
-      "type": "GiftSettlement",
+      "name": "_HongbaoSettlement",
+      "type": "HongbaoSettlement",
       "typeTag": 373282345846871664
     },
     {
-      "name": "_GiftCleanupQueue",
-      "type": "GiftCleanupQueueState",
+      "name": "_HongbaoCleanupQueue",
+      "type": "HongbaoCleanupQueueState",
       "typeTag": 5496675755488506181
     },
     {
-      "name": "_GiftCleanupNext",
+      "name": "_HongbaoCleanupNext",
       "type": "Address",
       "typeTag": 17438174819379414968
     },
     {
-      "name": "_GiftClaimApp",
+      "name": "_HongbaoClaimApp",
       "type": "u8",
       "typeTag": 631772817358541784
     },
@@ -1479,6 +1635,11 @@
       "name": "_Vesting",
       "type": "VestingState",
       "typeTag": 5151897875976358800
+    },
+    {
+      "name": "_TokenVesting",
+      "type": "Address",
+      "typeTag": 17438174819379414968
     }
   ],
   "constants": [
@@ -1513,32 +1674,42 @@
       "value": "1_000_000 * 1_000_000"
     },
     {
-      "name": "MAX_GIFT_CLAIMS",
+      "name": "MAX_HONGBAO_CLAIMS",
       "type": "u64",
       "value": 1024
     },
     {
-      "name": "GIFT_FEE_PER_CLAIM",
+      "name": "HONGBAO_FEE_PER_CLAIM",
       "type": "u64",
       "value": 100000
     },
     {
-      "name": "MAX_GIFT_RECIPIENTS",
+      "name": "MAX_HONGBAO_RECIPIENTS",
       "type": "usize",
       "value": 32
     },
     {
-      "name": "DEFAULT_GIFT_EXPIRATION_MS",
+      "name": "MAX_HONGBAO_CREDENTIALS",
+      "type": "usize",
+      "value": 8
+    },
+    {
+      "name": "DEFAULT_HONGBAO_EXPIRATION_MS",
       "type": "u64",
       "value": 86400000
     },
     {
-      "name": "GIFT_CLEANUP_BATCH",
+      "name": "HONGBAO_CLEANUP_BATCH",
       "type": "u64",
       "value": 64
     },
     {
-      "name": "GIFT_CLEANUP_INTERVAL_MS",
+      "name": "MAX_HONGBAO_MESSAGE_BYTES",
+      "type": "usize",
+      "value": 64
+    },
+    {
+      "name": "HONGBAO_CLEANUP_INTERVAL_MS",
       "type": "u64",
       "value": 1000
     },
@@ -1563,7 +1734,7 @@
       "fields": [
         {
           "indexed": true,
-          "name": "gift_id",
+          "name": "hongbao_id",
           "type": "Address"
         },
         {
@@ -1577,7 +1748,7 @@
           "type": "Address"
         }
       ],
-      "name": "GiftCreated",
+      "name": "HongbaoCreated",
       "typeTag": 5552105765182429402
     },
     {
@@ -1790,58 +1961,58 @@
     },
     {
       "code": 524,
-      "message": "gift not found: {0:?}",
-      "name": "GiftNotFound"
+      "message": "hongbao not found: {0:?}",
+      "name": "HongbaoNotFound"
     },
     {
       "code": 525,
-      "message": "gift id already used: {0:?}",
-      "name": "GiftAlreadyExists"
+      "message": "hongbao id already used: {0:?}",
+      "name": "HongbaoAlreadyExists"
     },
     {
       "code": 526,
-      "message": "gift expired: {0:?}",
-      "name": "GiftExpired"
+      "message": "hongbao expired: {0:?}",
+      "name": "HongbaoExpired"
     },
     {
       "code": 527,
-      "message": "gift is not expired: {0:?}",
-      "name": "GiftNotExpired"
+      "message": "hongbao is not expired: {0:?}",
+      "name": "HongbaoNotExpired"
     },
     {
       "code": 528,
-      "message": "gift is still active: {0:?}",
-      "name": "GiftStillActive"
+      "message": "hongbao is still active: {0:?}",
+      "name": "HongbaoStillActive"
     },
     {
       "code": 529,
-      "message": "invalid gift definition: {0}",
-      "name": "InvalidGiftDefinition"
+      "message": "invalid hongbao definition: {0}",
+      "name": "InvalidHongbaoDefinition"
     },
     {
       "code": 530,
-      "message": "gift claimant is not eligible: {0:?}",
-      "name": "GiftNotEligible"
+      "message": "hongbao claimant is not eligible: {0:?}",
+      "name": "HongbaoNotEligible"
     },
     {
       "code": 531,
-      "message": "gift already claimed by: {0:?}",
-      "name": "GiftAlreadyClaimed"
+      "message": "hongbao already claimed by: {0:?}",
+      "name": "HongbaoAlreadyClaimed"
     },
     {
       "code": 532,
-      "message": "gift escrow invariant violated: {0:?}",
-      "name": "GiftEscrowInvariantViolation"
+      "message": "hongbao escrow invariant violated: {0:?}",
+      "name": "HongbaoEscrowInvariantViolation"
     },
     {
       "code": 533,
       "message": "secure randomness unavailable: {0}",
-      "name": "GiftRandomnessUnavailable"
+      "name": "HongbaoRandomnessUnavailable"
     },
     {
       "code": 534,
-      "message": "gift cleanup wake rejected",
-      "name": "GiftCleanupWakeRejected"
+      "message": "hongbao cleanup wake rejected",
+      "name": "HongbaoCleanupWakeRejected"
     },
     {
       "code": 535,
@@ -1888,6 +2059,12 @@
       "code": 543,
       "message": "vesting escrow invariant violated: {0:?}",
       "name": "VestingEscrowInvariantViolation"
+    },
+    {
+      "code": 544,
+      "message": "Transparent SftError",
+      "name": "SftError",
+      "transparent": true
     }
   ]
 }

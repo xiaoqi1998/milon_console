@@ -15,7 +15,7 @@ func main() {
 }
 
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	//********************************* Create Account 1 Secp256k1
 
@@ -49,7 +49,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -60,12 +60,18 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	// Show the on-chain account and its signers (the source for AccountSignerBit below).
-	helper.DisplayGetAccount(client, account1)
-	helper.DisplayAccountGetListSigners(client, account1)
+	if err := helper.DisplayGetAccount(client, account1); err != nil {
+		panic(err)
+	}
+	if err := helper.DisplayAccountGetListSigners(client, account1); err != nil {
+		panic(err)
+	}
 
 	//********************************* Create Account 2 Ed25519
 
@@ -98,7 +104,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -109,12 +115,18 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	// Show the on-chain account and its signers (the source for AccountSignerBit below).
-	helper.DisplayGetAccount(client, account2)
-	helper.DisplayAccountGetListSigners(client, account2)
+	if err := helper.DisplayGetAccount(client, account2); err != nil {
+		panic(err)
+	}
+	if err := helper.DisplayAccountGetListSigners(client, account2); err != nil {
+		panic(err)
+	}
 
 	//********************************* Create Account 3 BLS12381
 
@@ -155,7 +167,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -166,12 +178,18 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	// Show the on-chain account and its signers (the source for AccountSignerBit below).
-	helper.DisplayGetAccount(client, account3.ToHex())
-	helper.DisplayAccountGetListSigners(client, account3)
+	if err := helper.DisplayGetAccount(client, account3.ToHex()); err != nil {
+		panic(err)
+	}
+	if err := helper.DisplayAccountGetListSigners(client, account3); err != nil {
+		panic(err)
+	}
 
 	//********************************* Create Account 4 FnDsa512
 
@@ -204,7 +222,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -215,10 +233,16 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	// Show the on-chain account and its signers (the source for AccountSignerBit below).
-	helper.DisplayGetAccount(client, account4.ToBase58())
-	helper.DisplayAccountGetListSigners(client, account4)
+	if err := helper.DisplayGetAccount(client, account4.ToBase58()); err != nil {
+		panic(err)
+	}
+	if err := helper.DisplayAccountGetListSigners(client, account4); err != nil {
+		panic(err)
+	}
 }

@@ -2,6 +2,8 @@ package api
 
 import (
 	"fmt"
+
+	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/postcard"
 )
 
@@ -17,6 +19,12 @@ import (
 			events: Vec<FramedDynamicValue>,
 			error: Option<TxFailurePayload>,
 			gas_charged: u64,
+			signers: Vec<SignerRequirement>,
+		}
+
+		pub struct SignerRequirement {
+			address: Address,
+			requires_pq_signature: bool,
 		}
 
 		struct FramedAccess {
@@ -52,6 +60,15 @@ type SimulateReceipt struct {
 	Events     []TypeTagWithData
 	Error      *TxFailurePayload
 	GasCharged uint64
+	Signers    []SignerRequirement
+}
+
+// SignerRequirement is simulation-only metadata: one entry per transaction
+// signer, telling whether the on-chain execution needs a post-quantum
+// signature from that signer.
+type SignerRequirement struct {
+	Address             crypto.Address
+	RequiresPqSignature bool
 }
 
 type TxFailurePayload struct {
@@ -124,6 +141,27 @@ func (r *SimulateReceipt) MarshalPostcard(serializer *postcard.Serializer) error
 	// 9. GasCharged (u64)
 	if err := serializer.SerializeU64(r.GasCharged); err != nil {
 		return fmt.Errorf("failed to serialize GasCharged: %w", err)
+	}
+
+	// 10. Signers (Vec<SignerRequirement>)
+	if err := postcard.SerializeSeq(serializer, r.Signers, func(s *postcard.Serializer, req SignerRequirement) error {
+		return req.MarshalPostcard(s)
+	}); err != nil {
+		return fmt.Errorf("failed to serialize Signers: %w", err)
+	}
+
+	return nil
+}
+
+func (r *SignerRequirement) MarshalPostcard(serializer *postcard.Serializer) error {
+	// Address (20 bytes)
+	if err := r.Address.MarshalPostcard(serializer); err != nil {
+		return fmt.Errorf("failed to serialize Address: %w", err)
+	}
+
+	// RequiresPqSignature (bool)
+	if err := serializer.SerializeBool(r.RequiresPqSignature); err != nil {
+		return fmt.Errorf("failed to serialize RequiresPqSignature: %w", err)
 	}
 
 	return nil
@@ -217,6 +255,35 @@ func (r *SimulateReceipt) UnmarshalPostcard(deserializer *postcard.Deserializer)
 		return fmt.Errorf("failed to deserialize GasCharged: %w", err)
 	}
 	r.GasCharged = gasCharged
+
+	// 10. Signers (Vec<SignerRequirement>)
+	signers, err := postcard.DeserializeSeq(deserializer, func(d *postcard.Deserializer) (SignerRequirement, error) {
+		var req SignerRequirement
+		if err := req.UnmarshalPostcard(d); err != nil {
+			return req, err
+		}
+		return req, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to deserialize Signers: %w", err)
+	}
+	r.Signers = signers
+
+	return nil
+}
+
+func (r *SignerRequirement) UnmarshalPostcard(d *postcard.Deserializer) error {
+	// Address (20 bytes)
+	if err := r.Address.UnmarshalPostcard(d); err != nil {
+		return fmt.Errorf("failed to deserialize Address: %w", err)
+	}
+
+	// RequiresPqSignature (bool)
+	requiresPqSignature, err := d.DeserializeBool()
+	if err != nil {
+		return fmt.Errorf("failed to deserialize RequiresPqSignature: %w", err)
+	}
+	r.RequiresPqSignature = requiresPqSignature
 
 	return nil
 }

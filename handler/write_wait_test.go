@@ -37,7 +37,8 @@ func newWriteWaitRouter(t *testing.T) *gin.Engine {
 			}, false); err == nil {
 				requestID = uint64(preq.RequestId)
 			}
-			rsp := lib.RpcResponse{RequestId: requestID, Status: 0}
+			// 新版 SDK 的 SubmitTx 会解码响应体为裸 32 字节 tx hash（decodeSubmitTxHash）
+			rsp := lib.RpcResponse{RequestId: requestID, Status: 0, Body: make([]byte, api.TxHashLen)}
 			ser := postcard.NewSerializerWithCap(64)
 			if err := rsp.MarshalPostcard(ser); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)

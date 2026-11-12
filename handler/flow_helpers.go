@@ -61,7 +61,7 @@ func flowCallView(mc *milon.Client, appName, method string, args provider.Args) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode view %s.%s: %w", appName, method, err)
 	}
-	result, err := mc.View([]api.PackedInstruction{wire}, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli())))
+	result, err := mc.BatchView([]api.PackedInstruction{wire}, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli())))
 	if err != nil {
 		return nil, fmt.Errorf("view %s.%s failed: %w", appName, method, err)
 	}
@@ -106,7 +106,7 @@ func flowBuildTx(mc *milon.Client, appName, method string, args provider.Args, a
 // flowSendTx 提交交易并等待确认,返回 txHash;链端执行错误以 error 返回
 // (txHash 一并返回,便于追踪已提交但执行失败的交易)。
 func flowSendTx(mc *milon.Client, tx *lib.Transaction) (string, error) {
-	if err := mc.SubmitTx(tx, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli()))); err != nil {
+	if _, err := mc.SubmitTx(tx, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli()))); err != nil {
 		return "", err
 	}
 	txHash := txHashHex(tx)

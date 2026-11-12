@@ -148,58 +148,6 @@ func TestProviderTokenEncodeAndDecode(t *testing.T) {
 	}
 }
 
-// Regression: ValidatorId([u8; 32]) and PoolId([u8; 32]) are
-// #[serde(transparent)] newtypes over a fixed 32-byte array, so the wire form
-// is 32 raw bytes and not a u64 varint.
-func TestProviderValidatorIdPoolIdWireFormat(t *testing.T) {
-	pd, err := LoadProviderFromFile("./IDL/validator.idl.json")
-	assert.NoError(t, err)
-
-	value := make([]byte, 32)
-	for i := range value {
-		value[i] = byte(i + 1)
-	}
-	var want [32]byte
-	copy(want[:], value)
-
-	controller, err := crypto.NewAddressFromRelaxed("0101010101010101010101010101010101010101")
-	assert.NoError(t, err)
-
-	t.Run("encode writes 32 fixed bytes", func(t *testing.T) {
-		wire, err := pd.Encode("DeclareValidatorAvailability", Args{
-			"controller": controller,
-			"validator":  value,
-		})
-		assert.NoError(t, err)
-		// [app_id(1)] + [discriminator(2)] + [controller(20)] + [validator(32)]
-		assert.Len(t, wire, 55)
-		assert.Equal(t, value, wire[23:])
-
-		decoded, err := pd.Decode("DeclareValidatorAvailability", wire)
-		assert.NoError(t, err)
-		assert.Equal(t, want, decoded["validator"])
-	})
-
-	t.Run("decode returns the 32 byte array", func(t *testing.T) {
-		for _, name := range []string{"ValidatorId", "PoolId"} {
-			decoded, err := pd.DecodeDataByIDLTypeName(name, value)
-			assert.NoError(t, err)
-			assert.Equal(t, want, decoded)
-		}
-	})
-
-	t.Run("a varint payload is rejected", func(t *testing.T) {
-		// u64(183) occupies 2 varint bytes; a fixed 32-byte read must not accept it
-		_, err := pd.DecodeDataByIDLTypeName("ValidatorId", []byte{0xB7, 0x01})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "insufficient data for ValidatorId")
-
-		_, err = pd.DecodeDataByIDLTypeName("PoolId", []byte{0xB7, 0x01})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "insufficient data for PoolId")
-	})
-}
-
 func TestDecode_Errors(t *testing.T) {
 	pd, err := LoadProviderFromFile("./IDL/token.idl.json")
 	assert.NoError(t, err)
@@ -953,4 +901,68 @@ func TestDecodeViewVarint_Errors(t *testing.T) {
 	_, err = decodeViewVarUint128(bytes.Repeat([]byte{0x80}, 8), &offset)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected end of input")
+}
+
+func TestDeserializeValueRejectsOutOfRangeIntegers(t *testing.T) {
+	pd := NewProvider(IDL{})
+
+	tests := []struct {
+		name     string
+		typeName string
+		body     []byte
+	}{
+		// 65536 = 4 << 14, one past the u16 maximum.
+		{name: "u16 overflow", typeName: "u16", body: []byte{0x80, 0x80, 0x04}},
+		// 2^32 = 16 << 28, one past the u32 maximum.
+		{name: "u32 overflow", typeName: "u32", body: []byte{0x80, 0x80, 0x80, 0x80, 0x10}},
+		{name: "i16 overflow", typeName: "i16", body: []byte{0x80, 0x80, 0x04}},
+		{name: "i32 overflow", typeName: "i32", body: []byte{0x80, 0x80, 0x80, 0x80, 0x10}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			offset := 0
+			_, err := pd.deserializeValue(tt.typeName, tt.body, &offset)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "exceeds")
+		})
+	}
+
+	// 65535 is still inside the u16 range and must keep decoding.
+	offset := 0
+	value, err := pd.deserializeValue("u16", []byte{0xFF, 0xFF, 0x03}, &offset)
+	assert.NoError(t, err)
+	assert.Equal(t, uint16(65535), value)
+}
+
+func TestDeserializeValueRejectsUnhashableMapKey(t *testing.T) {
+	pd := NewProvider(IDL{})
+
+	// map<vec<u8>,u8> with one entry: key = [7], value = 9. A vec key decodes to
+	// []any, which cannot be used as a Go map key.
+	offset := 0
+	_, err := pd.deserializeValue("map<vec<u8>,u8>", []byte{0x01, 0x01, 0x07, 0x09}, &offset)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "cannot be a Go map key")
+}
+
+// TestDecodeViewVarUintRejectsOverflow guards the 10th varint group: its bits
+// above bit 0 do not fit in a uint64 and used to be dropped silently.
+func TestDecodeViewVarUintRejectsOverflow(t *testing.T) {
+	// 2^64 = nine continuation groups + 0x02.
+	overflow := []byte{0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x02}
+	offset := 0
+	if _, err := decodeViewVarUint(overflow, &offset); err == nil {
+		t.Fatal("expected an overflow error for 2^64")
+	}
+
+	// max uint64 = nine 0xff groups + 0x01 must still decode.
+	maxUint64 := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01}
+	offset = 0
+	value, err := decodeViewVarUint(maxUint64, &offset)
+	if err != nil {
+		t.Fatalf("max uint64 must decode: %v", err)
+	}
+	if value != math.MaxUint64 {
+		t.Fatalf("decoded %d, want %d", value, uint64(math.MaxUint64))
+	}
 }

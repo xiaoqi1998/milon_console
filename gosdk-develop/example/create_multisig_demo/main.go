@@ -15,25 +15,30 @@ func main() {
 }
 
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
-	// Create 4 signers: signerMultiSig is the multisig wallet creator, signerA/B/C are the participants
-	signerMultiSig := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	signerA := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	signerB := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	signerC := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
+	// Create 4 signers, all post-quantum FN-DSA-512: signerMultiSig is the multisig wallet creator, signerA/B/C are the participants
+	signerMultiSig, pkMultiSig, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		panic("failed to generate FN-DSA-512 secret key:" + err.Error())
+	}
 
-	pkMultiSig := signerMultiSig.Ed25519Public()
-	pkA := signerA.Ed25519Public()
-	pkB := signerB.Ed25519Public()
-	pkC := signerC.Ed25519Public()
+	// accountA is only the transfer recipient, so signerA's secret key is not kept.
+	_, pkA, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		panic("failed to generate FN-DSA-512 public key for accountA:" + err.Error())
+	}
+	signerB, pkB, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		panic("failed to generate FN-DSA-512 secret key for signerB:" + err.Error())
+	}
+	signerC, pkC, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		panic("failed to generate FN-DSA-512 secret key for signerC:" + err.Error())
+	}
 
 	accountA, _ := crypto.NewAddressFromPublicKey(pkA)
 	accountMultiSig, _ := crypto.NewAddressFromPublicKey(pkMultiSig)
-
-	fmt.Printf("pkA = %v \n", pkA)
-	fmt.Printf("pkB = %v \n", pkB)
-	fmt.Printf("pkC = %v \n\n", pkC)
 
 	fmt.Printf("accountMultiSig = %v \n\n", accountMultiSig)
 
@@ -57,7 +62,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -68,11 +73,17 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	helper.DisplayGetAccount(client, accountMultiSig)
-	helper.DisplayAccountGetListSigners(client, accountMultiSig)
+	if err := helper.DisplayGetAccount(client, accountMultiSig); err != nil {
+		panic(err)
+	}
+	if err := helper.DisplayAccountGetListSigners(client, accountMultiSig); err != nil {
+		panic(err)
+	}
 
 	fmt.Printf("\n================ 2.transfer MIL ================\n")
 
@@ -114,7 +125,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to simulate transaction on chain:" + err.Error())
 	}
-	helper.CheckSimulateSuccess(simulateResult)
+	if err := helper.CheckSimulateSuccess(simulateResult); err != nil {
+		panic(err)
+	}
 	fmt.Printf("simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
 
 	// 5. After simulation passes, reset placeholders and sign with the real multisig signature (same builder -> same TxHash)
@@ -129,7 +142,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build signed transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -140,6 +153,8 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 }

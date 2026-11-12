@@ -15,7 +15,7 @@ func main() {
 }
 
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	tokenSk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	tokenPk := tokenSk.Ed25519Public()
@@ -97,7 +97,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -107,7 +107,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	fmt.Printf("\n================ 3.Mint(owner mint 1000 to account1 + owner sign) ================\n")
@@ -123,7 +125,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -132,14 +134,16 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err := client.View([]api.PackedInstruction{wire})
+	viewTxResult, err := client.View(wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -170,7 +174,7 @@ func example(networkConfig milon.Network) {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
 
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -179,14 +183,16 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -211,7 +217,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -220,14 +226,16 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -251,7 +259,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -261,14 +269,16 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -283,7 +293,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode FrozenOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view FrozenOf:" + err.Error())
 	}
@@ -307,7 +317,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -316,14 +326,16 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -338,7 +350,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode FrozenOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view FrozenOf:" + err.Error())
 	}
@@ -362,7 +374,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -371,14 +383,16 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -393,7 +407,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -418,7 +432,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -427,14 +441,16 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}
@@ -449,7 +465,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View([]api.PackedInstruction{wire})
+	viewTxResult, err = client.View(wire)
 	if err != nil {
 		panic("failed to view BalanceOf:" + err.Error())
 	}

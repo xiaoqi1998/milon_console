@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"sort"
 	"sync"
 )
 
@@ -21,39 +20,16 @@ type IDLTypeResolver struct {
 	providerByEventTypeTag    map[uint64]*Provider // event typeTag -> Provider
 }
 
-// buildIndexes precomputes typeTag -> Provider maps for O(1) lookups.
-// On collisions the first registered provider wins (deterministic).
+// buildIndexes fills the typeTag -> Provider maps used for O(1) lookups. The
+// construction is shared with IDLRegistry via buildTypeTagIndexes so both
+// resolve a tag to the identical provider. Event collisions are tolerated
+// (first-wins) here rather than rejected, matching the resolver's read-only
+// role; on the strictEvent=false path buildTypeTagIndexes never errors.
 func (r *IDLTypeResolver) buildIndexes() {
-	r.providerByResourceTypeTag = make(map[uint64]*Provider)
-	r.providerByTypeTag = make(map[uint64]*Provider)
-	r.providerByEventTypeTag = make(map[uint64]*Provider)
-	names := make([]string, 0, len(r.Providers))
-	for name := range r.Providers {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	for _, name := range names {
-		pd := r.Providers[name]
-		for typeTag := range pd.ResourceByTypeTag {
-			if _, ok := r.providerByResourceTypeTag[typeTag]; !ok {
-				r.providerByResourceTypeTag[typeTag] = pd
-			}
-		}
-		// Values may be persisted under their raw value-type tag (e.g. a bare
-		// Address written by the genesis transaction). Builtin tags such as
-		// Address or u64 repeat across IDLs with the same meaning, so
-		// first-wins stays deterministic.
-		for typeTag := range pd.IDLTypeByTypeTag {
-			if _, ok := r.providerByTypeTag[typeTag]; !ok {
-				r.providerByTypeTag[typeTag] = pd
-			}
-		}
-		for typeTag := range pd.EventByTypeTag {
-			if _, ok := r.providerByEventTypeTag[typeTag]; !ok {
-				r.providerByEventTypeTag[typeTag] = pd
-			}
-		}
-	}
+	indexes, _ := buildTypeTagIndexes(r.Providers, false)
+	r.providerByResourceTypeTag = indexes.byResource
+	r.providerByTypeTag = indexes.byType
+	r.providerByEventTypeTag = indexes.byEvent
 }
 
 // DecodeResource returns the consumed bytes of the persisted value registered
@@ -65,6 +41,8 @@ func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueByt
 	r.once.Do(r.buildIndexes)
 
 	if targetProvider := r.providerByResourceTypeTag[typeTag]; targetProvider != nil {
+		// Indexed from this provider's own ResourceByTypeTag, so the lookup
+		// cannot miss; ok is intentionally ignored.
 		targetResource, _ := targetProvider.GetResourceByTypeTag(typeTag)
 
 		offset := 0
@@ -76,6 +54,8 @@ func (r *IDLTypeResolver) DecodeResource(typeTag uint64, bytes []byte) (valueByt
 	}
 
 	if targetProvider := r.providerByTypeTag[typeTag]; targetProvider != nil {
+		// Indexed from this provider's own IDLTypeByTypeTag, so the lookup
+		// cannot miss; ok is intentionally ignored.
 		targetType, _ := targetProvider.GetIDLTypeByTypeTag(typeTag)
 
 		offset := 0
@@ -98,6 +78,8 @@ func (r *IDLTypeResolver) DecodeEvent(typeTag uint64, bytes []byte) (eventBytes 
 	if targetProvider == nil {
 		return nil, nil, fmt.Errorf("unknown event type_tag %d (not found in any loaded IDL)", typeTag)
 	}
+	// Indexed from this provider's own EventByTypeTag, so the lookup cannot
+	// miss; ok is intentionally ignored.
 	targetEvent, _ := targetProvider.GetEventByTypeTag(typeTag)
 
 	offset := 0

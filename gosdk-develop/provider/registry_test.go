@@ -188,6 +188,53 @@ func TestIDLRegistry_DecodeViewDatas_Errors(t *testing.T) {
 	})
 }
 
+func TestIDLRegistry_DecodeViewValue(t *testing.T) {
+	reg, err := NewIDLRegistry(loadProviders(t, "token", "demo"))
+	assert.NoError(t, err)
+
+	// The single view RPC (chain method 15) returns the bare value: no vec
+	// length and no Result envelope, unlike the batch view RPC (method 16).
+	value, err := reg.DecodeViewValue("token::BalanceOf", []byte{188, 5})
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(700), value)
+
+	value, err = reg.DecodeViewValue("demo::OrderBalance", []byte{1})
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(1), value)
+}
+
+func TestIDLRegistry_DecodeViewValue_Errors(t *testing.T) {
+	reg, err := NewIDLRegistry(loadProviders(t, "token"))
+	assert.NoError(t, err)
+
+	t.Run("invalid name", func(t *testing.T) {
+		_, err := reg.DecodeViewValue("token", []byte{1})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "expected appName::methodName")
+	})
+
+	t.Run("unknown app", func(t *testing.T) {
+		_, err := reg.DecodeViewValue("nope::BalanceOf", []byte{1})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unknown app")
+	})
+
+	t.Run("non view instruction", func(t *testing.T) {
+		_, err := reg.DecodeViewValue("token::Mint", []byte{1})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "not a view instruction")
+	})
+
+	t.Run("batch view body is rejected", func(t *testing.T) {
+		// A method 16 body (vec length + Result envelope) must not be accepted
+		// silently: only the leading byte turns into the value and the rest
+		// stays behind as trailing bytes.
+		_, err := reg.DecodeViewValue("token::BalanceOf", []byte{1, 0, 2, 188, 5})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "trailing bytes")
+	})
+}
+
 func TestIDLRegistry_DecodeEventDataByTag(t *testing.T) {
 	pd := loadProviders(t, "demo")["demo"]
 	reg, err := NewIDLRegistry(map[string]*Provider{"demo": pd})

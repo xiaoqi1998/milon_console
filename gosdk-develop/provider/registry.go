@@ -15,15 +15,72 @@ type IDLRegistry struct {
 	providerByTypeTag         map[uint64]*Provider // IDL type typeTag -> Provider (global index, first wins)
 }
 
+// typeTagIndexes holds the three global typeTag -> Provider maps. Both
+// IDLRegistry and IDLTypeResolver need them, so they are built from a single
+// shared routine to guarantee the two resolve any tag to the same Provider.
+type typeTagIndexes struct {
+	byResource map[uint64]*Provider
+	byType     map[uint64]*Provider
+	byEvent    map[uint64]*Provider
+}
+
+// buildTypeTagIndexes iterates providers in sorted name order and fills the
+// three typeTag indexes. Sorting keeps the first-wins result deterministic
+// regardless of map iteration order.
+//
+// resource and type typeTags legitimately repeat across IDLs (builtins such as
+// Address or u64 mean the same thing everywhere), so the first provider wins.
+// Event typeTags must be globally unique for decoding to stay unambiguous:
+// when strictEvent is true a duplicate returns an error so the registry fails
+// fast at load time, while the type resolver passes false to stay tolerant.
+func buildTypeTagIndexes(providers map[string]*Provider, strictEvent bool) (typeTagIndexes, error) {
+	indexes := typeTagIndexes{
+		byResource: make(map[uint64]*Provider),
+		byType:     make(map[uint64]*Provider),
+		byEvent:    make(map[uint64]*Provider),
+	}
+
+	names := make([]string, 0, len(providers))
+	for name := range providers {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		pd := providers[name]
+
+		for typeTag := range pd.ResourceByTypeTag {
+			if _, ok := indexes.byResource[typeTag]; !ok {
+				indexes.byResource[typeTag] = pd
+			}
+		}
+
+		for typeTag := range pd.IDLTypeByTypeTag {
+			if _, ok := indexes.byType[typeTag]; !ok {
+				indexes.byType[typeTag] = pd
+			}
+		}
+
+		for typeTag := range pd.EventByTypeTag {
+			if _, ok := indexes.byEvent[typeTag]; ok {
+				if strictEvent {
+					return typeTagIndexes{}, fmt.Errorf("duplicate event type_tag %d across loaded IDLs", typeTag)
+				}
+				continue
+			}
+			indexes.byEvent[typeTag] = pd
+		}
+	}
+
+	return indexes, nil
+}
+
 func NewIDLRegistry(providerByIDLName map[string]*Provider) (*IDLRegistry, error) {
 	providerByAppID := make(map[uint8]*Provider, len(providerByIDLName))
 	providerByName := make(map[string]*Provider, len(providerByIDLName))
-	providerByEventTypeTag := make(map[uint64]*Provider)
-	providerByResourceTypeTag := make(map[uint64]*Provider)
-	providerByTypeTag := make(map[uint64]*Provider)
 
-	// Sort provider names so the resource index built below is deterministic
-	// regardless of map iteration order.
+	// Sort provider names so duplicate app_id / app name errors are reported
+	// deterministically regardless of map iteration order.
 	names := make([]string, 0, len(providerByIDLName))
 	for name := range providerByIDLName {
 		names = append(names, name)
@@ -45,42 +102,22 @@ func NewIDLRegistry(providerByIDLName map[string]*Provider) (*IDLRegistry, error
 			}
 			providerByName[name] = pd
 		}
+	}
 
-		// event typeTags must be unique across all loaded IDLs, otherwise
-		// event decoding would be ambiguous.
-		for typeTag := range pd.EventByTypeTag {
-			if _, ok := providerByEventTypeTag[typeTag]; ok {
-				return nil, fmt.Errorf("duplicate event type_tag %d across loaded IDLs", typeTag)
-			}
-			providerByEventTypeTag[typeTag] = pd
-		}
-
-		// resource typeTags may repeat across IDLs (e.g. the builtin u64 or
-		// bool resource tags); the first provider wins, matching the per-
-		// provider first-declaration rule. Decoding is unaffected because
-		// shared tags imply the same value type.
-		for typeTag := range pd.ResourceByTypeTag {
-			if _, ok := providerByResourceTypeTag[typeTag]; !ok {
-				providerByResourceTypeTag[typeTag] = pd
-			}
-		}
-
-		// type typeTags repeat across IDLs as well (builtins such as Address
-		// are declared by every application); the first provider wins for the
-		// same reason.
-		for typeTag := range pd.IDLTypeByTypeTag {
-			if _, ok := providerByTypeTag[typeTag]; !ok {
-				providerByTypeTag[typeTag] = pd
-			}
-		}
+	// The three typeTag indexes are shared with IDLTypeResolver; event tags must
+	// be unique, so strictEvent fails construction instead of leaving decoding
+	// ambiguous later.
+	indexes, err := buildTypeTagIndexes(providerByIDLName, true)
+	if err != nil {
+		return nil, err
 	}
 
 	return &IDLRegistry{
 		providerByAppID:           providerByAppID,
 		providerByName:            providerByName,
-		providerByEventTypeTag:    providerByEventTypeTag,
-		providerByResourceTypeTag: providerByResourceTypeTag,
-		providerByTypeTag:         providerByTypeTag,
+		providerByEventTypeTag:    indexes.byEvent,
+		providerByResourceTypeTag: indexes.byResource,
+		providerByTypeTag:         indexes.byType,
 	}, nil
 }
 
@@ -203,12 +240,31 @@ func (m *IDLRegistry) DecodeViewDatas(appNameAndInstructionNames []string, body 
 	return results, nil
 }
 
+// DecodeViewValue decodes the response body of the single-instruction view
+// RPC (chain method 15); appNameAndInstruction uses the "appName::methodName"
+// format.
+func (m *IDLRegistry) DecodeViewValue(appNameAndInstruction string, body []byte) (any, error) {
+	parts := strings.Split(appNameAndInstruction, "::")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid format %q (expected appName::methodName)", appNameAndInstruction)
+	}
+
+	matchedProvider := m.providerByName[parts[0]]
+	if matchedProvider == nil {
+		return nil, fmt.Errorf("unknown app %q", parts[0])
+	}
+
+	return matchedProvider.DecodeViewValue(parts[1], body)
+}
+
 // DecodeEventDataByTag decodes event data by its typeTag.
 func (m *IDLRegistry) DecodeEventDataByTag(typeTag uint64, data []byte) (map[string]any, error) {
 	matchedProvider := m.providerByEventTypeTag[typeTag]
 	if matchedProvider == nil {
 		return nil, fmt.Errorf("unknown type tag: %d (loaded %d IDLs)", typeTag, len(m.providerByAppID))
 	}
+	// Indexed from this provider's own EventByTypeTag, so the lookup cannot
+	// miss; ok is intentionally ignored.
 	matchedEvent, _ := matchedProvider.GetEventByTypeTag(typeTag)
 
 	// Skip a leading type_tag varint prefix when present.
@@ -251,6 +307,8 @@ func (m *IDLRegistry) DecodeEventDataByTag(typeTag uint64, data []byte) (map[str
 // tag, e.g. an Address written by the genesis transaction).
 func (m *IDLRegistry) DecodeResourceDataByTag(typeTag uint64, data []byte) (map[string]any, error) {
 	if matchedProvider := m.providerByResourceTypeTag[typeTag]; matchedProvider != nil {
+		// Indexed from this provider's own ResourceByTypeTag, so the lookup
+		// cannot miss; ok is intentionally ignored.
 		matchedResource, _ := matchedProvider.GetResourceByTypeTag(typeTag)
 
 		offset := 0
@@ -274,6 +332,8 @@ func (m *IDLRegistry) DecodeResourceDataByTag(typeTag uint64, data []byte) (map[
 	}
 
 	if matchedProvider := m.providerByTypeTag[typeTag]; matchedProvider != nil {
+		// Indexed from this provider's own IDLTypeByTypeTag, so the lookup
+		// cannot miss; ok is intentionally ignored.
 		matchedType, _ := matchedProvider.GetIDLTypeByTypeTag(typeTag)
 
 		offset := 0

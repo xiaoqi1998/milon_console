@@ -748,6 +748,37 @@
           "name": "sft",
           "role": "input",
           "type": "Address"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 34242,
+      "handler": "backfill_total_balance",
+      "kind": "entry",
+      "name": "BackfillTotalBalance"
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 63205,
+      "handler": "backfill_total_supply",
+      "kind": "entry",
+      "name": "BackfillTotalSupply"
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
         }
       ],
       "discriminator": 46443,
@@ -1025,9 +1056,102 @@
       "returns": {
         "type": "Address"
       }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 32597,
+      "handler": "total_balance_of",
+      "kind": "view",
+      "name": "TotalBalanceOf",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 56878,
+      "handler": "total_balance_status",
+      "kind": "view",
+      "name": "TotalBalanceStatus",
+      "returns": {
+        "type": "SftBalanceState"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 35462,
+      "handler": "total_supply",
+      "kind": "view",
+      "name": "TotalSupply",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "sft",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 30765,
+      "handler": "total_supply_status",
+      "kind": "view",
+      "name": "TotalSupplyStatus",
+      "returns": {
+        "type": "SftBalanceState"
+      }
     }
   ],
   "types": [
+    {
+      "fields": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "next_token_id",
+          "type": "u64"
+        },
+        {
+          "name": "ready",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "SftBalanceState",
+      "typeTag": 5332615791021347137
+    },
     {
       "fields": [
         {
@@ -1147,6 +1271,21 @@
   ],
   "resources": [
     {
+      "name": "_SftBalanceTracking",
+      "type": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "name": "_SftBalance",
+      "type": "SftBalanceState",
+      "typeTag": 5332615791021347137
+    },
+    {
+      "name": "_SftTotalSupply",
+      "type": "SftBalanceState",
+      "typeTag": 5332615791021347137
+    },
+    {
       "name": "_SftOwner",
       "type": "Address",
       "typeTag": 17438174819379414968
@@ -1230,6 +1369,13 @@
       "name": "_Approval",
       "type": "u64",
       "typeTag": 5563585020063213298
+    }
+  ],
+  "constants": [
+    {
+      "name": "SFT_BALANCE_BACKFILL_BATCH",
+      "type": "u64",
+      "value": 64
     }
   ],
   "events": [
@@ -1501,6 +1647,16 @@
       "code": 1296,
       "message": "insufficient approval (token: {0}, owner: {1:?}, spender: {2:?}, available: {3}, required: {4})",
       "name": "InsufficientApproval"
+    },
+    {
+      "code": 1297,
+      "message": "SFT total balance is not initialized: {0:?}",
+      "name": "TotalBalanceNotReady"
+    },
+    {
+      "code": 1298,
+      "message": "SFT total supply is not initialized",
+      "name": "TotalSupplyNotReady"
     }
   ]
 }

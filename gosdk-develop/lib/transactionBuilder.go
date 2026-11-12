@@ -36,8 +36,13 @@ type TransactionBuilder struct {
 	slots []SigningSlot
 	errs  []error
 
-	txHash   *api.TxHash  // lazy cache: nil = not computed or dirty
-	ixHashes []api.TxHash // lazy cache: nil = not computed or dirty
+	// txHash and ixHashes are lazy caches: nil means "not computed yet, or
+	// invalidated". WithPayer/WithStamp clear txHash (both feed it); ixHashes
+	// depend only on Instructions, and the builder exposes no method that
+	// mutates Instructions after construction, so they never need invalidating
+	// today. Any future instruction-editing setter MUST reset ixHashes too.
+	txHash   *api.TxHash
+	ixHashes []api.TxHash
 }
 
 // cachedTxHash returns the transaction hash, recomputing lazily when dirty.

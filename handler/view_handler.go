@@ -77,7 +77,7 @@ func (h *ViewSingleHandler) ViewSingle(c *gin.Context) {
 	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.View(wires, milon.WithRequestID(requestId))
+	result, err := mc.BatchView(wires, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "ViewSingle", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to view single: "+err.Error(), nil))
@@ -115,7 +115,7 @@ func (h *ViewSingleHandler) ViewMulti(c *gin.Context) {
 	mc := middleware.ClientFrom(c)
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	result, err := mc.View(wires, milon.WithRequestID(requestId))
+	result, err := mc.BatchView(wires, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "ViewMulti", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to view multi: "+err.Error(), nil))

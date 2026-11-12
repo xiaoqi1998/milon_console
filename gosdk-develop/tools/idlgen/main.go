@@ -16,11 +16,11 @@
 //     converted to the provider wire format automatically on Encode.
 //
 //  3. Generated structs for every custom IDL type (e.g. TokenMetadata) and
-//     DecodeView methods for view instructions, so a view response body can
-//     be decoded directly:
+//     DecodeView methods for view instructions, so the body returned by the
+//     single view RPC (MethodTypeView) can be decoded directly:
 //
+//     viewResult, err := client.View(gen.Token.TotalSupply.Args().Encode())
 //     supply, err := gen.Token.TotalSupply.DecodeView(viewResult.HTTPResponseBody)
-//     meta, err := gen.Token.Metadata.DecodeView(viewResult.HTTPResponseBody)
 package main
 
 import (
@@ -812,11 +812,8 @@ func generateIx(b *strings.Builder, app appInfo, ix provider.Instruction, imp *i
 		fmt.Fprintf(b, "\tif ix.pd == nil {\n")
 		fmt.Fprintf(b, "\t\treturn out, fmt.Errorf(\"IDL app %s is not bound: call milon.NewClient first\")\n", app.name)
 		fmt.Fprintf(b, "\t}\n")
-		fmt.Fprintf(b, "\tv, err := ix.pd.DecodeViewData(%q, body)\n", ix.Name)
+		fmt.Fprintf(b, "\tv, err := ix.pd.DecodeViewValue(%q, body)\n", ix.Name)
 		fmt.Fprintf(b, "\tif err != nil {\n\t\treturn out, err\n\t}\n")
-		fmt.Fprintf(b, "\tif failure, ok := v.(*api.ApiFailure); ok {\n")
-		fmt.Fprintf(b, "\t\treturn out, fmt.Errorf(\"view %s failed: %%s\", failure)\n", ix.Name)
-		fmt.Fprintf(b, "\t}\n")
 		var convCounter int
 		writeConvStmt(b, "out", "v", ix.Returns.Type, "\t", app.name, typeByName, &convCounter)
 		fmt.Fprintf(b, "\treturn out, nil\n")

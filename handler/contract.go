@@ -78,7 +78,7 @@ func (h *ContractHandler) ReadContract(c *gin.Context) {
 		return
 	}
 
-	result, err := mc.View([]api.PackedInstruction{wire}, milon.WithRequestID(requestId))
+	result, err := mc.BatchView([]api.PackedInstruction{wire}, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "ReadContract", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to read contract: "+err.Error(), nil))
@@ -153,7 +153,7 @@ func (h *ContractHandler) ReadContractMulti(c *gin.Context) {
 		wires = append(wires, wire)
 	}
 
-	result, err := mc.View(wires, milon.WithRequestID(requestId))
+	result, err := mc.BatchView(wires, milon.WithRequestID(requestId))
 	if err != nil {
 		logSDKError(c, "ReadContractMulti", err)
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to read multi: "+err.Error(), nil))
@@ -313,7 +313,7 @@ func simulateAndReturn(mc *milon.Client, tx *lib.Transaction, requestId lib.Requ
 
 // submitAndReturn wraps SubmitTx to also return the built tx for raw inspection.
 func submitAndReturn(mc *milon.Client, tx *lib.Transaction, requestId lib.RequestID) (*lib.Transaction, error) {
-	if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+	if _, err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 		return nil, err
 	}
 	return tx, nil
@@ -1165,7 +1165,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 		if err != nil {
 			return nil, err
 		}
-		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+		if _, err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 			return nil, err
 		}
 		return tx, nil
@@ -1331,7 +1331,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 			return "", nil, err
 		}
 
-		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+		if _, err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 			return "", nil, err
 		}
 		return txHashHex(tx), tx, nil
@@ -1357,7 +1357,7 @@ func (h *ContractHandler) dispatchSubmit(mc *milon.Client, req *writeContractReq
 			return "", nil, err
 		}
 
-		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+		if _, err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 			return "", nil, err
 		}
 		return txHashHex(tx), tx, nil
@@ -1643,7 +1643,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		if err != nil {
 			return nil, err
 		}
-		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+		if _, err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 			return nil, err
 		}
 		return tx, nil
@@ -1811,7 +1811,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to create tx: %w", err)
 		}
-		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+		if _, err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 			return "", nil, err
 		}
 		return txHashHex(tx), tx, nil
@@ -1843,7 +1843,7 @@ func (h *ContractHandler) dispatchSubmitMulti(mc *milon.Client, req *multiContra
 		if err := tx.ValidateWireWith(allIdx); err != nil {
 			return "", nil, fmt.Errorf("transaction validation failed: %w", err)
 		}
-		if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+		if _, err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 			return "", nil, err
 		}
 		return txHashHex(tx), tx, nil

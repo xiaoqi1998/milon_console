@@ -78,7 +78,7 @@ var idlMethodDocs = map[string]string{
 	"account.ListActiveVotes":   "【功能】列出账户当前全部活跃投票意图。\n【返回】[[VoteMeta, 已投票位图, 是否达标], ...] 数组。",
 	"account.SweepExpiredVotes": "【功能】一次性清理自己名下已过期的投票意向，腾出投票索引位。\n【限制】仅可清理已过期意向（VoteExpired 276）；清扫手续费不足报 VoteSweepFeeInsufficient 285；清扫唤醒被拒报 VoteWakeRejected 286。",
 
-	// ==================== token 模块（app_id=2，31 entry + 12 view）====================
+	// ==================== token 模块（app_id=2，33 entry + 13 view）====================
 
 	"token.Create": "【功能】创建新代币资源：登记名称/符号/精度/图标等元数据并设定 owner（管理权限）。发币方调用；token 地址由专用密钥对派生，且该密钥必须参与交易签名。\n【限制】token 地址已被占用报 TokenAlreadyExists（516）；token 私钥必须签名，否则报 AddressNotSignatured（519）。",
 
@@ -139,16 +139,8 @@ var idlMethodDocs = map[string]string{
 	"token.Compliance": "【功能】查询代币合规策略配置。\n【返回】Compliance：{mode: \"All\"|\"Any\", requirements: [凭证 ID 数组]}。",
 
 	"token.FaucetCooldownRemaining": "【功能】查询某地址水龙头冷却剩余时间。\n【返回】u64 毫秒数；0 表示可立即领取。",
-	"token.CreateEqualGift":         "【功能】创建均分红包：创建者托管 total_amount，供 claim_count 人均分领取；领取资格由 rules 约束（可选 VC 凭证要求 / 指定收款人名单 / 过期时间）。gift_id 由链上派生，经交易事件或 GiftInfo 回读。\n【限制】红包定义不合法报 InvalidGiftDefinition 529（claim_count 须非零等）；gift_id 不可重复（GiftAlreadyExists 525）；托管转入失败报 token 层错误。",
-	"token.CreateLuckyGift":         "【功能】创建拼手气红包：创建者托管 total_amount，claim_count 人随机份额领取（份额由链上安全随机源决定）。\n【限制】同 CreateEqualGift；随机源不可用报 GiftRandomnessUnavailable 533。",
-	"token.ClaimGift":               "【功能】领取红包（claimant 签名）。\n【限制】红包须存在（GiftNotFound 524）；须在有效期内（GiftExpired 526）；资格不符报 GiftNotEligible 530（rules 名单 / VC 要求）；不可重复领取（GiftAlreadyClaimed 531）。",
-	"token.RefundGift":              "【功能】红包过期后把剩余托管金额退回创建者。\n【限制】红包须存在（524）；须已过期（GiftNotExpired 527）；仍在进行中报 GiftStillActive 528。",
-	"token.RunGiftCleanup":          "【功能】推进过期红包的清算（结算领取记录、回收托管），配合到期唤醒机制逐批执行。\n【限制】红包须已过期（GiftStillActive 528）；清扫唤醒被拒报 GiftCleanupWakeRejected 534。",
-	"token.GiftInfo":                "【功能】查询红包实时状态。\n【返回】GiftState：{creator, gift_id, token, total_amount, remaining_amount, claim_count, claimed_count, expires_at_ms, allocation, rules}。",
-	"token.GiftSettlement":          "【功能】查询红包清算进度。\n【返回】GiftSettlement：{creator, status, claim_records, cleanup_cursor}。",
-	"token.CanClaimGift":            "【功能】判断某地址当前能否领取某红包。\n【返回】bool。",
 
-	"token.CreateVesting": "【功能】创建分期释放（Vesting）：creator 锁定代币进托管，按名单分批释放给各领款人（每人独立配置总额/首释量/周期时长/期数/每期释放量，start_at_ms 为起算时间）。\n【限制】定义须自洽（InvalidVestingDefinition 537：首释 + 期数×每期须与总额一致、期数/周期须大于 0）；同 seed 重复创建报 VestingAlreadyExists（539）；余额不足报 InsufficientBalance。",
+	"token.CreateVesting": "【功能】创建分期释放（Vesting）：creator 锁定代币进托管，按名单分批释放给各领款人（每人独立配置总额/首释量/周期时长/期数/每期释放量，start_at_ms 为起算时间；name 仅作展示标签，每行可重复、不参与唯一性判定）。\n【限制】定义须自洽（InvalidVestingDefinition 537：periods>0、period_seconds>0、initial∈[0,total]、每期释放量 (total−initial)/periods 向下取整后须>0、start_at_ms 不能在过去、name 不能为空串；不整除时末期补足余数）。同 seed（creator+token+start_at_ms+recipients 全字段一致，name 亦计入）重复创建报 VestingAlreadyExists（539）；余额不足报 InsufficientBalance。",
 
 	"token.ClaimVesting": "【功能】领款人领取自己在某 Vesting 中当前累计可释放的代币（支持 sponsor 代付 gas）。\n【限制】Vesting 不存在报 VestingNotFound（538）；签名者不在领款名单报 VestingNotEligible（540）；当前无可领报 VestingNothingClaimable（541）；托管账实不一致报 543。",
 
@@ -157,65 +149,70 @@ var idlMethodDocs = map[string]string{
 	"token.VestingClaimable":           "【功能】查询指定领款人在某 Vesting 中当前可领取的数量。\n【返回】u64（最小单位）；Vesting 不存在报 538。",
 	"token.DiscloseTokenVcAttestation": "【功能】公开披露代币的 VC 认证材料：发行方对凭证（模式/哈希/有效期）的签名上链，供第三方核验代币合规背书。\n【限制】issuer_signature 须为发行方私钥对凭证内容的签名；issuer_key_id 为发行方密钥序号；valid_until_ms 可空表示长期有效。",
 
-	// ==================== staking 模块（app_id=3，17 entry + 11 view，Pool 模型）====================
+	"token.CreateEqualHongbao": "【功能】创建均分红包：创建者托管 total_amount，供 claim_count 人均分领取；领取资格由 rules 约束（可选 VC 凭证要求 / 指定收款人名单 / 过期时间），可附言 message。hongbao_id 由链上派生，经交易事件或 HongbaoInfo 回读。\n【限制】红包定义不合法报 InvalidHongbaoDefinition 529（claim_count 须非零等）；hongbao_id 不可重复（HongbaoAlreadyExists 525）；托管转入失败报 token 层错误。",
+	"token.CreateLuckyHongbao": "【功能】创建拼手气红包：创建者托管 total_amount，claim_count 人随机份额领取（份额由链上安全随机源决定），可附言 message。\n【限制】同 CreateEqualHongbao；随机源不可用报 HongbaoRandomnessUnavailable 533。",
+	"token.CreateCredentialHongbao": "【功能】创建凭证红包：创建者托管 total_amount，领取人须持有 credential_ids 列表中任一有效 VC 凭证方可领取，claim_count 人按 allocation（Equal/Lucky）分配，可设过期时间与附言。\n【限制】同 CreateEqualHongbao；资格校验走 identity VC 体系（未持凭证报 HongbaoNotEligible 530）。",
+	"token.CreateSftHongbao": "【功能】创建 SFT 红包：创建者托管 total_amount，领取人须持有不少于 min_amount 个指定 SFT（sft 地址）方可领取，claim_count 人按 allocation（Equal/Lucky）分配，可设过期时间与附言。\n【限制】同 CreateEqualHongbao；SFT 校验失败透传 sftoken 层错误（SftError 544）。",
+	"token.ClaimHongbao": "【功能】领取红包（claimant 签名）。\n【限制】红包须存在（HongbaoNotFound 524）；须在有效期内（HongbaoExpired 526）；资格不符报 HongbaoNotEligible 530（rules 名单 / VC / SFT 要求）；不可重复领取（HongbaoAlreadyClaimed 531）。",
+	"token.RefundHongbao": "【功能】红包过期后把剩余托管金额退回创建者。\n【限制】红包须存在（524）；须已过期（HongbaoNotExpired 527）；仍在进行中报 HongbaoStillActive 528。",
+	"token.RunHongbaoCleanup": "【功能】推进过期红包的清算（结算领取记录、回收托管），配合到期唤醒机制逐批执行。\n【限制】红包须已过期（HongbaoStillActive 528）；清扫唤醒被拒报 HongbaoCleanupWakeRejected 534。",
+	"token.HongbaoInfo": "【功能】查询红包实时状态。\n【返回】HongbaoState：{creator, hongbao_id, token, total_amount, remaining_amount, claim_count, claimed_count, expires_at_ms, allocation, eligibility, claimed_recipients}。",
+	"token.HongbaoSettlement": "【功能】查询红包清算进度。\n【返回】HongbaoSettlement：{creator, status, claim_records, cleanup_cursor}。",
+	"token.HongbaoMessage": "【功能】查询红包附言（创建时 message 参数）。\n【返回】String。",
+	"token.CanClaimHongbao": "【功能】判断某地址当前能否领取某红包。\n【返回】bool。",
 
-	"staking.CreatePool": "【功能】创建质押池：指定质押/奖励代币、周期配置（质押激活/解冻/奖励发放/佣金变更四类延迟，周期基准支持 Epoch/块高/时间戳）与佣金配置（费率+收款地址），返回池 ID。池主对池拥有暂停/冻结/关闭/佣金收取等全权。\n【返回】PoolId（新建池 ID，base58 字符串）。\n【限制】佣金率 ≤10000 基点；nonce 用于池 ID 确定性派生，非法报 InvalidParameters（769）；周期配置须合法（769）。",
+	// ==================== staking 模块（app_id=3，15 entry + 5 view，Pool 模型）====================
 
-	"staking.StakeIntoPool": "【功能】向指定池质押代币：按当前份额率折算份额（shares），先记为待激活（pending），过质押激活延迟后生效。\n【返回】B256 质押单 ID（stake_id），后续按 ID 解冻/领奖。\n【限制】池状态须为 Open（Paused/Frozen/Closing 拒绝）；余额不足报 TokenError（773）；金额须大于 0（769）。",
+	"staking.CreatePool": "【功能】创建质押池：指定质押/奖励代币、周期配置（质押激活/解冻/奖励发放/佣金变更四类延迟，周期基准支持 Epoch/块高/时间戳）与佣金配置（费率+收款地址），返回池 ID。池主对池拥有暂停/关闭/佣金收取等全权。\n【返回】PoolId（新建池 ID，base58 字符串）。\n【限制】佣金率 ≤10000 基点；nonce 用于池 ID 确定性派生，非法报 InvalidParameters（768）；周期配置须合法（768）。",
 
-	"staking.CancelStakeById": "【功能】撤销仍处于待激活状态的质押单，全额取回本金。\n【限制】质押单须存在且属于签名者（未找到报 769）；仅 Pending 状态可撤销，已激活/已关闭不可撤（771）。",
+	"staking.StakeIntoPool": "【功能】向指定池质押代币，先记为待激活（deposits 挂账），过质押激活延迟后生效。\n【限制】池状态须为 Open（Paused/Closing 拒绝）；余额不足报 TokenError（771）；金额须大于 0（768）。",
 
-	"staking.RequestUnstakeById": "【功能】对指定质押单按份额（shares，非代币数量）申请解冻：记录解冻意向，过解冻激活延迟后按份额率折算本金释放。\n【限制】份额不得超过该质押单持有量（769）；同一质押单同时至多一个待解冻意向；池须处于可解冻状态。",
 
-	"staking.CancelUnstakeById": "【功能】撤销该质押单上尚未生效的解冻意向，份额继续留在池内计息。\n【限制】须存在待解冻意向（769）；须为质押单所有者。",
 
-	"staking.ClaimRewardsById": "【功能】领取指定质押单累计的可领奖励（按池 reward_index 线性累计）。\n【返回】u64 实际领取数量（最小单位）。\n【限制】须为质押单所有者；池奖励金库余额不足报 RewardTreasuryBackingMismatch（770）；无奖励可领返回 0。",
 
-	"staking.AccruePoolReward": "【功能】向指定池注入奖励资金（reward_asset），推高池 reward_index，使全体质押人按份额分享。任何持币人可为池充奖。\n【限制】余额不足报 TokenError（773）；金额须大于 0（769）；金库记账须与实际托管一致（770）。",
 
-	"staking.RequestPoolRewardConfig": "【功能】池主申请变更佣金配置（费率/收款地址）：新配置记为待生效，过佣金变更延迟后自动启用。\n【限制】须为池主（771）；配置须合法（769）；存在待生效配置时再次申请将覆盖。",
+	"staking.AccruePoolReward": "【功能】向指定池注入奖励资金（reward_asset），使全体质押人按份额分享。任何持币人可为池充奖。\n【限制】余额不足报 TokenError（771）；金额须大于 0（768）。",
 
-	"staking.ClaimPoolCommission": "【功能】池主领取累计佣金（按佣金费率从注入奖励中切分）。\n【返回】u64 实际领取佣金数量（最小单位）。\n【限制】须为池主（771）；金库余额不足报 770；无可领返回 0。",
+	"staking.RequestPoolRewardConfig": "【功能】池主申请变更佣金配置（费率/收款地址）：新配置记为待生效，过佣金变更延迟后自动启用。\n【限制】须为池主（769）；配置须合法（768）；存在待生效配置时再次申请将覆盖。",
 
-	"staking.PausePool": "【功能】池主暂停池：暂停期间禁止新质押与解冻申请，已激活份额的奖励照常累计。\n【限制】须为池主（771）；仅 Open 状态可暂停。",
+	"staking.ClaimPoolCommission": "【功能】佣金收款人领取累计佣金（按佣金费率从注入奖励中切分）。\n【返回】u64 实际领取佣金数量（最小单位）；无可领返回 0。\n【限制】仅佣金收款地址（recipient）可领（769）。",
 
-	"staking.ResumePool": "【功能】池主恢复已暂停的池至 Open 状态。\n【限制】须为池主（771）；仅 Paused 状态可恢复。",
+	"staking.PausePool": "【功能】池主暂停池：暂停期间禁止新质押与解冻申请，已激活份额的奖励照常累计。\n【限制】须为池主（769）；仅 Open 状态可暂停。",
 
-	"staking.FreezePool": "【功能】池主冻结池：冻结后一切质押/解冻/领奖操作停止（极端情况/迁移用）。\n【限制】须为池主（771）；仅 Open/Paused 可冻结。",
+	"staking.ResumePool": "【功能】池主恢复已暂停的池至 Open 状态。\n【限制】须为池主（769）；仅 Paused 状态可恢复。",
 
-	"staking.UnfreezePool": "【功能】解除冻结，池恢复至可操作状态。\n【限制】须为池主（771）；仅 Frozen 状态可解冻。",
 
-	"staking.ClosePool": "【功能】池主发起关池：池进入 Closing，按调度周期（scheduled_cycles）逐步结算存量质押，结算完毕后池进入 Drained。\n【限制】须为池主（771）；Closing 后不再接受新质押；关池前通常先通过 RequestPoolRewardConfig 清零佣金。",
 
-	"staking.SweepPoolResidual": "【功能】清理关池后的池内残留资金（残差/尾款），转入池主账户，池进入 Drained 终态。\n【返回】u64 实际清扫金额（最小单位）。\n【限制】须为池主（771）；池须已完成排水结算（771）；无可清扫返回 0。",
+	"staking.ClosePool": "【功能】池主发起关池：池进入 Closing，按调度周期逐步结算存量质押，结算完毕后池进入 Drained。\n【限制】须为池主（769）；Closing 后不再接受新质押；关池前通常先通过 RequestPoolRewardConfig 清零佣金。",
 
-	"staking.ConfigureValidatorRewardPolicy": "【功能】配置验证人奖励政策：按（质押代币, 奖励代币）二元组设定每验证人每周期固定奖励额度（reward_per_validator），供协议层向验证人池发放奖励。\n【限制】权限由链上校验（治理/协议级操作）；同资产组合重复配置将覆盖旧政策。",
+	"staking.SweepPoolResidual": "【功能】清理关池后的池内残留资金（残差/尾款），转入池主账户，池进入 Drained 终态。\n【返回】u64 实际清扫金额（最小单位）。\n【限制】须为池主（769）；池须已完成排水结算（769）；无可清扫返回 0。",
 
-	"staking.FundValidatorRewardPolicy": "【功能】向验证人奖励政策金库注资，作为各周期验证人奖励的发放来源（任何持币人可资助）。\n【限制】余额不足报 TokenError（773）；金额须大于 0（769）。",
 
-	"staking.Pool": "【功能】查询池的全量记账快照。\n【返回】Pool：{pool_id, owner, stake_asset, reward_asset, status: Open|Paused|Frozen|Closing|Drained, slashing_mode: Disabled|System, cycle_config, total_shares, principal_assets, held_principal, reward_index, reward_config, pending_reward_config, claimable_commission, reward_liability, pending_stake_count, pending_unstake_count, closing_cycle, scheduled_cycles}；不存在报 769。",
 
-	"staking.StakeById": "【功能】按 ID 查询质押单原始数据。\n【返回】Stake：{stake_id, owner, pool_id, shares, principal, reward_debt, claimable_rewards, submitted_cycle, effective_cycle, status: Pending|Active|Closed|Cancelled, pending_unstake}；不存在报 769。",
+	"staking.Pool": "【功能】查询池的全量记账快照。\n【返回】Pool：{pool_id, owner, manager_app, app_permissions, stake_asset, reward_asset, cycle_config, commission 配置, 状态与记账字段}；不存在报 768。",
 
-	"staking.PoolTreasuryBalance": "【功能】查询池奖励金库（reward_asset）当前托管余额。\n【返回】u64（最小单位）；池不存在报 769。",
 
-	"staking.StakeIds": "【功能】查询某地址在某池中的全部质押单 ID。\n【返回】StakeIds：{ids: [B256 数组]}。",
+	"staking.PoolTreasuryBalance": "【功能】查询池奖励金库（reward_asset）当前托管余额。\n【返回】u64（最小单位）；池不存在报 768。",
 
-	"staking.StakePositionByPool": "【功能】查询某地址在某池中的质押仓位汇总（面向前端的聚合视图）。\n【返回】PoolStakePosition：{owner, pool_id, shares, reward_debt, claimable_rewards}。",
 
-	"staking.PendingStakes": "【功能】查询某地址在某池中尚未激活（pending）的质押单 ID 列表。\n【返回】vec<B256>。",
 
-	"staking.TotalShares": "【功能】查询池的总份额。\n【返回】u64；池不存在报 769。",
+
 
 	"staking.TotalStake": "【功能】查询池的总本金（principal_assets）。\n【返回】u64（最小单位）；池不存在报 769。",
 
-	"staking.RewardIndex": "【功能】查询池的累计奖励指数（每份额累计奖励，奖励分配的核心状态）。\n【返回】u128；池不存在报 769。",
 
-	"staking.ValidatorRewardPolicy": "【功能】查询指定（质押代币, 奖励代币）组合的验证人奖励政策。\n【返回】ValidatorRewardPolicy：{stake_asset, reward_asset, reward_per_validator, available（金库可发放余额）}；未配置返回空值。",
 
-	"staking.ValidatorRewardPolicyConfigured": "【功能】查询指定（质押代币, 奖励代币）组合是否已配置验证人奖励政策（资产对随调用参数传入）。\n【返回】bool。",
 
-	// ==================== validator 模块（app_id=7，5 entry + 7 view，验证人生命周期）====================
+	"staking.RequestUnstake": "【功能】对某池持仓按代币数量（amount，非份额）申请解冻：记录解冻意向（exits 挂账），过解冻激活延迟后可领取本金。\n【限制】金额不得超过该池可解冻持仓（768）；池须处于可解冻状态。",
+	"staking.CancelPendingStake": "【功能】撤销指定生效周期（effective_cycle）尚未激活的质押挂账，全额取回本金。\n【限制】须为持仓所有者；对应 pending 记录不存在报 768。",
+	"staking.CancelUnstake": "【功能】撤销指定生效周期尚未生效的解冻意向，本金继续留在池内计息。\n【限制】须为持仓所有者；对应解冻意向不存在报 768。",
+	"staking.ClaimPrincipal": "【功能】领取某池中已过解冻延迟的可取本金。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】须为持仓所有者。",
+	"staking.ClaimRewards": "【功能】领取某池累计的可领奖励（按池奖励进度线性累计）。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】须为持仓所有者。",
+	"staking.ClaimCommission": "【功能】佣金收款人领取某池累计佣金。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】仅佣金收款地址（recipient）可领。",
+	"staking.Position": "【功能】查询某地址在某池的聚合持仓视图：激活本金、奖励进度、可领奖励/本金与各周期挂账（staking 查询主入口，取代旧按 stake_id 的逐单查询）。\n【返回】Position：{owner, pool_id, active_principal, reward_checkpoint, reward_fraction, claimable_rewards, claimable_principal, deposits: [{cycle, amount}], exits: [{cycle, amount}], tracked}。",
+	"staking.CommissionBalance": "【功能】查询某池佣金收款人当前可领佣金余额。\n【返回】u64（最小单位）。",
+
+	// ==================== validator 模块（app_id=7，13 entry + 9 view，验证人生命周期）====================
 
 	"validator.RegisterValidator": "【功能】注册验证人身份：由 controller 签名创建 ValidatorId，作为后续绑定共识身份、创建验证人池的入口。\n【返回】ValidatorId（新建验证人标识）。\n【限制】同一 controller 不可绑定多个 ValidatorId（ControllerAlreadyAssigned 1794）；不可重复注册（AlreadyRegistered 1792）。",
 
@@ -225,7 +222,7 @@ var idlMethodDocs = map[string]string{
 
 	"validator.LeaveCandidatePool": "【功能】验证人申请退出候选池（随目标 epoch 结算生效）。\n【限制】签名者须为 controller（1795）；ValidatorId 须已注册（1793）；不在候选池中报 1798。",
 
-	"validator.DeclareValidatorAvailability": "【功能】验证人为目标 epoch 声明出块可用性（声明记录含目标 epoch、ValidatorId 与 controller），供验证人集合选举采信。\n【限制】签名者须为 controller（1795）；ValidatorId 须已注册（1793）；验证人集合不可用时报 ValidatorSetUnavailable（1801）。",
+	"validator.DeclareValidatorAvailability": "【功能】验证人为目标 epoch 声明出块可用性（声明记录含目标 epoch、ValidatorId 与 controller），供验证人集合选举采信。\n【限制】签名者须为 controller（1795）；ValidatorId 须已注册（1793）；验证人集合不可用时报 ValidatorSetUnavailable（1803）。",
 
 	"validator.CandidatePool": "【功能】查询当前候选池中的全部验证人（无参数）。\n【返回】CandidatePool：{validators: [ValidatorId 数组]}。",
 
@@ -237,9 +234,20 @@ var idlMethodDocs = map[string]string{
 
 	"validator.ValidatorForController": "【功能】按 controller 地址反查其绑定的 ValidatorId。\n【返回】ValidatorId；未绑定报 1793。",
 
-	"validator.CurrentValidatorPools": "【功能】查询当前 epoch 全体验证人池总览。\n【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, active_staker_count}]}；集合未就绪报 1801。",
+	"validator.CurrentValidatorPools": "【功能】查询当前 epoch 全体验证人池总览。\n【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, active_staker_count}]}；集合未就绪报 1803。",
 
-	"validator.CandidateValidatorPools": "【功能】查询候选验证人池总览（结构与 CurrentValidatorPools 相同，范围限于候选集合）。\n【返回】ValidatorPoolList；集合未就绪报 1801。",
+	"validator.CandidateValidatorPools": "【功能】查询候选验证人池总览（结构与 CurrentValidatorPools 相同，范围限于候选集合）。\n【返回】ValidatorPoolList；集合未就绪报 1803。",
+
+	"validator.PausePool": "【功能】controller 暂停验证人质押池：暂停期间禁止新质押与解冻申请，已激活份额的奖励照常累计。\n【限制】签名者须为该验证人 controller（1795）；仅 Open 状态可暂停。",
+	"validator.ResumePool": "【功能】controller 恢复已暂停的验证人质押池至 Open 状态。\n【限制】签名者须为 controller（1795）；仅 Paused 状态可恢复。",
+	"validator.ClosePool": "【功能】controller 发起关池：池进入 Closing，按调度周期逐步结算存量质押，结算完毕后进入 Drained。\n【限制】签名者须为 controller（1795）；Closing 后不再接受新质押。",
+	"validator.RequestPoolRewardConfig": "【功能】controller 申请变更验证人池佣金配置（费率/收款地址）：新配置记为待生效，过佣金变更延迟后自动启用。\n【限制】签名者须为 controller（1795）；配置须合法（1798）；存在待生效配置时再次申请将覆盖。",
+	"validator.ClaimPoolCommission": "【功能】controller 领取验证人池累计佣金（按佣金费率从注入奖励中切分）。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】签名者须为 controller（1795）；金库账实不一致报 RewardTreasuryBackingMismatch（1799）。",
+	"validator.SweepPoolResidual": "【功能】清理关池后的池内残留资金，转入 controller 账户，池进入 Drained 终态。\n【返回】u64 实际清扫金额（最小单位）；无可清扫返回 0。\n【限制】签名者须为 controller（1795）；池须已完成排水结算。",
+	"validator.ConfigureValidatorRewardPolicy": "【功能】配置验证人奖励政策：按（质押代币, 奖励代币）二元组设定每验证人每周期固定奖励额度（reward_per_validator），供协议层向验证人池发放奖励。\n【限制】权限由链上校验（治理/协议级操作）；同资产组合重复配置将覆盖旧政策。",
+	"validator.FundValidatorRewardPolicy": "【功能】向验证人奖励政策金库注资，作为各周期验证人奖励的发放来源（任何持币人可资助）。\n【限制】余额不足透传 TokenError（1800）；金额须大于 0（1798）。",
+	"validator.ValidatorRewardPolicy": "【功能】查询指定（质押代币, 奖励代币）组合的验证人奖励政策。\n【返回】ValidatorRewardPolicy：{stake_asset, reward_asset, reward_per_validator, available（金库可发放余额）}；未配置返回空值。",
+	"validator.ValidatorRewardPolicyConfigured": "【功能】查询是否已配置验证人奖励政策（无参数）。\n【返回】bool。",
 
 	// ==================== identity 模块（app_id=4，19 entry + 25 view）====================
 
@@ -331,7 +339,7 @@ var idlMethodDocs = map[string]string{
 
 	"identity.CredentialId": "【功能】由 issuer 地址与 credential_schema 派生全局凭证 ID（用于 CredentialDefinition 等查询）。\n【返回】String。",
 
-	// ==================== sftoken 模块（app_id=5，26 entry + 14 view）====================
+	// ==================== sftoken 模块（app_id=5，28 entry + 18 view）====================
 	// 2026-09 模型重构：份额按 (token_id, owner) 记账，transfer 仅搬运份额不派生新 token；
 	// mint/update/freeze 三个权限人提升为 SFT 集合级；元数据按 集合→槽位→token 逐级覆盖继承。
 
@@ -415,6 +423,13 @@ var idlMethodDocs = map[string]string{
 
 	"sftoken.FreezeAuthority": "【功能】查询 SFT 的冻结权限人地址。\n【返回】Address。",
 
+	"sftoken.BackfillTotalBalance": "【功能】为指定 owner 回填其名下该 SFT 全部 token 的余额聚合索引（供 TotalBalanceOf 查询），链升级/迁移后的一次性补偿操作。\n【限制】sft 须已创建（SftNotFound 1285）。",
+	"sftoken.BackfillTotalSupply": "【功能】回填该 SFT 全链发行总量聚合（供 TotalSupply 查询），链升级/迁移后的一次性补偿操作。\n【限制】sft 须已创建（1285）。",
+	"sftoken.TotalBalanceOf": "【功能】查询 owner 持有该 SFT 全部 token 的余额合计。\n【返回】u64（最小单位）；聚合尚未回填报 TotalBalanceNotReady（1297）。",
+	"sftoken.TotalBalanceStatus": "【功能】查询 owner 侧 SFT 余额聚合的就绪状态与进度。\n【返回】SftBalanceState：{amount, next_token_id, ready}；ready=false 表示聚合尚未回填完成。",
+	"sftoken.TotalSupply": "【功能】查询该 SFT 全链发行总量。\n【返回】u64（最小单位）；聚合尚未回填报 TotalSupplyNotReady（1298）。",
+	"sftoken.TotalSupplyStatus": "【功能】查询该 SFT 发行总量聚合的就绪状态与进度。\n【返回】SftBalanceState：{amount, next_token_id, ready}。",
+
 	// ==================== dex 模块（app_id=6，14 entry + 9 view）====================
 
 	"dex.CreateMarket": "【功能】创建订单簿交易市场（base/quote 代币对），调用者成为市场 authority（管理员）。maker/taker 费率由链上常量固定为 0.3%/0.5%。\n【返回】Address 新市场地址（由链上种子派生）。\n【限制】base≠quote（SameTokenPair 1536）；所有数值参数非 0（ZeroMarketParameter 1537）；同代币对不可重复建市场（MarketAlreadyExists 1541）。",
@@ -454,13 +469,13 @@ var idlMethodDocs = map[string]string{
 	"dex.SwapExactIn":       "【功能】混合换币（精确输入）：先吃订单簿（至多 max_book_makers 档成交），余量走 AMM 分段成交（至多 max_amm_segments 段），输入 input_token 的 amount_in，带 min_amount_out / worst_tick 保护。\n【返回】HybridSwapResult：{amount_in_used, amount_out, refund, clob_fills, amm_segments}。\n【限制】input_token 须属于该市场（InvalidSwapInputToken 1571）；保护/限额参数不合法报 InvalidSwapParameter 1570；输出低于 min_amount_out 报 MinSwapOutputNotMet 1573；算术溢出报 SwapOverflow 1572。",
 	"dex.AmmSwapEnabled":    "【功能】查询市场 AMM 池是否处于可交易状态。\n【返回】bool。",
 
-	// ==================== keyless 模块（app_id=8，13 entry + 10 view）====================
+	// ==================== keyless 模块（app_id=8，11 entry + 10 view）====================
 
 	"keyless.BootstrapKeyless": "【功能】初始化 keyless 注册表：注册内置 Google/Apple OIDC provider 与默认参数（无参数，args 传 {}）。\n【限制】仅 genesis 块 0 可调（GenesisOnly 2113）；只能初始化一次（AlreadyBootstrapped 2114）。",
 
-	"keyless.Authenticate": "【功能】用 OIDC id_token（JWT）+ 临时公钥完成无密钥认证，建立链上会话（后续以会话公钥签名操作）。gas 由赞助池代付（sponsor）。\n【限制】JWT 校验严格：须三段式 JWS（2049）、未过期（2060）且签发时间不过旧（≤10 分钟，JwtTooOld 2062）、issuer/audience 与 provider 匹配（2063-2065）、签名验证通过（2067）；nonce 须以 milon-keyless-v1. 开头且内嵌 ephemeral_pk 的 commitment（2068-2076）；公共赞助每会话仅一次（2091）；provider 须已注册并启用（2092/2094）。",
+	"keyless.Authenticate": "【功能】用 Groth16 ZK 证明完成无密钥认证，建立链上会话（后续以会话公钥签名操作，gas 可由赞助池代付）：auth={circuit_id, claim, proof}，claim 承载 JWT 语义承诺（provider_id/issuer/kid/jwk_thumbprint/audience_hash/address_seed/ephemeral_pk/iat/exp/session_expiry_ms 等），链上仅验证证明与 claim 一致性。\n【限制】ZK 认证未开放报 ZkAuthenticationDisabled（2125）；证明无效报 ZkProofInvalid（2126）；circuit_id 须已注册（ZkCircuitIdInvalid 2122）；会话公钥非法报 InvalidSessionPubkey（2089）；session_expiry 越界报 2087；公共赞助每会话仅一次（SessionSponsorshipAlreadyUsed 2091）。",
 
-	"keyless.Bind": "【功能】把 keyless 身份（JWT 认证通过后派生的地址）绑定到链上账户的一个 signer 槽位，使账户可无私钥托管。\n【限制】该身份不可已被绑定（AlreadyBound 2099）；绑定有激活延迟（默认 1 天、下限 1 小时，active_at_ms = bound_at_ms + 延迟）；JWT 校验同 Authenticate；owner 须签名。",
+	"keyless.Bind": "【功能】把 keyless 身份（经 Authenticate 认证后派生的地址）绑定到链上账户的一个 signer 槽位，使账户可无私钥托管；auth 为 Groth16 认证材料（结构同 Authenticate）。\n【限制】该身份不可已被绑定（AlreadyBound 2099）；绑定有激活延迟（默认 1 天、下限 1 小时，active_at_ms = bound_at_ms + 延迟）；ZK 校验同 Authenticate；owner 须签名。",
 
 	"keyless.Unbind": "【功能】解除 keyless 身份与账户的绑定。\n【限制】绑定须存在（BindingNotFound 2100）；仅绑定 owner 可解绑（BindingOwnerMismatch 2101）。",
 
@@ -493,9 +508,7 @@ var idlMethodDocs = map[string]string{
 
 	"keyless.PruneInactiveJwkReports": "【功能】清理不再活跃的验证人留下的 JWK 报告（无参数维护指令）。\n【限制】仅系统/维护流程调用。",
 
-	"keyless.AuthenticateZk": "【功能】用 Groth16 ZK 证明完成无密钥认证：JWT 语义由链下证明承载，链上仅验证证明本身（可 sponsor 代付 gas）。\n【限制】ZK 认证未开放报 ZkAuthenticationDisabled（2125）；证明无效报 ZkProofInvalid（2126）；证明编码/公共输入数等问题以 Groth16Error 变体返回。",
 
-	"keyless.BindZk": "【功能】ZK 认证通过后，把 keyless 身份绑定到 owner 账户的 signer 槽位（Bind 的 ZK 证明版）。\n【限制】ZK 校验同 AuthenticateZk；该身份不可已被绑定（AlreadyBound 2099）；owner 须签名；绑定激活延迟与 Bind 一致。",
 
 	"keyless.GetJwkReport": "【功能】查询某验证人对某 provider 的 JWK 报告。\n【返回】option<ValidatorJwkReport>：{validator, keys:[JWK JSON]}，无报告返回 null。",
 
@@ -515,7 +528,7 @@ var idlMethodDocs = map[string]string{
 
 	"lucky_box.AssetPool": "【功能】查询盒子资产池。\n【返回】AssetPoolState：{asset: {variant:\"Token\", value:{token}}, total_amount, remaining_amount, allocation: \"Equal\"|\"Lucky\"}。",
 
-	// ==================== social 模块（app_id=10，25 entry + 10 view）====================
+	// ==================== social 模块（app_id=10，32 entry + 14 view）====================
 
 	"social.UpsertSocialProfile": "【功能】写入/更新自己的社交 profile URI（链上只存 URI，内容存链下）。\n【限制】须有有效未停用 DID（DidNotActive 2560）；URI 须合法（InvalidUri 2563）。",
 
@@ -578,10 +591,22 @@ var idlMethodDocs = map[string]string{
 	"social.JoinRequest": "【功能】查询某成员是否有 pending 的加入申请。\n【返回】bool。",
 
 	"social.CommunityMembership":   "【功能】查询某地址是否为社区成员。\n【返回】bool。",
-	"social.CreateGift":            "【功能】创建社区红包：创建者向社区（community_id）发放 token 红包，total_amount 供 claim_count 人按 allocation（Equal 均分 / Lucky 拼手气）领取，可设过期时间。\n【限制】创建者须有有效 DID（DidNotActive 2560）；社区须存在（CommunityNotFound 2578）；托管转入失败透传 token 层错误（TokenError 2595）。",
-	"social.ClaimGift":             "【功能】领取社区红包（claimant 签名）。\n【限制】红包须存在（CommunityGiftNotFound 2596）；领取规则校验同 token 红包语义。",
-	"social.CanClaimCommunityGift": "【功能】判断某地址当前能否领取某社区红包。\n【返回】bool。",
-	"social.GiftCommunity":         "【功能】查询社区红包所属的社区 ID。\n【返回】u32。",
+
+	"social.Follow": "【功能】关注目标地址（建立 _Follow 社交关系记录）。\n【限制】不可自关注（CannotFollowSelf 2599）；已关注报 AlreadyFollowing（2600）。",
+	"social.Unfollow": "【功能】取消对目标地址的关注。\n【限制】未关注报 NotFollowing（2601）。",
+	"social.IsFollowing": "【功能】查询 follower 是否正关注 target。\n【返回】bool。",
+	"social.CreateFollowSponsor": "【功能】创建关注赞助池：owner 注资 amount，为「关注 owner」的行为提供奖励；返回赞助池地址，他人经 FollowSponsored 关注 owner 时领取赞助。\n【返回】Address（赞助池地址）。\n【限制】amount 须大于 0（InvalidFollowSponsorAmount 2602）。",
+	"social.CloseFollowSponsor": "【功能】关闭关注赞助池并取回剩余资金。\n【返回】u64 取回金额（最小单位）。\n【限制】仅赞助池 owner（FollowSponsorOwnerRequired 2606）；赞助池须存在（FollowSponsorNotFound 2604）。",
+	"social.FollowSponsored": "【功能】经赞助池完成关注：follower 关注 target 并领取 sponsor 池的赞助奖励（同一 (follower,target) 对仅可领取一次）。\n【限制】赞助池须存在（2604）且处于开启状态（FollowSponsorClosed 2607）；不可自关注（2599）；已关注报 2600；该 pair 已领过赞助报 FollowSponsorshipAlreadyUsed（2605）。",
+	"social.FollowSponsor": "【功能】查询关注赞助池状态。\n【返回】FollowSponsor：{owner, target, active}。",
+	"social.FollowSponsorAddress": "【功能】按目标地址反查其关注赞助池地址。\n【返回】Address。",
+	"social.CreateHongbao": "【功能】创建社区红包：创建者向社区（community_id）发放 token 红包，total_amount 供 claim_count 人按 allocation（Equal 均分 / Lucky 拼手气）领取，可设过期时间与附言 message。\n【限制】创建者须有有效 DID（DidNotActive 2560）；社区须存在（CommunityNotFound 2578）；社区已解散报 CommunityDissolved（2598）；托管转入失败透传 token 层错误（TokenError 2595）。",
+	"social.ClaimHongbao": "【功能】领取社区红包（claimant 签名）。\n【限制】红包须存在（CommunityHongbaoNotFound 2596）；社区已解散报 2598；领取规则校验同 token 红包语义。",
+	"social.CanClaimCommunityHongbao": "【功能】判断某地址当前能否领取某社区红包。\n【返回】bool。",
+	"social.HongbaoCommunity": "【功能】查询社区红包所属的社区 ID。\n【返回】u32。",
+	"social.AddCommunityMember": "【功能】管理员向社区添加成员。\n【限制】签名者须为社区管理员（CommunityAdminRequired 2582）；社区须存在（2578）且未解散（2598）；已是活跃成员报 MembershipAlreadyActive（2587）；成员数上限报 CommunityMemberLimitReached（2593）。",
+	"social.DissolveCommunity": "【功能】解散社区：解散后社区红包领取与成员变更被阻断（CommunityDissolved 2598）。\n【限制】签名者须为社区 owner（CommunityOwnerRequired 2581）；社区须存在（2578）。",
+	"social.IsCommunityDissolved": "【功能】查询社区是否已解散。\n【返回】bool。",
 
 	// ==================== demo 模块（app_id=254，19 entry + 13 view）====================
 
@@ -814,24 +839,6 @@ var idlArgDocs = map[string]string{
 	"token.Metadata:token":                             "代币资源地址，base58 字符串",
 	"token.Compliance:token":                           "代币资源地址，base58 字符串",
 	"token.FaucetCooldownRemaining:account":            "查询地址，base58 字符串",
-	"token.CreateEqualGift:creator":                    "创建者地址，须其私钥参与交易签名",
-	"token.CreateEqualGift:token":                      "红包代币地址，base58 字符串",
-	"token.CreateEqualGift:total_amount":               "托管总额，最小单位十进制数字",
-	"token.CreateEqualGift:claim_count":                "可领取人数，十进制数字（须非零）",
-	"token.CreateEqualGift:rules":                      "领取规则对象 {credential_id?, recipients?, expires_at_ms?}：可选 VC 凭证要求 / 指定收款人名单 / 过期时间（Unix 毫秒）",
-	"token.CreateLuckyGift:creator":                    "创建者地址，须其私钥参与交易签名",
-	"token.CreateLuckyGift:token":                      "红包代币地址，base58 字符串",
-	"token.CreateLuckyGift:total_amount":               "托管总额，最小单位十进制数字",
-	"token.CreateLuckyGift:claim_count":                "可领取人数，十进制数字（须非零）",
-	"token.CreateLuckyGift:rules":                      "领取规则对象，同 token.CreateEqualGift:rules",
-	"token.ClaimGift:claimant":                         "领取者地址，须其私钥参与交易签名",
-	"token.ClaimGift:gift_id":                          "红包地址，base58 字符串",
-	"token.RefundGift:gift_id":                         "红包地址，base58 字符串",
-	"token.RunGiftCleanup:gift_id":                     "红包地址，base58 字符串",
-	"token.GiftInfo:gift_id":                           "红包地址，base58 字符串",
-	"token.GiftSettlement:gift_id":                     "红包地址，base58 字符串",
-	"token.CanClaimGift:gift_id":                       "红包地址，base58 字符串",
-	"token.CanClaimGift:claimant":                      "待查询的领取人地址，base58 字符串",
 
 	"token.CreateVesting:creator":     "创建人地址，须其私钥参与交易签名（托管出资方）",
 	"token.CreateVesting:token":       "代币资源地址，base58 字符串",
@@ -853,6 +860,44 @@ var idlArgDocs = map[string]string{
 	"token.DiscloseTokenVcAttestation:credential_hash":   "凭证哈希，64 位 hex 字符串（可带 0x）",
 	"token.DiscloseTokenVcAttestation:valid_until_ms":    "凭证有效期截止，Unix 毫秒时间戳（十进制数字）；缺省表示长期有效",
 	"token.DiscloseTokenVcAttestation:issuer_signature":  "发行方签名，hex 字符串（可带 0x）",
+	"token.CreateEqualHongbao:creator":                    "创建者地址，须其私钥参与交易签名",
+	"token.CreateEqualHongbao:token":                      "红包代币地址，base58 字符串",
+	"token.CreateEqualHongbao:total_amount":               "托管总额，最小单位十进制数字",
+	"token.CreateEqualHongbao:claim_count":                "可领取人数，十进制数字（须非零）",
+	"token.CreateEqualHongbao:rules":                      "领取规则对象 {credential_id?, recipients?, expires_at_ms?}：可选 VC 凭证要求 / 指定收款人名单 / 过期时间（Unix 毫秒）",
+	"token.CreateEqualHongbao:message":                    "红包附言，字符串；null 表示无附言",
+	"token.CreateLuckyHongbao:creator":                    "创建者地址，须其私钥参与交易签名",
+	"token.CreateLuckyHongbao:token":                      "红包代币地址，base58 字符串",
+	"token.CreateLuckyHongbao:total_amount":               "托管总额，最小单位十进制数字",
+	"token.CreateLuckyHongbao:claim_count":                "可领取人数，十进制数字（须非零）",
+	"token.CreateLuckyHongbao:rules":                      "领取规则对象，同 token.CreateEqualHongbao:rules",
+	"token.CreateLuckyHongbao:message":                    "红包附言，字符串；null 表示无附言",
+	"token.CreateCredentialHongbao:creator":               "创建者地址，须其私钥参与交易签名",
+	"token.CreateCredentialHongbao:token":                 "红包代币地址，base58 字符串",
+	"token.CreateCredentialHongbao:total_amount":          "托管总额，最小单位十进制数字",
+	"token.CreateCredentialHongbao:claim_count":           "可领取人数，十进制数字（须非零）",
+	"token.CreateCredentialHongbao:allocation":            "分配方式枚举：Equal（均分）/ Lucky（拼手气）",
+	"token.CreateCredentialHongbao:credential_ids":        "准入 VC 凭证 ID 列表（字符串数组）；领取人须持有其中任一有效凭证",
+	"token.CreateCredentialHongbao:expires_at_ms":         "过期时间，Unix 毫秒时间戳；null 表示永不过期",
+	"token.CreateCredentialHongbao:message":               "红包附言，字符串；null 表示无附言",
+	"token.CreateSftHongbao:creator":                      "创建者地址，须其私钥参与交易签名",
+	"token.CreateSftHongbao:token":                        "红包代币地址，base58 字符串",
+	"token.CreateSftHongbao:total_amount":                 "托管总额，最小单位十进制数字",
+	"token.CreateSftHongbao:claim_count":                  "可领取人数，十进制数字（须非零）",
+	"token.CreateSftHongbao:allocation":                   "分配方式枚举：Equal（均分）/ Lucky（拼手气）",
+	"token.CreateSftHongbao:sft":                          "准入 SFT 定义地址，base58 字符串",
+	"token.CreateSftHongbao:min_amount":                   "领取门槛：持有人须持有的该 SFT 最少数量，最小单位十进制数字",
+	"token.CreateSftHongbao:expires_at_ms":                "过期时间，Unix 毫秒时间戳；null 表示永不过期",
+	"token.CreateSftHongbao:message":                      "红包附言，字符串；null 表示无附言",
+	"token.ClaimHongbao:claimant":                         "领取者地址，须其私钥参与交易签名",
+	"token.ClaimHongbao:hongbao_id":                       "红包地址，base58 字符串",
+	"token.RefundHongbao:hongbao_id":                      "红包地址，base58 字符串",
+	"token.RunHongbaoCleanup:hongbao_id":                  "红包地址，base58 字符串",
+	"token.HongbaoInfo:hongbao_id":                        "红包地址，base58 字符串",
+	"token.HongbaoSettlement:hongbao_id":                  "红包地址，base58 字符串",
+	"token.HongbaoMessage:hongbao_id":                     "红包地址，base58 字符串",
+	"token.CanClaimHongbao:hongbao_id":                    "红包地址，base58 字符串",
+	"token.CanClaimHongbao:claimant":                      "待检查的领取者地址，base58 字符串",
 	// ==================== staking ====================
 
 	"staking.CreatePool:owner":                                    "池主地址，须其私钥参与交易签名",
@@ -864,15 +909,6 @@ var idlArgDocs = map[string]string{
 	"staking.StakeIntoPool:owner":                                 "质押人地址，须其私钥参与交易签名",
 	"staking.StakeIntoPool:pool_id":                               "池 ID，base58 字符串（CreatePool/CreateValidatorPool 返回值）",
 	"staking.StakeIntoPool:amount":                                "质押数量，最小单位",
-	"staking.CancelStakeById:owner":                               "质押人地址，须其私钥参与交易签名",
-	"staking.CancelStakeById:stake_id":                            "质押单 ID，32 字节 hex/base58（StakeIntoPool 返回值）",
-	"staking.RequestUnstakeById:owner":                            "质押人地址，须其私钥参与交易签名",
-	"staking.RequestUnstakeById:stake_id":                         "质押单 ID，32 字节 hex/base58",
-	"staking.RequestUnstakeById:shares":                           "解冻份额数（非代币数量，份额率随池动态折算本金）",
-	"staking.CancelUnstakeById:owner":                             "质押人地址，须其私钥参与交易签名",
-	"staking.CancelUnstakeById:stake_id":                          "质押单 ID，32 字节 hex/base58",
-	"staking.ClaimRewardsById:owner":                              "质押人地址，须其私钥参与交易签名",
-	"staking.ClaimRewardsById:stake_id":                           "质押单 ID，32 字节 hex/base58",
 	"staking.AccruePoolReward:funder":                             "注资人地址，须其私钥参与交易签名",
 	"staking.AccruePoolReward:pool_id":                            "池 ID，base58 字符串",
 	"staking.AccruePoolReward:amount":                             "注入奖励数量，最小单位（reward_asset）",
@@ -885,37 +921,56 @@ var idlArgDocs = map[string]string{
 	"staking.PausePool:pool_id":                                   "池 ID，base58 字符串",
 	"staking.ResumePool:owner":                                    "池主地址，须其私钥参与交易签名",
 	"staking.ResumePool:pool_id":                                  "池 ID，base58 字符串",
-	"staking.FreezePool:owner":                                    "池主地址，须其私钥参与交易签名",
-	"staking.FreezePool:pool_id":                                  "池 ID，base58 字符串",
-	"staking.UnfreezePool:owner":                                  "池主地址，须其私钥参与交易签名",
-	"staking.UnfreezePool:pool_id":                                "池 ID，base58 字符串",
 	"staking.ClosePool:owner":                                     "池主地址，须其私钥参与交易签名",
 	"staking.ClosePool:pool_id":                                   "池 ID，base58 字符串",
 	"staking.SweepPoolResidual:owner":                             "池主地址，须其私钥参与交易签名",
 	"staking.SweepPoolResidual:pool_id":                           "池 ID，base58 字符串",
-	"staking.ConfigureValidatorRewardPolicy:owner":                "配置方地址，须其私钥参与交易签名（权限由链上校验）",
-	"staking.ConfigureValidatorRewardPolicy:stake_asset":          "质押代币资源地址，base58 字符串",
-	"staking.ConfigureValidatorRewardPolicy:reward_asset":         "奖励代币资源地址，base58 字符串",
-	"staking.ConfigureValidatorRewardPolicy:reward_per_validator": "每验证人每周期奖励额度，最小单位",
-	"staking.FundValidatorRewardPolicy:funder":                    "注资人地址，须其私钥参与交易签名",
-	"staking.FundValidatorRewardPolicy:stake_asset":               "质押代币资源地址，base58 字符串",
-	"staking.FundValidatorRewardPolicy:reward_asset":              "奖励代币资源地址，base58 字符串",
-	"staking.FundValidatorRewardPolicy:amount":                    "注资数量，最小单位（reward_asset）",
 	"staking.Pool:pool_id":                                        "池 ID，base58 字符串",
-	"staking.StakeById:stake_id":                                  "质押单 ID，32 字节 hex/base58",
 	"staking.PoolTreasuryBalance:pool_id":                         "池 ID，base58 字符串",
-	"staking.StakeIds:owner":                                      "质押人地址，base58 字符串",
-	"staking.StakeIds:pool_id":                                    "池 ID，base58 字符串",
-	"staking.StakePositionByPool:owner":                           "质押人地址，base58 字符串",
-	"staking.StakePositionByPool:pool_id":                         "池 ID，base58 字符串",
-	"staking.PendingStakes:owner":                                 "质押人地址，base58 字符串",
-	"staking.PendingStakes:pool_id":                               "池 ID，base58 字符串",
-	"staking.TotalShares:pool_id":                                 "池 ID，base58 字符串",
 	"staking.TotalStake:pool_id":                                  "池 ID，base58 字符串",
-	"staking.RewardIndex:pool_id":                                 "池 ID，base58 字符串",
-	"staking.ValidatorRewardPolicy:stake_asset":                   "质押代币资源地址，base58 字符串",
-	"staking.ValidatorRewardPolicy:reward_asset":                  "奖励代币资源地址，base58 字符串",
 
+	"staking.RequestUnstake:owner":                                    "质押人地址，须其私钥参与交易签名",
+	"staking.RequestUnstake:pool_id":                                 "池 ID，base58 字符串",
+	"staking.RequestUnstake:amount":                                  "申请解冻的代币数量，最小单位十进制数字",
+	"staking.CancelPendingStake:owner":                               "质押人地址，须其私钥参与交易签名",
+	"staking.CancelPendingStake:pool_id":                             "池 ID，base58 字符串",
+	"staking.CancelPendingStake:effective_cycle":                     "待激活挂账的生效周期号，十进制数字",
+	"staking.CancelUnstake:owner":                                    "质押人地址，须其私钥参与交易签名",
+	"staking.CancelUnstake:pool_id":                                  "池 ID，base58 字符串",
+	"staking.CancelUnstake:effective_cycle":                          "解冻意向的生效周期号，十进制数字",
+	"staking.ClaimPrincipal:owner":                                   "质押人地址，须其私钥参与交易签名",
+	"staking.ClaimPrincipal:pool_id":                                 "池 ID，base58 字符串",
+	"staking.ClaimRewards:owner":                                     "质押人地址，须其私钥参与交易签名",
+	"staking.ClaimRewards:pool_id":                                   "池 ID，base58 字符串",
+	"staking.ClaimCommission:recipient":                              "佣金收款地址，须其私钥参与交易签名",
+	"staking.ClaimCommission:pool_id":                                "池 ID，base58 字符串",
+	"staking.Position:owner":                                         "质押人地址，base58 字符串",
+	"staking.Position:pool_id":                                       "池 ID，base58 字符串",
+	"staking.CommissionBalance:pool_id":                              "池 ID，base58 字符串",
+	"staking.CommissionBalance:recipient":                            "佣金收款地址，base58 字符串",
+	"validator.PausePool:controller":                                  "验证人 controller 地址，须其私钥参与交易签名",
+	"validator.PausePool:validator":                                   "ValidatorId，base58 字符串",
+	"validator.ResumePool:controller":                                 "验证人 controller 地址，须其私钥参与交易签名",
+	"validator.ResumePool:validator":                                  "ValidatorId，base58 字符串",
+	"validator.ClosePool:controller":                                  "验证人 controller 地址，须其私钥参与交易签名",
+	"validator.ClosePool:validator":                                   "ValidatorId，base58 字符串",
+	"validator.RequestPoolRewardConfig:controller":                    "验证人 controller 地址，须其私钥参与交易签名",
+	"validator.RequestPoolRewardConfig:validator":                     "ValidatorId，base58 字符串",
+	"validator.RequestPoolRewardConfig:config":                        "佣金配置 JSON：{commission_rate_bps（万分比）, commission_recipient}",
+	"validator.ClaimPoolCommission:controller":                        "验证人 controller 地址，须其私钥参与交易签名",
+	"validator.ClaimPoolCommission:validator":                         "ValidatorId，base58 字符串",
+	"validator.SweepPoolResidual:controller":                          "验证人 controller 地址，须其私钥参与交易签名",
+	"validator.SweepPoolResidual:validator":                           "ValidatorId，base58 字符串",
+	"validator.ConfigureValidatorRewardPolicy:owner":                  "治理/协议授权地址，须其私钥参与交易签名",
+	"validator.ConfigureValidatorRewardPolicy:stake_asset":            "质押代币资源地址，base58 字符串",
+	"validator.ConfigureValidatorRewardPolicy:reward_asset":           "奖励代币资源地址，base58 字符串",
+	"validator.ConfigureValidatorRewardPolicy:reward_per_validator":   "每验证人每周期固定奖励额度，最小单位十进制数字",
+	"validator.FundValidatorRewardPolicy:funder":                      "注资人地址，须其私钥参与交易签名",
+	"validator.FundValidatorRewardPolicy:stake_asset":                 "质押代币资源地址，base58 字符串",
+	"validator.FundValidatorRewardPolicy:reward_asset":                "奖励代币资源地址，base58 字符串",
+	"validator.FundValidatorRewardPolicy:amount":                      "注资金额，最小单位十进制数字",
+	"validator.ValidatorRewardPolicy:stake_asset":                     "质押代币资源地址，base58 字符串",
+	"validator.ValidatorRewardPolicy:reward_asset":                    "奖励代币资源地址，base58 字符串",
 	// ==================== validator ====================
 
 	"validator.RegisterValidator:controller":            "控制人地址，须其私钥参与交易签名",
@@ -1026,6 +1081,15 @@ var idlArgDocs = map[string]string{
 	"identity.CredentialId:issuer":                         "凭证签发方地址，base58 字符串",
 	"identity.CredentialId:credential_schema":              "凭证 schema 字符串",
 
+	"sftoken.BackfillTotalBalance:sft":                              "SFT 定义地址，base58 字符串",
+	"sftoken.BackfillTotalBalance:owner":                            "回填目标的持有人地址，base58 字符串",
+	"sftoken.BackfillTotalSupply:sft":                               "SFT 定义地址，base58 字符串",
+	"sftoken.TotalBalanceOf:sft":                                    "SFT 定义地址，base58 字符串",
+	"sftoken.TotalBalanceOf:owner":                                  "持有人地址，base58 字符串",
+	"sftoken.TotalBalanceStatus:sft":                                "SFT 定义地址，base58 字符串",
+	"sftoken.TotalBalanceStatus:owner":                              "持有人地址，base58 字符串",
+	"sftoken.TotalSupply:sft":                                       "SFT 定义地址，base58 字符串",
+	"sftoken.TotalSupplyStatus:sft":                                 "SFT 定义地址，base58 字符串",
 	// ==================== sftoken ====================
 
 	"sftoken.CreateSft:sft":                          "SFT 资源账户地址，须其私钥参与交易签名",
@@ -1255,12 +1319,6 @@ var idlArgDocs = map[string]string{
 
 	// ==================== keyless ====================
 
-	"keyless.Authenticate:provider_id":                     "provider 标识，64 位 hex 字符串（内置 Google/Apple 有固定 ID，可由 ListProviders 查询）",
-	"keyless.Authenticate:jwt":                             "JWT 字符串的 UTF-8 字节：hex 字符串（可带 0x）或数字数组；须为三段式 JWS 且未过期",
-	"keyless.Authenticate:ephemeral_pk":                    "临时会话公钥，hex 或 base58 字符串（须与 JWT nonce 中的 commitment 一致）",
-	"keyless.Bind:provider_id":                             "provider 标识，64 位 hex 字符串",
-	"keyless.Bind:jwt":                                     "JWT 字符串的 UTF-8 字节（同 Authenticate）",
-	"keyless.Bind:ephemeral_pk":                            "临时会话公钥，hex 或 base58 字符串",
 	"keyless.Bind:owner":                                   "要绑定的链上账户地址，须其私钥参与交易签名",
 	"keyless.Unbind:keyless_addr":                          "keyless 派生地址，base58 字符串",
 	"keyless.Unbind:owner":                                 "绑定账户地址，须其私钥参与交易签名",
@@ -1297,9 +1355,6 @@ var idlArgDocs = map[string]string{
 	"keyless.UpdateJwkReport:jwks":              "JWK 集合，JSON 字符串数组（每项为一个 JWK JSON）",
 	"keyless.UpdateJwkReport:validator_account": "验证人账户地址，须其私钥参与交易签名",
 
-	"keyless.AuthenticateZk:auth": "Groth16 ZK 认证材料对象（证明/电路 ID/公共输入，结构随链端电路定义）",
-	"keyless.BindZk:auth":         "Groth16 ZK 认证材料对象，同 AuthenticateZk",
-	"keyless.BindZk:owner":        "绑定目标账户地址，须其私钥参与交易签名",
 
 	"keyless.GetJwkReport:validator":   "验证人 ID（ValidatorId），32 字节 hex 或 base58 字符串",
 	"keyless.GetJwkReport:provider_id": "provider 标识，64 位 hex 字符串",
@@ -1308,6 +1363,8 @@ var idlArgDocs = map[string]string{
 	"keyless.GetSelectedJwk:issuer":      "JWT 签发方 URL",
 	"keyless.GetSelectedJwk:kid":         "密钥 ID（JWK kid）",
 	"keyless.GetSelectedJwk:algorithm":   "签名算法名，如 ES256",
+	"keyless.Authenticate:auth":                          "Groth16 认证材料对象 {circuit_id, claim, proof}；claim 为 ZkAuthClaim 结构（provider_id/issuer/kid/jwk_thumbprint/audience_hash/address_seed/ephemeral_pk/iat/exp/session_expiry_ms）",
+	"keyless.Bind:auth":                                  "Groth16 认证材料对象，结构同 keyless.Authenticate:auth",
 	// ==================== lucky_box ====================
 
 	"lucky_box.CreateEqual:creator":      "创建者地址，须其私钥参与交易签名（资金从其账户托管）",
@@ -1328,6 +1385,40 @@ var idlArgDocs = map[string]string{
 	"lucky_box.BoxView:box_id":           "盒子编号，十进制数字",
 	"lucky_box.AssetPool:box_id":         "盒子编号，十进制数字",
 
+	"social.Follow:follower":                     "关注方地址，须其私钥参与交易签名",
+	"social.Follow:target":                       "被关注方地址，base58 字符串",
+	"social.Unfollow:follower":                   "关注方地址，须其私钥参与交易签名",
+	"social.Unfollow:target":                     "被关注方地址，base58 字符串",
+	"social.IsFollowing:follower":                "关注方地址，base58 字符串",
+	"social.IsFollowing:target":                  "被关注方地址，base58 字符串",
+	"social.CreateFollowSponsor:owner":            "赞助池创建者地址，须其私钥参与交易签名",
+	"social.CreateFollowSponsor:amount":           "注资金额，最小单位十进制数字（须大于 0）",
+	"social.CloseFollowSponsor:owner":             "赞助池 owner 地址，须其私钥参与交易签名",
+	"social.CloseFollowSponsor:sponsor":           "赞助池地址，base58 字符串",
+	"social.FollowSponsored:follower":             "关注方地址，须其私钥参与交易签名",
+	"social.FollowSponsored:target":               "被关注方地址，base58 字符串",
+	"social.FollowSponsored:sponsor":              "赞助池地址，base58 字符串",
+	"social.FollowSponsor:sponsor":                "赞助池地址，base58 字符串",
+	"social.FollowSponsorAddress:target":          "目标地址，base58 字符串",
+	"social.CreateHongbao:creator":                "创建者地址，须其私钥参与交易签名",
+	"social.CreateHongbao:community_id":           "社区 ID，十进制数字",
+	"social.CreateHongbao:token":                  "红包代币地址，base58 字符串",
+	"social.CreateHongbao:total_amount":           "托管总额，最小单位十进制数字",
+	"social.CreateHongbao:claim_count":            "可领取人数，十进制数字（须非零）",
+	"social.CreateHongbao:allocation":             "分配方式枚举：Equal（均分）/ Lucky（拼手气）",
+	"social.CreateHongbao:expires_at_ms":          "过期时间，Unix 毫秒时间戳；null 表示永不过期",
+	"social.CreateHongbao:message":                "红包附言，字符串；null 表示无附言",
+	"social.ClaimHongbao:claimant":                "领取者地址，须其私钥参与交易签名",
+	"social.ClaimHongbao:hongbao_id":              "社区红包地址，base58 字符串",
+	"social.CanClaimCommunityHongbao:hongbao_id":  "社区红包地址，base58 字符串",
+	"social.CanClaimCommunityHongbao:claimant":    "待检查的领取者地址，base58 字符串",
+	"social.HongbaoCommunity:hongbao_id":          "社区红包地址，base58 字符串",
+	"social.AddCommunityMember:admin":             "社区管理员地址，须其私钥参与交易签名",
+	"social.AddCommunityMember:community_id":      "社区 ID，十进制数字",
+	"social.AddCommunityMember:member":            "待添加成员地址，base58 字符串",
+	"social.DissolveCommunity:owner":              "社区 owner 地址，须其私钥参与交易签名",
+	"social.DissolveCommunity:community_id":       "社区 ID，十进制数字",
+	"social.IsCommunityDissolved:community_id":    "社区 ID，十进制数字",
 	// ==================== social ====================
 
 	"social.UpsertSocialProfile:subject":            "本人地址，须其私钥参与交易签名",
@@ -1408,18 +1499,6 @@ var idlArgDocs = map[string]string{
 	"social.JoinRequest:member":                     "成员地址，base58 字符串",
 	"social.CommunityMembership:community_id":       "社区 ID，十进制数字",
 	"social.CommunityMembership:member":             "成员地址，base58 字符串",
-	"social.CreateGift:creator":                     "创建者地址，须其私钥参与交易签名",
-	"social.CreateGift:community_id":                "社区 ID，十进制数字",
-	"social.CreateGift:token":                       "红包代币地址，base58 字符串",
-	"social.CreateGift:total_amount":                "托管总额，最小单位十进制数字",
-	"social.CreateGift:claim_count":                 "可领取人数，十进制数字（须非零）",
-	"social.CreateGift:allocation":                  "分配方式枚举：Equal（均分）/ Lucky（拼手气）",
-	"social.CreateGift:expires_at_ms":               "过期时间，Unix 毫秒时间戳；null 表示永不过期",
-	"social.ClaimGift:claimant":                     "领取者地址，须其私钥参与交易签名",
-	"social.ClaimGift:gift_id":                      "社区红包地址，base58 字符串",
-	"social.CanClaimCommunityGift:gift_id":          "社区红包地址，base58 字符串",
-	"social.CanClaimCommunityGift:claimant":         "待查询的领取人地址，base58 字符串",
-	"social.GiftCommunity:gift_id":                  "社区红包地址，base58 字符串",
 
 	// ==================== demo ====================
 

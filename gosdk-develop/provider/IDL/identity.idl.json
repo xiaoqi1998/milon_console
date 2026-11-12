@@ -1466,6 +1466,18 @@
       "typeTag": 5563585020063213298
     }
   ],
+  "constants": [
+    {
+      "name": "MAX_DISCLOSED_VCS_PER_SUBJECT",
+      "type": "usize",
+      "value": 64
+    },
+    {
+      "name": "MAX_CREDENTIAL_SCHEMAS",
+      "type": "usize",
+      "value": 32
+    }
+  ],
   "errors": [
     {
       "code": 1024,
@@ -1721,6 +1733,11 @@
       "code": 1074,
       "message": "VC attestation is not frozen",
       "name": "VcAttestationNotFrozen"
+    },
+    {
+      "code": 1075,
+      "message": "Disclosed VC count exceeds the limit",
+      "name": "TooManyDisclosedVcs"
     }
   ]
 }

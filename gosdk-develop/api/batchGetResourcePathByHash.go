@@ -29,17 +29,29 @@ func UnmarshalBatchResourcePathListFromRawList(rawList [][]any) ([]*BatchGetReso
 			return nil, fmt.Errorf("failed to parse RsHash: %w", err)
 		}
 
-		// Parse Result<String, String>: externally tagged enum {"Ok": path} or {"Err": message}
+		// Parse Result<String, String>: externally tagged enum {"Ok": path} or {"Err": message}.
+		// A result carrying neither tag is malformed and must not be silently
+		// reported as an Ok with an empty path.
 		resultMap, ok := item[1].(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("invalid BatchGetResourcePathInfo response")
 		}
 
 		info := &BatchGetResourcePathInfo{RsHash: rsHash}
-		if path, ok := resultMap["Ok"].(string); ok {
+		if raw, isOk := resultMap["Ok"]; isOk {
+			path, isString := raw.(string)
+			if !isString {
+				return nil, fmt.Errorf("invalid BatchGetResourcePathInfo Ok path: %T", raw)
+			}
 			info.Path = path
-		} else if errMsg, ok := resultMap["Err"].(string); ok {
+		} else if raw, isErr := resultMap["Err"]; isErr {
+			errMsg, isString := raw.(string)
+			if !isString {
+				return nil, fmt.Errorf("invalid BatchGetResourcePathInfo Err message: %T", raw)
+			}
 			info.ErrMsg = errMsg
+		} else {
+			return nil, fmt.Errorf("invalid BatchGetResourcePathInfo result: neither Ok nor Err present")
 		}
 		batchResourcePaths = append(batchResourcePaths, info)
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/provider"
 	"github.com/milon-labs/milon-go-sdk/types"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -20,24 +21,34 @@ type RpcClientImpl interface {
 	ClaimFaucet(accountSk crypto.SecretKeyer, account *crypto.Address, mode lib.AccountSignatureMode) error
 	CreateAccount(accountSk crypto.SecretKeyer, pk *crypto.PublicKey) error
 
-	BalanceOf(account *crypto.Address, token ...any) (uint64, error)
+	BalanceOf(account *crypto.Address, token ...*crypto.Address) (uint64, error)
 	ListAccountSigners(account *crypto.Address) ([]any, error)
 	AccountSignerBit(account *crypto.Address) (types.Bitmap64, error)
 	TokenMetadata(token *crypto.Address) (gen.TokenMetadata, error)
 
 	GetChainHead(opts ...RequestOption) (*ChainHeadResult, error)
-	SubmitTx(transaction *lib.Transaction, opts ...RequestOption) error
-	SubmitTxWithSponsorIxes(tx *lib.Transaction, sponsorIx []uint8, opts ...RequestOption) error
+	SubmitTx(transaction *lib.Transaction, opts ...RequestOption) (*SubmitTxResult, error)
+	SubmitTxWithSponsorIxes(tx *lib.Transaction, sponsorIx []uint8, opts ...RequestOption) (*SubmitTxResult, error)
+	BatchSubmitTx(txs []*lib.Transaction, opts ...RequestOption) (*BatchSubmitTxResult, error)
 	SimulateTx(transaction *lib.Transaction, opts ...RequestOption) (*SimulateTxResult, error)
-	View(wires []api.PackedInstruction, opts ...RequestOption) (*ViewResult, error)
+	BatchSimulateTx(txs []*lib.Transaction, opts ...RequestOption) (*BatchSimulateTxResult, error)
+	View(wire api.PackedInstruction, opts ...RequestOption) (*ViewSingleResult, error)
+	BatchView(wires []api.PackedInstruction, opts ...RequestOption) (*ViewResult, error)
 	GetAccount(accountRelaxed any, opts ...RequestOption) (*GetAccountResult, error)
+	BatchGetAccount(accountRelaxedList []any, opts ...RequestOption) (*BatchGetAccountResult, error)
 	EventsByTxHash(txHashRelaxed any, typeTagFilter *uint64, opts ...RequestOption) (*EventsByTxHashResult, error)
+	BatchEventsByTxHash(reqList []api.EventsByTxHashReq, opts ...RequestOption) (*BatchEventsByTxHashResult, error)
+	GetNodeCapability(opts ...RequestOption) (*NodeCapabilityResult, error)
 
 	GetBlockByHeight(blockHeight uint64, opts ...RequestOption) (*GetBlockByHeightResult, error)
+	BatchGetBlockByHeight(heights []uint64, opts ...RequestOption) (*BatchGetBlockByHeightResult, error)
 	GetTxByHash(txHashOrTxIdRelaxed any, opts ...RequestOption) (*GetTxByHashResult, error)
+	BatchGetTxByHash(txHashOrTxIdRelaxedList []any, opts ...RequestOption) (*BatchGetTxByHashResult, error)
 	GetTxHistoryProof(txHashOrTxIdRelaxed any, opts ...RequestOption) (*GetTxHistoryProofResult, error)
+	BatchGetTxHistoryProof(txHashOrTxIdRelaxedList []any, opts ...RequestOption) (*BatchGetTxHistoryProofResult, error)
 
 	GetResource(rsHash api.RsHash, opts ...RequestOption) (*GetResourceResult, error)
+	BatchGetResource(rsHashList []api.RsHash, opts ...RequestOption) (*BatchGetResourceResult, error)
 	GetResourcePathByHash(rsHash api.RsHash, opts ...RequestOption) (*GetResourcePathByHashResult, error)
 	BatchGetResourcePathByHash(rsHashList []api.RsHash, opts ...RequestOption) (*BatchGetResourcePathByHashResult, error)
 	GetAccessValue(blobHash api.BlobHash, opts ...RequestOption) (*GetAccessValueResult, error)
@@ -47,9 +58,19 @@ type RpcClientImpl interface {
 }
 
 type Client struct {
-	RpcClient RpcClientImpl
-	network   Network // 区块流 gRPC 等连接配置(来自 NewClient 入参)
+	// RpcClientImpl is embedded rather than wrapped: every RPC method is
+	// promoted onto Client, so client.SubmitTx(...) works without a forwarding
+	// layer. Build clients with NewClient/MustNewClient; the field is only
+	// assignable to substitute an implementation in tests.
+	RpcClientImpl
+	network Network
 }
+
+// Client promotes the entire RPC surface through the embedded implementation, so
+// callers write client.SubmitTx(...) rather than client.RpcClient.SubmitTx(...).
+// The assertion keeps that promise checked at compile time when the interface
+// grows.
+var _ RpcClientImpl = (*Client)(nil)
 
 // ========================================
 // ClientOption — for NewClient
@@ -62,15 +83,37 @@ type clientOptions struct {
 	pollTimeout time.Duration
 }
 
-func NewClient(config Network, options ...ClientOption) *Client {
-	lib.SetChainId(config.ChainId)
+// NewClient creates a client bound to config. It returns an error when the
+// built-in IDLs cannot be loaded or bound, so a broken IDL set is reported to
+// the caller instead of crashing the process; MustNewClient is the panicking
+// convenience form.
+//
+// The chain id and the generated instruction objects (gen.*) are process-wide:
+// every call rebinds them, so a process supports a single Network. Creating a
+// client for a different chain id is rejected rather than silently corrupting
+// the transaction and instruction hashes of the clients already in use.
+func NewClient(config Network, options ...ClientOption) (*Client, error) {
+	if config.RpcUrl == "" {
+		return nil, fmt.Errorf("network config requires RpcUrl")
+	}
+	if config.ChainId == 0 {
+		return nil, fmt.Errorf("network config requires ChainId: it is mixed into every transaction hash")
+	}
+	if err := reserveChainID(config.ChainId); err != nil {
+		return nil, err
+	}
+	if err := lib.SetChainId(config.ChainId); err != nil {
+		return nil, err
+	}
 
 	opts := &clientOptions{
 		pollPeriod:  1 * time.Second,
 		pollTimeout: 30 * time.Second,
 	}
 	for _, opt := range options {
-		opt(opts)
+		if opt != nil {
+			opt(opts)
+		}
 	}
 
 	rpc := &rpcClientV1{
@@ -81,27 +124,65 @@ func NewClient(config Network, options ...ClientOption) *Client {
 	}
 
 	if err := rpc.LoadIDLsFromData(gen.DefaultIDLs); err != nil {
-		panic("failed to load generated IDLs:" + err.Error())
+		return nil, fmt.Errorf("failed to load generated IDLs: %w", err)
 	}
+
+	// GetAllPd copies the provider map; take it once and share it across the
+	// resolver, the registry and the generated-app binding, which all read the
+	// same construction-time snapshot.
+	allPd := rpc.GetAllPd()
 
 	rpc.typeResolver = &provider.IDLTypeResolver{
-		Providers: rpc.GetAllPd(),
+		Providers: allPd,
 	}
 
-	idlManager, err := provider.NewIDLRegistry(rpc.GetAllPd())
+	idlManager, err := provider.NewIDLRegistry(allPd)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to build IDL registry: %w", err)
 	}
 	rpc.providerManager = idlManager
 
-	if err = gen.BindAll(rpc.GetAllPd()); err != nil {
-		panic(fmt.Sprintf("failed to bind generated IDL apps: %v", err))
+	if err = gen.BindAll(allPd); err != nil {
+		return nil, fmt.Errorf("failed to bind generated IDL apps: %w", err)
 	}
 
 	return &Client{
-		RpcClient: rpc,
-		network:   config,
+		RpcClientImpl: rpc,
+		network:       config,
+	}, nil
+}
+
+// MustNewClient is NewClient that panics on failure. Use it for static
+// configuration (examples, package-level initialisation) where a failure is
+// not recoverable.
+func MustNewClient(config Network, options ...ClientOption) *Client {
+	client, err := NewClient(config, options...)
+	if err != nil {
+		panic(err)
 	}
+	return client
+}
+
+var (
+	chainIDMu       sync.Mutex
+	reservedChainID uint64
+	chainIDReserved bool
+)
+
+// reserveChainID records the process-wide chain id used when hashing
+// transactions and instructions. The id is shared by every transaction, so two
+// clients bound to networks with different ids would silently produce hashes
+// for the wrong chain; reject that configuration.
+func reserveChainID(chainID uint64) error {
+	chainIDMu.Lock()
+	defer chainIDMu.Unlock()
+
+	if chainIDReserved && reservedChainID != chainID {
+		return fmt.Errorf("chain id %d conflicts with the already initialised chain id %d: a process can only use one Network", chainID, reservedChainID)
+	}
+	reservedChainID = chainID
+	chainIDReserved = true
+	return nil
 }
 
 // WithClientPollPeriod sets the default polling interval for WaitForTransaction.
@@ -145,7 +226,14 @@ func applyRequestOptions(opts []RequestOption) requestOptions {
 		requestID: nextRequestID(),
 	}
 	for _, fn := range opts {
-		fn(&o)
+		if fn != nil {
+			fn(&o)
+		}
+	}
+	// A nil context would panic on every downstream Done()/Err() call, so fall
+	// back to the background context instead of letting it propagate.
+	if o.ctx == nil {
+		o.ctx = context.Background()
 	}
 	return o
 }
@@ -169,10 +257,11 @@ func WithRequestID(id lib.RequestID) RequestOption {
 // ========================================
 
 type waitOptions struct {
-	ctx         context.Context
-	requestID   lib.RequestID
-	pollPeriod  time.Duration
-	pollTimeout time.Duration
+	ctx             context.Context
+	requestID       lib.RequestID
+	requestIDPinned bool // true when the caller supplied an explicit request id
+	pollPeriod      time.Duration
+	pollTimeout     time.Duration
 }
 
 // WaitOption configures WaitForTransaction.
@@ -186,7 +275,14 @@ func (c *rpcClientV1) applyWaitOptions(opts []WaitOption) waitOptions {
 		pollTimeout: c.pollTimeout,
 	}
 	for _, fn := range opts {
-		fn(&o)
+		if fn != nil {
+			fn(&o)
+		}
+	}
+	// A nil context would panic on every downstream Done()/Err() call, so fall
+	// back to the background context instead of letting it propagate.
+	if o.ctx == nil {
+		o.ctx = context.Background()
 	}
 	return o
 }
@@ -198,10 +294,13 @@ func WithWaitContext(ctx context.Context) WaitOption {
 	}
 }
 
-// WithWaitRequestID sets a custom request ID for WaitForTransaction.
+// WithWaitRequestID sets a custom request ID for WaitForTransaction. By default
+// every polling attempt uses a fresh request id; setting one explicitly pins it
+// for all attempts.
 func WithWaitRequestID(id lib.RequestID) WaitOption {
 	return func(o *waitOptions) {
 		o.requestID = id
+		o.requestIDPinned = true
 	}
 }
 
@@ -217,88 +316,4 @@ func WithWaitPollTimeout(timeout time.Duration) WaitOption {
 	return func(o *waitOptions) {
 		o.pollTimeout = timeout
 	}
-}
-
-// ========================================
-// Client delegation methods
-// ========================================
-
-func (client *Client) GetAllPd() map[string]*provider.Provider {
-	return client.RpcClient.GetAllPd()
-}
-func (client *Client) GetProviderManager() *provider.IDLRegistry {
-	return client.RpcClient.GetProviderManager()
-}
-
-func (client *Client) ClaimFaucet(accountSk crypto.SecretKeyer, account *crypto.Address, mode lib.AccountSignatureMode) error {
-	return client.RpcClient.ClaimFaucet(accountSk, account, mode)
-}
-func (client *Client) CreateAccount(accountSk crypto.SecretKeyer, pk *crypto.PublicKey) error {
-	return client.RpcClient.CreateAccount(accountSk, pk)
-}
-
-func (client *Client) BalanceOf(account *crypto.Address, token ...any) (uint64, error) {
-	return client.RpcClient.BalanceOf(account, token...)
-}
-func (client *Client) ListAccountSigners(account *crypto.Address) ([]any, error) {
-	return client.RpcClient.ListAccountSigners(account)
-}
-func (client *Client) AccountSignerBit(account *crypto.Address) (types.Bitmap64, error) {
-	return client.RpcClient.AccountSignerBit(account)
-}
-
-func (client *Client) TokenMetadata(token *crypto.Address) (gen.TokenMetadata, error) {
-	return client.RpcClient.TokenMetadata(token)
-}
-
-func (client *Client) GetChainHead(opts ...RequestOption) (*ChainHeadResult, error) {
-	return client.RpcClient.GetChainHead(opts...)
-}
-func (client *Client) SubmitTx(transaction *lib.Transaction, opts ...RequestOption) error {
-	return client.RpcClient.SubmitTx(transaction, opts...)
-}
-func (client *Client) SubmitTxWithSponsorIxes(tx *lib.Transaction, sponsorIx []uint8, opts ...RequestOption) error {
-	return client.RpcClient.SubmitTxWithSponsorIxes(tx, sponsorIx, opts...)
-}
-func (client *Client) SimulateTx(transaction *lib.Transaction, opts ...RequestOption) (*SimulateTxResult, error) {
-	return client.RpcClient.SimulateTx(transaction, opts...)
-}
-func (client *Client) View(wires []api.PackedInstruction, opts ...RequestOption) (*ViewResult, error) {
-	return client.RpcClient.View(wires, opts...)
-}
-func (client *Client) GetAccount(accountRelaxed any, opts ...RequestOption) (*GetAccountResult, error) {
-	return client.RpcClient.GetAccount(accountRelaxed, opts...)
-}
-func (client *Client) EventsByTxHash(txHashRelaxed any, typeTagFilter *uint64, opts ...RequestOption) (*EventsByTxHashResult, error) {
-	return client.RpcClient.EventsByTxHash(txHashRelaxed, typeTagFilter, opts...)
-}
-
-func (client *Client) GetBlockByHeight(blockHeight uint64, opts ...RequestOption) (*GetBlockByHeightResult, error) {
-	return client.RpcClient.GetBlockByHeight(blockHeight, opts...)
-}
-func (client *Client) GetTxByHash(txHashOrTxIdRelaxed any, opts ...RequestOption) (*GetTxByHashResult, error) {
-	return client.RpcClient.GetTxByHash(txHashOrTxIdRelaxed, opts...)
-}
-func (client *Client) GetTxHistoryProof(txHashOrTxIdRelaxed any, opts ...RequestOption) (*GetTxHistoryProofResult, error) {
-	return client.RpcClient.GetTxHistoryProof(txHashOrTxIdRelaxed, opts...)
-}
-
-func (client *Client) GetResource(rsHash api.RsHash, opts ...RequestOption) (*GetResourceResult, error) {
-	return client.RpcClient.GetResource(rsHash, opts...)
-}
-func (client *Client) GetResourcePathByHash(rsHash api.RsHash, opts ...RequestOption) (*GetResourcePathByHashResult, error) {
-	return client.RpcClient.GetResourcePathByHash(rsHash, opts...)
-}
-func (client *Client) BatchGetResourcePathByHash(rsHashList []api.RsHash, opts ...RequestOption) (*BatchGetResourcePathByHashResult, error) {
-	return client.RpcClient.BatchGetResourcePathByHash(rsHashList, opts...)
-}
-func (client *Client) GetAccessValue(blobHash api.BlobHash, opts ...RequestOption) (*GetAccessValueResult, error) {
-	return client.RpcClient.GetAccessValue(blobHash, opts...)
-}
-func (client *Client) BatchGetAccessValue(blobHashList []api.BlobHash, opts ...RequestOption) (*BatchGetAccessValueResult, error) {
-	return client.RpcClient.BatchGetAccessValue(blobHashList, opts...)
-}
-
-func (client *Client) WaitForTransaction(txHashOrTxIdRelaxed any, opts ...WaitOption) (*GetTxByHashResult, error) {
-	return client.RpcClient.WaitForTransaction(txHashOrTxIdRelaxed, opts...)
 }

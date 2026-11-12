@@ -5,12 +5,13 @@ import (
 	"github.com/milon-labs/milon-go-sdk"
 )
 
-func DisplayEventsByTxHash(client *milon.Client, txHash any, typeTagFilter *uint64) {
+// DisplayEventsByTxHash prints the events decoded for a transaction.
+func DisplayEventsByTxHash(client *milon.Client, txHash any, typeTagFilter *uint64) error {
 	fmt.Printf("\n================ Display EventsByTxHash ================\n")
 
 	eventsByTxHashResult, err := client.EventsByTxHash(txHash, typeTagFilter)
 	if err != nil {
-		panic("failed to get events by tx hash: " + err.Error())
+		return fmt.Errorf("failed to get events by tx hash: %w", err)
 	}
 	fmt.Printf("BodyEventsByTxHash : %+v \n\n", eventsByTxHashResult.BodyEventsByTxHash)
 
@@ -24,11 +25,12 @@ func DisplayEventsByTxHash(client *milon.Client, txHash any, typeTagFilter *uint
 
 		decodedEvent, err := client.GetProviderManager().DecodeEventDataByTag(eventEntry.Data.TypeTag, eventEntry.Data.Value)
 		if err != nil {
-			panic("failed to decode event data: " + err.Error())
+			return fmt.Errorf("failed to decode event data: %w", err)
 		}
 		fmt.Printf("\t decodedEvent = %+v \n\n", decodedEvent)
 		fmt.Printf("\t FormatDecodedEvent: %+v \n\n", client.GetProviderManager().FormatDecodedEvent(decodedEvent))
 	}
 
 	fmt.Printf("\n================ Display EventsByTxHash ================\n")
+	return nil
 }

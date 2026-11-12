@@ -171,7 +171,8 @@ func buildClaimFaucetTx(mc *milon.Client, addr crypto.Address, sk crypto.SecretK
 
 // submitClaimFaucetTx submits a sponsored ClaimFaucet tx with ix0 marked sponsored.
 func submitClaimFaucetTx(mc *milon.Client, tx *lib.Transaction) error {
-	return mc.SubmitTxWithSponsorIxes(tx, []uint8{0}, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli())))
+	_, err := mc.SubmitTxWithSponsorIxes(tx, []uint8{0}, milon.WithRequestID(lib.RequestID(time.Now().UnixMilli())))
+	return err
 }
 
 // GetBalance handles GET /api/faucet/balance/:address

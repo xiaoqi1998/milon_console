@@ -76,7 +76,7 @@ func Sign512(signKey *SecretKeyBytesFnDsa512, msg []byte) (*SignatureBytesFnDsa5
 	//   - rng: nil uses system RNG (recommended)
 	//   - ctx: domain separation context (empty string corresponds to DOMAIN_NONE)
 	//   - id: pre-hash function identifier (0 for raw message, corresponds to HASH_ID_RAW)
-	signature, err := fndsa.Sign(nil, signKey[:], []byte{}, 0, msg)
+	signature, err := fndsa.Sign(nil, signKey[:], nil, 0, msg)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrSignFailed, err)
 	}
@@ -95,7 +95,7 @@ func Verify512(vrfyKey *PublicKeyBytesFnDsa512, sig *SignatureBytesFnDsa512, msg
 	// Parameter notes:
 	//   - ctx: domain separation context (must match the one used in signing, empty string corresponds to DOMAIN_NONE)
 	//   - id: pre-hash function identifier (must match the one used in signing, 0 for raw message, corresponds to HASH_ID_RAW)
-	isValid := fndsa.Verify(vrfyKey[:], []byte{}, 0, msg, sig[:])
+	isValid := fndsa.Verify(vrfyKey[:], nil, 0, msg, sig[:])
 	if isValid {
 		return nil
 	}

@@ -277,3 +277,46 @@ func TestDeserializeEventEntryNoLen(t *testing.T) {
 		assert.Equal(t, want, entry.Value)
 	})
 }
+
+func TestRsHashString(t *testing.T) {
+	rsHash := api.RsHash{1, 2, 3}
+	assert.Equal(t, base58.Encode(rsHash[:]), rsHash.String())
+
+	blobHash := api.BlobHash{4, 5}
+	assert.Equal(t, base58.Encode(blobHash[:]), blobHash.String())
+}
+
+func TestUnmarshalRsHashFromJSONArray(t *testing.T) {
+	validRaw := func() []interface{} {
+		raw := make([]interface{}, api.RsHashLen)
+		for i := range raw {
+			raw[i] = float64(i)
+		}
+		return raw
+	}
+
+	t.Run("accepts exactly RsHashLen bytes", func(t *testing.T) {
+		hash, err := api.UnmarshalRsHashFromJSONArray(validRaw())
+		assert.NoError(t, err)
+		assert.Equal(t, byte(17), hash[api.RsHashLen-1])
+	})
+
+	t.Run("rejects a short array", func(t *testing.T) {
+		_, err := api.UnmarshalRsHashFromJSONArray(validRaw()[:api.RsHashLen-1])
+		assert.Error(t, err)
+	})
+
+	t.Run("rejects a non-number element", func(t *testing.T) {
+		raw := validRaw()
+		raw[3] = "3"
+		_, err := api.UnmarshalRsHashFromJSONArray(raw)
+		assert.Error(t, err)
+	})
+
+	t.Run("rejects an out-of-range element", func(t *testing.T) {
+		raw := validRaw()
+		raw[3] = float64(256)
+		_, err := api.UnmarshalRsHashFromJSONArray(raw)
+		assert.Error(t, err)
+	})
+}

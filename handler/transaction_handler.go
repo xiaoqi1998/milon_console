@@ -492,7 +492,7 @@ func (h *TransactionHandler) SubmitTransaction(c *gin.Context) {
 
 	requestId := lib.RequestID(time.Now().UnixMilli())
 
-	if err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
+	if _, err := mc.SubmitTx(tx, milon.WithRequestID(requestId)); err != nil {
 		logSDKError(c, "SubmitTransaction", err)
 
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse(types.ERR_SDK_ERROR, "failed to submit transaction: "+err.Error(), nil))

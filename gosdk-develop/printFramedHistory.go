@@ -9,7 +9,6 @@ import (
 
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
-	"github.com/milon-labs/milon-go-sdk/provider"
 )
 
 // FramedHistoryLogger is the optional output target for PrintFramedHistory.
@@ -123,7 +122,7 @@ func appendIndented(sb *strings.Builder, s string) {
 
 // writeDynamicValue finds the IDL type by type_tag and decodes the Inline body (postcard resource-value bytes)
 func writeDynamicValue(client *Client, sb *strings.Builder, label string, v *FramedDynamicValue) {
-	pd, idlType := findIDLTypeByTag(client, v.TypeTag)
+	pd, idlType := client.FindIDLTypeByTag(v.TypeTag)
 	if pd == nil || idlType == nil {
 		fmt.Fprintf(sb, "    | %s: unknown type_tag=%d body=%s\n", label, v.TypeTag, hexPreview(v.Body))
 		return
@@ -136,16 +135,7 @@ func writeDynamicValue(client *Client, sb *strings.Builder, label string, v *Fra
 	fmt.Fprintf(sb, "    | %s: %s = %+v\n", label, idlType.Name, decoded)
 }
 
-// findIDLTypeByTag iterates over all loaded IDLs and finds the matching type by type_tag
-func findIDLTypeByTag(client *Client, typeTag uint64) (*provider.Provider, *provider.IDLType) {
-	for _, pd := range client.GetAllPd() {
-		if idlType, ok := pd.GetIDLTypeByTypeTag(typeTag); ok {
-			return pd, idlType
-		}
-	}
-	return nil, nil
-}
-
+// hexPreview renders a short hex preview with its byte length.
 func hexPreview(b []byte) string {
 	return fmt.Sprintf("0x%s (%dB)", hex.EncodeToString(b), len(b))
 }

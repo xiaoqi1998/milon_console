@@ -216,6 +216,11 @@
       "code": 68,
       "message": "跨应用调用未跟踪调用方 app ID，请使用 app_call! 发起调用",
       "name": "AppCallerRequired"
+    },
+    {
+      "code": 69,
+      "message": "签名者的抗量子签名不满足当前授权要求: {0:?}",
+      "name": "PqSignatureRequired"
     }
   ]
 }

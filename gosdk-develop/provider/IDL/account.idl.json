@@ -766,7 +766,7 @@
     },
     {
       "code": 288,
-      "message": "Address {0:?} index 0 is not the FN-DSA-512 key that derives it",
+      "message": "Address {0:?} index 0 is not the public key that derives it",
       "name": "SignerAddressKeyMismatch"
     }
   ]

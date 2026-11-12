@@ -18,7 +18,7 @@
       "kind": "entry",
       "name": "RegisterValidator",
       "returns": {
-        "type": "ValidatorId"
+        "type": "B256"
       }
     },
     {
@@ -31,7 +31,7 @@
         {
           "name": "validator",
           "role": "input",
-          "type": "ValidatorId"
+          "type": "B256"
         },
         {
           "name": "stake_asset",
@@ -54,7 +54,7 @@
       "kind": "entry",
       "name": "CreateValidatorPool",
       "returns": {
-        "type": "PoolId"
+        "type": "B256"
       }
     },
     {
@@ -67,7 +67,182 @@
         {
           "name": "validator",
           "role": "input",
-          "type": "ValidatorId"
+          "type": "B256"
+        }
+      ],
+      "discriminator": 9233,
+      "handler": "pause_pool",
+      "kind": "entry",
+      "name": "PausePool"
+    },
+    {
+      "args": [
+        {
+          "name": "controller",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 38150,
+      "handler": "resume_pool",
+      "kind": "entry",
+      "name": "ResumePool"
+    },
+    {
+      "args": [
+        {
+          "name": "controller",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 12323,
+      "handler": "close_pool",
+      "kind": "entry",
+      "name": "ClosePool"
+    },
+    {
+      "args": [
+        {
+          "name": "controller",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "config",
+          "role": "input",
+          "type": "PoolRewardConfig"
+        }
+      ],
+      "discriminator": 17593,
+      "handler": "request_pool_reward_config",
+      "kind": "entry",
+      "name": "RequestPoolRewardConfig"
+    },
+    {
+      "args": [
+        {
+          "name": "controller",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 50141,
+      "handler": "claim_pool_commission",
+      "kind": "entry",
+      "name": "ClaimPoolCommission",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "controller",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 61791,
+      "handler": "sweep_pool_residual",
+      "kind": "entry",
+      "name": "SweepPoolResidual",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "stake_asset",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "reward_asset",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "reward_per_validator",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 57544,
+      "handler": "configure_validator_reward_policy",
+      "kind": "entry",
+      "name": "ConfigureValidatorRewardPolicy"
+    },
+    {
+      "args": [
+        {
+          "name": "funder",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "stake_asset",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "reward_asset",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 17047,
+      "handler": "fund_validator_reward_policy",
+      "kind": "entry",
+      "name": "FundValidatorRewardPolicy"
+    },
+    {
+      "args": [
+        {
+          "name": "controller",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "B256"
         }
       ],
       "discriminator": 45033,
@@ -85,7 +260,7 @@
         {
           "name": "validator",
           "role": "input",
-          "type": "ValidatorId"
+          "type": "B256"
         }
       ],
       "discriminator": 52192,
@@ -103,13 +278,44 @@
         {
           "name": "validator",
           "role": "input",
-          "type": "ValidatorId"
+          "type": "B256"
         }
       ],
       "discriminator": 43639,
       "handler": "declare_validator_availability",
       "kind": "entry",
       "name": "DeclareValidatorAvailability"
+    },
+    {
+      "args": [
+        {
+          "name": "stake_asset",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "reward_asset",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 57655,
+      "handler": "validator_reward_policy",
+      "kind": "view",
+      "name": "ValidatorRewardPolicy",
+      "returns": {
+        "type": "ValidatorRewardPolicy"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 27560,
+      "handler": "validator_reward_policy_configured",
+      "kind": "view",
+      "name": "ValidatorRewardPolicyConfigured",
+      "returns": {
+        "type": "bool"
+      }
     },
     {
       "args": [],
@@ -152,7 +358,7 @@
         {
           "name": "validator",
           "role": "input",
-          "type": "ValidatorId"
+          "type": "B256"
         }
       ],
       "discriminator": 37544,
@@ -176,7 +382,7 @@
       "kind": "view",
       "name": "ValidatorForController",
       "returns": {
-        "type": "ValidatorId"
+        "type": "B256"
       }
     },
     {
@@ -254,7 +460,7 @@
       "fields": [
         {
           "name": "validator",
-          "type": "ValidatorId"
+          "type": "B256"
         },
         {
           "name": "controller",
@@ -270,7 +476,7 @@
         },
         {
           "name": "pool_id",
-          "type": "option<PoolId>"
+          "type": "option<B256>"
         }
       ],
       "kind": "struct",
@@ -281,7 +487,7 @@
       "fields": [
         {
           "name": "validators",
-          "type": "vec<ValidatorId>"
+          "type": "vec<B256>"
         }
       ],
       "kind": "struct",
@@ -292,7 +498,7 @@
       "fields": [
         {
           "name": "validator",
-          "type": "ValidatorId"
+          "type": "B256"
         },
         {
           "name": "consensus_account",
@@ -307,7 +513,7 @@
       "fields": [
         {
           "name": "validator",
-          "type": "ValidatorId"
+          "type": "B256"
         },
         {
           "name": "consensus_account",
@@ -315,7 +521,7 @@
         },
         {
           "name": "pool_id",
-          "type": "PoolId"
+          "type": "B256"
         },
         {
           "name": "stake_asset",
@@ -334,7 +540,7 @@
           "type": "u64"
         },
         {
-          "name": "active_staker_count",
+          "name": "position_count",
           "type": "u64"
         }
       ],
@@ -369,7 +575,7 @@
         },
         {
           "name": "validator",
-          "type": "ValidatorId"
+          "type": "B256"
         },
         {
           "name": "controller",
@@ -379,6 +585,44 @@
       "kind": "struct",
       "name": "AvailabilityDeclaration",
       "typeTag": 9892382822654520502
+    },
+    {
+      "fields": [
+        {
+          "name": "stake_asset",
+          "type": "Address"
+        },
+        {
+          "name": "reward_asset",
+          "type": "Address"
+        },
+        {
+          "name": "reward_per_validator",
+          "type": "u64"
+        },
+        {
+          "name": "available",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "ValidatorRewardPolicy",
+      "typeTag": 5457600749461134614
+    },
+    {
+      "fields": [
+        {
+          "name": "initialized",
+          "type": "bool"
+        },
+        {
+          "name": "last_settled_epoch",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "RewardCursor",
+      "typeTag": 13878982144518937538
     },
     {
       "fields": [
@@ -393,7 +637,7 @@
       ],
       "kind": "struct",
       "name": "PoolRewardConfig",
-      "typeTag": 1255043119785956927
+      "typeTag": 12365982797053730650
     },
     {
       "kind": "builtin",
@@ -407,13 +651,8 @@
     },
     {
       "kind": "builtin",
-      "name": "PoolId",
-      "typeTag": 10033863623731171282
-    },
-    {
-      "kind": "builtin",
-      "name": "ValidatorId",
-      "typeTag": 14542707920151212342
+      "name": "bool",
+      "typeTag": 14785269867199075517
     },
     {
       "kind": "builtin",
@@ -423,13 +662,23 @@
   ],
   "resources": [
     {
+      "name": "_ValidatorRewardPolicy",
+      "type": "ValidatorRewardPolicy",
+      "typeTag": 5457600749461134614
+    },
+    {
+      "name": "_RewardCursor",
+      "type": "RewardCursor",
+      "typeTag": 13878982144518937538
+    },
+    {
       "name": "_ValidatorRecord",
       "type": "ValidatorProfile",
       "typeTag": 13667524927300449050
     },
     {
       "name": "_ValidatorByController",
-      "type": "ValidatorId",
+      "type": "B256",
       "typeTag": 14542707920151212342
     },
     {
@@ -493,18 +742,29 @@
     },
     {
       "code": 1799,
+      "message": "Reward reserve backing mismatch: {0}, {1}",
+      "name": "RewardTreasuryBackingMismatch"
+    },
+    {
+      "code": 1800,
+      "message": "Transparent Token",
+      "name": "Token",
+      "transparent": true
+    },
+    {
+      "code": 1801,
       "message": "Transparent Staking",
       "name": "Staking",
       "transparent": true
     },
     {
-      "code": 1800,
+      "code": 1802,
       "message": "Transparent Context",
       "name": "Context",
       "transparent": true
     },
     {
-      "code": 1801,
+      "code": 1803,
       "message": "validator set unavailable: {0}",
       "name": "ValidatorSetUnavailable"
     }

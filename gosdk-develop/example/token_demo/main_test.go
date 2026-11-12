@@ -7,6 +7,9 @@ import (
 )
 
 func Test_Main(t *testing.T) {
+	if testing.Short() {
+		t.Skip("requires a running Milon node")
+	}
 	t.Parallel()
 	example(milon.DevNet)
 }

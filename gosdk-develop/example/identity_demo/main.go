@@ -34,7 +34,7 @@ func newAccount() *account {
 func strPtr(s string) *string { return &s }
 
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	// alice: the personal DID used by the DID document demo (deactivated at the end).
 	alice := newAccount()
@@ -82,14 +82,16 @@ func submit(client *milon.Client, signer *account, what string, encode func() (a
 	if err != nil {
 		panic("failed to build and sign " + what + ": " + err.Error())
 	}
-	if err = client.SubmitTx(tx); err != nil {
+	if _, err = client.SubmitTx(tx); err != nil {
 		panic("failed to submit " + what + ": " + err.Error())
 	}
 	result, err := client.WaitForTransaction(tx.TxHash())
 	if err != nil {
 		panic("failed to wait for tx.TxHash()=" + tx.TxHash().String() + "|" + what + ": " + err.Error())
 	}
-	helper.CheckTxSuccess(result.BodyTxHistory)
+	if err := helper.CheckTxSuccess(result.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("  [tx] %s ok, hash: %s, gas charged: %d\n", what, tx.TxHash(), result.BodyTxHistory.Receipt.GasCharged)
 }
 
@@ -109,7 +111,7 @@ func expectOnChainError(client *milon.Client, signer *account, what string, enco
 	if err != nil {
 		panic("failed to build and sign " + what + ": " + err.Error())
 	}
-	if err = client.SubmitTx(tx); err != nil {
+	if _, err = client.SubmitTx(tx); err != nil {
 		fmt.Printf("  [tx] %s rejected as expected: %v\n", what, err)
 		return
 	}
@@ -133,7 +135,7 @@ func view[T any](client *milon.Client, what string, encode func() (api.PackedIns
 	if err != nil {
 		panic("failed to encode view " + what + ": " + err.Error())
 	}
-	result, err := client.View([]api.PackedInstruction{wire})
+	result, err := client.View(wire)
 	if err != nil {
 		panic("failed to view " + what + ": " + err.Error())
 	}
@@ -153,7 +155,7 @@ func expectViewFail[T any](client *milon.Client, what string, encode func() (api
 	if err != nil {
 		panic("failed to encode view " + what + ": " + err.Error())
 	}
-	result, err := client.View([]api.PackedInstruction{wire})
+	result, err := client.View(wire)
 	if err != nil {
 		fmt.Printf("  [view] %s failed as expected: %v\n", what, err)
 		return

@@ -3,6 +3,7 @@ package lib
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
@@ -11,9 +12,17 @@ import (
 )
 
 var (
-	ChainId      uint64 = 900_000_001
-	ChainIdMutex sync.RWMutex
+	// chainID is the process-wide chain id mixed into tx, ix and auth hashes.
+	// It deliberately has no default: it must come from the Network actually in
+	// use, otherwise every hash would silently target the wrong chain.
+	chainID      uint64
+	chainIDSet   bool
+	chainIDMutex sync.RWMutex
 )
+
+// ErrChainIDNotSet is reported when hashing or signing runs before the chain id
+// has been configured.
+var ErrChainIDNotSet = errors.New("chain id is not set: configure it from the network with milon.NewClient or lib.SetChainId")
 
 type TransactionStamp uint64
 type RequestID uint64
@@ -23,17 +32,41 @@ type RequestID uint64
 // while the tx hash and the signed message stay format-byte free.
 const TxTypeBase uint8 = 0x00
 
-func SetChainId(id uint64) {
-	ChainIdMutex.Lock()
-	defer ChainIdMutex.Unlock()
+// SetChainId sets the process-wide chain id mixed into tx, ix and auth hashes.
+// Zero is rejected: it is not a valid network id and would be
+// indistinguishable from the unset state.
+func SetChainId(id uint64) error {
+	if id == 0 {
+		return fmt.Errorf("chain id must not be zero")
+	}
 
-	ChainId = id
+	chainIDMutex.Lock()
+	defer chainIDMutex.Unlock()
+
+	chainID = id
+	chainIDSet = true
+	return nil
 }
-func GetChainId() uint64 {
-	ChainIdMutex.RLock()
-	defer ChainIdMutex.RUnlock()
 
-	return ChainId
+// GetChainId returns the process-wide chain id. It panics when the id has not
+// been configured: hashing or signing for an unknown chain would silently
+// produce values that are invalid on the real chain.
+func GetChainId() uint64 {
+	chainIDMutex.RLock()
+	defer chainIDMutex.RUnlock()
+
+	if !chainIDSet {
+		panic(ErrChainIDNotSet)
+	}
+	return chainID
+}
+
+// ChainIdSet reports whether the process-wide chain id has been configured.
+func ChainIdSet() bool {
+	chainIDMutex.RLock()
+	defer chainIDMutex.RUnlock()
+
+	return chainIDSet
 }
 
 type Transaction struct {
@@ -50,15 +83,16 @@ type TransactionSignatures struct {
 
 // TxHash = Blake3(MILON_ROOT || TX_HASH_DOMAIN || GetChainId() || Stamp || [Payer] || ix_hashes...)
 func (tx *Transaction) TxHash() api.TxHash {
-	hasher := crypto.Hasher(crypto.TxHashDomainBytes)
+	hasher := crypto.AcquireHasher(crypto.TxHashDomainBytes)
+	defer crypto.ReleaseHasher(hasher)
 
-	chainIDBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(chainIDBytes, GetChainId()) //big-endian
-	hasher.Write(chainIDBytes)
+	var chainIDBytes [8]byte
+	binary.BigEndian.PutUint64(chainIDBytes[:], GetChainId()) //big-endian
+	hasher.Write(chainIDBytes[:])
 
-	stampBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(stampBytes, uint64(tx.Stamp)) //big-endian
-	hasher.Write(stampBytes)
+	var stampBytes [8]byte
+	binary.BigEndian.PutUint64(stampBytes[:], uint64(tx.Stamp)) //big-endian
+	hasher.Write(stampBytes[:])
 
 	if tx.Payer != nil {
 		payerBytes := tx.Payer.AsBytes()
@@ -91,11 +125,12 @@ func (tx *Transaction) IxHashes() []api.TxHash {
 
 // IxHashFromWire compute ix hash from PackedInstruction: IxHash = Blake3(MILON_ROOT || IX_HASH_DOMAIN || GetChainId() || wire)
 func (tx *Transaction) IxHashFromWire(wire api.PackedInstruction) api.TxHash {
-	hasher := crypto.Hasher(crypto.IxHashDomainBytes)
+	hasher := crypto.AcquireHasher(crypto.IxHashDomainBytes)
+	defer crypto.ReleaseHasher(hasher)
 
-	chainIDBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(chainIDBytes, GetChainId()) // big-endian
-	hasher.Write(chainIDBytes)
+	var chainIDBytes [8]byte
+	binary.BigEndian.PutUint64(chainIDBytes[:], GetChainId()) // big-endian
+	hasher.Write(chainIDBytes[:])
 
 	hasher.Write(wire)
 

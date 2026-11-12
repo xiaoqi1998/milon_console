@@ -2,6 +2,7 @@ package postcard
 
 import (
 	"encoding/hex"
+	"math"
 	"math/big"
 	"testing"
 
@@ -271,4 +272,24 @@ func TestPeekRemainingOffset(t *testing.T) {
 	assert.Equal(t, 1, d.Remaining())
 	assert.Equal(t, 2, d.Offset())
 	assert.Equal(t, []byte{1, 2, 3}, d.Buffer())
+}
+
+// TestDeserializeU64RejectsOverflow guards the 10th varint group: its bits above
+// bit 0 do not fit in a uint64 and used to be dropped silently.
+func TestDeserializeU64RejectsOverflow(t *testing.T) {
+	// 2^64 = nine continuation groups + 0x02.
+	overflow := []byte{0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x02}
+	if _, err := NewDeserializer(overflow).DeserializeU64(); err == nil {
+		t.Fatal("expected an overflow error for 2^64")
+	}
+
+	// max uint64 = nine 0xff groups + 0x01 must still decode.
+	maxUint64 := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01}
+	value, err := NewDeserializer(maxUint64).DeserializeU64()
+	if err != nil {
+		t.Fatalf("max uint64 must decode: %v", err)
+	}
+	if value != math.MaxUint64 {
+		t.Fatalf("decoded %d, want %d", value, uint64(math.MaxUint64))
+	}
 }

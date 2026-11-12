@@ -56,7 +56,7 @@ func (rsp *RpcResponse) UnmarshalPostcard(deserializer *postcard.Deserializer) e
 
 	rsp.RequestId, err = deserializer.DeserializeU64()
 	if err != nil {
-		return fmt.Errorf("failed to deserialize Message: %w", err)
+		return fmt.Errorf("failed to deserialize RequestId: %w", err)
 	}
 
 	rsp.Status, err = deserializer.DeserializeU8()

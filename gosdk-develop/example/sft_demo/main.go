@@ -25,7 +25,7 @@ func main() {
 //   - merge folds all of the signer's shares in the source TOKEN into the target TOKEN of the same SLOT;
 //   - three-level metadata inheritance: SFT metadata <- SLOT override <- TOKEN override; view returns the resolved result.
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	// Account roles:
 	//   sft   : SFT resource account, only the instruction signer for create_sft (gas paid by owner, no faucet needed)
@@ -417,7 +417,7 @@ func newAccount() (*crypto.ClassicalSecretKey, *crypto.PublicKey, *crypto.Addres
 
 // submitAndWait submits a transaction, waits for it to be committed on-chain, and returns the full receipt for event extraction.
 func submitAndWait(client *milon.Client, tx *lib.Transaction) *api.TxHistory {
-	if err := client.SubmitTx(tx); err != nil {
+	if _, err := client.SubmitTx(tx); err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
 	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
@@ -425,7 +425,9 @@ func submitAndWait(client *milon.Client, tx *lib.Transaction) *api.TxHistory {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 	return getTxByHashResult.BodyTxHistory
 }
@@ -441,7 +443,7 @@ func viewValue[T any](client *milon.Client, args encoder, decode func([]byte) (T
 	if err != nil {
 		panic("failed to encode view instruction:" + err.Error())
 	}
-	viewTxResult, err := client.View([]api.PackedInstruction{wire})
+	viewTxResult, err := client.View(wire)
 	if err != nil {
 		panic("failed to call view:" + err.Error())
 	}

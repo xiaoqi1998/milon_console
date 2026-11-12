@@ -15,27 +15,34 @@ func main() {
 }
 
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
-	// Create 4 signers: signerMultiSig is the multisig wallet creator, signerA/B/C are the participants
-	signerMultiSig := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	signerA := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	signerB := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	signerC := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
+	// Create 4 signers, all post-quantum FN-DSA-512: signerMultiSig is the multisig wallet creator, signerA/B/C are the participants
+	signerMultiSig, pkMultiSig, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		panic("failed to generate FN-DSA-512 secret key for signerMultiSig:" + err.Error())
+	}
 
-	pkMultiSig := signerMultiSig.Ed25519Public()
-	pkA := signerA.Ed25519Public()
-	pkB := signerB.Ed25519Public()
-	pkC := signerC.Ed25519Public()
+	// accountA is only the transfer recipient, so signerA's secret key is not kept.
+	_, pkA, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		panic("failed to generate FN-DSA-512 public key for accountA:" + err.Error())
+	}
+	signerB, pkB, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		panic("failed to generate FN-DSA-512 secret key for signerB:" + err.Error())
+	}
+	signerC, pkC, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		panic("failed to generate FN-DSA-512 secret key for signerC:" + err.Error())
+	}
 
 	accountA, _ := crypto.NewAddressFromPublicKey(pkA)
 	accountB, _ := crypto.NewAddressFromPublicKey(pkB)
 	accountC, _ := crypto.NewAddressFromPublicKey(pkC)
 	accountMultiSig, _ := crypto.NewAddressFromPublicKey(pkMultiSig)
 
-	fmt.Printf("pkA = %v \n", pkA)
-	fmt.Printf("pkB = %v \n", pkB)
-	fmt.Printf("pkC = %v \n\n", pkC)
+
 
 	fmt.Printf("accountA = %v \n", accountA)
 	fmt.Printf("accountMultiSig = %v \n\n", accountMultiSig)
@@ -63,7 +70,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -71,7 +78,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("CreateMultisig committed: tx %s, gas charged: %d\n\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	fmt.Printf("\n================ 2.transfer MIL By Vote ================\n")
@@ -131,7 +140,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build VoteInit transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit VoteInit transaction:" + err.Error())
 	}
@@ -139,7 +148,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("VoteInit committed: tx %s, gas charged: %d\n\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	// 5. Second vote by participant signerC (signer index 2, weight 3).
@@ -157,7 +168,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build Vote transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit Vote transaction:" + err.Error())
 	}
@@ -165,7 +176,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("Vote committed: tx %s, gas charged: %d\n\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	// 6. Query on-chain vote progress: GetVote -> tuple<VoteMeta, sig_bit, ready>.
@@ -173,7 +186,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode GetVote view:" + err.Error())
 	}
-	viewResult, err := client.View([]api.PackedInstruction{getVoteWire})
+	viewResult, err := client.View(getVoteWire)
 	if err != nil {
 		panic("failed to query GetVote view:" + err.Error())
 	}
@@ -219,7 +232,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build vote execute transaction:" + err.Error())
 	}
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit vote execute transaction:" + err.Error())
 	}
@@ -227,7 +240,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("vote execute committed: tx %s, gas charged: %d\n\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	fmt.Printf("\n================ Final MIL ================\n")

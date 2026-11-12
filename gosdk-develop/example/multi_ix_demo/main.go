@@ -15,7 +15,7 @@ func main() {
 }
 
 func example(networkConfig milon.Network) {
-	client := milon.NewClient(networkConfig)
+	client := milon.MustNewClient(networkConfig)
 
 	signerA := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
 	signerB := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
@@ -119,7 +119,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to simulate transaction on chain:" + err.Error())
 	}
-	helper.CheckSimulateSuccess(simulateResult)
+	if err := helper.CheckSimulateSuccess(simulateResult); err != nil {
+		panic(err)
+	}
 	fmt.Printf("simple mode - Simulated transaction hash: %s, gas charged: %d\n", simulateTx.TxHash(), simulateResult.BodySimulateReceipt.GasCharged)
 
 	// 3.3 Real sign on the same builder (same TxHash)
@@ -135,7 +137,7 @@ func example(networkConfig milon.Network) {
 	}
 
 	// 3.4 Submit transaction on chain
-	err = client.SubmitTx(tx)
+	_, err = client.SubmitTx(tx)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -146,7 +148,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("simple mode - submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	// ==================== Complex mode: SigningSlot + ApplySlots ====================
@@ -171,7 +175,9 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to simulate transaction on chain:" + err.Error())
 	}
-	helper.CheckSimulateSuccess(simulateResultComplex)
+	if err := helper.CheckSimulateSuccess(simulateResultComplex); err != nil {
+		panic(err)
+	}
 	fmt.Printf("complex mode - Simulated transaction hash: %s, gas charged: %d\n", simulateTxComplex.TxHash(), simulateResultComplex.BodySimulateReceipt.GasCharged)
 
 	// 4.4 Real sign: private keys are matched to slots by address
@@ -188,7 +194,7 @@ func example(networkConfig milon.Network) {
 	}
 
 	// 4.5 Submit transaction on chain
-	err = client.SubmitTx(txComplex)
+	_, err = client.SubmitTx(txComplex)
 	if err != nil {
 		panic("failed to submit transaction:" + err.Error())
 	}
@@ -199,14 +205,20 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to wait for transaction:" + err.Error())
 	}
-	helper.CheckTxSuccess(getTxByHashResultComplex.BodyTxHistory)
+	if err := helper.CheckTxSuccess(getTxByHashResultComplex.BodyTxHistory); err != nil {
+		panic(err)
+	}
 	fmt.Printf("complex mode - submit transaction hash: %s, gas charged: %d\n", txComplex.TxHash(), getTxByHashResultComplex.BodyTxHistory.Receipt.GasCharged)
 
 	// Display TxHistory
-	helper.DisplayTxHistory(client, getTxByHashResultComplex.BodyTxHistory)
+	if err := helper.DisplayTxHistory(client, getTxByHashResultComplex.BodyTxHistory); err != nil {
+		panic(err)
+	}
 
 	// Display EventsByTxHash
 	if len(getTxByHashResultComplex.BodyTxHistory.Receipt.Events) > 0 {
-		helper.DisplayEventsByTxHash(client, txComplex.TxHash(), nil)
+		if err := helper.DisplayEventsByTxHash(client, txComplex.TxHash(), nil); err != nil {
+			panic(err)
+		}
 	}
 }

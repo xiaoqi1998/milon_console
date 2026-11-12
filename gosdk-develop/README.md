@@ -17,6 +17,10 @@ Milon 区块链的 Go SDK，提供合约交互（IDL 编解码）、交易构建
   - [上链交互：提交 / 模拟 / 等待](#上链交互提交--模拟--等待)
 - [IDL 类型系统](#idl-类型系统)
 - [RPC 方法与 Client 封装](#rpc-方法与-client-封装)
+  - [Client 与 RpcClientImpl](#client-与-rpcclientimpl)
+  - [方法一览](#方法一览)
+  - [MethodType 表](#methodtype-表)
+  - [传输与重试](#传输与重试)
 - [请求选项](#请求选项requestoption--waitoption)
 - [区块流（gRPC）](#区块流grpc)
 - [高级用法](#高级用法)
@@ -49,7 +53,10 @@ import (
 
 func main() {
 	// 1. 配置网络（LocalNet / DevNet / 自定义）
-	client := milon.NewClient(milon.DevNet)
+	client, err := milon.NewClient(milon.DevNet)
+	if err != nil {
+		panic(err)
+	}
 
 	// 2. 创建密钥对（Ed25519）
 	sk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
@@ -73,36 +80,39 @@ func main() {
 }
 ```
 
-`NewClient` 会自动内嵌加载全部内置 IDL（`gen.DefaultIDLs`）、绑定 `gen` 应用对象并构造 IDL 注册表，无需额外初始化。
+`NewClient` 会自动内嵌加载全部内置 IDL（`gen.DefaultIDLs`）、绑定 `gen` 应用对象并构造 IDL 注册表，无需额外初始化；IDL 加载/绑定失败时通过 error 返回，由调用方决定如何处理。配置固定的场景（示例、包级初始化）可用 `milon.MustNewClient(...)`，失败时 panic。返回的 `*Client` 内嵌 `RpcClientImpl`，所有 RPC 方法（`SubmitTx`、`GetAccount`、`BatchView` 等）直接提升到 `client` 上调用。
 
 ## 包结构
 
 ```text
-├── client.go                  NewClient、Client 封装方法、RequestOption / WaitOption
+├── client.go                  NewClient / MustNewClient、Client（内嵌 RpcClientImpl）、RequestOption / WaitOption
 ├── network.go                 网络配置（LocalNet / DevNet / 自定义 Network）
 ├── rpcClientV1.go             RPC 实现：JSON / postcard 传输、IDL 加载、各方法结果结构体
 ├── blockStream.go             gRPC 区块流：NewBlockStream 低层接口 + Client.StreamBlocks
 ├── framedHistory.go           区块流交易帧 FramedHistory 的 postcard 解码
 ├── printFramedHistory.go      PrintFramedHistory：打印交易帧完整明细
 ├── resolveResourcePaths.go    ResolveResourcePaths：批量解析资源路径
+├── findIDLType.go             Client.FindIDLTypeByTag：按 type_tag 解析 Provider 与 IDLType
 │
-├── api/                       RPC 请求 / 响应结构体
+├── api/                       RPC 请求 / 响应结构体（单条 + 批量成对）
 │   ├── base.go                PackedInstruction、TxHash、TxId、RsHash、BlobHash、AccessRecord、PersistedValue、MILToken
 │   ├── apiFailure.go          链上 ApiFailure 错误返回
-│   ├── accountView.go         账户视图
-│   ├── block.go               区块
 │   ├── chainHead.go           链头
+│   ├── getAccount.go          账户视图
+│   ├── getBlockByHeight.go    区块
+│   ├── getTxByHash.go         交易查询（TxHistory / TxReceipt / TxStatePending·Success·Failed）
+│   ├── getTxHistoryProof.go   交易历史证明
 │   ├── eventsByTxHash.go      事件（EventEntry / TypeTagWithData）
-│   ├── getAccessValue.go      外部访问值
 │   ├── getResource.go         资源
-│   ├── get_tx_history_proof.go 交易历史证明
-│   ├── batchGetResourcePathByHash.go 批量资源路径查询
-│   ├── listResourcePath.go    资源路径列表
-│   ├── simulateReceipt.go     模拟执行回执
-│   └── txHistory.go           交易历史与回执（TxStatePending / Success / Failed）
+│   ├── getAccessValue.go      外部访问值（blob）
+│   ├── simulateTx.go          模拟执行回执（SimulateReceipt / TxFailurePayload）
+│   ├── nodeCapability.go      节点能力
+│   └── batch*.go              批量版本：batchSubmitTx / batchSimulateTx / batchView / batchGetAccount /
+│                              batchGetBlockByHeight / batchGetTxByHash / batchGetTxHistoryProof /
+│                              batchEventsByTxHash / batchGetResource / batchGetResourcePathByHash / batchGetAccessValue
 │
 ├── lib/                       交易构建与签名
-│   ├── transaction.go         Transaction、TxHash、IxHashes、ValidateWire(With)
+│   ├── transaction.go         Transaction、TxHash、IxHashes、ValidateWire(With)、链 ID（SetChainId / GetChainId）
 │   ├── transactionBuilder.go  TransactionBuilder：四种付款模式
 │   ├── accountSignature.go    AccountSignature、AuthBit 工具、投票门控哈希
 │   ├── accountSignatureBuild.go AccountSignatureBuilder：单签 / 多签 / 占位签名
@@ -115,7 +125,7 @@ func main() {
 │   ├── publickey.go           公钥
 │   ├── signature.go           签名结构与验签（含批量验签）
 │   ├── fn_dsa512.go           FnDSA-512 实现
-│   ├── hash_domain.go         Blake3 哈希域常量
+│   ├── hash_domain.go         Blake3 哈希域常量与哈希器池（AcquireHasher / ReleaseHasher）
 │   └── error.go
 │
 ├── provider/                  合约 IDL 加载与编解码
@@ -129,9 +139,9 @@ func main() {
 │   ├── gen.go                 应用绑定注册（RegisterApp / BindAll）
 │   └── idl_gen.go             自动生成：DefaultIDLs + 11 个应用对象 + 结构体类型
 │
-├── helper/                    常用辅助函数
-│   ├── checkTxSuccess.go      CheckTxSuccess：回执非成功时 panic
-│   ├── checkSimulateSuccess.go CheckSimulateSuccess：模拟失败时 panic
+├── helper/                    常用辅助函数（失败时返回 error，不 panic）
+│   ├── checkTxSuccess.go      CheckTxSuccess：回执非成功时返回 error
+│   ├── checkSimulateSuccess.go CheckSimulateSuccess：模拟失败时返回 error
 │   ├── eventsByTxHash.go      DisplayEventsByTxHash
 │   ├── getAccount.go          DisplayGetAccount
 │   ├── listSigners.go         DisplayAccountGetListSigners
@@ -140,7 +150,7 @@ func main() {
 ├── postcard/                  Postcard 序列化 / 反序列化（与链约定）
 ├── types/                     Bitmap64 位图（bitbap.go）
 └── tools/                     HTTP 工具与 IDL 代码生成器
-    ├── http.go                HTTP 客户端（连接池、5xx 重试）
+    ├── http.go                HTTP 客户端（连接池；读请求 5xx 重试，提交类写请求不自动重试）
     └── idlgen/                IDL → Go 代码生成器
 ```
 
@@ -325,7 +335,7 @@ client.SubmitTx(tx)                                // ValidateWire 校验后提�
 client.SubmitTxWithSponsorIxes(tx, []uint8{0})     // ValidateWireWith 校验后提交（可指定赞助指令）
 ```
 
-传输方式：`SubmitTx` / `SimulateTx` 使用 `application/x-milon+postcard`，其余方法使用 `application/x-milon+json`（body 仍为 postcard 字节）。
+传输与重试：提交 / 模拟类方法走 `application/x-milon+postcard`，其余走 `application/x-milon+json`（body 仍为 postcard 字节）；`Submit*` 不自动重试（响应丢失后重试会重复提交同一笔交易），`Simulate*` 与查询类对网络错误 / 5xx 自动重试。完整对照见 [传输与重试](#传输与重试)。
 
 #### 模拟执行（可选，估 gas）
 
@@ -341,7 +351,9 @@ txBuilder := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
 	SimulateSlots()
 
 simulateResult, err := client.SimulateTx(txBuilder.Tx()) // 免私钥估算 gas
-helper.CheckSimulateSuccess(simulateResult)
+if err := helper.CheckSimulateSuccess(simulateResult); err != nil {
+	panic(err)
+}
 
 txBuilder.ResetSigs().
 	SignWith(lib.Signer{SecretKey: payerSk, PublicKey: *payerPk}, lib.Signer{SecretKey: executorSk, PublicKey: *executorPk})
@@ -356,7 +368,7 @@ tx, err := txBuilder.Build()
 result, err := client.WaitForTransaction(tx.TxHash())
 ```
 
-`WaitForTransaction` 轮询 `GetTxByHash`，直到回执状态不是 `TxStatePending`；轮询期间的网络错误不会立即返回，而是记录最后一次错误继续重试。需要校验链上执行结果时可用 `helper.CheckTxSuccess(result.BodyTxHistory)`。
+`WaitForTransaction` 轮询 `GetTxByHash`，直到回执状态不是 `TxStatePending`；每次轮询使用新的 request ID（避免命中节点请求缓存），轮询期间的网络错误不会立即返回，而是记录最后一次错误继续重试。`pollPeriod` 与 `pollTimeout` 都必须为正数，否则直接返回错误；超时判断在每次查询之后进行，保证超时前一定完成过最后一次尝试。需要校验链上执行结果时可用 `helper.CheckTxSuccess(result.BodyTxHistory)`。`helper` 包的解码 / 显示函数（`DisplayTxHistory`、`DisplayEventsByTxHash`、`DisplayGetAccount`、`DisplayAccountGetListSigners`）同样只返回 error 而不 panic，示例中统一 `panic(err)` 处理。
 
 ## IDL 类型系统
 
@@ -386,58 +398,102 @@ Provider 基于 IDL JSON 实现合约方法的序列化与反序列化。动态�
 
 ## RPC 方法与 Client 封装
 
-### MethodType 表
+### Client 与 RpcClientImpl
 
-| 常量 | 值 | 使用方 |
-|------|----|--------|
-| `MethodTypeChainHead` | 1 | `Client.GetChainHead` |
-| `MethodTypeSubmitTx` | 5 | `Client.SubmitTx` / `SubmitTxWithSponsorIxes` |
-| `MethodTypeSimulateTx` | 10 | `Client.SimulateTx` |
-| `MethodTypeBatchView` | 16 | `Client.View`（单条 / 多条统一走批量接口） |
-| `MethodTypeGetAccount` | 20 | `Client.GetAccount` |
-| `MethodTypeEventsByTxHash` | 25 | `Client.EventsByTxHash` |
-| `MethodTypeGetBlockByHeight` | 50 | `Client.GetBlockByHeight` |
-| `MethodTypeGetTxByHash` | 55 | `Client.GetTxByHash` / `WaitForTransaction` |
-| `MethodTypeGetTxHistoryProof` | 60 | `Client.GetTxHistoryProof` |
-| `MethodTypeGetResource` | 150 | `Client.GetResource` |
-| `MethodTypeGetResourcePathByHash` | 155 | `Client.GetResourcePathByHash` |
-| `MethodTypeBatchGetResourcePathByHash` | 160 | `Client.BatchGetResourcePathByHash` |
-| `MethodTypeGetAccessValue` | 165 | `Client.GetAccessValue` |
+`milon.NewClient(...)` 返回的 `*Client` 直接内嵌 `RpcClientImpl` 接口（34 个方法），全部 RPC 方法都提升到 `*Client` 上，调用时不需要经过 `.RpcClient` 转发层：
 
-> `lib` 中还定义了 `MethodTypeBatchSubmitTx`(6)、`MethodTypeBatchSimulateTx`(11)、`MethodTypeView`(15) 常量，SDK 当前未封装对应方法。
+```go
+client, err := milon.NewClient(milon.DevNet)
+if err != nil {
+	panic(err)
+}
 
-### Client 封装方法
+client.SubmitTx(tx)             // 来自内嵌的 RpcClientImpl
+client.GetProviderManager()     // 同上
+client.StreamBlocks(0, onBlock) // Client 自有方法（gRPC 区块流）
+```
 
-`milon.NewClient(...)` 返回的 `*milon.Client` 可直接调用：
+- `Client` 自有方法只有 `StreamBlocks` 与 `FindIDLTypeByTag`，其余全部由接口提升
+- `client.go` 中的 `var _ RpcClientImpl = (*Client)(nil)` 是编译期断言：接口新增方法而 `Client` 的方法集不再满足时直接编译失败，避免方法提升失效只在调用点才暴露
+- 测试可替换实现：`&milon.Client{RpcClientImpl: fake}`（接口字段，`network` 为零值，仅用于替代 RPC 方法）；生产代码用 `NewClient` / `MustNewClient`，二者负责加载 `gen.DefaultIDLs`、构造 IDL 注册表并绑定 `gen` 应用
+
+> 迁移提示（相对旧版）：`Client.RpcClient` 字段已移除。`client.RpcClient.SubmitTx(tx)` → `client.SubmitTx(tx)`；自定义实现 `milon.Client{RpcClient: impl}` → `milon.Client{RpcClientImpl: impl}`。
+
+### 方法一览
+
+`RpcClientImpl` 共 34 个方法，按用途分组：
 
 | 分类 | 方法 | 说明 |
 |------|------|------|
 | 账户 | `ClaimFaucet(sk, address, mode)` | 领取测试代币 |
 | | `CreateAccount(sk, pk)` | 创建链上账户 |
-| | `BalanceOf(account, token ...any)` | 查询 MIL 余额（`token` 变参当前保留，实现固定查 MIL） |
+| | `BalanceOf(account, token ...*crypto.Address)` | 查询代币余额（`token` 省略时查 MIL，最多一个） |
 | | `ListAccountSigners(address)` | 查询账户签名者列表（`[账户信息, signers]`） |
-| | `AccountSignerBit(address)` | 查询单签名者账户的槽位位图（`Bitmap64`） |
+| | `AccountSignerBit(address)` | 查询单签名者账户的槽位位图（`types.Bitmap64`） |
 | | `TokenMetadata(token)` | 查询代币元数据（名称 / 符号 / 精度 / 图标 / URI） |
-| 交易 | `SubmitTx(tx, opts...)` | `ValidateWire` 校验后提交 |
-| | `SubmitTxWithSponsorIxes(tx, sponsorIxes, opts...)` | `ValidateWireWith` 校验后提交 |
-| | `SimulateTx(tx, opts...)` | 模拟执行（估算 gas） |
+| 交易 | `SubmitTx(tx, opts...)` | `ValidateWire` 校验后提交（postcard，不重试） |
+| | `SubmitTxWithSponsorIxes(tx, sponsorIxes, opts...)` | `ValidateWireWith` 校验后提交（postcard，不重试） |
+| | `BatchSubmitTx(txs, opts...)` | 批量提交（postcard，不重试；逐笔返回 tx hash / 失败原因） |
+| | `SimulateTx(tx, opts...)` | 模拟执行估算 gas（postcard，自动重试） |
+| | `BatchSimulateTx(txs, opts...)` | 批量模拟（postcard，自动重试） |
 | | `WaitForTransaction(txHashOrTxId, opts...)` | 轮询等待交易确认 |
+| 合约 | `View(wire, opts...)` | 单条只读查询（method 15），结果在 `ViewSingleResult.HTTPResponseBody`（裸编码返回值） |
+| | `BatchView(wires, opts...)` | 批量只读查询（method 16），`BodyBatchViewItems` 按请求顺序逐条给出 Ok / Err |
 | 链 | `GetChainHead(opts...)` | 查询链头 |
-| | `GetBlockByHeight(height, opts...)` | 按高度查询区块 |
-| | `GetTxByHash(txHashOrTxId, opts...)` | 按哈希 / TxId 查询交易 |
-| | `GetTxHistoryProof(txHashOrTxId, opts...)` | 查询交易历史证明 |
-| | `GetAccount(accountRelaxed, opts...)` | 查询账户详情 |
-| | `EventsByTxHash(txHash, typeTagFilter, opts...)` | 查询交易事件（可按 type_tag 过滤，`nil` 表示不过滤） |
-| 资源 | `GetResource(rsHash, opts...)` | 查询资源 |
-| | `GetResourcePathByHash(rsHash, opts...)` | 按哈希查询资源路径 |
-| | `BatchGetResourcePathByHash(rsHashList, opts...)` | 批量查询资源路径 |
-| | `GetAccessValue(blobHashList, opts...)` | 查询外部访问值 |
-| 合约 | `View(wires, opts...)` | 只读查询（view 指令列表） |
-| 区块流 | `StreamBlocks(startBlock, onBlockDone)` | gRPC 订阅区块流 |
+| | `GetBlockByHeight(height, opts...)` / `BatchGetBlockByHeight(heights, opts...)` | 按高度查询区块（单条 / 批量） |
+| | `GetTxByHash(txHashOrTxId, opts...)` / `BatchGetTxByHash(list, opts...)` | 按哈希 / TxId 查询交易 |
+| | `GetTxHistoryProof(txHashOrTxId, opts...)` / `BatchGetTxHistoryProof(list, opts...)` | 查询交易历史证明 |
+| | `GetAccount(accountRelaxed, opts...)` / `BatchGetAccount(list, opts...)` | 查询账户详情（`accountRelaxed` 接受地址 / Hex / Base58） |
+| | `EventsByTxHash(txHash, typeTagFilter, opts...)` / `BatchEventsByTxHash(reqList, opts...)` | 查询交易事件（`typeTagFilter` 为 `nil` 表示不过滤） |
+| | `GetNodeCapability(opts...)` | 查询节点能力（method 30） |
+| 资源 | `GetResource(rsHash, opts...)` / `BatchGetResource(rsHashList, opts...)` | 查询资源 |
+| | `GetResourcePathByHash(rsHash, opts...)` / `BatchGetResourcePathByHash(rsHashList, opts...)` | 按哈希查询资源路径 |
+| | `GetAccessValue(blobHash, opts...)` / `BatchGetAccessValue(blobHashList, opts...)` | 查询外部访问值（blob） |
+| 区块流 | `StreamBlocks(startBlock, onBlockDone)` | gRPC 订阅区块流（`Client` 自有方法，非 RPC） |
 | 元数据 | `GetAllPd()` | 获取全部已加载 Provider（IDL 名 → Provider） |
 | | `GetProviderManager()` | 获取 `*provider.IDLRegistry`（指令 / 事件 / 资源 / View 解码） |
+| | `FindIDLTypeByTag(typeTag)` | 按 type_tag 解析 `(*provider.Provider, *provider.IDLType)`（`Client` 自有方法） |
 
-结果结构体统一带 `HTTPResponseBody []byte`（原始响应体，供 `DecodeView` 等后续解码）与 `BodyXxx` 字段（已解析结构）。
+结果结构体统一带 `HTTPResponseBody []byte`（原始响应体，供 `DecodeView` 等后续解码）与 `BodyXxx` 字段（已解析结构）。批量方法的每一项按**请求顺序**一一对应，且为 Ok / Failure 二选一（`Value` / `Block` / `Data` + `Failure *api.ApiFailure`），单项失败不影响其余项。
+
+### MethodType 表
+
+| 常量 | 值 | 使用方 |
+|------|----|--------|
+| `MethodTypeChainHead` | 1 | `GetChainHead` |
+| `MethodTypeSubmitTx` | 5 | `SubmitTx` / `SubmitTxWithSponsorIxes` |
+| `MethodTypeBatchSubmitTx` | 6 | `BatchSubmitTx` |
+| `MethodTypeSimulateTx` | 10 | `SimulateTx` |
+| `MethodTypeBatchSimulateTx` | 11 | `BatchSimulateTx` |
+| `MethodTypeView` | 15 | `View`（单条） |
+| `MethodTypeBatchView` | 16 | `BatchView` |
+| `MethodTypeGetAccount` | 20 | `GetAccount` |
+| `MethodTypeBatchGetAccount` | 21 | `BatchGetAccount` |
+| `MethodTypeEventsByTxHash` | 25 | `EventsByTxHash` |
+| `MethodTypeBatchEventsByTxHash` | 26 | `BatchEventsByTxHash` |
+| `MethodTypeNodeCapability` | 30 | `GetNodeCapability` |
+| `MethodTypeGetBlockByHeight` | 50 | `GetBlockByHeight` |
+| `MethodTypeBatchGetBlockByHeight` | 51 | `BatchGetBlockByHeight` |
+| `MethodTypeGetTxByHash` | 55 | `GetTxByHash` / `WaitForTransaction` |
+| `MethodTypeBatchGetTxByHash` | 56 | `BatchGetTxByHash` |
+| `MethodTypeGetTxHistoryProof` | 60 | `GetTxHistoryProof` |
+| `MethodTypeBatchGetTxHistoryProof` | 61 | `BatchGetTxHistoryProof` |
+| `MethodTypeGetResource` | 150 | `GetResource` |
+| `MethodTypeBatchGetResource` | 151 | `BatchGetResource` |
+| `MethodTypeGetResourcePathByHash` | 155 | `GetResourcePathByHash` |
+| `MethodTypeBatchGetResourcePathByHash` | 160 | `BatchGetResourcePathByHash` |
+| `MethodTypeGetAccessValue` | 165 | `GetAccessValue` |
+| `MethodTypeBatchGetAccessValue` | 166 | `BatchGetAccessValue` |
+
+### 传输与重试
+
+| 方法 | Content-Type | 自动重试 |
+|------|--------------|----------|
+| `SubmitTx` / `SubmitTxWithSponsorIxes` / `BatchSubmitTx` | `application/x-milon+postcard` | 否 |
+| `SimulateTx` / `BatchSimulateTx` | `application/x-milon+postcard` | 是 |
+| 其余查询类方法（含批量） | `application/x-milon+json`（body 仍为 postcard 字节） | 是（网络错误与 5xx） |
+
+提交类请求不自动重试：节点可能已接收交易但响应丢失，重试会导致同一笔交易被重复提交，是否重试由调用方依据 `request_id` / `txHash` 决定。`WaitForTransaction` 每次轮询主动更换 `request_id`，避免命中节点请求缓存而一直读到旧的 pending 回执。
 
 ## 请求选项（RequestOption / WaitOption）
 
@@ -463,17 +519,20 @@ client.GetTxByHash(txHash, milon.WithRequestID(12345))
 | 选项 | 说明 |
 |------|------|
 | `milon.WithWaitContext(ctx)` | 设置 context，支持超时 / 取消 |
-| `milon.WithWaitRequestID(id)` | 自定义 request ID |
+| `milon.WithWaitRequestID(id)` | 自定义 request ID（默认每次轮询使用新的 request ID，指定后固定复用） |
 | `milon.WithWaitPollPeriod(d)` | 轮询间隔（默认 1s） |
 | `milon.WithWaitPollTimeout(d)` | 轮询超时（默认 30s） |
 
 **1. 全局默认（NewClient 级别）**
 
 ```go
-client := milon.NewClient(milon.DevNet,
+client, err := milon.NewClient(milon.DevNet,
 	milon.WithClientPollPeriod(500*time.Millisecond),
 	milon.WithClientPollTimeout(30*time.Second),
 )
+if err != nil {
+	panic(err)
+}
 ```
 
 **2. 单次覆盖（WaitForTransaction 级别，优先级高于全局）**
@@ -531,8 +590,8 @@ if err != nil {
 	panic(err)
 }
 
-// 2. 查询
-viewResult, err := client.View([]api.PackedInstruction{wire})
+// 2. 查询（单条 view）
+viewResult, err := client.View(wire)
 if err != nil {
 	panic(err)
 }
@@ -545,13 +604,13 @@ if err != nil {
 fmt.Printf("balance: %d\n", balance) // uint64
 ```
 
-- `DecodeView` 传入 `client.View` 返回的原始响应体（`HTTPResponseBody`），返回类型跟随 IDL：`u64 → uint64`、`String → string`、struct → 生成的结构体（如 `gen.TokenMetadata`）
+- `DecodeView` 传入 `client.View` / `client.BatchView` 返回的原始响应体（`HTTPResponseBody`），返回类型跟随 IDL：`u64 → uint64`、`String → string`、struct → 生成的结构体（如 `gen.TokenMetadata`）
 - `DecodeView` 自动处理 Ok/Err 分支，链上返回失败（`ApiFailure`）会转为 error
 
 多条 view 一次查询 + 批量解码（结果按 `"appName::methodName"` 顺序对应）：
 
 ```go
-viewResult, err := client.View([]api.PackedInstruction{wire1, wire2})
+viewResult, err := client.BatchView([]api.PackedInstruction{wire1, wire2})
 
 results, err := client.GetProviderManager().DecodeViewDatas(
 	[]string{"token::BalanceOf", "demo::OrderBalance"},
@@ -634,28 +693,33 @@ wire, err := pd.Encode("BalanceOf", provider.Args{"token": api.MILToken, "accoun
 
 ```go
 // 本地开发网络
-client := milon.NewClient(milon.LocalNet)
+client, err := milon.NewClient(milon.LocalNet)
 //   RpcUrl:   http://127.0.0.1:6280/v1/rpc
 //   GrpcAddr: 127.0.0.1:50051
 //   ChainId:  900_000_001
 
 // 开发测试网络
-client := milon.NewClient(milon.DevNet)
+client, err = milon.NewClient(milon.DevNet)
 //   RpcUrl:   https://devnet.milonlabs.com/v1/rpc
 //   GrpcAddr: 8.218.101.239:50051
 //   ChainId:  900_000_001
 
 // 自定义网络
-client := milon.NewClient(milon.Network{
+client, err = milon.NewClient(milon.Network{
 	Name:     "myNet",
-	ChainId:  900_000_001,
+	ChainId:  900_000_001,         // 必填：参与交易/指令/授权哈希
 	RpcUrl:   "http://127.0.0.1:6280/v1/rpc",
 	InxUrl:   "",                  // 可选
 	GrpcAddr: "127.0.0.1:50051",   // 区块流使用，留空则 StreamBlocks 报错
 })
+if err != nil {
+	panic(err)
+}
 ```
 
-> `NewClient` 会调用 `lib.SetChainId(config.ChainId)` 写入全局链 ID（影响交易哈希与签名域），同一进程内不要并发使用不同 `ChainId` 的客户端。
+> `NewClient` 会调用 `lib.SetChainId(config.ChainId)` 写入全局链 ID（影响交易哈希与签名域）。链 ID 和 `gen` 生成的指令对象都是进程级的，因此**一个进程只支持一个 `Network`**：用不同 `ChainId` 再次创建 client 会直接返回错误，避免静默算出错误链的交易哈希。
+>
+> `Network.ChainId` 是必填项，SDK **不提供默认链 ID**：未填写时 `NewClient` 直接报错；若绕过 client 直接使用 `lib` 构建交易，未配置链 ID 时 `lib.GetChainId()` 会 panic 并提示 `ErrChainIDNotSet`，而不会静默按某个固定链 ID 计算。
 
 ## 示例索引
 
@@ -669,7 +733,7 @@ client := milon.NewClient(milon.Network{
 | `create_multisig_demo`             | 多签账户创建 + 多签转账（含占位签名模拟 → 真实签名） |
 | `create_multisig_vote`             | 多签投票与执行（拆分付款） |
 | `create_multisig_vote2`            | 多签投票与执行（统一付款） |
-| `getTxHistoryProof`                | 查询交易历史证明 |
+| `get_tx_history_proof`             | 查询交易历史证明 |
 | `grpc_demo`                        | gRPC 区块流订阅（StreamBlocks + PrintFramedHistory） |
 | `identity_demo`                    | 链上身份：DID / 机构注册 / VC 合规 |
 | `identity_test`                    | 身份合约多场景：VC 冻结 / 披露 / 签发者校验 |
@@ -681,8 +745,9 @@ client := milon.NewClient(milon.Network{
 | `token_create_unified_separate_ix` | 建币（UnifiedPayerSeparateIx 付款模式） |
 | `token_create_unified_sign_all`    | 建币（UnifiedPayerSignAll 付款模式） |
 | `token_demo`                       | 代币创建 / 增发 / 转账 / 查询余额 |
+| `token_test`                       | 代币 VC 披露（Create / DiscloseTokenVcAttestation） |
 | `view_demo`                        | 只读查询与批量解码 |
-| `debug`                            | 调试用指令（EchoMode / EnsureAccount / Create / Mint） |
+| `debug`                            | 调试用指令全集（Account / Demo / Identity / Sftoken / Token 各方法） |
 
 运行方式：
 

@@ -28,9 +28,12 @@ func RegisterApp(appName string, binder Binder) {
 // BindAll rebinds every registered generated app with the currently loaded
 // providers. milon.NewClient calls it after IDL loading, so each NewClient
 // re-binds the generated instruction objects to the latest IDL definitions.
+//
+// It takes the write lock: a binder writes package-level fields of the generated
+// apps (e.g. App.Pd), so two concurrent rebinds would race.
 func BindAll(providers map[string]*provider.Provider) error {
-	bindersMu.RLock()
-	defer bindersMu.RUnlock()
+	bindersMu.Lock()
+	defer bindersMu.Unlock()
 	for appName, binder := range binders {
 		pd, ok := providers[appName]
 		if !ok {
