@@ -96,7 +96,20 @@ func seedMultisigWeights(n int) []uint8 {
 
 func (r *seedRunner) runMultisig() error {
 	for _, ms := range r.plan.Multisig {
-		a := r.acct(ms.Name)
+		// 链端 2026-11-12 多签授权全 PQ 化:signers 用经典公钥被拒(273 Invalid
+		// public key),owner 经典签名提交后被回执翻转为 69 PqSignatureRequired;
+		// owner+signers 全 FN-DSA-512 稳定成功(实测 tx 2880d659)。ms 运行期账户
+		// 整体替换为 PQ 账户,下游 faucet/DID/create 全链路 PQ 签名。
+		sk, pub, adr, err := seedEnsurePqAccount(r.state, ms.Name)
+		if err != nil {
+			return fmt.Errorf("pq owner %s: %w", ms.Name, err)
+		}
+		a := &SeedPlanAccount{
+			Name: ms.Name, Role: "multisig", Curve: "fndsa512",
+			SK: sk, PUB: &pub, ADR: &adr,
+			PublicKey: pub.ToBase58(), Address: adr.ToBase58(),
+		}
+		r.accts[ms.Name] = a
 
 		// 按阶段顺序执行(faucet → did → create,见 seedMultisigStageOrder):
 		// DID 必须先于注册,注册后链端拒绝单公钥签名(285)
@@ -166,13 +179,25 @@ func (r *seedRunner) runMultisig() error {
 						r.logf("  %s ListSigners 视图失败(%v),转注册路径", ms.Name, err)
 					}
 					if !registered {
-						signers := make([]any, len(ms.SignerNames))
-						for j, sn := range ms.SignerNames {
-							signers[j] = r.acct(sn).PUB
+						// 链端 2026-11-12 起 signers 只接受 FN-DSA-512(PQ)公钥(经典
+						// ed25519 公钥被拒 273 Invalid public key);签者密钥组运行时
+						// 生成、即落盘 state,重跑幂等复用。ms.SignerNames 仅决定签者
+						// 数量(threshold 语义不变),不再作为公钥来源。
+						pqKeys, err := seedEnsurePqSigners(r.state, ms.Name, len(ms.SignerNames))
+						if err != nil {
+							return fmt.Errorf("pq signers %s: %w", ms.Name, err)
 						}
-						_, err := seedSendSingle(r.mc, "account", "CreateMultisig", provider.Args{
+						pubs, err := seedPqSignerPublicKeys(pqKeys)
+						if err != nil {
+							return fmt.Errorf("pq signers %s: %w", ms.Name, err)
+						}
+						signers := make([]any, len(pubs))
+						for j := range pubs {
+							signers[j] = &pubs[j]
+						}
+						_, err = seedSendSingle(r.mc, "account", "CreateMultisig", provider.Args{
 							"owner": a.Address, "signers": signers,
-							"weights": seedMultisigWeights(len(ms.SignerNames)), "threshold": ms.Threshold,
+							"weights": seedMultisigWeights(len(pubs)), "threshold": ms.Threshold,
 						}, a)
 						// 1059/1064 为 identity 域幂等码(保留无害);account 域真实码待 devNet
 						// 冒烟确认,先以消息语义 AlreadyExist 兜底(大小写不敏感)。

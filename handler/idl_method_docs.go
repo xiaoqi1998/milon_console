@@ -48,7 +48,7 @@ var idlMethodDocs = map[string]string{
 
 	"account.EnsureAccount": "【功能】确保账户存在：不存在则创建、已存在则什么都不做（幂等建户）。\n【限制】幂等，已存在不报错（与 Create 的区别）。",
 
-	"account.CreateMultisig": "【功能】将签名者账户配置为多签账户：登记 signer 公钥列表、每个 signer 的权重与生效阈值（权重和 ≥ 阈值才可通过）。\n【限制】signer 总权重 1..=255（WeightSumExceeded 263）；signers 与 weights 长度须一致（264）；signer 槽位 0..63（261）；权重不得为 0（262）；阈值非法报 ThresholdIncorrect（265）。",
+	"account.CreateMultisig": "【功能】将签名者账户配置为多签账户：登记 signer 公钥列表、每个 signer 的权重与生效阈值（权重和 ≥ 阈值才可通过）。\n【限制】signer 总权重 1..=255（WeightSumExceeded 263）；signers 与 weights 长度须一致（264）；signer 槽位 0..63（261）；权重不得为 0（262）；阈值非法报 ThresholdIncorrect（265）。链端 2026-11-12 起多签授权全 PQ 化：signers 仅接受 FN-DSA-512 公钥（经典 ed25519/secp256k1 公钥报 273 InvalidPublicKey），owner 经典签名会被授权校验拒（69 PqSignatureRequired），owner+signers 须全 FN-DSA-512；注册消耗链上费用，owner 账户须先有余额。",
 
 	"account.AddSigner": "【功能】向多签账户添加一个 signer（按公钥），自动分配最低空闲槽位。\n【限制】账户必须已是多签账户（AccountNotMultisig 274）；公钥不可重复（258）；总权重不得超过 255（263）；槽位最多 64 个（261）。",
 

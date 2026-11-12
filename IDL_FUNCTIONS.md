@@ -160,7 +160,7 @@
 | system | CloseVote | close_vote | 45954 | 【功能】关闭投票期并结算提案：达标进入激活队列，未达标标记过期。<br>【限制】提案不存在报 UpgradeProposalNotFound（112）。 |
 | account | Create | create | 2182 | 【功能】为给定公钥显式创建链上账户资源（区别于首笔交易时的懒创建），账户默认单签模式。<br>【限制】账户已存在报 AccountAlreadyExists（257）；公钥非法报 InvalidPublicKey（273）。 |
 | account | EnsureAccount | ensure_account | 38184 | 【功能】确保账户存在：不存在则创建、已存在则什么都不做（幂等建户）。<br>【限制】幂等，已存在不报错（与 Create 的区别）。 |
-| account | CreateMultisig | create_multisig | 20289 | 【功能】将签名者账户配置为多签账户：登记 signer 公钥列表、每个 signer 的权重与生效阈值（权重和 ≥ 阈值才可通过）。<br>【限制】signer 总权重 1..=255（WeightSumExceeded 263）；signers 与 weights 长度须一致（264）；signer 槽位 0..63（261）；权重不得为 0（262）；阈值非法报 ThresholdIncorrect（265）。 |
+| account | CreateMultisig | create_multisig | 20289 | 【功能】将签名者账户配置为多签账户：登记 signer 公钥列表、每个 signer 的权重与生效阈值（权重和 ≥ 阈值才可通过）。<br>【限制】signer 总权重 1..=255（WeightSumExceeded 263）；signers 与 weights 长度须一致（264）；signer 槽位 0..63（261）；权重不得为 0（262）；阈值非法报 ThresholdIncorrect（265）。链端 2026-11-12 起多签授权全 PQ 化：signers 仅接受 FN-DSA-512 公钥（经典 ed25519/secp256k1 公钥报 273 InvalidPublicKey），owner 经典签名会被授权校验拒（69 PqSignatureRequired），owner+signers 须全 FN-DSA-512；注册消耗链上费用，owner 账户须先有余额。 |
 | account | AddSigner | add_signer | 41092 | 【功能】向多签账户添加一个 signer（按公钥），自动分配最低空闲槽位。<br>【限制】账户必须已是多签账户（AccountNotMultisig 274）；公钥不可重复（258）；总权重不得超过 255（263）；槽位最多 64 个（261）。 |
 | account | AddSignerByAddress | add_signer_by_address | 30603 | 【功能】向多签账户按地址添加一个 signer（区别于按公钥的 AddSigner），自动分配最低空闲槽位。<br>【限制】账户必须已是多签账户（AccountNotMultisig 274）；地址不可重复（258）；权重 1..=255（262）；总权重 ≤255（263）；槽位最多 64 个（261）；地址与已登记公钥不匹配报 SignerAddressKeyMismatch（288）。 |
 | account | AddSigners | add_signers | 25813 | 【功能】批量添加多个 signer 并同步设置新阈值（CreateMultisig 的增量版）。<br>【限制】同 CreateMultisig：长度一致、权重 1..=255、总权重 ≤255、槽位 0..63、阈值合法。 |
