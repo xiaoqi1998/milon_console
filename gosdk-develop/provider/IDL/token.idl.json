@@ -1901,27 +1901,27 @@
   "errors": [
     {
       "code": 512,
-      "message": "账户不存在 (token: {0:?}, account: {1:?})",
+      "message": "account does not exist (token: {0:?}, account: {1:?})",
       "name": "AccountNotFound"
     },
     {
       "code": 513,
-      "message": "余额不足 (token: {0:?}, account: {1:?}, 可用: {2}, 需操作: {3})",
+      "message": "insufficient balance (token: {0:?}, account: {1:?}, available: {2}, required: {3})",
       "name": "InsufficientBalance"
     },
     {
       "code": 514,
-      "message": "授权金额不足 (token: {0:?}, owner: {1:?}, spender: {2:?}, 可用: {3}, 需操作: {4})",
+      "message": "insufficient allowance (token: {0:?}, owner: {1:?}, spender: {2:?}, available: {3}, required: {4})",
       "name": "InsufficientApproval"
     },
     {
       "code": 515,
-      "message": "代币不存在 (token: {0:?})",
+      "message": "token does not exist (token: {0:?})",
       "name": "TokenNotFound"
     },
     {
       "code": 516,
-      "message": "代币已存在 (token: {0:?})",
+      "message": "token already exists (token: {0:?})",
       "name": "TokenAlreadyExists"
     },
     {

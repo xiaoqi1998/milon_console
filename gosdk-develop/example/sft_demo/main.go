@@ -7,7 +7,6 @@ import (
 	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/gen"
-	"github.com/milon-labs/milon-go-sdk/helper"
 	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
@@ -98,7 +97,11 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	submitAndWait(client, tx)
+	txHistory, err := client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 
 	fmt.Printf("\n================ 3.CreateSlot(owner sign, is_transferable=true) ================\n")
 	// a slot can only be created by the SFT owner; SlotData.metadata is an optional MetadataOverride,
@@ -122,7 +125,12 @@ func example(networkConfig milon.Network) {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
 	// slot_id is assigned by a global on-chain increment (starting from 1); extract it from the receipt event to avoid hardcoding.
-	slotID := receiptEventU64(client, submitAndWait(client, tx), "SlotCreatedEvent", "slot_id")
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
+	slotID := receiptEventU64(client, txHistory, "SlotCreatedEvent", "slot_id")
 	fmt.Printf("slot created: slot_id = %d\n", slotID)
 	// A new SFT's slot_id is assigned incrementally from 1, so the first slot must be 1.
 	requireU64(slotID, 1, "slot_id")
@@ -144,7 +152,12 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	token1 := receiptEventU64(client, submitAndWait(client, tx), "TokenMintedEvent", "token_id")
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
+	token1 := receiptEventU64(client, txHistory, "TokenMintedEvent", "token_id")
 	fmt.Printf("minted: token_id = %d, owner holds 100\n", token1)
 	// A new SFT's token_id is assigned incrementally from 1, so the first minted TOKEN must be 1.
 	requireU64(token1, 1, "minted token_id")
@@ -167,7 +180,12 @@ func example(networkConfig milon.Network) {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
 	// split reuses TokenTransferredEvent: from_token_id is the source TOKEN, to_token_id is the newly derived TOKEN.
-	token2 := receiptEventU64(client, submitAndWait(client, tx), "TokenTransferredEvent", "to_token_id")
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
+	token2 := receiptEventU64(client, txHistory, "TokenTransferredEvent", "to_token_id")
 	fmt.Printf("split: token %d (100) -> new token %d (40 for alice), owner keeps 60 on token %d\n", token1, token2, token1)
 	// The new TOKEN derived by split gets the next token_id.
 	requireU64(token2, 2, "split to_token_id")
@@ -191,7 +209,11 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	txHistory := submitAndWait(client, tx)
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 	requireU64(receiptEventU64(client, txHistory, "TokenTransferredEvent", "amount"), 20, "transferred amount")
 	// A share transfer does not derive a new TOKEN: in the event, to_token_id equals from_token_id.
 	requireU64(receiptEventU64(client, txHistory, "TokenTransferredEvent", "to_token_id"), token1, "transfer to_token_id")
@@ -214,7 +236,11 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	submitAndWait(client, tx)
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 	fmt.Printf("full transfer: token %d -> bob holds 40, alice holds 0\n", token2)
 	requireU64(balanceOf(client, sft, token2, alice), 0, "alice balance on token2 after full transfer")
 	requireU64(balanceOf(client, sft, token2, bob), 40, "bob balance on token2 after full transfer")
@@ -235,8 +261,15 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	submitAndWait(client, tx)
-	approval := viewValue(client, gen.Sftoken.ApprovalOf.Args(sft, token2, bob, alice), gen.Sftoken.ApprovalOf.DecodeView)
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
+	approval, err := milon.ViewValue(client, gen.Sftoken.ApprovalOf.Args(sft, token2, bob, alice).Encode, gen.Sftoken.ApprovalOf.DecodeView)
+	if err != nil {
+		panic("failed to view ApprovalOf:" + err.Error())
+	}
 	// After approving 30, the allowance should be 30.
 	requireU64(approval, 30, "approval after approve")
 	fmt.Printf("alice approval on token %d (owner=bob): %d\n", token2, approval)
@@ -257,12 +290,19 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	submitAndWait(client, tx)
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 	fmt.Printf("transfer_from: token %d -> bob keeps 10, owner holds 30 (same token_id)\n", token2)
 	requireU64(balanceOf(client, sft, token2, bob), 10, "bob balance on token2 after transfer_from")
 	requireU64(balanceOf(client, sft, token2, owner), 30, "owner balance on token2 after transfer_from")
 
-	approval = viewValue(client, gen.Sftoken.ApprovalOf.Args(sft, token2, bob, alice), gen.Sftoken.ApprovalOf.DecodeView)
+	approval, err = milon.ViewValue(client, gen.Sftoken.ApprovalOf.Args(sft, token2, bob, alice).Encode, gen.Sftoken.ApprovalOf.DecodeView)
+	if err != nil {
+		panic("failed to view ApprovalOf:" + err.Error())
+	}
 	// After spending 30, the allowance drops to zero (the record is deleted once the allowance is exhausted).
 	requireU64(approval, 0, "approval after transfer_from")
 	fmt.Printf("alice approval on token %d after spend: %d\n", token2, approval)
@@ -283,8 +323,15 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	submitAndWait(client, tx)
-	frozen := viewValue(client, gen.Sftoken.FrozenOf.Args(sft, token2, bob), gen.Sftoken.FrozenOf.DecodeView)
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
+	frozen, err := milon.ViewValue(client, gen.Sftoken.FrozenOf.Args(sft, token2, bob).Encode, gen.Sftoken.FrozenOf.DecodeView)
+	if err != nil {
+		panic("failed to view FrozenOf:" + err.Error())
+	}
 	requireBool(frozen, true, "bob frozen on token2 after freeze")
 	fmt.Printf("bob frozen on token %d: %v\n", token2, frozen)
 
@@ -299,8 +346,15 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	submitAndWait(client, tx)
-	frozen = viewValue(client, gen.Sftoken.FrozenOf.Args(sft, token2, bob), gen.Sftoken.FrozenOf.DecodeView)
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
+	frozen, err = milon.ViewValue(client, gen.Sftoken.FrozenOf.Args(sft, token2, bob).Encode, gen.Sftoken.FrozenOf.DecodeView)
+	if err != nil {
+		panic("failed to view FrozenOf:" + err.Error())
+	}
 	requireBool(frozen, false, "bob frozen on token2 after unfreeze")
 	fmt.Printf("bob frozen on token %d after unfreeze: %v\n", token2, frozen)
 
@@ -319,7 +373,11 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to build and sign transaction:" + err.Error())
 	}
-	txHistory = submitAndWait(client, tx)
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait:" + err.Error())
+	}
+	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 	mergedAmount := receiptEventU64(client, txHistory, "TokenTransferredEvent", "amount")
 	// All 20 of bob's shares on token1 are folded into token2.
 	requireU64(mergedAmount, 20, "merged amount")
@@ -332,28 +390,58 @@ func example(networkConfig milon.Network) {
 	displayToken(client, sft, token2, holders...)
 
 	fmt.Printf("\n================ 12.Final states ================\n")
-	sftOwner := viewValue(client, gen.Sftoken.SftOwnerOf.Args(sft), gen.Sftoken.SftOwnerOf.DecodeView)
-	sftMeta := viewValue(client, gen.Sftoken.SftMetadata.Args(sft), gen.Sftoken.SftMetadata.DecodeView)
+	sftOwner, err := milon.ViewValue(client, gen.Sftoken.SftOwnerOf.Args(sft).Encode, gen.Sftoken.SftOwnerOf.DecodeView)
+	if err != nil {
+		panic("failed to view SftOwnerOf:" + err.Error())
+	}
+	sftMeta, err := milon.ViewValue(client, gen.Sftoken.SftMetadata.Args(sft).Encode, gen.Sftoken.SftMetadata.DecodeView)
+	if err != nil {
+		panic("failed to view SftMetadata:" + err.Error())
+	}
 	fmt.Printf("sft: owner=%v name=%q symbol=%q cover_url=%q uri=%q attribute=%s\n",
 		sftOwner, sftMeta.Name, sftMeta.Symbol, sftMeta.CoverUrl, sftMeta.Metadata, optStr(sftMeta.Attribute))
 
-	royalty := viewValue(client, gen.Sftoken.RoyaltyInfo.Args(sft), gen.Sftoken.RoyaltyInfo.DecodeView)
+	royalty, err := milon.ViewValue(client, gen.Sftoken.RoyaltyInfo.Args(sft).Encode, gen.Sftoken.RoyaltyInfo.DecodeView)
+	if err != nil {
+		panic("failed to view RoyaltyInfo:" + err.Error())
+	}
 	fmt.Printf("royalty: recipient=%v bps=%d\n", royalty.Recipient, royalty.Bps)
 
 	// When not transferred, all three authorities fall back to the SFT owner.
-	mintAuthority := viewValue(client, gen.Sftoken.MintAuthority.Args(sft), gen.Sftoken.MintAuthority.DecodeView)
-	updateAuthor := viewValue(client, gen.Sftoken.UpdateAuthor.Args(sft), gen.Sftoken.UpdateAuthor.DecodeView)
-	freezeAuthority := viewValue(client, gen.Sftoken.FreezeAuthority.Args(sft), gen.Sftoken.FreezeAuthority.DecodeView)
+	mintAuthority, err := milon.ViewValue(client, gen.Sftoken.MintAuthority.Args(sft).Encode, gen.Sftoken.MintAuthority.DecodeView)
+	if err != nil {
+		panic("failed to view MintAuthority:" + err.Error())
+	}
+	updateAuthor, err := milon.ViewValue(client, gen.Sftoken.UpdateAuthor.Args(sft).Encode, gen.Sftoken.UpdateAuthor.DecodeView)
+	if err != nil {
+		panic("failed to view UpdateAuthor:" + err.Error())
+	}
+	freezeAuthority, err := milon.ViewValue(client, gen.Sftoken.FreezeAuthority.Args(sft).Encode, gen.Sftoken.FreezeAuthority.DecodeView)
+	if err != nil {
+		panic("failed to view FreezeAuthority:" + err.Error())
+	}
 	fmt.Printf("authorities: mint=%v update=%v freeze=%v\n", mintAuthority, updateAuthor, freezeAuthority)
 
-	transferable := viewValue(client, gen.Sftoken.IsSlotTransferable.Args(sft, slotID), gen.Sftoken.IsSlotTransferable.DecodeView)
-	slotInfo := viewValue(client, gen.Sftoken.SlotInfo.Args(sft, slotID), gen.Sftoken.SlotInfo.DecodeView)
-	slotMeta := viewValue(client, gen.Sftoken.SlotMetadata.Args(sft, slotID), gen.Sftoken.SlotMetadata.DecodeView)
+	transferable, err := milon.ViewValue(client, gen.Sftoken.IsSlotTransferable.Args(sft, slotID).Encode, gen.Sftoken.IsSlotTransferable.DecodeView)
+	if err != nil {
+		panic("failed to view IsSlotTransferable:" + err.Error())
+	}
+	slotInfo, err := milon.ViewValue(client, gen.Sftoken.SlotInfo.Args(sft, slotID).Encode, gen.Sftoken.SlotInfo.DecodeView)
+	if err != nil {
+		panic("failed to view SlotInfo:" + err.Error())
+	}
+	slotMeta, err := milon.ViewValue(client, gen.Sftoken.SlotMetadata.Args(sft, slotID).Encode, gen.Sftoken.SlotMetadata.DecodeView)
+	if err != nil {
+		panic("failed to view SlotMetadata:" + err.Error())
+	}
 	fmt.Printf("slot %d: is_transferable=%v override=%v\n", slotID, transferable, overrideStr(slotInfo.Metadata))
 	fmt.Printf("slot %d resolved metadata: name=%q symbol=%q attribute=%s\n",
 		slotID, slotMeta.Name, slotMeta.Symbol, optStr(slotMeta.Attribute))
 
-	approval = viewValue(client, gen.Sftoken.ApprovalOf.Args(sft, token2, bob, alice), gen.Sftoken.ApprovalOf.DecodeView)
+	approval, err = milon.ViewValue(client, gen.Sftoken.ApprovalOf.Args(sft, token2, bob, alice).Encode, gen.Sftoken.ApprovalOf.DecodeView)
+	if err != nil {
+		panic("failed to view ApprovalOf:" + err.Error())
+	}
 	fmt.Printf("alice approval on token %d (owner=bob): %d\n", token2, approval)
 
 	// Final shares: token1 has only owner with 40; token2 is co-held by bob with 30 and owner with 30.
@@ -415,48 +503,13 @@ func newAccount() (*crypto.ClassicalSecretKey, *crypto.PublicKey, *crypto.Addres
 	return sk, pk, addr
 }
 
-// submitAndWait submits a transaction, waits for it to be committed on-chain, and returns the full receipt for event extraction.
-func submitAndWait(client *milon.Client, tx *lib.Transaction) *api.TxHistory {
-	if _, err := client.SubmitTx(tx); err != nil {
-		panic("failed to submit transaction:" + err.Error())
-	}
-	fmt.Printf("and we wait for the transaction %s to complete...\n", tx.TxHash())
-	getTxByHashResult, err := client.WaitForTransaction(tx.TxHash())
-	if err != nil {
-		panic("failed to wait for transaction:" + err.Error())
-	}
-	if err := helper.CheckTxSuccess(getTxByHashResult.BodyTxHistory); err != nil {
-		panic(err)
-	}
-	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
-	return getTxByHashResult.BodyTxHistory
-}
-
-// encoder abstracts the Encode method of a gen instruction-args object.
-type encoder interface {
-	Encode() (api.PackedInstruction, error)
-}
-
-// viewValue calls a view instruction and decodes the return value with the corresponding DecodeView.
-func viewValue[T any](client *milon.Client, args encoder, decode func([]byte) (T, error)) T {
-	wire, err := args.Encode()
-	if err != nil {
-		panic("failed to encode view instruction:" + err.Error())
-	}
-	viewTxResult, err := client.View(wire)
-	if err != nil {
-		panic("failed to call view:" + err.Error())
-	}
-	value, err := decode(viewTxResult.HTTPResponseBody)
-	if err != nil {
-		panic("failed to decode view result:" + err.Error())
-	}
-	return value
-}
-
 // balanceOf queries an address's shares on a given TOKEN.
 func balanceOf(client *milon.Client, sft *crypto.Address, tokenID uint64, owner *crypto.Address) uint64 {
-	return viewValue(client, gen.Sftoken.BalanceOf.Args(sft, tokenID, owner), gen.Sftoken.BalanceOf.DecodeView)
+	balance, err := milon.ViewValue(client, gen.Sftoken.BalanceOf.Args(sft, tokenID, owner).Encode, gen.Sftoken.BalanceOf.DecodeView)
+	if err != nil {
+		panic("failed to view BalanceOf:" + err.Error())
+	}
+	return balance
 }
 
 // sftokenEventTypeTag looks up an event's typeTag from the bound sftoken IDL (avoiding hardcoding).
@@ -495,13 +548,22 @@ func receiptEventU64(client *milon.Client, txHistory *api.TxHistory, eventName, 
 
 // displayToken prints a TOKEN's latest on-chain state: the inheritance-resolved metadata, plus each holder's shares and freeze status.
 func displayToken(client *milon.Client, sft *crypto.Address, tokenID uint64, holders ...holder) {
-	slotID := viewValue(client, gen.Sftoken.SlotOf.Args(sft, tokenID), gen.Sftoken.SlotOf.DecodeView)
-	meta := viewValue(client, gen.Sftoken.Token.Args(sft, tokenID), gen.Sftoken.Token.DecodeView)
+	slotID, err := milon.ViewValue(client, gen.Sftoken.SlotOf.Args(sft, tokenID).Encode, gen.Sftoken.SlotOf.DecodeView)
+	if err != nil {
+		panic("failed to view SlotOf:" + err.Error())
+	}
+	meta, err := milon.ViewValue(client, gen.Sftoken.Token.Args(sft, tokenID).Encode, gen.Sftoken.Token.DecodeView)
+	if err != nil {
+		panic("failed to view Token:" + err.Error())
+	}
 	fmt.Printf("  token_id=%d slot_id=%d name=%q symbol=%q cover_url=%q attribute=%s\n", tokenID, slotID, meta.Name, meta.Symbol, meta.CoverUrl, optStr(meta.Attribute))
 
 	for _, h := range holders {
 		balance := balanceOf(client, sft, tokenID, h.addr)
-		frozen := viewValue(client, gen.Sftoken.FrozenOf.Args(sft, tokenID, h.addr), gen.Sftoken.FrozenOf.DecodeView)
+		frozen, err := milon.ViewValue(client, gen.Sftoken.FrozenOf.Args(sft, tokenID, h.addr).Encode, gen.Sftoken.FrozenOf.DecodeView)
+		if err != nil {
+			panic("failed to view FrozenOf:" + err.Error())
+		}
 		fmt.Printf("    holder=%-6s addr=%v balance=%d frozen=%v\n", h.name, h.addr, balance, frozen)
 	}
 }

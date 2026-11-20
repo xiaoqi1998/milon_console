@@ -93,78 +93,15 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "validator",
+						Name: "validators",
 						Role: "input",
-						Type: "B256",
-					},
-					provider.Arg{
-						Name: "controller",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "consensus_account",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "consensus_pubkey",
-						Role: "input",
-						Type: "bytes",
-					},
-					provider.Arg{
-						Name: "bls_pubkey",
-						Role: "input",
-						Type: "bytes",
-					},
-					provider.Arg{
-						Name: "ed25519_pubkey",
-						Role: "input",
-						Type: "bytes",
+						Type: "vec<B256>",
 					},
 				},
-				Discriminator: 16918,
-				Handler: "register_validator_identity",
+				Discriminator: 46958,
+				Handler: "bootstrap_registered_validator_set",
 				Kind: "entry",
-				Name: "RegisterValidatorIdentity",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "target_epoch",
-						Role: "input",
-						Type: "u64",
-					},
-					provider.Arg{
-						Name: "validator_set_seed",
-						Role: "input",
-						Type: "B256",
-					},
-				},
-				Discriminator: 55212,
-				Handler: "prepare_validator_set",
-				Kind: "entry",
-				Name: "PrepareValidatorSet",
-			},
-			provider.Instruction{
-				Args: nil,
-				Discriminator: 61700,
-				Handler: "settle_staking_epoch",
-				Kind: "entry",
-				Name: "SettleStakingEpoch",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "rules_height",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 59552,
-				Handler: "commit_validator_set",
-				Kind: "entry",
-				Name: "CommitValidatorSet",
+				Name: "BootstrapRegisteredValidatorSet",
 			},
 			provider.Instruction{
 				Args: nil,
@@ -189,11 +126,6 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "signer",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
 						Name: "feature_id",
 						Role: "input",
 						Type: "u32",
@@ -211,11 +143,6 @@ provider.IDL{
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
-					provider.Arg{
-						Name: "signer",
-						Role: "signer",
-						Type: "Signer",
-					},
 					provider.Arg{
 						Name: "params",
 						Role: "input",
@@ -235,11 +162,6 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "signer",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
 						Name: "feature_id",
 						Role: "input",
 						Type: "u32",
@@ -252,11 +174,6 @@ provider.IDL{
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
-					provider.Arg{
-						Name: "signer",
-						Role: "signer",
-						Type: "Signer",
-					},
 					provider.Arg{
 						Name: "feature_id",
 						Role: "input",
@@ -345,6 +262,25 @@ provider.IDL{
 			},
 		},
 		Types: []provider.IDLType{
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "written",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "number",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "hash",
+						Type: "B256",
+					},
+				},
+				Kind: "struct",
+				Name: "RecentBlock",
+				TypeTag: 14176988562306742379,
+			},
 			provider.IDLType{
 				Variants: []provider.EnumVariant{
 					provider.EnumVariant{
@@ -712,9 +648,19 @@ provider.IDL{
 				TypeTag: 14785269867199075517,
 			},
 			provider.Resource{
+				Name: "_EpochCommitment",
+				Type: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.Resource{
 				Name: "_BlockSeed",
 				Type: "B256",
 				TypeTag: 12016729314829497160,
+			},
+			provider.Resource{
+				Name: "_RecentBlockAnchor",
+				Type: "RecentBlock",
+				TypeTag: 14176988562306742379,
 			},
 			provider.Resource{
 				Name: "_ActiveFeatures",
@@ -787,6 +733,11 @@ provider.IDL{
 				TypeTag: 14542707920151212342,
 			},
 			provider.Resource{
+				Name: "_ConsensusValidatorByTransport",
+				Type: "B256",
+				TypeTag: 14542707920151212342,
+			},
+			provider.Resource{
 				Name: "_AppWake",
 				Type: "WakeRecord",
 				TypeTag: 14699626089141530756,
@@ -840,71 +791,61 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 104,
-				Message: "Signer is not a validator consensus account",
-				Name: "UpgradeNotValidator",
-			},
-			provider.ErrorDef{
-				Code: 105,
-				Message: "Validator is not eligible to vote on upgrades",
-				Name: "UpgradeNotEligible",
-			},
-			provider.ErrorDef{
-				Code: 106,
 				Message: "Invalid feature id {0}",
 				Name: "UpgradeInvalidFeatureId",
 			},
 			provider.ErrorDef{
-				Code: 107,
+				Code: 105,
 				Message: "Feature {0} is already active",
 				Name: "UpgradeFeatureActive",
 			},
 			provider.ErrorDef{
-				Code: 108,
+				Code: 106,
 				Message: "Feature {0} already has a proposal in voting",
 				Name: "UpgradeProposalExists",
 			},
 			provider.ErrorDef{
-				Code: 109,
+				Code: 107,
 				Message: "Another proposal of this kind is in voting",
 				Name: "UpgradeKindBusy",
 			},
 			provider.ErrorDef{
-				Code: 110,
+				Code: 108,
 				Message: "A proposal just ended in this block; propose again from the next block",
 				Name: "UpgradeResubmitNextBlock",
 			},
 			provider.ErrorDef{
-				Code: 111,
+				Code: 109,
 				Message: "Invalid chain params: {0}",
 				Name: "UpgradeInvalidParams",
 			},
 			provider.ErrorDef{
-				Code: 112,
+				Code: 110,
 				Message: "No proposal in voting for feature {0}",
 				Name: "UpgradeProposalNotFound",
 			},
 			provider.ErrorDef{
-				Code: 113,
+				Code: 111,
 				Message: "Voting period has ended",
 				Name: "UpgradeVotingClosed",
 			},
 			provider.ErrorDef{
-				Code: 114,
+				Code: 112,
 				Message: "Validator has already voted",
 				Name: "UpgradeAlreadyVoted",
 			},
 			provider.ErrorDef{
-				Code: 115,
+				Code: 113,
 				Message: "Only the proposer can cancel the proposal",
 				Name: "UpgradeNotProposer",
 			},
 			provider.ErrorDef{
-				Code: 116,
+				Code: 114,
 				Message: "Only the trailing system transaction can close a vote",
 				Name: "UpgradeSystemTxOnly",
 			},
 			provider.ErrorDef{
-				Code: 117,
+				Code: 115,
 				Message: "Upgrade state is corrupt: {0}",
 				Name: "UpgradeStateCorrupt",
 			},
@@ -913,7 +854,12 @@ provider.IDL{
 			provider.Constant{
 				Name: "BLOCK_SEED_RES_HINT",
 				Type: "usize",
-				Value: 1,
+				Value: 2,
+			},
+			provider.Constant{
+				Name: "RECENT_BLOCK_WINDOW",
+				Type: "u64",
+				Value: 64,
 			},
 			provider.Constant{
 				Name: "STATUS_HISTORY",
@@ -3508,27 +3454,27 @@ provider.IDL{
 		Errors: []provider.ErrorDef{
 			provider.ErrorDef{
 				Code: 512,
-				Message: "账户不存在 (token: {0:?}, account: {1:?})",
+				Message: "account does not exist (token: {0:?}, account: {1:?})",
 				Name: "AccountNotFound",
 			},
 			provider.ErrorDef{
 				Code: 513,
-				Message: "余额不足 (token: {0:?}, account: {1:?}, 可用: {2}, 需操作: {3})",
+				Message: "insufficient balance (token: {0:?}, account: {1:?}, available: {2}, required: {3})",
 				Name: "InsufficientBalance",
 			},
 			provider.ErrorDef{
 				Code: 514,
-				Message: "授权金额不足 (token: {0:?}, owner: {1:?}, spender: {2:?}, 可用: {3}, 需操作: {4})",
+				Message: "insufficient allowance (token: {0:?}, owner: {1:?}, spender: {2:?}, available: {3}, required: {4})",
 				Name: "InsufficientApproval",
 			},
 			provider.ErrorDef{
 				Code: 515,
-				Message: "代币不存在 (token: {0:?})",
+				Message: "token does not exist (token: {0:?})",
 				Name: "TokenNotFound",
 			},
 			provider.ErrorDef{
 				Code: 516,
-				Message: "代币已存在 (token: {0:?})",
+				Message: "token already exists (token: {0:?})",
 				Name: "TokenAlreadyExists",
 			},
 			provider.ErrorDef{
@@ -10680,61 +10626,42 @@ provider.IDL{
 		},
 		Instructions: []provider.Instruction{
 			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "controller",
-						Role: "signer",
-						Type: "Signer",
-					},
-				},
-				Discriminator: 51820,
-				Handler: "register_validator",
+				Args: nil,
+				Discriminator: 23268,
+				Handler: "record_validator_activity",
 				Kind: "entry",
-				Name: "RegisterValidator",
-				Returns: provider.ReturnValue{
-					Type: "B256",
-				},
+				Name: "RecordValidatorActivity",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "controller",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "validator",
+						Name: "minimum_self_stake",
 						Role: "input",
-						Type: "B256",
-					},
-					provider.Arg{
-						Name: "stake_asset",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "reward_asset",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "reward_config",
-						Role: "input",
-						Type: "PoolRewardConfig",
+						Type: "u64",
 					},
 				},
-				Discriminator: 51696,
-				Handler: "create_validator_pool",
+				Discriminator: 54067,
+				Handler: "bootstrap_validator_rules",
 				Kind: "entry",
-				Name: "CreateValidatorPool",
-				Returns: provider.ReturnValue{
-					Type: "B256",
-				},
+				Name: "BootstrapValidatorRules",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "controller",
+						Name: "start_slot",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 32944,
+				Handler: "freeze_validator_epoch",
+				Kind: "entry",
+				Name: "FreezeValidatorEpoch",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
@@ -10744,15 +10671,15 @@ provider.IDL{
 						Type: "B256",
 					},
 				},
-				Discriminator: 9233,
-				Handler: "pause_pool",
+				Discriminator: 9901,
+				Handler: "join_validator",
 				Kind: "entry",
-				Name: "PausePool",
+				Name: "JoinValidator",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "controller",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
@@ -10762,15 +10689,15 @@ provider.IDL{
 						Type: "B256",
 					},
 				},
-				Discriminator: 38150,
-				Handler: "resume_pool",
+				Discriminator: 47485,
+				Handler: "exit_validator",
 				Kind: "entry",
-				Name: "ResumePool",
+				Name: "ExitValidator",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "controller",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
@@ -10779,16 +10706,21 @@ provider.IDL{
 						Role: "input",
 						Type: "B256",
 					},
+					provider.Arg{
+						Name: "amount",
+						Role: "input",
+						Type: "u64",
+					},
 				},
-				Discriminator: 12323,
-				Handler: "close_pool",
+				Discriminator: 39689,
+				Handler: "top_up_self_stake",
 				Kind: "entry",
-				Name: "ClosePool",
+				Name: "TopUpSelfStake",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "controller",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
@@ -10811,7 +10743,7 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "controller",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
@@ -10832,7 +10764,7 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "controller",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
@@ -10853,47 +10785,9 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "owner",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "stake_asset",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "reward_asset",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "reward_per_validator",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 57544,
-				Handler: "configure_validator_reward_policy",
-				Kind: "entry",
-				Name: "ConfigureValidatorRewardPolicy",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
 						Name: "funder",
 						Role: "signer",
 						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "stake_asset",
-						Role: "input",
-						Type: "Address",
-					},
-					provider.Arg{
-						Name: "reward_asset",
-						Role: "input",
-						Type: "Address",
 					},
 					provider.Arg{
 						Name: "amount",
@@ -10901,130 +10795,113 @@ provider.IDL{
 						Type: "u64",
 					},
 				},
-				Discriminator: 17047,
-				Handler: "fund_validator_reward_policy",
+				Discriminator: 27609,
+				Handler: "fund_validator_rewards",
 				Kind: "entry",
-				Name: "FundValidatorRewardPolicy",
+				Name: "FundValidatorRewards",
 			},
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "controller",
+						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
-						Role: "input",
-						Type: "B256",
-					},
-				},
-				Discriminator: 45033,
-				Handler: "join_candidate_pool",
-				Kind: "entry",
-				Name: "JoinCandidatePool",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "controller",
+						Name: "consensus_account",
 						Role: "signer",
 						Type: "Signer",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "consensus_pubkey",
 						Role: "input",
-						Type: "B256",
-					},
-				},
-				Discriminator: 52192,
-				Handler: "leave_candidate_pool",
-				Kind: "entry",
-				Name: "LeaveCandidatePool",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "controller",
-						Role: "signer",
-						Type: "Signer",
+						Type: "bytes",
 					},
 					provider.Arg{
-						Name: "validator",
+						Name: "bls_pubkey",
 						Role: "input",
-						Type: "B256",
+						Type: "bytes",
 					},
-				},
-				Discriminator: 43639,
-				Handler: "declare_validator_availability",
-				Kind: "entry",
-				Name: "DeclareValidatorAvailability",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
 					provider.Arg{
-						Name: "stake_asset",
+						Name: "bls_proof",
 						Role: "input",
-						Type: "Address",
+						Type: "bytes",
 					},
 					provider.Arg{
-						Name: "reward_asset",
+						Name: "ed25519_pubkey",
 						Role: "input",
-						Type: "Address",
+						Type: "bytes",
 					},
-				},
-				Discriminator: 57655,
-				Handler: "validator_reward_policy",
-				Kind: "view",
-				Name: "ValidatorRewardPolicy",
-				Returns: provider.ReturnValue{
-					Type: "ValidatorRewardPolicy",
-				},
-			},
-			provider.Instruction{
-				Args: nil,
-				Discriminator: 27560,
-				Handler: "validator_reward_policy_configured",
-				Kind: "view",
-				Name: "ValidatorRewardPolicyConfigured",
-				Returns: provider.ReturnValue{
-					Type: "bool",
-				},
-			},
-			provider.Instruction{
-				Args: nil,
-				Discriminator: 65512,
-				Handler: "candidate_pool",
-				Kind: "view",
-				Name: "CandidatePool",
-				Returns: provider.ReturnValue{
-					Type: "CandidatePool",
-				},
-			},
-			provider.Instruction{
-				Args: nil,
-				Discriminator: 7913,
-				Handler: "candidate_validators",
-				Kind: "view",
-				Name: "CandidateValidators",
-				Returns: provider.ReturnValue{
-					Type: "vec<CandidateValidator>",
-				},
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
 					provider.Arg{
-						Name: "target_epoch",
+						Name: "self_stake",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "commission_rate_bps",
 						Role: "input",
 						Type: "u64",
 					},
 				},
-				Discriminator: 21712,
-				Handler: "declared_validators",
-				Kind: "view",
-				Name: "DeclaredValidators",
+				Discriminator: 51820,
+				Handler: "register_validator",
+				Kind: "entry",
+				Name: "RegisterValidator",
 				Returns: provider.ReturnValue{
-					Type: "CandidatePool",
+					Type: "B256",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 15316,
+				Handler: "settle_validator_epoch",
+				Kind: "entry",
+				Name: "SettleValidatorEpoch",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "epoch",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 46392,
+				Handler: "validator_epoch_activity",
+				Kind: "view",
+				Name: "ValidatorEpochActivity",
+				Returns: provider.ReturnValue{
+					Type: "EpochActivity",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 43732,
+				Handler: "validator_memberships",
+				Kind: "view",
+				Name: "ValidatorMemberships",
+				Returns: provider.ReturnValue{
+					Type: "vec<Membership>",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 32584,
+				Handler: "current_validator_pools",
+				Kind: "view",
+				Name: "CurrentValidatorPools",
+				Returns: provider.ReturnValue{
+					Type: "ValidatorPoolList",
+				},
+			},
+			provider.Instruction{
+				Args: nil,
+				Discriminator: 24480,
+				Handler: "validator_reward_budget",
+				Kind: "view",
+				Name: "ValidatorRewardBudget",
+				Returns: provider.ReturnValue{
+					Type: "u64",
 				},
 			},
 			provider.Instruction{
@@ -11046,142 +10923,70 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "controller",
+						Name: "owner",
 						Role: "input",
 						Type: "Address",
 					},
 				},
-				Discriminator: 61371,
-				Handler: "validator_for_controller",
+				Discriminator: 10754,
+				Handler: "validator_for_owner",
 				Kind: "view",
-				Name: "ValidatorForController",
+				Name: "ValidatorForOwner",
 				Returns: provider.ReturnValue{
 					Type: "B256",
 				},
 			},
 			provider.Instruction{
-				Args: nil,
-				Discriminator: 32584,
-				Handler: "current_validator_pools",
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "target_epoch",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 13504,
+				Handler: "validator_self_stake",
 				Kind: "view",
-				Name: "CurrentValidatorPools",
+				Name: "ValidatorSelfStake",
 				Returns: provider.ReturnValue{
-					Type: "ValidatorPoolList",
+					Type: "u64",
 				},
 			},
 			provider.Instruction{
 				Args: nil,
-				Discriminator: 4184,
-				Handler: "candidate_validator_pools",
+				Discriminator: 19434,
+				Handler: "registered_validators",
 				Kind: "view",
-				Name: "CandidateValidatorPools",
+				Name: "RegisteredValidators",
 				Returns: provider.ReturnValue{
-					Type: "ValidatorPoolList",
+					Type: "vec<B256>",
 				},
 			},
 		},
 		Types: []provider.IDLType{
 			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
-						Name: "Registered",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Suspended",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Retired",
-						Kind: "unit",
-						Fields: nil,
-					},
-				},
-				Kind: "enum",
-				Name: "ValidatorIdentityStatus",
-				TypeTag: 2039065263709388929,
-			},
-			provider.IDLType{
-				Variants: []provider.EnumVariant{
-					provider.EnumVariant{
-						Name: "None",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Candidate",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Selected",
-						Kind: "unit",
-						Fields: nil,
-					},
-					provider.EnumVariant{
-						Name: "Leaving",
-						Kind: "unit",
-						Fields: nil,
-					},
-				},
-				Kind: "enum",
-				Name: "ValidatorSelectionStatus",
-				TypeTag: 17411245120379223379,
-			},
-			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
 						Name: "validator",
 						Type: "B256",
 					},
 					provider.StructField{
-						Name: "controller",
+						Name: "owner",
 						Type: "Address",
 					},
 					provider.StructField{
-						Name: "identity_status",
-						Type: "ValidatorIdentityStatus",
-					},
-					provider.StructField{
-						Name: "selection_status",
-						Type: "ValidatorSelectionStatus",
-					},
-					provider.StructField{
 						Name: "pool_id",
-						Type: "option<B256>",
+						Type: "B256",
 					},
 				},
 				Kind: "struct",
 				Name: "ValidatorProfile",
 				TypeTag: 13667524927300449050,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "validators",
-						Type: "vec<B256>",
-					},
-				},
-				Kind: "struct",
-				Name: "CandidatePool",
-				TypeTag: 16438948254081357680,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
-						Name: "validator",
-						Type: "B256",
-					},
-					provider.StructField{
-						Name: "consensus_account",
-						Type: "Address",
-					},
-				},
-				Kind: "struct",
-				Name: "CandidateValidator",
-				TypeTag: 6579223508042650616,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -11230,7 +11035,7 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "validator_set_hash",
-						Type: "option<B256>",
+						Type: "B256",
 					},
 					provider.StructField{
 						Name: "validators",
@@ -11244,59 +11049,79 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "target_epoch",
+						Name: "blocks",
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "validator",
-						Type: "B256",
+						Name: "signers",
+						Type: "u64",
 					},
 					provider.StructField{
-						Name: "controller",
-						Type: "Address",
+						Name: "last_block",
+						Type: "u64",
 					},
 				},
 				Kind: "struct",
-				Name: "AvailabilityDeclaration",
-				TypeTag: 9892382822654520502,
+				Name: "EpochActivity",
+				TypeTag: 12255403643170472952,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "stake_asset",
-						Type: "Address",
+						Name: "previous_set_hash",
+						Type: "B256",
 					},
 					provider.StructField{
-						Name: "reward_asset",
-						Type: "Address",
+						Name: "freeze_block",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "freeze_slot",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "start_slot",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "minimum_self_stake",
+						Type: "u64",
 					},
 					provider.StructField{
 						Name: "reward_per_validator",
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "available",
-						Type: "u64",
+						Name: "validator_set",
+						Type: "bytes",
 					},
 				},
 				Kind: "struct",
-				Name: "ValidatorRewardPolicy",
-				TypeTag: 5457600749461134614,
+				Name: "FrozenEpoch",
+				TypeTag: 10270300266935636981,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "initialized",
-						Type: "bool",
+						Name: "validator",
+						Type: "B256",
 					},
 					provider.StructField{
-						Name: "last_settled_epoch",
+						Name: "join_epoch",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "exit_epoch",
+						Type: "option<u64>",
+					},
+					provider.StructField{
+						Name: "minimum_self_stake",
 						Type: "u64",
 					},
 				},
 				Kind: "struct",
-				Name: "RewardCursor",
-				TypeTag: 13878982144518937538,
+				Name: "Membership",
+				TypeTag: 5003904180896082345,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -11325,8 +11150,8 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
-				Name: "bool",
-				TypeTag: 14785269867199075517,
+				Name: "bytes",
+				TypeTag: 10405529814227927951,
 			},
 			provider.IDLType{
 				Kind: "builtin",
@@ -11336,14 +11161,24 @@ provider.IDL{
 		},
 		Resources: []provider.Resource{
 			provider.Resource{
-				Name: "_ValidatorRewardPolicy",
-				Type: "ValidatorRewardPolicy",
-				TypeTag: 5457600749461134614,
+				Name: "_EpochActivity",
+				Type: "EpochActivity",
+				TypeTag: 12255403643170472952,
 			},
 			provider.Resource{
-				Name: "_RewardCursor",
-				Type: "RewardCursor",
-				TypeTag: 13878982144518937538,
+				Name: "_EpochSelfStake",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_FrozenEpoch",
+				Type: "FrozenEpoch",
+				TypeTag: 10270300266935636981,
+			},
+			provider.Resource{
+				Name: "_Memberships",
+				Type: "vec<Membership>",
+				TypeTag: 16079097394413548312,
 			},
 			provider.Resource{
 				Name: "_ValidatorRecord",
@@ -11351,24 +11186,9 @@ provider.IDL{
 				TypeTag: 13667524927300449050,
 			},
 			provider.Resource{
-				Name: "_ValidatorByController",
-				Type: "B256",
-				TypeTag: 14542707920151212342,
-			},
-			provider.Resource{
-				Name: "_CandidatePool",
-				Type: "CandidatePool",
-				TypeTag: 16438948254081357680,
-			},
-			provider.Resource{
-				Name: "_AvailabilityDeclaration",
-				Type: "AvailabilityDeclaration",
-				TypeTag: 9892382822654520502,
-			},
-			provider.Resource{
-				Name: "_DeclaredByEpoch",
-				Type: "CandidatePool",
-				TypeTag: 16438948254081357680,
+				Name: "_RegisteredValidators",
+				Type: "vec<B256>",
+				TypeTag: 7359110152451899916,
 			},
 		},
 		Errors: []provider.ErrorDef{
@@ -11384,58 +11204,48 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 1794,
-				Message: "controller already assigned: {0:?}",
-				Name: "ControllerAlreadyAssigned",
+				Message: "signer is not the validator owner: {0:?}",
+				Name: "OwnerMismatch",
 			},
 			provider.ErrorDef{
 				Code: 1795,
-				Message: "controller does not own validator: {0:?}",
-				Name: "ControllerMismatch",
-			},
-			provider.ErrorDef{
-				Code: 1796,
-				Message: "validator pool already bound: {0:?}",
-				Name: "PoolAlreadyBound",
-			},
-			provider.ErrorDef{
-				Code: 1797,
 				Message: "consensus identity not registered: {0:?}",
 				Name: "ConsensusIdentityMissing",
 			},
 			provider.ErrorDef{
-				Code: 1798,
+				Code: 1796,
 				Message: "invalid validator parameter: {0}",
 				Name: "InvalidParameters",
 			},
 			provider.ErrorDef{
-				Code: 1799,
+				Code: 1797,
 				Message: "Reward reserve backing mismatch: {0}, {1}",
 				Name: "RewardTreasuryBackingMismatch",
 			},
 			provider.ErrorDef{
-				Code: 1800,
+				Code: 1798,
 				Message: "Transparent Token",
 				Name: "Token",
 			},
 			provider.ErrorDef{
-				Code: 1801,
+				Code: 1799,
 				Message: "Transparent Staking",
 				Name: "Staking",
 			},
 			provider.ErrorDef{
-				Code: 1802,
+				Code: 1800,
 				Message: "Transparent Context",
 				Name: "Context",
 			},
 			provider.ErrorDef{
-				Code: 1803,
+				Code: 1801,
 				Message: "validator set unavailable: {0}",
 				Name: "ValidatorSetUnavailable",
 			},
 		},
 		Constants: []provider.Constant{
 			provider.Constant{
-				Name: "MIN_CANDIDATE_POOL_STAKE",
+				Name: "MIN_SELF_STAKE",
 				Type: "u64",
 				Value: 1,
 			},
@@ -11505,17 +11315,11 @@ provider.IDL{
 						Role: "input",
 						Type: "vec<String>",
 					},
-					provider.Arg{
-						Name: "validator_account",
-						Role: "signer",
-						Type: "Signer",
-					},
 				},
 				Discriminator: 50524,
 				Handler: "update_jwk_report",
 				Kind: "entry",
 				Name: "UpdateJwkReport",
-				Sponsor: true,
 			},
 			provider.Instruction{
 				Args: nil,
@@ -12688,7 +12492,7 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 2088,
-				Message: "mock verifier rejects non-empty proof bytes (ZK phase not enabled)",
+				Message: "legacy mock verifier rejects non-empty proof bytes",
 				Name: "MockProofNotEmpty",
 			},
 			provider.ErrorDef{
@@ -12903,31 +12707,21 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 2131,
-				Message: "consensus validator identity is missing or does not match signer",
-				Name: "ConsensusIdentityMissing",
-			},
-			provider.ErrorDef{
-				Code: 2132,
-				Message: "validator is not in the current validator set: {0:?}",
-				Name: "ValidatorNotActive",
-			},
-			provider.ErrorDef{
-				Code: 2133,
 				Message: "current validator set is unavailable",
 				Name: "ValidatorSetUnavailable",
 			},
 			provider.ErrorDef{
-				Code: 2134,
+				Code: 2132,
 				Message: "dynamic JWK set is invalid or exceeds protocol limits",
 				Name: "DynamicJwkSetInvalid",
 			},
 			provider.ErrorDef{
-				Code: 2135,
+				Code: 2133,
 				Message: "JWK vote has no unique highest candidate",
 				Name: "JwkVoteTie",
 			},
 			provider.ErrorDef{
-				Code: 2136,
+				Code: 2134,
 				Message: "JWK base64url member is not canonical",
 				Name: "JwkThumbprintNonCanonical",
 			},
@@ -12969,34 +12763,29 @@ provider.IDL{
 				Value: "builtin_provider_id (b\"GOOGLE_OIDC_V1\")",
 			},
 			provider.Constant{
-				Name: "GOOGLE_ISSUER",
-				Type: "str",
-				Value: "https://accounts.google.com",
-			},
-			provider.Constant{
 				Name: "APPLE_PROVIDER_ID",
 				Type: "B256",
 				Value: "builtin_provider_id (b\"APPLE_OIDC_V1\")",
 			},
 			provider.Constant{
-				Name: "APPLE_ISSUER",
-				Type: "str",
-				Value: "https://appleid.apple.com",
-			},
-			provider.Constant{
-				Name: "GOOGLE_MAX_ID_TOKEN_AGE_MS",
-				Type: "u64",
-				Value: 600000,
-			},
-			provider.Constant{
-				Name: "APPLE_MAX_ID_TOKEN_AGE_MS",
-				Type: "u64",
-				Value: 600000,
-			},
-			provider.Constant{
 				Name: "MAX_ZK_VERIFYING_KEY_BYTES",
 				Type: "usize",
 				Value: "64 * 1024",
+			},
+			provider.Constant{
+				Name: "COMPACT_RS256_DEV_R1CS_HASH",
+				Type: "B256",
+				Value: "[0x08 , 0x21 , 0x6D , 0x61 , 0x7A , 0x2D , 0xB0 , 0x48 , 0x2D , 0xD3 , 0xD7 , 0x12 , 0x9F , 0x6F , 0x9C , 0xEC , 0x11 , 0x6E , 0xE2 , 0x3B , 0x56 , 0xAC , 0x3E , 0x08 , 0xE1 , 0x3E , 0xC4 , 0x26 , 0xA6 , 0x29 , 0x43 , 0x0D ,]",
+			},
+			provider.Constant{
+				Name: "COMPACT_RS256_DEV_VK_ACTIVATION_SHA256",
+				Type: "B256",
+				Value: "[0x32 , 0xA1 , 0x7D , 0x5C , 0x42 , 0x54 , 0xA0 , 0xCE , 0x53 , 0x46 , 0x09 , 0xE5 , 0xC8 , 0x5D , 0x27 , 0x3A , 0x95 , 0xC8 , 0x8D , 0x26 , 0xAC , 0x89 , 0x2B , 0x98 , 0x15 , 0xA7 , 0x48 , 0x5C , 0x2F , 0x7F , 0x6A , 0x28 ,]",
+			},
+			provider.Constant{
+				Name: "COMPACT_RS256_DEV_VK_BYTES",
+				Type: "bytes",
+				Value: "& [0xE2 , 0xF2 , 0x6D , 0xBE , 0xA2 , 0x99 , 0xF5 , 0x22 , 0x3B , 0x64 , 0x6C , 0xB1 , 0xFB , 0x33 , 0xEA , 0xDB , 0x05 , 0x9D , 0x94 , 0x07 , 0x55 , 0x9D , 0x74 , 0x41 , 0xDF , 0xD9 , 0x02 , 0xE3 , 0xA7 , 0x9A , 0x4D , 0x2D , 0xAB , 0xB7 , 0x3D , 0xC1 , 0x7F , 0xBC , 0x13 , 0x02 , 0x1E , 0x24 , 0x71 , 0xE0 , 0xC0 , 0x8B , 0xD6 , 0x7D , 0x84 , 0x01 , 0xF5 , 0x2B , 0x73 , 0xD6 , 0xD0 , 0x74 , 0x83 , 0x79 , 0x4C , 0xAD , 0x47 , 0x78 , 0x18 , 0x0E , 0x0C , 0x06 , 0xF3 , 0x3B , 0xBC , 0x4C , 0x79 , 0xA9 , 0xCA , 0xDE , 0xF2 , 0x53 , 0xA6 , 0x80 , 0x84 , 0xD3 , 0x82 , 0xF1 , 0x77 , 0x88 , 0xF8 , 0x85 , 0xC9 , 0xAF , 0xD1 , 0x76 , 0xF7 , 0xCB , 0x2F , 0x03 , 0x67 , 0x89 , 0xED , 0xF6 , 0x92 , 0xD9 , 0x5C , 0xBD , 0xDE , 0x46 , 0xDD , 0xDA , 0x5E , 0xF7 , 0xD4 , 0x22 , 0x43 , 0x67 , 0x79 , 0x44 , 0x5C , 0x5E , 0x66 , 0x00 , 0x6A , 0x42 , 0x76 , 0x1E , 0x1F , 0x12 , 0xEF , 0xDE , 0x00 , 0x18 , 0xC2 , 0x12 , 0xF3 , 0xAE , 0xB7 , 0x85 , 0xE4 , 0x97 , 0x12 , 0xE7 , 0xA9 , 0x35 , 0x33 , 0x49 , 0xAA , 0xF1 , 0x25 , 0x5D , 0xFB , 0x31 , 0xB7 , 0xBF , 0x60 , 0x72 , 0x3A , 0x48 , 0x0D , 0x92 , 0x93 , 0x93 , 0x8E , 0x19 , 0x0D , 0x39 , 0xD7 , 0xB0 , 0x4E , 0xAE , 0xA7 , 0x0E , 0xA1 , 0xCB , 0xB7 , 0x31 , 0x0F , 0x4A , 0x4C , 0xAA , 0x0D , 0xA7 , 0x0B , 0xA6 , 0x1B , 0x71 , 0xDB , 0xDF , 0x6D , 0xED , 0x59 , 0x3B , 0x7E , 0xD0 , 0x22 , 0x0A , 0x8A , 0x39 , 0x2A , 0xC7 , 0x22 , 0x07 , 0xAA , 0xE6 , 0xA0 , 0xFB , 0xB7 , 0xF3 , 0x2A , 0x5C , 0x41 , 0x4F , 0x3F , 0x52 , 0xC9 , 0xD9 , 0x6E , 0x43 , 0x92 , 0x0C , 0x0E , 0xD0 , 0xAD , 0xA5 , 0x02 , 0x24 , 0xA8 , 0xA6 , 0x16 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x1E , 0x3F , 0xF0 , 0xB7 , 0x50 , 0xE6 , 0x42 , 0xBA , 0x6D , 0xB8 , 0xEE , 0x47 , 0xE6 , 0x34 , 0x5F , 0x39 , 0x77 , 0xC8 , 0xBD , 0x80 , 0x65 , 0x4B , 0x4C , 0x67 , 0xB8 , 0x6A , 0x4B , 0xBA , 0xE6 , 0x0E , 0x70 , 0x8F , 0xDB , 0x23 , 0x67 , 0x26 , 0xCD , 0x80 , 0x1F , 0x36 , 0xC1 , 0xD9 , 0x7E , 0xCC , 0x8B , 0x6D , 0xB6 , 0x4B , 0x5C , 0xF3 , 0x5D , 0x64 , 0x2D , 0x38 , 0xF1 , 0x2D , 0x3F , 0xC6 , 0xAA , 0x3E , 0x2E , 0x44 , 0x7F , 0x0B , 0x36 , 0xAA , 0xD8 , 0xF6 , 0x6D , 0x0A , 0xE4 , 0xC7 , 0xEA , 0x4F , 0x74 , 0x7A , 0xA4 , 0x11 , 0x43 , 0x31 , 0xE3 , 0x30 , 0x24 , 0x6E , 0x02 , 0x6D , 0xB0 , 0x4D , 0xD1 , 0x61 , 0x45 , 0x76 , 0x81 , 0x5E , 0x6A , 0x1B , 0x3E , 0xC3 , 0xAE , 0x02 , 0x0F , 0x0C , 0xB8 , 0xBB , 0xD5 , 0x2E , 0xA6 , 0x7F , 0x3D , 0x92 , 0x3C , 0x91 , 0x07 , 0xDA , 0x5E , 0x71 , 0xF4 , 0x8D , 0xEF , 0x7A , 0xF2 , 0xB7 , 0x6C , 0xC6 , 0xC4 , 0x57 , 0x55 , 0x0F , 0x66 , 0x37 , 0xCE , 0x4E , 0x63 , 0xF0 , 0xE9 , 0x5B , 0xE8 , 0x6D , 0xC5 , 0x53 , 0xCF , 0x92 , 0x4A , 0x68 , 0x62 , 0xC6 , 0x8F , 0x42 , 0x9D , 0x67 , 0x2B , 0x45 , 0xCC , 0x14 , 0xB1 , 0x56 , 0x6A , 0xE8 , 0x0F , 0x04 , 0xD2 , 0x36 , 0x9C , 0xD7 , 0xC0 , 0x24 , 0x31 , 0x0A , 0x06 , 0xDC , 0xEF , 0x2F , 0xD5 , 0x89 , 0x77 , 0x33 , 0xA2 , 0xE9 , 0x25 , 0xD4 , 0x0B , 0x1F , 0xCD , 0xBB , 0x52 , 0x42 , 0xC3 , 0xF2 , 0x0E , 0x05 , 0x89 , 0x96 , 0x96 , 0xCD , 0x80 , 0x15 , 0x81 , 0x43 , 0x72 , 0x94 , 0x95 , 0x1A , 0xF2 , 0x0B , 0x5B , 0xFB , 0x5A , 0x6B , 0x1E , 0xFF , 0x36 , 0x02 , 0x81 , 0x6B , 0xAB , 0xBF , 0xAD , 0xD4 , 0x65 , 0x0B , 0x37 , 0xA0 , 0x65 , 0x0A , 0x1F , 0xB3 , 0x79 , 0x2A , 0x81 , 0x8F , 0x86 , 0x27 , 0x27 , 0xC0 , 0x1C , 0x65 , 0x91 , 0xFF , 0x0A , 0x91 , 0x46 , 0x4E , 0xE9 , 0xD5 , 0x75 , 0x9B , 0x15 , 0x9F , 0xBC , 0xDE , 0x8C , 0x27 , 0x92 , 0xF2 , 0x19 , 0xA5 , 0xAA , 0xD3 , 0xA2 , 0x28 , 0xB5 , 0xBB , 0x41 , 0x10 , 0x2C , 0xC0 , 0x55 , 0xA2 , 0x09 , 0xA0 , 0x75 , 0x5F , 0x04 , 0x2D , 0x12 , 0x61 , 0xB0 , 0x7B , 0x4C , 0x99 , 0x23 , 0x48 , 0x13 , 0xB1 , 0xEF , 0x13 , 0x4C , 0x9B , 0x8F , 0xA0 , 0x98 , 0xC4 , 0xFA , 0xB0 , 0xF5 , 0x0A , 0xBF , 0xDB , 0x73 , 0x7D , 0x8F , 0x48 , 0x8B , 0xA3 , 0x9E , 0xBE , 0x82 , 0x35 , 0x9E , 0xD9 , 0x81 , 0xD9 , 0x61 , 0xAB , 0xB8 , 0xC1 , 0x1F , 0x51 , 0x56 , 0x21 , 0xF3 , 0x9D , 0x1C , 0x54 , 0x0B , 0xF9 , 0x6D , 0x74 , 0x6D , 0x22 , 0xEA , 0x6D , 0xDA , 0xF9 , 0x21 , 0xD2 , 0x9C , 0x4F , 0xBE , 0x31 , 0x66 , 0x36 , 0x1F , 0x62 , 0x2F , 0xE9 , 0x86 , 0x2E , 0xAD , 0x3E , 0x4A , 0x8C , 0x0C , 0xBF , 0x6E , 0x7D , 0x67 , 0x80 , 0x23 , 0xBD , 0xB6 , 0x10 , 0x72 , 0xA1 , 0x47 , 0xEB , 0x6A , 0x75 , 0x55 , 0x89 , 0x0E , 0xEA , 0xF1 , 0x58 , 0xB2 , 0x2B , 0xC5 , 0x64 , 0xF5 , 0x02 , 0x44 , 0x8A , 0x89 , 0x9E , 0x44 , 0x42 , 0xEB , 0x2C , 0x41 , 0xC8 , 0xF3 , 0x6B , 0x9A , 0xFB , 0xC5 , 0x44 , 0xBD , 0x44 , 0x26 , 0xAF , 0xC0 , 0x09 , 0xC7 , 0xA3 , 0xC5 , 0xB6 , 0x36 , 0xCD , 0x42 , 0x41 , 0x08 , 0x0A , 0xE0 , 0x04 , 0x65 , 0xA1 , 0x59 , 0x16 , 0xD4 , 0xF8 , 0x4F , 0x71 , 0xAF , 0x7A , 0x61 , 0x2C , 0x6D , 0x9E , 0x14 , 0xAE , 0xF1 , 0xCB , 0x87 , 0x13 , 0x36 , 0x78 , 0x85 , 0xB2 , 0x86 , 0xC2 , 0x84 , 0x72 , 0x95 , 0x9D , 0x32 , 0xF9 , 0x58 , 0x19 , 0x7A , 0x7A , 0xD8 , 0x3E , 0x2E , 0xCE , 0xA1 , 0xE7 , 0xBE , 0x61 , 0x0E , 0x6D , 0x4A , 0x45 , 0x37 , 0x6C , 0xE4 , 0xA7 , 0x4A , 0x63 , 0x58 , 0x8E , 0xB0 , 0x2A , 0x60 , 0x76 , 0x07 , 0xB0 , 0xB7 , 0xE9 , 0x5E , 0x2E , 0xFD , 0xE2 , 0x0C , 0x35 , 0x7C , 0x1C , 0x39 , 0xDC , 0xDF , 0xC8 , 0x57 , 0x25 , 0x2D , 0x33 , 0xE8 , 0xB2 , 0x3A , 0xA8 , 0x86 , 0x7C , 0xE8 , 0xAE , 0xFD , 0xEC , 0x94 , 0x57 , 0x89 , 0xA8 , 0xA6 , 0xAE , 0x84 , 0x03 , 0x14 , 0x8F , 0x83 , 0xC6 , 0xBE , 0xCC , 0x94 , 0xEF , 0xB3 , 0xB3 , 0x37 , 0xB6 , 0x5C , 0x53 , 0x26 , 0x8F , 0xE4 , 0x04 , 0xA1 , 0x06 , 0xF0 , 0x12 , 0x4A , 0x26 , 0xF0 , 0x43 , 0xCE , 0x29 , 0x55 , 0x59 , 0x08 , 0x25 , 0x06 , 0xF0 , 0xD3 , 0x7C , 0x85 , 0x22 , 0x70 , 0x8B , 0x08 , 0xC5 , 0x49 , 0x6F , 0xB8 , 0xEE , 0xC9 , 0x76 , 0x63 , 0x0C , 0x95 , 0x65 , 0x2E , 0xBC , 0xDD , 0xEE , 0xEF , 0x07 , 0xB2 , 0x23 , 0x28 , 0xD5 , 0xEC , 0x0C , 0x34 , 0xFB , 0xC3 , 0x30 , 0xB4 , 0x6B , 0xEA , 0x70 , 0x1E , 0xD2 , 0x09 , 0x6B , 0x05 , 0x4C , 0x3A , 0xC4 , 0xE3 , 0x7A , 0x32 , 0x8E , 0x12 , 0x29 , 0xC9 , 0x9E , 0xA7 , 0x0A , 0xA2 , 0xEF , 0xAC , 0xEB , 0xAF , 0x86 , 0xD3 , 0xF3 , 0xA0 , 0x59 , 0x29 , 0x96 , 0x41 , 0x71 , 0xE7 , 0x85 , 0xFB , 0x09 , 0x6E , 0x48 , 0x7C , 0xC4 , 0x4E , 0xDB , 0xAA , 0xB3 , 0x0E , 0xCC , 0x9B , 0x2F , 0x7D , 0x1D , 0x2C , 0x8F , 0xCB , 0x30 , 0x72 , 0x00 , 0xC3 , 0xB5 , 0x88 , 0x0B , 0xBB , 0x3F , 0x6E , 0x62 , 0x0C , 0xD4 , 0x2C , 0x93 , 0x71 , 0xD7 , 0x17 , 0x46 , 0xA6 , 0x9B , 0x2D , 0xEF , 0x33 , 0xD7 , 0x96 , 0x88 , 0xCF , 0x40 , 0xBB , 0x10 , 0xFC , 0x86 , 0x17 , 0x0D , 0xDF , 0x5B , 0x5A , 0x67 , 0x37 , 0x66 , 0xDF , 0x62 , 0x7D , 0x3A , 0x92 , 0x3C , 0x8C , 0x6C , 0x3B , 0x8E , 0x71 , 0xF7 , 0xAD , 0x85 , 0xFA , 0xD9 , 0x9B , 0x87 , 0x1C , 0x8C , 0xB9 , 0xB5 , 0x4F , 0xCA , 0x47 , 0xAE ,]",
 			},
 			provider.Constant{
 				Name: "DEFAULT_MAX_SESSION_TTL_MS",
@@ -13049,31 +12838,6 @@ provider.IDL{
 				Value: 4,
 			},
 			provider.Constant{
-				Name: "TRUSTED_PREPARED_CIRCUIT_ID",
-				Type: "u32",
-				Value: 9,
-			},
-			provider.Constant{
-				Name: "TRUSTED_PREPARED_PUBLIC_INPUT_COUNT",
-				Type: "u16",
-				Value: 21,
-			},
-			provider.Constant{
-				Name: "TRUSTED_PREPARED_R1CS_HASH",
-				Type: "B256",
-				Value: "[0xAE , 0x93 , 0x09 , 0x88 , 0xC5 , 0xC7 , 0x71 , 0xF5 , 0x75 , 0xF1 , 0x96 , 0xDE , 0x48 , 0x5F , 0x3B , 0xE5 , 0x5F , 0xEF , 0x6B , 0xE2 , 0x6F , 0x06 , 0xCF , 0x10 , 0xBE , 0xD0 , 0x24 , 0x3C , 0x3E , 0x87 , 0x6D , 0x56 ,]",
-			},
-			provider.Constant{
-				Name: "TRUSTED_PREPARED_VK_ACTIVATION_SHA256",
-				Type: "B256",
-				Value: "[0x08 , 0x7D , 0xEE , 0x33 , 0xF1 , 0xCD , 0xF0 , 0x9A , 0x6D , 0xB3 , 0x9E , 0xF7 , 0xE9 , 0xCD , 0xC7 , 0x89 , 0x96 , 0x1B , 0xA2 , 0x19 , 0xD3 , 0x12 , 0x17 , 0x03 , 0x4F , 0x3E , 0xA7 , 0x46 , 0xCE , 0x7E , 0x85 , 0x7C ,]",
-			},
-			provider.Constant{
-				Name: "TRUSTED_PREPARED_VK_BYTES",
-				Type: "bytes",
-				Value: "& [0xC6 , 0x8D , 0xB3 , 0x53 , 0xC9 , 0x77 , 0xD6 , 0xFD , 0x17 , 0x72 , 0x40 , 0xDE , 0x8C , 0xD0 , 0xC6 , 0x06 , 0xD3 , 0x7A , 0xD0 , 0x7B , 0x9C , 0xC9 , 0x67 , 0xF6 , 0xDE , 0xD6 , 0x04 , 0x80 , 0x16 , 0x85 , 0x66 , 0x99 , 0x50 , 0xDB , 0x59 , 0x4C , 0x05 , 0x64 , 0x83 , 0x5B , 0xFA , 0xED , 0xE7 , 0xD1 , 0x80 , 0xBB , 0x63 , 0x1B , 0xE9 , 0x2D , 0x5A , 0xDA , 0xEC , 0x62 , 0xCD , 0xB6 , 0x96 , 0x8C , 0xE0 , 0x20 , 0x24 , 0x18 , 0x3F , 0x1A , 0x99 , 0x25 , 0x97 , 0xA6 , 0x0B , 0x68 , 0x92 , 0xB8 , 0x31 , 0x2B , 0x88 , 0x26 , 0xF9 , 0x6F , 0x51 , 0x68 , 0x51 , 0x67 , 0x88 , 0x39 , 0x67 , 0x8F , 0xE7 , 0xC9 , 0xD7 , 0x90 , 0xFE , 0x4C , 0xBE , 0xB5 , 0x33 , 0x9C , 0xED , 0xF6 , 0x92 , 0xD9 , 0x5C , 0xBD , 0xDE , 0x46 , 0xDD , 0xDA , 0x5E , 0xF7 , 0xD4 , 0x22 , 0x43 , 0x67 , 0x79 , 0x44 , 0x5C , 0x5E , 0x66 , 0x00 , 0x6A , 0x42 , 0x76 , 0x1E , 0x1F , 0x12 , 0xEF , 0xDE , 0x00 , 0x18 , 0xC2 , 0x12 , 0xF3 , 0xAE , 0xB7 , 0x85 , 0xE4 , 0x97 , 0x12 , 0xE7 , 0xA9 , 0x35 , 0x33 , 0x49 , 0xAA , 0xF1 , 0x25 , 0x5D , 0xFB , 0x31 , 0xB7 , 0xBF , 0x60 , 0x72 , 0x3A , 0x48 , 0x0D , 0x92 , 0x93 , 0x93 , 0x8E , 0x19 , 0x11 , 0xA8 , 0xF7 , 0x27 , 0x53 , 0x17 , 0xD7 , 0x1A , 0x8E , 0x67 , 0x83 , 0x49 , 0x04 , 0x91 , 0xCB , 0xC4 , 0xE5 , 0xDF , 0x0B , 0xB3 , 0x1F , 0x80 , 0x7B , 0xA4 , 0xD6 , 0x77 , 0xDD , 0xAE , 0x47 , 0x0C , 0x58 , 0x30 , 0x1E , 0x3B , 0x6C , 0xA9 , 0x80 , 0xF3 , 0x07 , 0x8C , 0x22 , 0xE4 , 0x9A , 0x3C , 0x02 , 0x9B , 0x5B , 0x3E , 0xCD , 0x25 , 0x03 , 0xC2 , 0xDA , 0xE0 , 0x29 , 0xA8 , 0x19 , 0x75 , 0xB2 , 0xBB , 0x93 , 0x41 , 0x03 , 0x2F , 0x16 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x00 , 0x0D , 0xCD , 0x5C , 0x4B , 0x0E , 0xEE , 0x87 , 0xDF , 0xEE , 0xC5 , 0x11 , 0x0E , 0x57 , 0x92 , 0x9D , 0x30 , 0xED , 0xFD , 0x21 , 0xEF , 0x3A , 0x44 , 0xD2 , 0xD1 , 0xD6 , 0x27 , 0x34 , 0xB2 , 0x6F , 0xDD , 0xB0 , 0x2B , 0xE5 , 0xEA , 0x2E , 0xEB , 0xC7 , 0x3F , 0xBA , 0x45 , 0xFC , 0xEA , 0x0E , 0xAE , 0xC3 , 0x13 , 0x10 , 0xDD , 0xC9 , 0xD5 , 0x84 , 0x16 , 0x7E , 0x3D , 0xE1 , 0x70 , 0x1A , 0x22 , 0x4A , 0xA6 , 0x25 , 0x8A , 0x85 , 0xAC , 0xAF , 0x5E , 0xE1 , 0x50 , 0x4E , 0x2D , 0xB9 , 0x05 , 0xCC , 0x02 , 0x7F , 0x18 , 0xE7 , 0xC2 , 0xB1 , 0x74 , 0x7D , 0xBE , 0x04 , 0xA6 , 0xFF , 0x41 , 0x0D , 0x67 , 0xE6 , 0xE6 , 0x7E , 0x7C , 0xE0 , 0xED , 0x90 , 0x17 , 0x97 , 0x67 , 0x09 , 0x0E , 0x98 , 0xF8 , 0x1E , 0xE1 , 0x48 , 0x32 , 0xD8 , 0xC5 , 0x74 , 0xD0 , 0x7E , 0x68 , 0x22 , 0xC0 , 0xFC , 0x7D , 0x3B , 0x38 , 0xAA , 0x5C , 0xC0 , 0x65 , 0x5F , 0x79 , 0x61 , 0xF1 , 0xBD , 0x17 , 0x01 , 0x58 , 0xC8 , 0xFD , 0x38 , 0x06 , 0xD2 , 0x74 , 0xC9 , 0x48 , 0x52 , 0x93 , 0xF0 , 0x31 , 0x3E , 0x56 , 0xD8 , 0x8B , 0x07 , 0xD3 , 0x43 , 0x9B , 0xCE , 0x0A , 0xDB , 0xFD , 0xC9 , 0xC8 , 0xE9 , 0xD8 , 0x2E , 0x2E , 0xD6 , 0x06 , 0x95 , 0x27 , 0xD2 , 0x95 , 0x7D , 0xE7 , 0x18 , 0x9B , 0x4C , 0x60 , 0x0D , 0x8E , 0xE9 , 0xFB , 0xD4 , 0xEC , 0x6D , 0x3C , 0x11 , 0x5F , 0x18 , 0xE0 , 0x68 , 0x66 , 0x5E , 0xD3 , 0x42 , 0x30 , 0x48 , 0x83 , 0x77 , 0xDC , 0x7E , 0x0E , 0xC4 , 0x1E , 0xBD , 0xBA , 0xD1 , 0xE3 , 0xB1 , 0x8D , 0xB1 , 0x92 , 0xF9 , 0x0F , 0x68 , 0xE4 , 0xC2 , 0xB4 , 0x34 , 0xDD , 0x4F , 0xA7 , 0x58 , 0x64 , 0xF9 , 0x21 , 0xB2 , 0x99 , 0x68 , 0x95 , 0xEF , 0xC1 , 0x66 , 0xDF , 0xA6 , 0x6A , 0xAD , 0xEA , 0xBB , 0x2D , 0x6B , 0xB6 , 0x3B , 0xF1 , 0x28 , 0xF5 , 0x3B , 0x04 , 0xE8 , 0xBF , 0xBF , 0x17 , 0xA6 , 0xD4 , 0xCC , 0xB7 , 0xDB , 0x3D , 0x3D , 0x1B , 0x21 , 0xAB , 0x2D , 0x98 , 0x9E , 0x29 , 0x2A , 0x50 , 0x99 , 0xC1 , 0x41 , 0x22 , 0xB0 , 0x2E , 0xA7 , 0xF3 , 0x73 , 0x7F , 0x8D , 0x95 , 0xCF , 0x9A , 0xC5 , 0x5E , 0x0B , 0x8F , 0x64 , 0x5C , 0x97 , 0x73 , 0x07 , 0xB7 , 0x1E , 0x82 , 0x3B , 0x19 , 0x64 , 0xAD , 0x2F , 0xC3 , 0x5A , 0xF1 , 0xA8 , 0x8C , 0xCA , 0xCF , 0x24 , 0x8C , 0xCA , 0x23 , 0x30 , 0xFD , 0x70 , 0x65 , 0x49 , 0x8B , 0xA0 , 0x2E , 0x3F , 0xA0 , 0x2B , 0xE1 , 0x91 , 0x78 , 0x4E , 0x85 , 0x1E , 0x79 , 0xB5 , 0x15 , 0x5A , 0x3D , 0xB8 , 0x2A , 0x69 , 0xC7 , 0xEF , 0xE3 , 0xC6 , 0x33 , 0xAA , 0x1B , 0xA0 , 0x66 , 0x83 , 0x9C , 0xE2 , 0x53 , 0x31 , 0x3E , 0x57 , 0x2B , 0xC7 , 0xB1 , 0x21 , 0xB6 , 0x23 , 0x9D , 0x16 , 0x44 , 0x30 , 0x2E , 0x64 , 0xA9 , 0x30 , 0xFE , 0x2F , 0xF1 , 0x34 , 0xD0 , 0x51 , 0x25 , 0x49 , 0x93 , 0x87 , 0x5A , 0x5A , 0xFE , 0x0F , 0x95 , 0x1D , 0x95 , 0x6B , 0x14 , 0x2B , 0xE7 , 0x24 , 0x70 , 0x75 , 0x2C , 0xAF , 0xFA , 0x2D , 0xE2 , 0xE5 , 0xD0 , 0x93 , 0xB7 , 0x21 , 0x11 , 0xEE , 0x91 , 0xE4 , 0x71 , 0x56 , 0x5D , 0x45 , 0x8A , 0x28 , 0xA1 , 0x3F , 0xE3 , 0xAB , 0x65 , 0x84 , 0xFC , 0xA1 , 0xF7 , 0x8B , 0x79 , 0xDF , 0x15 , 0xC4 , 0xE8 , 0x5B , 0x81 , 0x7A , 0x61 , 0x5C , 0x70 , 0xD5 , 0x53 , 0x95 , 0xB7 , 0x69 , 0xDA , 0xD2 , 0x6F , 0xEA , 0xEC , 0xDE , 0x00 , 0x5F , 0xD5 , 0xCB , 0xE8 , 0x1C , 0x5E , 0xB3 , 0x41 , 0x17 , 0x73 , 0x4A , 0x23 , 0x13 , 0xBE , 0xA8 , 0x7B , 0xAB , 0x41 , 0x5C , 0x30 , 0x44 , 0xC1 , 0x1C , 0xBD , 0x7F , 0x29 , 0x0C , 0x7F , 0x59 , 0x95 , 0x1A , 0xB9 , 0x41 , 0x7C , 0x99 , 0x8B , 0x3A , 0x4C , 0x3F , 0x8A , 0x3D , 0xF8 , 0x90 , 0x8A , 0xB3 , 0x02 , 0x04 , 0xDC , 0x77 , 0x8E , 0x3A , 0x06 , 0xE3 , 0x49 , 0x24 , 0x05 , 0xDE , 0xA4 , 0x12 , 0xA7 , 0xA4 , 0x86 , 0x82 , 0xD7 , 0x24 , 0x24 , 0xB9 , 0xC4 , 0xAF , 0x4C , 0x4C , 0x67 , 0xF9 , 0x34 , 0x06 , 0x06 , 0xA6 , 0x62 , 0xD7 , 0x25 , 0x1F , 0xBA , 0x05 , 0x33 , 0x3D , 0xAF , 0x04 , 0x01 , 0x8B , 0x55 , 0x73 , 0xC5 , 0x6D , 0x99 , 0x67 , 0x7B , 0x87 , 0xB8 , 0xE8 , 0x20 , 0x7F , 0x28 , 0xE3 , 0x6C , 0x47 , 0x34 , 0x8C , 0x80 , 0xBF , 0xCF , 0x8C , 0x5F , 0xB0 , 0x22 , 0x46 , 0x5C , 0x72 , 0x41 , 0x37 , 0x00 , 0x9F , 0x70 , 0x54 , 0x1A , 0x0A , 0x7B , 0xF3 , 0xFD , 0x96 , 0x5A , 0x64 , 0x93 , 0x97 , 0x4E , 0xEA , 0x36 , 0xB6 , 0x4A , 0xED , 0x11 , 0x46 , 0xD6 , 0xA7 , 0xE9 , 0x12 , 0x78 , 0x30 , 0x03 , 0xF7 , 0x80 , 0x8C , 0x60 , 0x7F , 0xF8 , 0xE1 , 0x81 , 0x0A , 0x24 , 0x2E , 0xBC , 0x81 , 0x12 , 0x33 , 0x09 , 0x60 , 0xDB , 0xE0 , 0x91 , 0x60 , 0x12 , 0x60 , 0x10 , 0x08 , 0xA5 , 0x27 , 0xF6 , 0x0B , 0x25 , 0x72 , 0x1E , 0xD9 , 0x35 , 0x94 , 0x33 , 0x55 , 0x6C , 0x42 , 0x34 , 0xAA , 0xBC , 0xDF , 0xDE , 0x67 , 0x49 , 0xF3 , 0x81 , 0xD3 , 0xA4 , 0x5A , 0xFD , 0x5E , 0x70 , 0x51 , 0x9F , 0xE0 , 0xC9 , 0x81 , 0xB8 , 0x1E , 0xF5 , 0x9F , 0x39 , 0xCA , 0x44 , 0x6B , 0xA9 , 0x8C , 0x72 , 0x5A , 0x03 , 0x03 , 0x99 , 0x97 , 0x8E , 0x3A , 0x6C , 0xB5 , 0x32 , 0x74 , 0x7C , 0x0C , 0x7B , 0xA1 , 0xEE , 0xBF , 0xA4 , 0x54 , 0x95 , 0x52 , 0x3C , 0xB5 , 0x2A , 0x54 , 0x79 , 0x22 , 0xB8 , 0x84 , 0x44 , 0xF1 , 0x13 , 0x90 , 0xBF , 0x5A , 0xE1 , 0x8E , 0x3E , 0xD1 , 0x90 , 0xC5 , 0x95 , 0x23 , 0xF6 , 0x84 , 0xE5 , 0x33 , 0x06 , 0xF1 , 0x2B ,]",
-			},
-			provider.Constant{
 				Name: "STAGED_JWT_RS256_CIRCUIT_ID",
 				Type: "u32",
 				Value: 7,
@@ -13084,22 +12848,12 @@ provider.IDL{
 				Value: 8,
 			},
 			provider.Constant{
-				Name: "TRUSTED_PREPARED_RS256_CIRCUIT_ID",
+				Name: "COMPACT_STAGED_JWT_RS256_CIRCUIT_ID",
 				Type: "u32",
-				Value: 9,
-			},
-			provider.Constant{
-				Name: "TRUSTED_PREPARED_ES256_CIRCUIT_ID",
-				Type: "u32",
-				Value: 10,
+				Value: 5,
 			},
 			provider.Constant{
 				Name: "STAGED_JWT_PUBLIC_INPUTS",
-				Type: "u16",
-				Value: 21,
-			},
-			provider.Constant{
-				Name: "TRUSTED_PREPARED_PUBLIC_INPUTS",
 				Type: "u16",
 				Value: 21,
 			},
@@ -15717,6 +15471,25 @@ provider.IDL{
 			},
 		},
 	},
+}
+
+// SystemRecentBlock matches the IDL struct RecentBlock.
+type SystemRecentBlock struct {
+	Written bool
+	Number uint64
+	Hash [32]byte
+}
+
+// ToValue converts SystemRecentBlock into the provider wire value (map[string]any).
+func (v SystemRecentBlock) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// written: bool
+	out["written"] = v.Written
+	// number: u64
+	out["number"] = v.Number
+	// hash: B256
+	out["hash"] = v.Hash
+	return out, nil
 }
 
 // SystemProposalKind matches the IDL enum ProposalKind.
@@ -18496,121 +18269,22 @@ func (v DexDidSubjectType) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
-// ValidatorValidatorIdentityStatus matches the IDL enum ValidatorIdentityStatus.
-type ValidatorValidatorIdentityStatus struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
-}
-
-// ToValue converts ValidatorValidatorIdentityStatus into the provider wire value (map[string]any).
-func (v ValidatorValidatorIdentityStatus) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum ValidatorIdentityStatus: empty variant")
-	}
-	switch v.Variant {
-	case "Registered":
-		return map[string]any{"variant": "Registered"}, nil
-	case "Suspended":
-		return map[string]any{"variant": "Suspended"}, nil
-	case "Retired":
-		return map[string]any{"variant": "Retired"}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
-}
-
-// ValidatorValidatorSelectionStatus matches the IDL enum ValidatorSelectionStatus.
-type ValidatorValidatorSelectionStatus struct {
-	Variant string // Active variant name
-	Index   uint64 // Active variant index
-	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
-}
-
-// ToValue converts ValidatorValidatorSelectionStatus into the provider wire value (map[string]any).
-func (v ValidatorValidatorSelectionStatus) ToValue() (map[string]any, error) {
-	if v.Variant == "" {
-		return nil, fmt.Errorf("enum ValidatorSelectionStatus: empty variant")
-	}
-	switch v.Variant {
-	case "None":
-		return map[string]any{"variant": "None"}, nil
-	case "Candidate":
-		return map[string]any{"variant": "Candidate"}, nil
-	case "Selected":
-		return map[string]any{"variant": "Selected"}, nil
-	case "Leaving":
-		return map[string]any{"variant": "Leaving"}, nil
-	}
-	return nil, fmt.Errorf("unknown variant %q", v.Variant)
-}
-
 // ValidatorValidatorProfile matches the IDL struct ValidatorProfile.
 type ValidatorValidatorProfile struct {
 	Validator [32]byte
-	Controller *crypto.Address
-	IdentityStatus ValidatorValidatorIdentityStatus
-	SelectionStatus ValidatorValidatorSelectionStatus
-	PoolId *[32]byte
+	Owner *crypto.Address
+	PoolId [32]byte
 }
 
 // ToValue converts ValidatorValidatorProfile into the provider wire value (map[string]any).
 func (v ValidatorValidatorProfile) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 5)
+	out := make(map[string]any, 3)
 	// validator: B256
 	out["validator"] = v.Validator
-	// controller: Address
-	out["controller"] = v.Controller
-	// identity_status: ValidatorIdentityStatus
-	v0, err := toValidatorValidatorIdentityStatusValue(v.IdentityStatus)
-	if err != nil {
-		return nil, err
-	}
-	out["identity_status"] = v0
-	// selection_status: ValidatorSelectionStatus
-	v1, err := toValidatorValidatorSelectionStatusValue(v.SelectionStatus)
-	if err != nil {
-		return nil, err
-	}
-	out["selection_status"] = v1
-	// pool_id: option<B256>
-	if v.PoolId == nil {
-		out["pool_id"] = nil
-	} else {
-		out["pool_id"] = *v.PoolId
-	}
-	return out, nil
-}
-
-// ValidatorCandidatePool matches the IDL struct CandidatePool.
-type ValidatorCandidatePool struct {
-	Validators [][32]byte
-}
-
-// ToValue converts ValidatorCandidatePool into the provider wire value (map[string]any).
-func (v ValidatorCandidatePool) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 1)
-	// validators: vec<B256>
-	v0 := make([]any, len(v.Validators))
-	for v1, v2 := range v.Validators {
-		v0[v1] = v2
-	}
-	out["validators"] = v0
-	return out, nil
-}
-
-// ValidatorCandidateValidator matches the IDL struct CandidateValidator.
-type ValidatorCandidateValidator struct {
-	Validator [32]byte
-	ConsensusAccount *crypto.Address
-}
-
-// ToValue converts ValidatorCandidateValidator into the provider wire value (map[string]any).
-func (v ValidatorCandidateValidator) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 2)
-	// validator: B256
-	out["validator"] = v.Validator
-	// consensus_account: Address
-	out["consensus_account"] = v.ConsensusAccount
+	// owner: Address
+	out["owner"] = v.Owner
+	// pool_id: B256
+	out["pool_id"] = v.PoolId
 	return out, nil
 }
 
@@ -18651,7 +18325,7 @@ func (v ValidatorValidatorPoolOverview) ToValue() (map[string]any, error) {
 // ValidatorValidatorPoolList matches the IDL struct ValidatorPoolList.
 type ValidatorValidatorPoolList struct {
 	Epoch uint64
-	ValidatorSetHash *[32]byte
+	ValidatorSetHash [32]byte
 	Validators []ValidatorValidatorPoolOverview
 }
 
@@ -18660,12 +18334,8 @@ func (v ValidatorValidatorPoolList) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 3)
 	// epoch: u64
 	out["epoch"] = v.Epoch
-	// validator_set_hash: option<B256>
-	if v.ValidatorSetHash == nil {
-		out["validator_set_hash"] = nil
-	} else {
-		out["validator_set_hash"] = *v.ValidatorSetHash
-	}
+	// validator_set_hash: B256
+	out["validator_set_hash"] = v.ValidatorSetHash
 	// validators: vec<ValidatorPoolOverview>
 	v0 := make([]any, len(v.Validators))
 	for v1, v2 := range v.Validators {
@@ -18679,60 +18349,79 @@ func (v ValidatorValidatorPoolList) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// ValidatorAvailabilityDeclaration matches the IDL struct AvailabilityDeclaration.
-type ValidatorAvailabilityDeclaration struct {
-	TargetEpoch uint64
-	Validator [32]byte
-	Controller *crypto.Address
+// ValidatorEpochActivity matches the IDL struct EpochActivity.
+type ValidatorEpochActivity struct {
+	Blocks uint64
+	Signers uint64
+	LastBlock uint64
 }
 
-// ToValue converts ValidatorAvailabilityDeclaration into the provider wire value (map[string]any).
-func (v ValidatorAvailabilityDeclaration) ToValue() (map[string]any, error) {
+// ToValue converts ValidatorEpochActivity into the provider wire value (map[string]any).
+func (v ValidatorEpochActivity) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 3)
-	// target_epoch: u64
-	out["target_epoch"] = v.TargetEpoch
-	// validator: B256
-	out["validator"] = v.Validator
-	// controller: Address
-	out["controller"] = v.Controller
+	// blocks: u64
+	out["blocks"] = v.Blocks
+	// signers: u64
+	out["signers"] = v.Signers
+	// last_block: u64
+	out["last_block"] = v.LastBlock
 	return out, nil
 }
 
-// ValidatorValidatorRewardPolicy matches the IDL struct ValidatorRewardPolicy.
-type ValidatorValidatorRewardPolicy struct {
-	StakeAsset *crypto.Address
-	RewardAsset *crypto.Address
+// ValidatorFrozenEpoch matches the IDL struct FrozenEpoch.
+type ValidatorFrozenEpoch struct {
+	PreviousSetHash [32]byte
+	FreezeBlock uint64
+	FreezeSlot uint64
+	StartSlot uint64
+	MinimumSelfStake uint64
 	RewardPerValidator uint64
-	Available uint64
+	ValidatorSet []byte
 }
 
-// ToValue converts ValidatorValidatorRewardPolicy into the provider wire value (map[string]any).
-func (v ValidatorValidatorRewardPolicy) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// stake_asset: Address
-	out["stake_asset"] = v.StakeAsset
-	// reward_asset: Address
-	out["reward_asset"] = v.RewardAsset
+// ToValue converts ValidatorFrozenEpoch into the provider wire value (map[string]any).
+func (v ValidatorFrozenEpoch) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 7)
+	// previous_set_hash: B256
+	out["previous_set_hash"] = v.PreviousSetHash
+	// freeze_block: u64
+	out["freeze_block"] = v.FreezeBlock
+	// freeze_slot: u64
+	out["freeze_slot"] = v.FreezeSlot
+	// start_slot: u64
+	out["start_slot"] = v.StartSlot
+	// minimum_self_stake: u64
+	out["minimum_self_stake"] = v.MinimumSelfStake
 	// reward_per_validator: u64
 	out["reward_per_validator"] = v.RewardPerValidator
-	// available: u64
-	out["available"] = v.Available
+	// validator_set: bytes
+	out["validator_set"] = v.ValidatorSet
 	return out, nil
 }
 
-// ValidatorRewardCursor matches the IDL struct RewardCursor.
-type ValidatorRewardCursor struct {
-	Initialized bool
-	LastSettledEpoch uint64
+// ValidatorMembership matches the IDL struct Membership.
+type ValidatorMembership struct {
+	Validator [32]byte
+	JoinEpoch uint64
+	ExitEpoch *uint64
+	MinimumSelfStake uint64
 }
 
-// ToValue converts ValidatorRewardCursor into the provider wire value (map[string]any).
-func (v ValidatorRewardCursor) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 2)
-	// initialized: bool
-	out["initialized"] = v.Initialized
-	// last_settled_epoch: u64
-	out["last_settled_epoch"] = v.LastSettledEpoch
+// ToValue converts ValidatorMembership into the provider wire value (map[string]any).
+func (v ValidatorMembership) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// validator: B256
+	out["validator"] = v.Validator
+	// join_epoch: u64
+	out["join_epoch"] = v.JoinEpoch
+	// exit_epoch: option<u64>
+	if v.ExitEpoch == nil {
+		out["exit_epoch"] = nil
+	} else {
+		out["exit_epoch"] = *v.ExitEpoch
+	}
+	// minimum_self_stake: u64
+	out["minimum_self_stake"] = v.MinimumSelfStake
 	return out, nil
 }
 
@@ -19623,6 +19312,39 @@ func (v DemoDemoMode) ToValue() (map[string]any, error) {
 		return map[string]any{"variant": "Three", "fields": []any{v0, v1}}, nil
 	}
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// fromSystemRecentBlock converts a decoded IDL value into SystemRecentBlock.
+func fromSystemRecentBlock(v any) (out SystemRecentBlock, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// written: bool
+	{
+		v0, err := toBool(m["written"])
+		if err != nil {
+			return out, err
+		}
+		out.Written = v0
+	}
+	// number: u64
+	{
+		v1, err := toUint64(m["number"])
+		if err != nil {
+			return out, err
+		}
+		out.Number = v1
+	}
+	// hash: B256
+	{
+		v2, err := toFixed32(m["hash"])
+		if err != nil {
+			return out, err
+		}
+		out.Hash = v2
+	}
+	return out, nil
 }
 
 // fromSystemProposalKind converts a decoded IDL value into SystemProposalKind.
@@ -23862,44 +23584,6 @@ func fromDexDidSubjectType(v any) (out DexDidSubjectType, err error) {
 	return out, nil
 }
 
-// fromValidatorValidatorIdentityStatus converts a decoded IDL value into ValidatorValidatorIdentityStatus.
-func fromValidatorValidatorIdentityStatus(v any) (out ValidatorValidatorIdentityStatus, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum ValidatorIdentityStatus: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	return out, nil
-}
-
-// fromValidatorValidatorSelectionStatus converts a decoded IDL value into ValidatorValidatorSelectionStatus.
-func fromValidatorValidatorSelectionStatus(v any) (out ValidatorValidatorSelectionStatus, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	s, ok := m["variant"].(string)
-	if !ok {
-		return out, fmt.Errorf("enum ValidatorSelectionStatus: missing variant")
-	}
-	out.Variant = s
-	n, err := toUint(m["index"])
-	if err != nil {
-		return out, err
-	}
-	out.Index = n
-	return out, nil
-}
-
 // fromValidatorValidatorProfile converts a decoded IDL value into ValidatorValidatorProfile.
 func fromValidatorValidatorProfile(v any) (out ValidatorValidatorProfile, err error) {
 	m, err := toRecord(v)
@@ -23914,92 +23598,21 @@ func fromValidatorValidatorProfile(v any) (out ValidatorValidatorProfile, err er
 		}
 		out.Validator = v0
 	}
-	// controller: Address
+	// owner: Address
 	{
-		v1, err := toAddress(m["controller"])
+		v1, err := toAddress(m["owner"])
 		if err != nil {
 			return out, err
 		}
-		out.Controller = v1
+		out.Owner = v1
 	}
-	// identity_status: ValidatorIdentityStatus
+	// pool_id: B256
 	{
-		v2, err := fromValidatorValidatorIdentityStatus(m["identity_status"])
+		v2, err := toFixed32(m["pool_id"])
 		if err != nil {
 			return out, err
 		}
-		out.IdentityStatus = v2
-	}
-	// selection_status: ValidatorSelectionStatus
-	{
-		v3, err := fromValidatorValidatorSelectionStatus(m["selection_status"])
-		if err != nil {
-			return out, err
-		}
-		out.SelectionStatus = v3
-	}
-	// pool_id: option<B256>
-	{
-		if m["pool_id"] == nil {
-			out.PoolId = nil
-		} else {
-			var v4 [32]byte
-			v5, err := toFixed32(m["pool_id"])
-			if err != nil {
-				return out, err
-			}
-			v4 = v5
-			out.PoolId = &v4
-		}
-	}
-	return out, nil
-}
-
-// fromValidatorCandidatePool converts a decoded IDL value into ValidatorCandidatePool.
-func fromValidatorCandidatePool(v any) (out ValidatorCandidatePool, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// validators: vec<B256>
-	{
-		v0, err := toSlice(m["validators"])
-		if err != nil {
-			return out, err
-		}
-		out.Validators = make([][32]byte, len(v0))
-		for v1, v2 := range v0 {
-			v3, err := toFixed32(v2)
-			if err != nil {
-				return out, err
-			}
-			out.Validators[v1] = v3
-		}
-	}
-	return out, nil
-}
-
-// fromValidatorCandidateValidator converts a decoded IDL value into ValidatorCandidateValidator.
-func fromValidatorCandidateValidator(v any) (out ValidatorCandidateValidator, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// validator: B256
-	{
-		v0, err := toFixed32(m["validator"])
-		if err != nil {
-			return out, err
-		}
-		out.Validator = v0
-	}
-	// consensus_account: Address
-	{
-		v1, err := toAddress(m["consensus_account"])
-		if err != nil {
-			return out, err
-		}
-		out.ConsensusAccount = v1
+		out.PoolId = v2
 	}
 	return out, nil
 }
@@ -24091,133 +23704,173 @@ func fromValidatorValidatorPoolList(v any) (out ValidatorValidatorPoolList, err 
 		}
 		out.Epoch = v0
 	}
-	// validator_set_hash: option<B256>
+	// validator_set_hash: B256
 	{
-		if m["validator_set_hash"] == nil {
-			out.ValidatorSetHash = nil
-		} else {
-			var v1 [32]byte
-			v2, err := toFixed32(m["validator_set_hash"])
-			if err != nil {
-				return out, err
-			}
-			v1 = v2
-			out.ValidatorSetHash = &v1
+		v1, err := toFixed32(m["validator_set_hash"])
+		if err != nil {
+			return out, err
 		}
+		out.ValidatorSetHash = v1
 	}
 	// validators: vec<ValidatorPoolOverview>
 	{
-		v3, err := toSlice(m["validators"])
+		v2, err := toSlice(m["validators"])
 		if err != nil {
 			return out, err
 		}
-		out.Validators = make([]ValidatorValidatorPoolOverview, len(v3))
-		for v4, v5 := range v3 {
-			v6, err := fromValidatorValidatorPoolOverview(v5)
+		out.Validators = make([]ValidatorValidatorPoolOverview, len(v2))
+		for v3, v4 := range v2 {
+			v5, err := fromValidatorValidatorPoolOverview(v4)
 			if err != nil {
 				return out, err
 			}
-			out.Validators[v4] = v6
+			out.Validators[v3] = v5
 		}
 	}
 	return out, nil
 }
 
-// fromValidatorAvailabilityDeclaration converts a decoded IDL value into ValidatorAvailabilityDeclaration.
-func fromValidatorAvailabilityDeclaration(v any) (out ValidatorAvailabilityDeclaration, err error) {
+// fromValidatorEpochActivity converts a decoded IDL value into ValidatorEpochActivity.
+func fromValidatorEpochActivity(v any) (out ValidatorEpochActivity, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// target_epoch: u64
+	// blocks: u64
 	{
-		v0, err := toUint64(m["target_epoch"])
+		v0, err := toUint64(m["blocks"])
 		if err != nil {
 			return out, err
 		}
-		out.TargetEpoch = v0
+		out.Blocks = v0
 	}
-	// validator: B256
+	// signers: u64
 	{
-		v1, err := toFixed32(m["validator"])
+		v1, err := toUint64(m["signers"])
 		if err != nil {
 			return out, err
 		}
-		out.Validator = v1
+		out.Signers = v1
 	}
-	// controller: Address
+	// last_block: u64
 	{
-		v2, err := toAddress(m["controller"])
+		v2, err := toUint64(m["last_block"])
 		if err != nil {
 			return out, err
 		}
-		out.Controller = v2
+		out.LastBlock = v2
 	}
 	return out, nil
 }
 
-// fromValidatorValidatorRewardPolicy converts a decoded IDL value into ValidatorValidatorRewardPolicy.
-func fromValidatorValidatorRewardPolicy(v any) (out ValidatorValidatorRewardPolicy, err error) {
+// fromValidatorFrozenEpoch converts a decoded IDL value into ValidatorFrozenEpoch.
+func fromValidatorFrozenEpoch(v any) (out ValidatorFrozenEpoch, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// stake_asset: Address
+	// previous_set_hash: B256
 	{
-		v0, err := toAddress(m["stake_asset"])
+		v0, err := toFixed32(m["previous_set_hash"])
 		if err != nil {
 			return out, err
 		}
-		out.StakeAsset = v0
+		out.PreviousSetHash = v0
 	}
-	// reward_asset: Address
+	// freeze_block: u64
 	{
-		v1, err := toAddress(m["reward_asset"])
+		v1, err := toUint64(m["freeze_block"])
 		if err != nil {
 			return out, err
 		}
-		out.RewardAsset = v1
+		out.FreezeBlock = v1
+	}
+	// freeze_slot: u64
+	{
+		v2, err := toUint64(m["freeze_slot"])
+		if err != nil {
+			return out, err
+		}
+		out.FreezeSlot = v2
+	}
+	// start_slot: u64
+	{
+		v3, err := toUint64(m["start_slot"])
+		if err != nil {
+			return out, err
+		}
+		out.StartSlot = v3
+	}
+	// minimum_self_stake: u64
+	{
+		v4, err := toUint64(m["minimum_self_stake"])
+		if err != nil {
+			return out, err
+		}
+		out.MinimumSelfStake = v4
 	}
 	// reward_per_validator: u64
 	{
-		v2, err := toUint64(m["reward_per_validator"])
+		v5, err := toUint64(m["reward_per_validator"])
 		if err != nil {
 			return out, err
 		}
-		out.RewardPerValidator = v2
+		out.RewardPerValidator = v5
 	}
-	// available: u64
+	// validator_set: bytes
 	{
-		v3, err := toUint64(m["available"])
+		v6, err := toBytes(m["validator_set"])
 		if err != nil {
 			return out, err
 		}
-		out.Available = v3
+		out.ValidatorSet = v6
 	}
 	return out, nil
 }
 
-// fromValidatorRewardCursor converts a decoded IDL value into ValidatorRewardCursor.
-func fromValidatorRewardCursor(v any) (out ValidatorRewardCursor, err error) {
+// fromValidatorMembership converts a decoded IDL value into ValidatorMembership.
+func fromValidatorMembership(v any) (out ValidatorMembership, err error) {
 	m, err := toRecord(v)
 	if err != nil {
 		return out, err
 	}
-	// initialized: bool
+	// validator: B256
 	{
-		v0, err := toBool(m["initialized"])
+		v0, err := toFixed32(m["validator"])
 		if err != nil {
 			return out, err
 		}
-		out.Initialized = v0
+		out.Validator = v0
 	}
-	// last_settled_epoch: u64
+	// join_epoch: u64
 	{
-		v1, err := toUint64(m["last_settled_epoch"])
+		v1, err := toUint64(m["join_epoch"])
 		if err != nil {
 			return out, err
 		}
-		out.LastSettledEpoch = v1
+		out.JoinEpoch = v1
+	}
+	// exit_epoch: option<u64>
+	{
+		if m["exit_epoch"] == nil {
+			out.ExitEpoch = nil
+		} else {
+			var v2 uint64
+			v3, err := toUint64(m["exit_epoch"])
+			if err != nil {
+				return out, err
+			}
+			v2 = v3
+			out.ExitEpoch = &v2
+		}
+	}
+	// minimum_self_stake: u64
+	{
+		v4, err := toUint64(m["minimum_self_stake"])
+		if err != nil {
+			return out, err
+		}
+		out.MinimumSelfStake = v4
 	}
 	return out, nil
 }
@@ -25481,6 +25134,21 @@ func fromDemoDemoMode(v any) (out DemoDemoMode, err error) {
 		}
 	}
 	return out, nil
+}
+
+// toSystemRecentBlockValue converts any into SystemRecentBlock for provider serialization.
+func toSystemRecentBlockValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case SystemRecentBlock:
+		return x.ToValue()
+	case *SystemRecentBlock:
+		if x == nil {
+			return nil, fmt.Errorf("nil SystemRecentBlock")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected SystemRecentBlock, got %T", v)
+	}
 }
 
 // toSystemProposalKindValue converts any into SystemProposalKind for provider serialization.
@@ -27103,36 +26771,6 @@ func toDexDidSubjectTypeValue(v any) (map[string]any, error) {
 	}
 }
 
-// toValidatorValidatorIdentityStatusValue converts any into ValidatorValidatorIdentityStatus for provider serialization.
-func toValidatorValidatorIdentityStatusValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case ValidatorValidatorIdentityStatus:
-		return x.ToValue()
-	case *ValidatorValidatorIdentityStatus:
-		if x == nil {
-			return nil, fmt.Errorf("nil ValidatorValidatorIdentityStatus")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected ValidatorValidatorIdentityStatus, got %T", v)
-	}
-}
-
-// toValidatorValidatorSelectionStatusValue converts any into ValidatorValidatorSelectionStatus for provider serialization.
-func toValidatorValidatorSelectionStatusValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case ValidatorValidatorSelectionStatus:
-		return x.ToValue()
-	case *ValidatorValidatorSelectionStatus:
-		if x == nil {
-			return nil, fmt.Errorf("nil ValidatorValidatorSelectionStatus")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected ValidatorValidatorSelectionStatus, got %T", v)
-	}
-}
-
 // toValidatorValidatorProfileValue converts any into ValidatorValidatorProfile for provider serialization.
 func toValidatorValidatorProfileValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -27145,36 +26783,6 @@ func toValidatorValidatorProfileValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected ValidatorValidatorProfile, got %T", v)
-	}
-}
-
-// toValidatorCandidatePoolValue converts any into ValidatorCandidatePool for provider serialization.
-func toValidatorCandidatePoolValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case ValidatorCandidatePool:
-		return x.ToValue()
-	case *ValidatorCandidatePool:
-		if x == nil {
-			return nil, fmt.Errorf("nil ValidatorCandidatePool")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected ValidatorCandidatePool, got %T", v)
-	}
-}
-
-// toValidatorCandidateValidatorValue converts any into ValidatorCandidateValidator for provider serialization.
-func toValidatorCandidateValidatorValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case ValidatorCandidateValidator:
-		return x.ToValue()
-	case *ValidatorCandidateValidator:
-		if x == nil {
-			return nil, fmt.Errorf("nil ValidatorCandidateValidator")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected ValidatorCandidateValidator, got %T", v)
 	}
 }
 
@@ -27208,48 +26816,48 @@ func toValidatorValidatorPoolListValue(v any) (map[string]any, error) {
 	}
 }
 
-// toValidatorAvailabilityDeclarationValue converts any into ValidatorAvailabilityDeclaration for provider serialization.
-func toValidatorAvailabilityDeclarationValue(v any) (map[string]any, error) {
+// toValidatorEpochActivityValue converts any into ValidatorEpochActivity for provider serialization.
+func toValidatorEpochActivityValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case ValidatorAvailabilityDeclaration:
+	case ValidatorEpochActivity:
 		return x.ToValue()
-	case *ValidatorAvailabilityDeclaration:
+	case *ValidatorEpochActivity:
 		if x == nil {
-			return nil, fmt.Errorf("nil ValidatorAvailabilityDeclaration")
+			return nil, fmt.Errorf("nil ValidatorEpochActivity")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected ValidatorAvailabilityDeclaration, got %T", v)
+		return nil, fmt.Errorf("expected ValidatorEpochActivity, got %T", v)
 	}
 }
 
-// toValidatorValidatorRewardPolicyValue converts any into ValidatorValidatorRewardPolicy for provider serialization.
-func toValidatorValidatorRewardPolicyValue(v any) (map[string]any, error) {
+// toValidatorFrozenEpochValue converts any into ValidatorFrozenEpoch for provider serialization.
+func toValidatorFrozenEpochValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case ValidatorValidatorRewardPolicy:
+	case ValidatorFrozenEpoch:
 		return x.ToValue()
-	case *ValidatorValidatorRewardPolicy:
+	case *ValidatorFrozenEpoch:
 		if x == nil {
-			return nil, fmt.Errorf("nil ValidatorValidatorRewardPolicy")
+			return nil, fmt.Errorf("nil ValidatorFrozenEpoch")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected ValidatorValidatorRewardPolicy, got %T", v)
+		return nil, fmt.Errorf("expected ValidatorFrozenEpoch, got %T", v)
 	}
 }
 
-// toValidatorRewardCursorValue converts any into ValidatorRewardCursor for provider serialization.
-func toValidatorRewardCursorValue(v any) (map[string]any, error) {
+// toValidatorMembershipValue converts any into ValidatorMembership for provider serialization.
+func toValidatorMembershipValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
-	case ValidatorRewardCursor:
+	case ValidatorMembership:
 		return x.ToValue()
-	case *ValidatorRewardCursor:
+	case *ValidatorMembership:
 		if x == nil {
-			return nil, fmt.Errorf("nil ValidatorRewardCursor")
+			return nil, fmt.Errorf("nil ValidatorMembership")
 		}
 		return x.ToValue()
 	default:
-		return nil, fmt.Errorf("expected ValidatorRewardCursor, got %T", v)
+		return nil, fmt.Errorf("expected ValidatorMembership, got %T", v)
 	}
 }
 
@@ -27784,10 +27392,7 @@ type SystemApp struct {
 	Noop *SystemNoopIx
 	BootstrapEpochClock *SystemBootstrapEpochClockIx
 	BootstrapValidatorSetConfig *SystemBootstrapValidatorSetConfigIx
-	RegisterValidatorIdentity *SystemRegisterValidatorIdentityIx
-	PrepareValidatorSet *SystemPrepareValidatorSetIx
-	SettleStakingEpoch *SystemSettleStakingEpochIx
-	CommitValidatorSet *SystemCommitValidatorSetIx
+	BootstrapRegisteredValidatorSet *SystemBootstrapRegisteredValidatorSetIx
 	CommitBlockSeed *SystemCommitBlockSeedIx
 	BootstrapChainParams *SystemBootstrapChainParamsIx
 	Propose *SystemProposeIx
@@ -27805,10 +27410,7 @@ var System = &SystemApp{
 	Noop: &SystemNoopIx{},
 	BootstrapEpochClock: &SystemBootstrapEpochClockIx{},
 	BootstrapValidatorSetConfig: &SystemBootstrapValidatorSetConfigIx{},
-	RegisterValidatorIdentity: &SystemRegisterValidatorIdentityIx{},
-	PrepareValidatorSet: &SystemPrepareValidatorSetIx{},
-	SettleStakingEpoch: &SystemSettleStakingEpochIx{},
-	CommitValidatorSet: &SystemCommitValidatorSetIx{},
+	BootstrapRegisteredValidatorSet: &SystemBootstrapRegisteredValidatorSetIx{},
 	CommitBlockSeed: &SystemCommitBlockSeedIx{},
 	BootstrapChainParams: &SystemBootstrapChainParamsIx{},
 	Propose: &SystemProposeIx{},
@@ -27827,10 +27429,7 @@ func (a *SystemApp) bind(pd *provider.Provider) {
 	a.Noop.pd = pd
 	a.BootstrapEpochClock.pd = pd
 	a.BootstrapValidatorSetConfig.pd = pd
-	a.RegisterValidatorIdentity.pd = pd
-	a.PrepareValidatorSet.pd = pd
-	a.SettleStakingEpoch.pd = pd
-	a.CommitValidatorSet.pd = pd
+	a.BootstrapRegisteredValidatorSet.pd = pd
 	a.CommitBlockSeed.pd = pd
 	a.BootstrapChainParams.pd = pd
 	a.Propose.pd = pd
@@ -27964,148 +27563,36 @@ func (a *SystemBootstrapValidatorSetConfigArgs) Encode() (api.PackedInstruction,
 	return api.PackedInstruction(wire), nil
 }
 
-type SystemRegisterValidatorIdentityIx struct {
+type SystemBootstrapRegisteredValidatorSetIx struct {
 	pd *provider.Provider
 }
 
-type SystemRegisterValidatorIdentityArgs struct {
-	validator [32]byte
-	controller *crypto.Address
-	consensus_account *crypto.Address
-	consensus_pubkey []byte
-	bls_pubkey []byte
-	ed25519_pubkey []byte
+type SystemBootstrapRegisteredValidatorSetArgs struct {
+	validators [][32]byte
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of RegisterValidatorIdentity.
-func (ix *SystemRegisterValidatorIdentityIx) Args(validator [32]byte, controller *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, ed25519_pubkey []byte) *SystemRegisterValidatorIdentityArgs {
-	return &SystemRegisterValidatorIdentityArgs{
-		validator: validator,
-		controller: controller,
-		consensus_account: consensus_account,
-		consensus_pubkey: consensus_pubkey,
-		bls_pubkey: bls_pubkey,
-		ed25519_pubkey: ed25519_pubkey,
+// Args builds the IDL arguments of BootstrapRegisteredValidatorSet.
+func (ix *SystemBootstrapRegisteredValidatorSetIx) Args(validators [][32]byte) *SystemBootstrapRegisteredValidatorSetArgs {
+	return &SystemBootstrapRegisteredValidatorSetArgs{
+		validators: validators,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *SystemRegisterValidatorIdentityArgs) Encode() (api.PackedInstruction, error) {
+func (a *SystemBootstrapRegisteredValidatorSetArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// validator: B256
-	args["validator"] = a.validator
-	// controller: Signer
-	args["controller"] = a.controller
-	// consensus_account: Signer
-	args["consensus_account"] = a.consensus_account
-	// consensus_pubkey: bytes
-	args["consensus_pubkey"] = a.consensus_pubkey
-	// bls_pubkey: bytes
-	args["bls_pubkey"] = a.bls_pubkey
-	// ed25519_pubkey: bytes
-	args["ed25519_pubkey"] = a.ed25519_pubkey
-	wire, err := a.pd.Encode("RegisterValidatorIdentity", args)
-	if err != nil {
-		return nil, err
+	// validators: vec<B256>
+	v0 := make([]any, len(a.validators))
+	for v1, v2 := range a.validators {
+		v0[v1] = v2
 	}
-	return api.PackedInstruction(wire), nil
-}
-
-type SystemPrepareValidatorSetIx struct {
-	pd *provider.Provider
-}
-
-type SystemPrepareValidatorSetArgs struct {
-	target_epoch uint64
-	validator_set_seed [32]byte
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of PrepareValidatorSet.
-func (ix *SystemPrepareValidatorSetIx) Args(target_epoch uint64, validator_set_seed [32]byte) *SystemPrepareValidatorSetArgs {
-	return &SystemPrepareValidatorSetArgs{
-		target_epoch: target_epoch,
-		validator_set_seed: validator_set_seed,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SystemPrepareValidatorSetArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// target_epoch: u64
-	args["target_epoch"] = a.target_epoch
-	// validator_set_seed: B256
-	args["validator_set_seed"] = a.validator_set_seed
-	wire, err := a.pd.Encode("PrepareValidatorSet", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type SystemSettleStakingEpochIx struct {
-	pd *provider.Provider
-}
-
-type SystemSettleStakingEpochArgs struct {
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of SettleStakingEpoch.
-func (ix *SystemSettleStakingEpochIx) Args() *SystemSettleStakingEpochArgs {
-	return &SystemSettleStakingEpochArgs{
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SystemSettleStakingEpochArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	wire, err := a.pd.Encode("SettleStakingEpoch", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type SystemCommitValidatorSetIx struct {
-	pd *provider.Provider
-}
-
-type SystemCommitValidatorSetArgs struct {
-	rules_height uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of CommitValidatorSet.
-func (ix *SystemCommitValidatorSetIx) Args(rules_height uint64) *SystemCommitValidatorSetArgs {
-	return &SystemCommitValidatorSetArgs{
-		rules_height: rules_height,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *SystemCommitValidatorSetArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// rules_height: u64
-	args["rules_height"] = a.rules_height
-	wire, err := a.pd.Encode("CommitValidatorSet", args)
+	args["validators"] = v0
+	wire, err := a.pd.Encode("BootstrapRegisteredValidatorSet", args)
 	if err != nil {
 		return nil, err
 	}
@@ -28183,16 +27670,14 @@ type SystemProposeIx struct {
 }
 
 type SystemProposeArgs struct {
-	signer *crypto.Address
 	feature_id uint32
 	kind SystemProposalKind
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Propose.
-func (ix *SystemProposeIx) Args(signer *crypto.Address, feature_id uint32, kind SystemProposalKind) *SystemProposeArgs {
+func (ix *SystemProposeIx) Args(feature_id uint32, kind SystemProposalKind) *SystemProposeArgs {
 	return &SystemProposeArgs{
-		signer: signer,
 		feature_id: feature_id,
 		kind: kind,
 		pd: ix.pd,
@@ -28205,8 +27690,6 @@ func (a *SystemProposeArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// signer: Signer
-	args["signer"] = a.signer
 	// feature_id: u32
 	args["feature_id"] = a.feature_id
 	// kind: ProposalKind
@@ -28227,16 +27710,14 @@ type SystemProposeParamsIx struct {
 }
 
 type SystemProposeParamsArgs struct {
-	signer *crypto.Address
 	params [][]any
 	kind SystemProposalKind
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of ProposeParams.
-func (ix *SystemProposeParamsIx) Args(signer *crypto.Address, params [][]any, kind SystemProposalKind) *SystemProposeParamsArgs {
+func (ix *SystemProposeParamsIx) Args(params [][]any, kind SystemProposalKind) *SystemProposeParamsArgs {
 	return &SystemProposeParamsArgs{
-		signer: signer,
 		params: params,
 		kind: kind,
 		pd: ix.pd,
@@ -28249,8 +27730,6 @@ func (a *SystemProposeParamsArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// signer: Signer
-	args["signer"] = a.signer
 	// params: vec<tuple<u16,bytes>>
 	v0 := make([]any, len(a.params))
 	for v1, v2 := range a.params {
@@ -28277,15 +27756,13 @@ type SystemVoteIx struct {
 }
 
 type SystemVoteArgs struct {
-	signer *crypto.Address
 	feature_id uint32
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Vote.
-func (ix *SystemVoteIx) Args(signer *crypto.Address, feature_id uint32) *SystemVoteArgs {
+func (ix *SystemVoteIx) Args(feature_id uint32) *SystemVoteArgs {
 	return &SystemVoteArgs{
-		signer: signer,
 		feature_id: feature_id,
 		pd: ix.pd,
 	}
@@ -28297,8 +27774,6 @@ func (a *SystemVoteArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// signer: Signer
-	args["signer"] = a.signer
 	// feature_id: u32
 	args["feature_id"] = a.feature_id
 	wire, err := a.pd.Encode("Vote", args)
@@ -28313,15 +27788,13 @@ type SystemCancelIx struct {
 }
 
 type SystemCancelArgs struct {
-	signer *crypto.Address
 	feature_id uint32
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of Cancel.
-func (ix *SystemCancelIx) Args(signer *crypto.Address, feature_id uint32) *SystemCancelArgs {
+func (ix *SystemCancelIx) Args(feature_id uint32) *SystemCancelArgs {
 	return &SystemCancelArgs{
-		signer: signer,
 		feature_id: feature_id,
 		pd: ix.pd,
 	}
@@ -28333,8 +27806,6 @@ func (a *SystemCancelArgs) Encode() (api.PackedInstruction, error) {
 		return nil, fmt.Errorf("IDL app system is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// signer: Signer
-	args["signer"] = a.signer
 	// feature_id: u32
 	args["feature_id"] = a.feature_id
 	wire, err := a.pd.Encode("Cancel", args)
@@ -38458,267 +37929,273 @@ func (ix *DexVaultLiabilityIx) DecodeView(body []byte) (out uint64, err error) {
 // ValidatorApp exposes type-safe instruction builders for IDL app "validator".
 type ValidatorApp struct {
 	Pd *provider.Provider
-	RegisterValidator *ValidatorRegisterValidatorIx
-	CreateValidatorPool *ValidatorCreateValidatorPoolIx
-	PausePool *ValidatorPausePoolIx
-	ResumePool *ValidatorResumePoolIx
-	ClosePool *ValidatorClosePoolIx
+	RecordValidatorActivity *ValidatorRecordValidatorActivityIx
+	BootstrapValidatorRules *ValidatorBootstrapValidatorRulesIx
+	FreezeValidatorEpoch *ValidatorFreezeValidatorEpochIx
+	JoinValidator *ValidatorJoinValidatorIx
+	ExitValidator *ValidatorExitValidatorIx
+	TopUpSelfStake *ValidatorTopUpSelfStakeIx
 	RequestPoolRewardConfig *ValidatorRequestPoolRewardConfigIx
 	ClaimPoolCommission *ValidatorClaimPoolCommissionIx
 	SweepPoolResidual *ValidatorSweepPoolResidualIx
-	ConfigureValidatorRewardPolicy *ValidatorConfigureValidatorRewardPolicyIx
-	FundValidatorRewardPolicy *ValidatorFundValidatorRewardPolicyIx
-	JoinCandidatePool *ValidatorJoinCandidatePoolIx
-	LeaveCandidatePool *ValidatorLeaveCandidatePoolIx
-	DeclareValidatorAvailability *ValidatorDeclareValidatorAvailabilityIx
-	ValidatorRewardPolicy *ValidatorValidatorRewardPolicyIx
-	ValidatorRewardPolicyConfigured *ValidatorValidatorRewardPolicyConfiguredIx
-	CandidatePool *ValidatorCandidatePoolIx
-	CandidateValidators *ValidatorCandidateValidatorsIx
-	DeclaredValidators *ValidatorDeclaredValidatorsIx
-	ValidatorProfile *ValidatorValidatorProfileIx
-	ValidatorForController *ValidatorValidatorForControllerIx
+	FundValidatorRewards *ValidatorFundValidatorRewardsIx
+	RegisterValidator *ValidatorRegisterValidatorIx
+	SettleValidatorEpoch *ValidatorSettleValidatorEpochIx
+	ValidatorEpochActivity *ValidatorValidatorEpochActivityIx
+	ValidatorMemberships *ValidatorValidatorMembershipsIx
 	CurrentValidatorPools *ValidatorCurrentValidatorPoolsIx
-	CandidateValidatorPools *ValidatorCandidateValidatorPoolsIx
+	ValidatorRewardBudget *ValidatorValidatorRewardBudgetIx
+	ValidatorProfile *ValidatorValidatorProfileIx
+	ValidatorForOwner *ValidatorValidatorForOwnerIx
+	ValidatorSelfStake *ValidatorValidatorSelfStakeIx
+	RegisteredValidators *ValidatorRegisteredValidatorsIx
 }
 
 var Validator = &ValidatorApp{
-	RegisterValidator: &ValidatorRegisterValidatorIx{},
-	CreateValidatorPool: &ValidatorCreateValidatorPoolIx{},
-	PausePool: &ValidatorPausePoolIx{},
-	ResumePool: &ValidatorResumePoolIx{},
-	ClosePool: &ValidatorClosePoolIx{},
+	RecordValidatorActivity: &ValidatorRecordValidatorActivityIx{},
+	BootstrapValidatorRules: &ValidatorBootstrapValidatorRulesIx{},
+	FreezeValidatorEpoch: &ValidatorFreezeValidatorEpochIx{},
+	JoinValidator: &ValidatorJoinValidatorIx{},
+	ExitValidator: &ValidatorExitValidatorIx{},
+	TopUpSelfStake: &ValidatorTopUpSelfStakeIx{},
 	RequestPoolRewardConfig: &ValidatorRequestPoolRewardConfigIx{},
 	ClaimPoolCommission: &ValidatorClaimPoolCommissionIx{},
 	SweepPoolResidual: &ValidatorSweepPoolResidualIx{},
-	ConfigureValidatorRewardPolicy: &ValidatorConfigureValidatorRewardPolicyIx{},
-	FundValidatorRewardPolicy: &ValidatorFundValidatorRewardPolicyIx{},
-	JoinCandidatePool: &ValidatorJoinCandidatePoolIx{},
-	LeaveCandidatePool: &ValidatorLeaveCandidatePoolIx{},
-	DeclareValidatorAvailability: &ValidatorDeclareValidatorAvailabilityIx{},
-	ValidatorRewardPolicy: &ValidatorValidatorRewardPolicyIx{},
-	ValidatorRewardPolicyConfigured: &ValidatorValidatorRewardPolicyConfiguredIx{},
-	CandidatePool: &ValidatorCandidatePoolIx{},
-	CandidateValidators: &ValidatorCandidateValidatorsIx{},
-	DeclaredValidators: &ValidatorDeclaredValidatorsIx{},
-	ValidatorProfile: &ValidatorValidatorProfileIx{},
-	ValidatorForController: &ValidatorValidatorForControllerIx{},
+	FundValidatorRewards: &ValidatorFundValidatorRewardsIx{},
+	RegisterValidator: &ValidatorRegisterValidatorIx{},
+	SettleValidatorEpoch: &ValidatorSettleValidatorEpochIx{},
+	ValidatorEpochActivity: &ValidatorValidatorEpochActivityIx{},
+	ValidatorMemberships: &ValidatorValidatorMembershipsIx{},
 	CurrentValidatorPools: &ValidatorCurrentValidatorPoolsIx{},
-	CandidateValidatorPools: &ValidatorCandidateValidatorPoolsIx{},
+	ValidatorRewardBudget: &ValidatorValidatorRewardBudgetIx{},
+	ValidatorProfile: &ValidatorValidatorProfileIx{},
+	ValidatorForOwner: &ValidatorValidatorForOwnerIx{},
+	ValidatorSelfStake: &ValidatorValidatorSelfStakeIx{},
+	RegisteredValidators: &ValidatorRegisteredValidatorsIx{},
 }
 
 func (a *ValidatorApp) bind(pd *provider.Provider) {
 	a.Pd = pd
-	a.RegisterValidator.pd = pd
-	a.CreateValidatorPool.pd = pd
-	a.PausePool.pd = pd
-	a.ResumePool.pd = pd
-	a.ClosePool.pd = pd
+	a.RecordValidatorActivity.pd = pd
+	a.BootstrapValidatorRules.pd = pd
+	a.FreezeValidatorEpoch.pd = pd
+	a.JoinValidator.pd = pd
+	a.ExitValidator.pd = pd
+	a.TopUpSelfStake.pd = pd
 	a.RequestPoolRewardConfig.pd = pd
 	a.ClaimPoolCommission.pd = pd
 	a.SweepPoolResidual.pd = pd
-	a.ConfigureValidatorRewardPolicy.pd = pd
-	a.FundValidatorRewardPolicy.pd = pd
-	a.JoinCandidatePool.pd = pd
-	a.LeaveCandidatePool.pd = pd
-	a.DeclareValidatorAvailability.pd = pd
-	a.ValidatorRewardPolicy.pd = pd
-	a.ValidatorRewardPolicyConfigured.pd = pd
-	a.CandidatePool.pd = pd
-	a.CandidateValidators.pd = pd
-	a.DeclaredValidators.pd = pd
-	a.ValidatorProfile.pd = pd
-	a.ValidatorForController.pd = pd
+	a.FundValidatorRewards.pd = pd
+	a.RegisterValidator.pd = pd
+	a.SettleValidatorEpoch.pd = pd
+	a.ValidatorEpochActivity.pd = pd
+	a.ValidatorMemberships.pd = pd
 	a.CurrentValidatorPools.pd = pd
-	a.CandidateValidatorPools.pd = pd
+	a.ValidatorRewardBudget.pd = pd
+	a.ValidatorProfile.pd = pd
+	a.ValidatorForOwner.pd = pd
+	a.ValidatorSelfStake.pd = pd
+	a.RegisteredValidators.pd = pd
 }
 
-type ValidatorRegisterValidatorIx struct {
+type ValidatorRecordValidatorActivityIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorRegisterValidatorArgs struct {
-	controller *crypto.Address
+type ValidatorRecordValidatorActivityArgs struct {
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of RegisterValidator.
-func (ix *ValidatorRegisterValidatorIx) Args(controller *crypto.Address) *ValidatorRegisterValidatorArgs {
-	return &ValidatorRegisterValidatorArgs{
-		controller: controller,
+// Args builds the IDL arguments of RecordValidatorActivity.
+func (ix *ValidatorRecordValidatorActivityIx) Args() *ValidatorRecordValidatorActivityArgs {
+	return &ValidatorRecordValidatorActivityArgs{
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorRegisterValidatorArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorRecordValidatorActivityArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
-	wire, err := a.pd.Encode("RegisterValidator", args)
+	wire, err := a.pd.Encode("RecordValidatorActivity", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorCreateValidatorPoolIx struct {
+type ValidatorBootstrapValidatorRulesIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorCreateValidatorPoolArgs struct {
-	controller *crypto.Address
-	validator [32]byte
-	stake_asset *crypto.Address
-	reward_asset *crypto.Address
-	reward_config ValidatorPoolRewardConfig
+type ValidatorBootstrapValidatorRulesArgs struct {
+	minimum_self_stake uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CreateValidatorPool.
-func (ix *ValidatorCreateValidatorPoolIx) Args(controller *crypto.Address, validator [32]byte, stake_asset *crypto.Address, reward_asset *crypto.Address, reward_config ValidatorPoolRewardConfig) *ValidatorCreateValidatorPoolArgs {
-	return &ValidatorCreateValidatorPoolArgs{
-		controller: controller,
-		validator: validator,
-		stake_asset: stake_asset,
-		reward_asset: reward_asset,
-		reward_config: reward_config,
+// Args builds the IDL arguments of BootstrapValidatorRules.
+func (ix *ValidatorBootstrapValidatorRulesIx) Args(minimum_self_stake uint64) *ValidatorBootstrapValidatorRulesArgs {
+	return &ValidatorBootstrapValidatorRulesArgs{
+		minimum_self_stake: minimum_self_stake,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorCreateValidatorPoolArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorBootstrapValidatorRulesArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
-	// validator: B256
-	args["validator"] = a.validator
-	// stake_asset: Address
-	args["stake_asset"] = a.stake_asset
-	// reward_asset: Address
-	args["reward_asset"] = a.reward_asset
-	// reward_config: PoolRewardConfig
-	v0, err := toValidatorPoolRewardConfigValue(a.reward_config)
-	if err != nil {
-		return nil, err
-	}
-	args["reward_config"] = v0
-	wire, err := a.pd.Encode("CreateValidatorPool", args)
+	// minimum_self_stake: u64
+	args["minimum_self_stake"] = a.minimum_self_stake
+	wire, err := a.pd.Encode("BootstrapValidatorRules", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorPausePoolIx struct {
+type ValidatorFreezeValidatorEpochIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorPausePoolArgs struct {
-	controller *crypto.Address
-	validator [32]byte
+type ValidatorFreezeValidatorEpochArgs struct {
+	start_slot uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of PausePool.
-func (ix *ValidatorPausePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorPausePoolArgs {
-	return &ValidatorPausePoolArgs{
-		controller: controller,
-		validator: validator,
+// Args builds the IDL arguments of FreezeValidatorEpoch.
+func (ix *ValidatorFreezeValidatorEpochIx) Args(start_slot uint64) *ValidatorFreezeValidatorEpochArgs {
+	return &ValidatorFreezeValidatorEpochArgs{
+		start_slot: start_slot,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorPausePoolArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorFreezeValidatorEpochArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
-	// validator: B256
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("PausePool", args)
+	// start_slot: u64
+	args["start_slot"] = a.start_slot
+	wire, err := a.pd.Encode("FreezeValidatorEpoch", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorResumePoolIx struct {
+type ValidatorJoinValidatorIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorResumePoolArgs struct {
-	controller *crypto.Address
+type ValidatorJoinValidatorArgs struct {
+	owner *crypto.Address
 	validator [32]byte
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ResumePool.
-func (ix *ValidatorResumePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorResumePoolArgs {
-	return &ValidatorResumePoolArgs{
-		controller: controller,
+// Args builds the IDL arguments of JoinValidator.
+func (ix *ValidatorJoinValidatorIx) Args(owner *crypto.Address, validator [32]byte) *ValidatorJoinValidatorArgs {
+	return &ValidatorJoinValidatorArgs{
+		owner: owner,
 		validator: validator,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorResumePoolArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorJoinValidatorArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
+	// owner: Signer
+	args["owner"] = a.owner
 	// validator: B256
 	args["validator"] = a.validator
-	wire, err := a.pd.Encode("ResumePool", args)
+	wire, err := a.pd.Encode("JoinValidator", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorClosePoolIx struct {
+type ValidatorExitValidatorIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorClosePoolArgs struct {
-	controller *crypto.Address
+type ValidatorExitValidatorArgs struct {
+	owner *crypto.Address
 	validator [32]byte
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ClosePool.
-func (ix *ValidatorClosePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorClosePoolArgs {
-	return &ValidatorClosePoolArgs{
-		controller: controller,
+// Args builds the IDL arguments of ExitValidator.
+func (ix *ValidatorExitValidatorIx) Args(owner *crypto.Address, validator [32]byte) *ValidatorExitValidatorArgs {
+	return &ValidatorExitValidatorArgs{
+		owner: owner,
 		validator: validator,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorClosePoolArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorExitValidatorArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
+	// owner: Signer
+	args["owner"] = a.owner
 	// validator: B256
 	args["validator"] = a.validator
-	wire, err := a.pd.Encode("ClosePool", args)
+	wire, err := a.pd.Encode("ExitValidator", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type ValidatorTopUpSelfStakeIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorTopUpSelfStakeArgs struct {
+	owner *crypto.Address
+	validator [32]byte
+	amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of TopUpSelfStake.
+func (ix *ValidatorTopUpSelfStakeIx) Args(owner *crypto.Address, validator [32]byte, amount uint64) *ValidatorTopUpSelfStakeArgs {
+	return &ValidatorTopUpSelfStakeArgs{
+		owner: owner,
+		validator: validator,
+		amount: amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorTopUpSelfStakeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// validator: B256
+	args["validator"] = a.validator
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("TopUpSelfStake", args)
 	if err != nil {
 		return nil, err
 	}
@@ -38730,16 +38207,16 @@ type ValidatorRequestPoolRewardConfigIx struct {
 }
 
 type ValidatorRequestPoolRewardConfigArgs struct {
-	controller *crypto.Address
+	owner *crypto.Address
 	validator [32]byte
 	config ValidatorPoolRewardConfig
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of RequestPoolRewardConfig.
-func (ix *ValidatorRequestPoolRewardConfigIx) Args(controller *crypto.Address, validator [32]byte, config ValidatorPoolRewardConfig) *ValidatorRequestPoolRewardConfigArgs {
+func (ix *ValidatorRequestPoolRewardConfigIx) Args(owner *crypto.Address, validator [32]byte, config ValidatorPoolRewardConfig) *ValidatorRequestPoolRewardConfigArgs {
 	return &ValidatorRequestPoolRewardConfigArgs{
-		controller: controller,
+		owner: owner,
 		validator: validator,
 		config: config,
 		pd: ix.pd,
@@ -38752,8 +38229,8 @@ func (a *ValidatorRequestPoolRewardConfigArgs) Encode() (api.PackedInstruction, 
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
+	// owner: Signer
+	args["owner"] = a.owner
 	// validator: B256
 	args["validator"] = a.validator
 	// config: PoolRewardConfig
@@ -38774,15 +38251,15 @@ type ValidatorClaimPoolCommissionIx struct {
 }
 
 type ValidatorClaimPoolCommissionArgs struct {
-	controller *crypto.Address
+	owner *crypto.Address
 	validator [32]byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of ClaimPoolCommission.
-func (ix *ValidatorClaimPoolCommissionIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorClaimPoolCommissionArgs {
+func (ix *ValidatorClaimPoolCommissionIx) Args(owner *crypto.Address, validator [32]byte) *ValidatorClaimPoolCommissionArgs {
 	return &ValidatorClaimPoolCommissionArgs{
-		controller: controller,
+		owner: owner,
 		validator: validator,
 		pd: ix.pd,
 	}
@@ -38794,8 +38271,8 @@ func (a *ValidatorClaimPoolCommissionArgs) Encode() (api.PackedInstruction, erro
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
+	// owner: Signer
+	args["owner"] = a.owner
 	// validator: B256
 	args["validator"] = a.validator
 	wire, err := a.pd.Encode("ClaimPoolCommission", args)
@@ -38810,15 +38287,15 @@ type ValidatorSweepPoolResidualIx struct {
 }
 
 type ValidatorSweepPoolResidualArgs struct {
-	controller *crypto.Address
+	owner *crypto.Address
 	validator [32]byte
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of SweepPoolResidual.
-func (ix *ValidatorSweepPoolResidualIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorSweepPoolResidualArgs {
+func (ix *ValidatorSweepPoolResidualIx) Args(owner *crypto.Address, validator [32]byte) *ValidatorSweepPoolResidualArgs {
 	return &ValidatorSweepPoolResidualArgs{
-		controller: controller,
+		owner: owner,
 		validator: validator,
 		pd: ix.pd,
 	}
@@ -38830,8 +38307,8 @@ func (a *ValidatorSweepPoolResidualArgs) Encode() (api.PackedInstruction, error)
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
+	// owner: Signer
+	args["owner"] = a.owner
 	// validator: B256
 	args["validator"] = a.validator
 	wire, err := a.pd.Encode("SweepPoolResidual", args)
@@ -38841,248 +38318,172 @@ func (a *ValidatorSweepPoolResidualArgs) Encode() (api.PackedInstruction, error)
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorConfigureValidatorRewardPolicyIx struct {
+type ValidatorFundValidatorRewardsIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorConfigureValidatorRewardPolicyArgs struct {
-	owner *crypto.Address
-	stake_asset *crypto.Address
-	reward_asset *crypto.Address
-	reward_per_validator uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ConfigureValidatorRewardPolicy.
-func (ix *ValidatorConfigureValidatorRewardPolicyIx) Args(owner *crypto.Address, stake_asset *crypto.Address, reward_asset *crypto.Address, reward_per_validator uint64) *ValidatorConfigureValidatorRewardPolicyArgs {
-	return &ValidatorConfigureValidatorRewardPolicyArgs{
-		owner: owner,
-		stake_asset: stake_asset,
-		reward_asset: reward_asset,
-		reward_per_validator: reward_per_validator,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorConfigureValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// owner: Signer
-	args["owner"] = a.owner
-	// stake_asset: Address
-	args["stake_asset"] = a.stake_asset
-	// reward_asset: Address
-	args["reward_asset"] = a.reward_asset
-	// reward_per_validator: u64
-	args["reward_per_validator"] = a.reward_per_validator
-	wire, err := a.pd.Encode("ConfigureValidatorRewardPolicy", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-type ValidatorFundValidatorRewardPolicyIx struct {
-	pd *provider.Provider
-}
-
-type ValidatorFundValidatorRewardPolicyArgs struct {
+type ValidatorFundValidatorRewardsArgs struct {
 	funder *crypto.Address
-	stake_asset *crypto.Address
-	reward_asset *crypto.Address
 	amount uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of FundValidatorRewardPolicy.
-func (ix *ValidatorFundValidatorRewardPolicyIx) Args(funder *crypto.Address, stake_asset *crypto.Address, reward_asset *crypto.Address, amount uint64) *ValidatorFundValidatorRewardPolicyArgs {
-	return &ValidatorFundValidatorRewardPolicyArgs{
+// Args builds the IDL arguments of FundValidatorRewards.
+func (ix *ValidatorFundValidatorRewardsIx) Args(funder *crypto.Address, amount uint64) *ValidatorFundValidatorRewardsArgs {
+	return &ValidatorFundValidatorRewardsArgs{
 		funder: funder,
-		stake_asset: stake_asset,
-		reward_asset: reward_asset,
 		amount: amount,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorFundValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorFundValidatorRewardsArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
 	// funder: Signer
 	args["funder"] = a.funder
-	// stake_asset: Address
-	args["stake_asset"] = a.stake_asset
-	// reward_asset: Address
-	args["reward_asset"] = a.reward_asset
 	// amount: u64
 	args["amount"] = a.amount
-	wire, err := a.pd.Encode("FundValidatorRewardPolicy", args)
+	wire, err := a.pd.Encode("FundValidatorRewards", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorJoinCandidatePoolIx struct {
+type ValidatorRegisterValidatorIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorJoinCandidatePoolArgs struct {
-	controller *crypto.Address
-	validator [32]byte
+type ValidatorRegisterValidatorArgs struct {
+	owner *crypto.Address
+	consensus_account *crypto.Address
+	consensus_pubkey []byte
+	bls_pubkey []byte
+	bls_proof []byte
+	ed25519_pubkey []byte
+	self_stake uint64
+	commission_rate_bps uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of JoinCandidatePool.
-func (ix *ValidatorJoinCandidatePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorJoinCandidatePoolArgs {
-	return &ValidatorJoinCandidatePoolArgs{
-		controller: controller,
-		validator: validator,
+// Args builds the IDL arguments of RegisterValidator.
+func (ix *ValidatorRegisterValidatorIx) Args(owner *crypto.Address, consensus_account *crypto.Address, consensus_pubkey []byte, bls_pubkey []byte, bls_proof []byte, ed25519_pubkey []byte, self_stake uint64, commission_rate_bps uint64) *ValidatorRegisterValidatorArgs {
+	return &ValidatorRegisterValidatorArgs{
+		owner: owner,
+		consensus_account: consensus_account,
+		consensus_pubkey: consensus_pubkey,
+		bls_pubkey: bls_pubkey,
+		bls_proof: bls_proof,
+		ed25519_pubkey: ed25519_pubkey,
+		self_stake: self_stake,
+		commission_rate_bps: commission_rate_bps,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorJoinCandidatePoolArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorRegisterValidatorArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
-	// validator: B256
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("JoinCandidatePool", args)
+	// owner: Signer
+	args["owner"] = a.owner
+	// consensus_account: Signer
+	args["consensus_account"] = a.consensus_account
+	// consensus_pubkey: bytes
+	args["consensus_pubkey"] = a.consensus_pubkey
+	// bls_pubkey: bytes
+	args["bls_pubkey"] = a.bls_pubkey
+	// bls_proof: bytes
+	args["bls_proof"] = a.bls_proof
+	// ed25519_pubkey: bytes
+	args["ed25519_pubkey"] = a.ed25519_pubkey
+	// self_stake: u64
+	args["self_stake"] = a.self_stake
+	// commission_rate_bps: u64
+	args["commission_rate_bps"] = a.commission_rate_bps
+	wire, err := a.pd.Encode("RegisterValidator", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorLeaveCandidatePoolIx struct {
+type ValidatorSettleValidatorEpochIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorLeaveCandidatePoolArgs struct {
-	controller *crypto.Address
-	validator [32]byte
+type ValidatorSettleValidatorEpochArgs struct {
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of LeaveCandidatePool.
-func (ix *ValidatorLeaveCandidatePoolIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorLeaveCandidatePoolArgs {
-	return &ValidatorLeaveCandidatePoolArgs{
-		controller: controller,
-		validator: validator,
+// Args builds the IDL arguments of SettleValidatorEpoch.
+func (ix *ValidatorSettleValidatorEpochIx) Args() *ValidatorSettleValidatorEpochArgs {
+	return &ValidatorSettleValidatorEpochArgs{
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorLeaveCandidatePoolArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorSettleValidatorEpochArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
-	// validator: B256
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("LeaveCandidatePool", args)
+	wire, err := a.pd.Encode("SettleValidatorEpoch", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorDeclareValidatorAvailabilityIx struct {
+type ValidatorValidatorEpochActivityIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorDeclareValidatorAvailabilityArgs struct {
-	controller *crypto.Address
-	validator [32]byte
+type ValidatorValidatorEpochActivityArgs struct {
+	epoch uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of DeclareValidatorAvailability.
-func (ix *ValidatorDeclareValidatorAvailabilityIx) Args(controller *crypto.Address, validator [32]byte) *ValidatorDeclareValidatorAvailabilityArgs {
-	return &ValidatorDeclareValidatorAvailabilityArgs{
-		controller: controller,
-		validator: validator,
+// Args builds the IDL arguments of ValidatorEpochActivity.
+func (ix *ValidatorValidatorEpochActivityIx) Args(epoch uint64) *ValidatorValidatorEpochActivityArgs {
+	return &ValidatorValidatorEpochActivityArgs{
+		epoch: epoch,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorDeclareValidatorAvailabilityArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorValidatorEpochActivityArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Signer
-	args["controller"] = a.controller
-	// validator: B256
-	args["validator"] = a.validator
-	wire, err := a.pd.Encode("DeclareValidatorAvailability", args)
+	// epoch: u64
+	args["epoch"] = a.epoch
+	wire, err := a.pd.Encode("ValidatorEpochActivity", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorValidatorRewardPolicyIx struct {
-	pd *provider.Provider
-}
-
-type ValidatorValidatorRewardPolicyArgs struct {
-	stake_asset *crypto.Address
-	reward_asset *crypto.Address
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ValidatorRewardPolicy.
-func (ix *ValidatorValidatorRewardPolicyIx) Args(stake_asset *crypto.Address, reward_asset *crypto.Address) *ValidatorValidatorRewardPolicyArgs {
-	return &ValidatorValidatorRewardPolicyArgs{
-		stake_asset: stake_asset,
-		reward_asset: reward_asset,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorValidatorRewardPolicyArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// stake_asset: Address
-	args["stake_asset"] = a.stake_asset
-	// reward_asset: Address
-	args["reward_asset"] = a.reward_asset
-	wire, err := a.pd.Encode("ValidatorRewardPolicy", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of ValidatorRewardPolicy into ValidatorValidatorRewardPolicy.
-func (ix *ValidatorValidatorRewardPolicyIx) DecodeView(body []byte) (out ValidatorValidatorRewardPolicy, err error) {
+// DecodeView decodes the raw view response body of ValidatorEpochActivity into ValidatorEpochActivity.
+func (ix *ValidatorValidatorEpochActivityIx) DecodeView(body []byte) (out ValidatorEpochActivity, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewValue("ValidatorRewardPolicy", body)
+	v, err := ix.pd.DecodeViewValue("ValidatorEpochActivity", body)
 	if err != nil {
 		return out, err
 	}
-	v0, err := fromValidatorValidatorRewardPolicy(v)
+	v0, err := fromValidatorEpochActivity(v)
 	if err != nil {
 		return out, err
 	}
@@ -39090,130 +38491,40 @@ func (ix *ValidatorValidatorRewardPolicyIx) DecodeView(body []byte) (out Validat
 	return out, nil
 }
 
-type ValidatorValidatorRewardPolicyConfiguredIx struct {
+type ValidatorValidatorMembershipsIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorValidatorRewardPolicyConfiguredArgs struct {
+type ValidatorValidatorMembershipsArgs struct {
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ValidatorRewardPolicyConfigured.
-func (ix *ValidatorValidatorRewardPolicyConfiguredIx) Args() *ValidatorValidatorRewardPolicyConfiguredArgs {
-	return &ValidatorValidatorRewardPolicyConfiguredArgs{
+// Args builds the IDL arguments of ValidatorMemberships.
+func (ix *ValidatorValidatorMembershipsIx) Args() *ValidatorValidatorMembershipsArgs {
+	return &ValidatorValidatorMembershipsArgs{
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorValidatorRewardPolicyConfiguredArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorValidatorMembershipsArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	wire, err := a.pd.Encode("ValidatorRewardPolicyConfigured", args)
+	wire, err := a.pd.Encode("ValidatorMemberships", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of ValidatorRewardPolicyConfigured into bool.
-func (ix *ValidatorValidatorRewardPolicyConfiguredIx) DecodeView(body []byte) (out bool, err error) {
+// DecodeView decodes the raw view response body of ValidatorMemberships into []ValidatorMembership.
+func (ix *ValidatorValidatorMembershipsIx) DecodeView(body []byte) (out []ValidatorMembership, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewValue("ValidatorRewardPolicyConfigured", body)
-	if err != nil {
-		return out, err
-	}
-	v0, err := toBool(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type ValidatorCandidatePoolIx struct {
-	pd *provider.Provider
-}
-
-type ValidatorCandidatePoolArgs struct {
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of CandidatePool.
-func (ix *ValidatorCandidatePoolIx) Args() *ValidatorCandidatePoolArgs {
-	return &ValidatorCandidatePoolArgs{
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorCandidatePoolArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	wire, err := a.pd.Encode("CandidatePool", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of CandidatePool into ValidatorCandidatePool.
-func (ix *ValidatorCandidatePoolIx) DecodeView(body []byte) (out ValidatorCandidatePool, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewValue("CandidatePool", body)
-	if err != nil {
-		return out, err
-	}
-	v0, err := fromValidatorCandidatePool(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
-}
-
-type ValidatorCandidateValidatorsIx struct {
-	pd *provider.Provider
-}
-
-type ValidatorCandidateValidatorsArgs struct {
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of CandidateValidators.
-func (ix *ValidatorCandidateValidatorsIx) Args() *ValidatorCandidateValidatorsArgs {
-	return &ValidatorCandidateValidatorsArgs{
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorCandidateValidatorsArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	wire, err := a.pd.Encode("CandidateValidators", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of CandidateValidators into []ValidatorCandidateValidator.
-func (ix *ValidatorCandidateValidatorsIx) DecodeView(body []byte) (out []ValidatorCandidateValidator, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewValue("CandidateValidators", body)
+	v, err := ix.pd.DecodeViewValue("ValidatorMemberships", body)
 	if err != nil {
 		return out, err
 	}
@@ -39221,9 +38532,9 @@ func (ix *ValidatorCandidateValidatorsIx) DecodeView(body []byte) (out []Validat
 	if err != nil {
 		return out, err
 	}
-	out = make([]ValidatorCandidateValidator, len(v0))
+	out = make([]ValidatorMembership, len(v0))
 	for v1, v2 := range v0 {
-		v3, err := fromValidatorCandidateValidator(v2)
+		v3, err := fromValidatorMembership(v2)
 		if err != nil {
 			return out, err
 		}
@@ -39232,48 +38543,89 @@ func (ix *ValidatorCandidateValidatorsIx) DecodeView(body []byte) (out []Validat
 	return out, nil
 }
 
-type ValidatorDeclaredValidatorsIx struct {
+type ValidatorCurrentValidatorPoolsIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorDeclaredValidatorsArgs struct {
-	target_epoch uint64
+type ValidatorCurrentValidatorPoolsArgs struct {
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of DeclaredValidators.
-func (ix *ValidatorDeclaredValidatorsIx) Args(target_epoch uint64) *ValidatorDeclaredValidatorsArgs {
-	return &ValidatorDeclaredValidatorsArgs{
-		target_epoch: target_epoch,
+// Args builds the IDL arguments of CurrentValidatorPools.
+func (ix *ValidatorCurrentValidatorPoolsIx) Args() *ValidatorCurrentValidatorPoolsArgs {
+	return &ValidatorCurrentValidatorPoolsArgs{
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorDeclaredValidatorsArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorCurrentValidatorPoolsArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// target_epoch: u64
-	args["target_epoch"] = a.target_epoch
-	wire, err := a.pd.Encode("DeclaredValidators", args)
+	wire, err := a.pd.Encode("CurrentValidatorPools", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of DeclaredValidators into ValidatorCandidatePool.
-func (ix *ValidatorDeclaredValidatorsIx) DecodeView(body []byte) (out ValidatorCandidatePool, err error) {
+// DecodeView decodes the raw view response body of CurrentValidatorPools into ValidatorValidatorPoolList.
+func (ix *ValidatorCurrentValidatorPoolsIx) DecodeView(body []byte) (out ValidatorValidatorPoolList, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewValue("DeclaredValidators", body)
+	v, err := ix.pd.DecodeViewValue("CurrentValidatorPools", body)
 	if err != nil {
 		return out, err
 	}
-	v0, err := fromValidatorCandidatePool(v)
+	v0, err := fromValidatorValidatorPoolList(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type ValidatorValidatorRewardBudgetIx struct {
+	pd *provider.Provider
+}
+
+type ValidatorValidatorRewardBudgetArgs struct {
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ValidatorRewardBudget.
+func (ix *ValidatorValidatorRewardBudgetIx) Args() *ValidatorValidatorRewardBudgetArgs {
+	return &ValidatorValidatorRewardBudgetArgs{
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *ValidatorValidatorRewardBudgetArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	wire, err := a.pd.Encode("ValidatorRewardBudget", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ValidatorRewardBudget into uint64.
+func (ix *ValidatorValidatorRewardBudgetIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("ValidatorRewardBudget", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toUint64(v)
 	if err != nil {
 		return out, err
 	}
@@ -39330,44 +38682,44 @@ func (ix *ValidatorValidatorProfileIx) DecodeView(body []byte) (out ValidatorVal
 	return out, nil
 }
 
-type ValidatorValidatorForControllerIx struct {
+type ValidatorValidatorForOwnerIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorValidatorForControllerArgs struct {
-	controller *crypto.Address
+type ValidatorValidatorForOwnerArgs struct {
+	owner *crypto.Address
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ValidatorForController.
-func (ix *ValidatorValidatorForControllerIx) Args(controller *crypto.Address) *ValidatorValidatorForControllerArgs {
-	return &ValidatorValidatorForControllerArgs{
-		controller: controller,
+// Args builds the IDL arguments of ValidatorForOwner.
+func (ix *ValidatorValidatorForOwnerIx) Args(owner *crypto.Address) *ValidatorValidatorForOwnerArgs {
+	return &ValidatorValidatorForOwnerArgs{
+		owner: owner,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorValidatorForControllerArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorValidatorForOwnerArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	// controller: Address
-	args["controller"] = a.controller
-	wire, err := a.pd.Encode("ValidatorForController", args)
+	// owner: Address
+	args["owner"] = a.owner
+	wire, err := a.pd.Encode("ValidatorForOwner", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of ValidatorForController into [32]byte.
-func (ix *ValidatorValidatorForControllerIx) DecodeView(body []byte) (out [32]byte, err error) {
+// DecodeView decodes the raw view response body of ValidatorForOwner into [32]byte.
+func (ix *ValidatorValidatorForOwnerIx) DecodeView(body []byte) (out [32]byte, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewValue("ValidatorForController", body)
+	v, err := ix.pd.DecodeViewValue("ValidatorForOwner", body)
 	if err != nil {
 		return out, err
 	}
@@ -39379,44 +38731,52 @@ func (ix *ValidatorValidatorForControllerIx) DecodeView(body []byte) (out [32]by
 	return out, nil
 }
 
-type ValidatorCurrentValidatorPoolsIx struct {
+type ValidatorValidatorSelfStakeIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorCurrentValidatorPoolsArgs struct {
+type ValidatorValidatorSelfStakeArgs struct {
+	validator [32]byte
+	target_epoch uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CurrentValidatorPools.
-func (ix *ValidatorCurrentValidatorPoolsIx) Args() *ValidatorCurrentValidatorPoolsArgs {
-	return &ValidatorCurrentValidatorPoolsArgs{
+// Args builds the IDL arguments of ValidatorSelfStake.
+func (ix *ValidatorValidatorSelfStakeIx) Args(validator [32]byte, target_epoch uint64) *ValidatorValidatorSelfStakeArgs {
+	return &ValidatorValidatorSelfStakeArgs{
+		validator: validator,
+		target_epoch: target_epoch,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorCurrentValidatorPoolsArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorValidatorSelfStakeArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	wire, err := a.pd.Encode("CurrentValidatorPools", args)
+	// validator: B256
+	args["validator"] = a.validator
+	// target_epoch: u64
+	args["target_epoch"] = a.target_epoch
+	wire, err := a.pd.Encode("ValidatorSelfStake", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of CurrentValidatorPools into ValidatorValidatorPoolList.
-func (ix *ValidatorCurrentValidatorPoolsIx) DecodeView(body []byte) (out ValidatorValidatorPoolList, err error) {
+// DecodeView decodes the raw view response body of ValidatorSelfStake into uint64.
+func (ix *ValidatorValidatorSelfStakeIx) DecodeView(body []byte) (out uint64, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewValue("CurrentValidatorPools", body)
+	v, err := ix.pd.DecodeViewValue("ValidatorSelfStake", body)
 	if err != nil {
 		return out, err
 	}
-	v0, err := fromValidatorValidatorPoolList(v)
+	v0, err := toUint64(v)
 	if err != nil {
 		return out, err
 	}
@@ -39424,48 +38784,55 @@ func (ix *ValidatorCurrentValidatorPoolsIx) DecodeView(body []byte) (out Validat
 	return out, nil
 }
 
-type ValidatorCandidateValidatorPoolsIx struct {
+type ValidatorRegisteredValidatorsIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorCandidateValidatorPoolsArgs struct {
+type ValidatorRegisteredValidatorsArgs struct {
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of CandidateValidatorPools.
-func (ix *ValidatorCandidateValidatorPoolsIx) Args() *ValidatorCandidateValidatorPoolsArgs {
-	return &ValidatorCandidateValidatorPoolsArgs{
+// Args builds the IDL arguments of RegisteredValidators.
+func (ix *ValidatorRegisteredValidatorsIx) Args() *ValidatorRegisteredValidatorsArgs {
+	return &ValidatorRegisteredValidatorsArgs{
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorCandidateValidatorPoolsArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorRegisteredValidatorsArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	wire, err := a.pd.Encode("CandidateValidatorPools", args)
+	wire, err := a.pd.Encode("RegisteredValidators", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of CandidateValidatorPools into ValidatorValidatorPoolList.
-func (ix *ValidatorCandidateValidatorPoolsIx) DecodeView(body []byte) (out ValidatorValidatorPoolList, err error) {
+// DecodeView decodes the raw view response body of RegisteredValidators into [][32]byte.
+func (ix *ValidatorRegisteredValidatorsIx) DecodeView(body []byte) (out [][32]byte, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewValue("CandidateValidatorPools", body)
+	v, err := ix.pd.DecodeViewValue("RegisteredValidators", body)
 	if err != nil {
 		return out, err
 	}
-	v0, err := fromValidatorValidatorPoolList(v)
+	v0, err := toSlice(v)
 	if err != nil {
 		return out, err
 	}
-	out = v0
+	out = make([][32]byte, len(v0))
+	for v1, v2 := range v0 {
+		v3, err := toFixed32(v2)
+		if err != nil {
+			return out, err
+		}
+		out[v1] = v3
+	}
 	return out, nil
 }
 
@@ -39635,16 +39002,14 @@ type KeylessUpdateJwkReportIx struct {
 type KeylessUpdateJwkReportArgs struct {
 	provider_id [32]byte
 	jwks []string
-	validator_account *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of UpdateJwkReport.
-func (ix *KeylessUpdateJwkReportIx) Args(provider_id [32]byte, jwks []string, validator_account *crypto.Address) *KeylessUpdateJwkReportArgs {
+func (ix *KeylessUpdateJwkReportIx) Args(provider_id [32]byte, jwks []string) *KeylessUpdateJwkReportArgs {
 	return &KeylessUpdateJwkReportArgs{
 		provider_id: provider_id,
 		jwks: jwks,
-		validator_account: validator_account,
 		pd: ix.pd,
 	}
 }
@@ -39663,8 +39028,6 @@ func (a *KeylessUpdateJwkReportArgs) Encode() (api.PackedInstruction, error) {
 		v0[v1] = v2
 	}
 	args["jwks"] = v0
-	// validator_account: Signer
-	args["validator_account"] = a.validator_account
 	wire, err := a.pd.Encode("UpdateJwkReport", args)
 	if err != nil {
 		return nil, err

@@ -193,34 +193,54 @@
       "name": "UnknownTxHistoryType"
     },
     {
+      "code": 28,
+      "message": "joint validator epoch is not ready",
+      "name": "ValidatorEpochNotReady"
+    },
+    {
       "code": 64,
-      "message": "未绑定上下文, 请先调用bind_context绑定上下文",
+      "message": "context is not bound; call bind_context first",
       "name": "ContextNotBound"
     },
     {
       "code": 65,
-      "message": "地址未参与当前 ix 签名: {0:?}",
+      "message": "address did not sign the current instruction: {0:?}",
       "name": "AddressNotSignatured"
     },
     {
       "code": 66,
-      "message": "当前执行交易未绑定, 无法验证 direct pubkey ix signer: {0:?}",
+      "message": "current transaction is not bound; cannot verify direct public key instruction signer: {0:?}",
       "name": "DirectPubkeySignerContextNotBound"
     },
     {
       "code": 67,
-      "message": "地址没有使用指定 direct pubkey 参与当前 ix 签名: {0:?}",
+      "message": "address did not sign the current instruction with the specified direct public key: {0:?}",
       "name": "DirectPubkeySignerMismatch"
     },
     {
       "code": 68,
-      "message": "跨应用调用未跟踪调用方 app ID，请使用 app_call! 发起调用",
+      "message": "cross-app call does not track the caller app ID; use app_call! to invoke it",
       "name": "AppCallerRequired"
     },
     {
       "code": 69,
-      "message": "签名者的抗量子签名不满足当前授权要求: {0:?}",
+      "message": "signer's post-quantum signature does not satisfy the current authorization requirements: {0:?}",
       "name": "PqSignatureRequired"
+    },
+    {
+      "code": 70,
+      "message": "current instruction requires exactly one active validator signature",
+      "name": "ValidatorSignatureRequired"
+    },
+    {
+      "code": 71,
+      "message": "multiple active validators signed the current instruction",
+      "name": "AmbiguousValidatorSignature"
+    },
+    {
+      "code": 72,
+      "message": "current validator set is unavailable",
+      "name": "ValidatorSetUnavailable"
     }
   ]
 }

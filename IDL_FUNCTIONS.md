@@ -1,12 +1,12 @@
 # Milon IDL 函数清单
 
-> 导出自 `gosdk-develop/provider/IDL/`，共 **12** 个 app、**342** 个函数（view 127 + entry 215）。
+> 导出自 `gosdk-develop/provider/IDL/`，共 **12** 个 app、**337** 个函数（view 126 + entry 211）。
 
 > 表格列：`appname`(应用名) · `meth`(方法名/指令名) · `handler`(链上入口名) · `id`(discriminator 指令编号) · `说明`(中文释义，来自 handler/idl_method_docs.go 的文档映射，与 /api/idl/metadata 输出一致)
 
 ## View（只读查询，kind=view）
 
-共 **127** 个。
+共 **126** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -89,15 +89,14 @@
 | dex | OrderbookDepth | orderbook_depth | 46884 | 【功能】查询买卖各价位档的深度。<br>【返回】{bids: [{tick, order_count, total_base_lots}], asks: [...]}。<br>【限制】depth 上限 50（InvalidViewLimit 1552）。 |
 | dex | OrdersAtLevel | orders_at_level | 24461 | 【功能】分页查询某一价格档上的订单列表。<br>【返回】LevelOrderPage：{orders: [OrderInfo], next_order_id（翻页游标，0 表示没有更多）}。<br>【限制】limit 1..=100（1552）；档位不存在报 PriceLevelNotFound（1553）；游标非法报 InvalidOrderCursor（1554）。 |
 | dex | VaultLiability | vault_liability | 6759 | 【功能】查询市场金库对某代币的负债总额（所有用户托管资金之和）。<br>【返回】u64。 |
-| validator | ValidatorRewardPolicy | validator_reward_policy | 57655 | 【功能】查询指定（质押代币, 奖励代币）组合的验证人奖励政策。<br>【返回】ValidatorRewardPolicy：{stake_asset, reward_asset, reward_per_validator, available（金库可发放余额）}；未配置返回空值。 |
-| validator | ValidatorRewardPolicyConfigured | validator_reward_policy_configured | 27560 | 【功能】查询是否已配置验证人奖励政策（无参数）。<br>【返回】bool。 |
-| validator | CandidatePool | candidate_pool | 65512 | 【功能】查询当前候选池中的全部验证人（无参数）。<br>【返回】CandidatePool：{validators: [ValidatorId 数组]}。 |
-| validator | CandidateValidators | candidate_validators | 7913 | 【功能】查询候选验证人明细（含共识账户地址）。<br>【返回】vec<CandidateValidator>：每项 {validator, consensus_account}。 |
-| validator | DeclaredValidators | declared_validators | 21712 | 【功能】查询某目标 epoch 已声明出块可用性的验证人列表。<br>【返回】CandidatePool：{validators}。 |
-| validator | ValidatorProfile | validator_profile | 37544 | 【功能】查询验证人档案：身份状态、候选/选中状态与绑定池。<br>【返回】ValidatorProfile：{validator, controller, identity_status: Registered\|Suspended\|Retired, selection_status: None\|Candidate\|Selected\|Leaving, pool_id}；未注册报 1793。 |
-| validator | ValidatorForController | validator_for_controller | 61371 | 【功能】按 controller 地址反查其绑定的 ValidatorId。<br>【返回】ValidatorId；未绑定报 1793。 |
-| validator | CurrentValidatorPools | current_validator_pools | 32584 | 【功能】查询当前 epoch 全体验证人池总览。<br>【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, active_staker_count}]}；集合未就绪报 1803。 |
-| validator | CandidateValidatorPools | candidate_validator_pools | 4184 | 【功能】查询候选验证人池总览（结构与 CurrentValidatorPools 相同，范围限于候选集合）。<br>【返回】ValidatorPoolList；集合未就绪报 1803。 |
+| validator | ValidatorEpochActivity | validator_epoch_activity | 46392 | 【功能】查询某 epoch 的验证人出块活动统计。<br>【返回】EpochActivity：{blocks（出块数）, signers（参与签名验证人数）, last_block（末块高度）}。 |
+| validator | ValidatorMemberships | validator_memberships | 43732 | 【功能】查询全体验证人集合成员关系。<br>【返回】vec<Membership>：每项 {validator, join_epoch, exit_epoch（option，null 表示在任）, minimum_self_stake}。 |
+| validator | CurrentValidatorPools | current_validator_pools | 32584 | 【功能】查询当前 epoch 全体验证人池总览。<br>【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, position_count}]}；集合未就绪报 1801。 |
+| validator | ValidatorRewardBudget | validator_reward_budget | 24480 | 【功能】查询验证人奖励预算余额（FundValidatorRewards 注资的累计可发放额度）。<br>【返回】u64（最小单位）。 |
+| validator | ValidatorProfile | validator_profile | 37544 | 【功能】查询验证人档案。<br>【返回】ValidatorProfile：{validator, owner, pool_id}；未注册报 1793。 |
+| validator | ValidatorForOwner | validator_for_owner | 10754 | 【功能】按 owner 地址反查其绑定的 ValidatorId。<br>【返回】ValidatorId（B256）；未绑定报 1793。 |
+| validator | ValidatorSelfStake | validator_self_stake | 13504 | 【功能】查询某验证人在目标 epoch 的自押金额（快照值）。<br>【返回】u64（最小单位）。 |
+| validator | RegisteredValidators | registered_validators | 19434 | 【功能】查询全体验证人 ID 列表。<br>【返回】vec<B256>（base58）。 |
 | keyless | GetSessions | get_sessions | 58087 | 【功能】查询某账户的全部活跃会话。<br>【返回】[{session_id, provider_id, audience_hash, session_version, session_pubkey, expires_at_ms, created_at_ms}]。 |
 | keyless | GetBinding | get_binding | 4855 | 【功能】查询某 keyless 地址的绑定信息。<br>【返回】null 或 {owner, slot_index, bound_at_ms, active_at_ms}。 |
 | keyless | ListProviders | list_providers | 12570 | 【功能】列出全部 provider（内置 + 自定义，无参数）。<br>【返回】[{provider_id, kind: "BuiltinOidc"\|"StaticJwk", display_name, issuer, allowed_algs, max_id_token_age_ms, max_session_ttl_ms, owner, keys, key_revision}]。 |
@@ -140,24 +139,21 @@
 
 ## Entry（写状态交易，kind=entry）
 
-共 **215** 个。
+共 **211** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
 | system | Noop | noop | 13507 | 【功能】空操作指令，无参数、无任何链上效果，常用于测试交易链路或触发账户资源的懒创建。<br>【限制】无。 |
-| system | BootstrapEpochClock | bootstrap_epoch_clock | 57604 | 【功能】初始化协议 epoch 时钟（计时起点 + 最短纪元时长），是 staking 纪元结算（system.SettleStakingEpoch 及池周期调度）的前置条件。<br>【限制】一次性初始化，重复调用会失败（EpochClockFailure）；仅在链引导阶段调用。 |
+| system | BootstrapEpochClock | bootstrap_epoch_clock | 57604 | 【功能】初始化协议 epoch 时钟（计时起点 + 最短纪元时长），是 staking 纪元结算与验证人 epoch 调度的前置条件。<br>【限制】一次性初始化，重复调用会失败（EpochClockFailure）；仅在链引导阶段调用。 |
 | system | BootstrapValidatorSetConfig | bootstrap_validator_set_config | 37696 | 【功能】初始化验证人集合配置：最大验证人数，以及分组/出块/批次委员会三类阈值比例，全局一次性配置。<br>【限制】一次性初始化；比例以「分子/分母」分数表示。 |
-| system | RegisterValidatorIdentity | register_validator_identity | 16918 | 【功能】为验证人登记系统层共识身份：绑定 ValidatorId、controller 与共识账户，登记共识/BLS/ed25519 三把公钥，生成共识验证人身份记录（validator.CreateValidatorPool 的前置条件）。<br>【限制】controller 与共识账户均须对交易签名；公钥长度按曲线校验（secp256k1 压缩 33 字节 / BLS 48 字节 / ed25519 32 字节）；地址与公钥唯一性由链上校验。 |
-| system | PrepareValidatorSet | prepare_validator_set | 55212 | 【功能】为目标 epoch 准备验证人集合：提交随机种子作为集合选举输入（两阶段提交第一步，之后 CommitValidatorSet 生效）。<br>【限制】依赖 epoch 时钟已初始化；同一 epoch 不可重复准备。 |
-| system | SettleStakingEpoch | settle_staking_epoch | 61700 | 【功能】结算当前 epoch 的质押：处理 pending 质押/解冻意向、候选池进出申请，并按配置发放奖励（即触发 staking 的 epoch 结算）。<br>【限制】需 epoch 时钟就绪（先调 system.BootstrapEpochClock）；失败以 StakingFailure 包装返回；同一 epoch 不可重复结算。 |
-| system | CommitValidatorSet | commit_validator_set | 59552 | 【功能】提交已准备的验证人集合并使其生效（PrepareValidatorSet 的第二步）。<br>【限制】须先成功执行 PrepareValidatorSet，否则报 ValidatorSetFailure。 |
+| system | BootstrapRegisteredValidatorSet | bootstrap_registered_validator_set | 46958 | 【功能】引导期一次性写入验证人集合：validators 为已完成 validator.RegisterValidator 注册的验证人 ID 列表（替代旧 RegisterValidatorIdentity/PrepareValidatorSet/CommitValidatorSet 三步流程）。<br>【限制】仅链引导阶段调用；失败以 ValidatorSetFailure（99）包装。 |
 | system | CommitBlockSeed | commit_block_seed | 49456 | 【功能】提交/更新区块随机种子（链上随机数信标的数据源）。<br>【限制】种子未初始化时不可提交（BlockSeedNotInitialized）；重复初始化报 BlockSeedAlreadyInitialized；底层失败以 RandomnessFailure 包装。 |
 | system | BootstrapChainParams | bootstrap_chain_params | 34076 | 【功能】引导阶段直接写入链参数键值对（键为 u16 编号、值为 opaque bytes），不经过提案投票流程。<br>【限制】仅链引导（genesis）阶段调用。 |
-| system | Propose | propose | 50539 | 【功能】发起特性升级提案（投票通过后于后续高度激活，Urgent 走快速阈值）。<br>【限制】提案人须为活跃验证人（UpgradeNotValidator 104）；feature_id 须具备提案资格（UpgradeNotEligible 105）且未激活（UpgradeFeatureActive 107）；同 feature_id 提案已存在报 UpgradeProposalExists（108）；该 kind 的提案槽被占报 UpgradeKindBusy（109）；须系统交易通道（UpgradeSystemTxOnly 116）。 |
-| system | ProposeParams | propose_params | 54058 | 【功能】发起链参数修改提案（params 键值对经投票通过后生效）。<br>【限制】同 system.Propose；参数非法报 UpgradeInvalidParams（111）。 |
-| system | Vote | vote | 56775 | 【功能】验证人对指定提案投赞成票。<br>【限制】仅验证人可投（UpgradeNotValidator 104）；提案不存在报 UpgradeProposalNotFound（112）；投票期已结束报 UpgradeVotingClosed（113）；重复投票报 UpgradeAlreadyVoted（114）。 |
-| system | Cancel | cancel | 46921 | 【功能】提案发起人撤销提案。<br>【限制】仅提案发起人可撤销（UpgradeNotProposer 115）；提案不存在报 UpgradeProposalNotFound（112）。 |
-| system | CloseVote | close_vote | 45954 | 【功能】关闭投票期并结算提案：达标进入激活队列，未达标标记过期。<br>【限制】提案不存在报 UpgradeProposalNotFound（112）。 |
+| system | Propose | propose | 50539 | 【功能】发起特性升级提案（投票通过后于后续高度激活，Urgent 走快速阈值）。<br>【限制】交易须验证人签名授权（无显式 signer 参数，2026-11-20 起升级提案经验证人集合通道提交）；feature_id 未激活（UpgradeFeatureActive 105）；同 feature_id 提案不存在（UpgradeProposalExists 106）；该 kind 的提案槽空闲（UpgradeKindBusy 107）；须系统交易通道（UpgradeSystemTxOnly 114）。 |
+| system | ProposeParams | propose_params | 54058 | 【功能】发起链参数修改提案（params 键值对经投票通过后生效）。<br>【限制】同 system.Propose；参数非法报 UpgradeInvalidParams（109）。 |
+| system | Vote | vote | 56775 | 【功能】验证人对指定提案投赞成票（交易须验证人签名授权）。<br>【限制】提案不存在报 UpgradeProposalNotFound（110）；投票期已结束报 UpgradeVotingClosed（111）；重复投票报 UpgradeAlreadyVoted（112）。 |
+| system | Cancel | cancel | 46921 | 【功能】提案发起人撤销提案。<br>【限制】仅提案发起人可撤销（UpgradeNotProposer 113）；提案不存在报 UpgradeProposalNotFound（110）。 |
+| system | CloseVote | close_vote | 45954 | 【功能】关闭投票期并结算提案：达标进入激活队列，未达标标记过期。<br>【限制】提案不存在报 UpgradeProposalNotFound（110）。 |
 | account | Create | create | 2182 | 【功能】为给定公钥显式创建链上账户资源（区别于首笔交易时的懒创建），账户默认单签模式。<br>【限制】账户已存在报 AccountAlreadyExists（257）；公钥非法报 InvalidPublicKey（273）。 |
 | account | EnsureAccount | ensure_account | 38184 | 【功能】确保账户存在：不存在则创建、已存在则什么都不做（幂等建户）。<br>【限制】幂等，已存在不报错（与 Create 的区别）。 |
 | account | CreateMultisig | create_multisig | 20289 | 【功能】将签名者账户配置为多签账户：登记 signer 公钥列表、每个 signer 的权重与生效阈值（权重和 ≥ 阈值才可通过）。<br>【限制】signer 总权重 1..=255（WeightSumExceeded 263）；signers 与 weights 长度须一致（264）；signer 槽位 0..63（261）；权重不得为 0（262）；阈值非法报 ThresholdIncorrect（265）。链端 2026-11-12 起多签授权全 PQ 化：signers 仅接受 FN-DSA-512 公钥（经典 ed25519/secp256k1 公钥报 273 InvalidPublicKey），owner 经典签名会被授权校验拒（69 PqSignatureRequired），owner+signers 须全 FN-DSA-512；注册消耗链上费用，owner 账户须先有余额。 |
@@ -280,22 +276,21 @@
 | dex | CancelByClientOrderId | cancel_by_client_order_id | 16334 | 【功能】按下单者自己的 client_order_id 撤单（无需记链上单号）。<br>【返回】OrderInfo。<br>【限制】该 owner 下须存在此 client 单号（ClientOrderNotFound 1548）。 |
 | dex | BatchCancel | batch_cancel | 55242 | 【功能】批量撤单并释放锁定资金。<br>【返回】OrderInfo JSON 数组。<br>【限制】列表非空（EmptyBatchCancel 1549）且最多 32 个（BatchCancelLimitExceeded 1550）；不可重复（DuplicateBatchOrder 1551）。 |
 | dex | SetMarketStatus | set_market_status | 48095 | 【功能】切换市场状态：Active（正常交易）/ CancelOnly（只可撤单）/ Paused（暂停）。<br>【限制】仅市场 authority 生效（1546）。 |
-| validator | RegisterValidator | register_validator | 51820 | 【功能】注册验证人身份：由 controller 签名创建 ValidatorId，作为后续绑定共识身份、创建验证人池的入口。<br>【返回】ValidatorId（新建验证人标识）。<br>【限制】同一 controller 不可绑定多个 ValidatorId（ControllerAlreadyAssigned 1794）；不可重复注册（AlreadyRegistered 1792）。 |
-| validator | CreateValidatorPool | create_validator_pool | 51696 | 【功能】为验证人创建验证人质押池：绑定 ValidatorId 与质押/奖励代币、佣金配置，用户向该池质押即委托该验证人。<br>【返回】PoolId（新建池 ID）。<br>【限制】ValidatorId 须已注册（NotRegistered 1793）；须已有系统层共识身份（ConsensusIdentityMissing 1797，先调 system.RegisterValidatorIdentity）；一个验证人至多绑定一个池（PoolAlreadyBound 1796）；签名者须为该验证人 controller（1795）；佣金率 ≤10000 基点。 |
-| validator | PausePool | pause_pool | 9233 | 【功能】controller 暂停验证人质押池：暂停期间禁止新质押与解冻申请，已激活份额的奖励照常累计。<br>【限制】签名者须为该验证人 controller（1795）；仅 Open 状态可暂停。 |
-| validator | ResumePool | resume_pool | 38150 | 【功能】controller 恢复已暂停的验证人质押池至 Open 状态。<br>【限制】签名者须为 controller（1795）；仅 Paused 状态可恢复。 |
-| validator | ClosePool | close_pool | 12323 | 【功能】controller 发起关池：池进入 Closing，按调度周期逐步结算存量质押，结算完毕后进入 Drained。<br>【限制】签名者须为 controller（1795）；Closing 后不再接受新质押。 |
-| validator | RequestPoolRewardConfig | request_pool_reward_config | 17593 | 【功能】controller 申请变更验证人池佣金配置（费率/收款地址）：新配置记为待生效，过佣金变更延迟后自动启用。<br>【限制】签名者须为 controller（1795）；配置须合法（1798）；存在待生效配置时再次申请将覆盖。 |
-| validator | ClaimPoolCommission | claim_pool_commission | 50141 | 【功能】controller 领取验证人池累计佣金（按佣金费率从注入奖励中切分）。<br>【返回】u64 实际领取数量（最小单位）；无可领返回 0。<br>【限制】签名者须为 controller（1795）；金库账实不一致报 RewardTreasuryBackingMismatch（1799）。 |
-| validator | SweepPoolResidual | sweep_pool_residual | 61791 | 【功能】清理关池后的池内残留资金，转入 controller 账户，池进入 Drained 终态。<br>【返回】u64 实际清扫金额（最小单位）；无可清扫返回 0。<br>【限制】签名者须为 controller（1795）；池须已完成排水结算。 |
-| validator | ConfigureValidatorRewardPolicy | configure_validator_reward_policy | 57544 | 【功能】配置验证人奖励政策：按（质押代币, 奖励代币）二元组设定每验证人每周期固定奖励额度（reward_per_validator），供协议层向验证人池发放奖励。<br>【限制】权限由链上校验（治理/协议级操作）；同资产组合重复配置将覆盖旧政策。 |
-| validator | FundValidatorRewardPolicy | fund_validator_reward_policy | 17047 | 【功能】向验证人奖励政策金库注资，作为各周期验证人奖励的发放来源（任何持币人可资助）。<br>【限制】余额不足透传 TokenError（1800）；金额须大于 0（1798）。 |
-| validator | JoinCandidatePool | join_candidate_pool | 45033 | 【功能】验证人申请加入候选池，参与后续 epoch 的验证人集合选举。<br>【限制】签名者须为该验证人 controller（ControllerMismatch 1795）；ValidatorId 须已注册（1793）；重复申请报参数错误（1798）。 |
-| validator | LeaveCandidatePool | leave_candidate_pool | 52192 | 【功能】验证人申请退出候选池（随目标 epoch 结算生效）。<br>【限制】签名者须为 controller（1795）；ValidatorId 须已注册（1793）；不在候选池中报 1798。 |
-| validator | DeclareValidatorAvailability | declare_validator_availability | 43639 | 【功能】验证人为目标 epoch 声明出块可用性（声明记录含目标 epoch、ValidatorId 与 controller），供验证人集合选举采信。<br>【限制】签名者须为 controller（1795）；ValidatorId 须已注册（1793）；验证人集合不可用时报 ValidatorSetUnavailable（1803）。 |
+| validator | RecordValidatorActivity | record_validator_activity | 23268 | 【功能】记录当前验证人的出块活动（EpochActivity 的 blocks/signers/last_block 计数来源，通常由链内共识通道调用）。<br>【限制】须验证人集合就绪（1801）。 |
+| validator | BootstrapValidatorRules | bootstrap_validator_rules | 54067 | 【功能】引导期一次性设置验证人规则：最低自押门槛（minimum_self_stake）。<br>【限制】仅链引导阶段调用，重复引导失败。 |
+| validator | FreezeValidatorEpoch | freeze_validator_epoch | 32944 | 【功能】冻结当前 epoch：锁定验证人集合、最低自押与每验证人奖励额度等参数为 FrozenEpoch 快照（previous_set_hash/freeze_block/freeze_slot/start_slot），是 SettleValidatorEpoch 的前置。<br>【限制】须验证人集合就绪（ValidatorSetUnavailable 1801）；重复冻结报参数错误。 |
+| validator | JoinValidator | join_validator | 9901 | 【功能】验证人 owner 申请加入验证人集合（记录 Membership，join_epoch 为生效纪元，随 epoch 冻结进入集合）。<br>【限制】ValidatorId 须已注册（NotRegistered 1793）；签名者须为 owner（OwnerMismatch 1794）。 |
+| validator | ExitValidator | exit_validator | 47485 | 【功能】验证人 owner 申请退出验证人集合（Membership.exit_epoch 置位，随目标 epoch 结算退出）。<br>【限制】ValidatorId 须已注册（1793）；签名者须为 owner（1794）；未在集合中报参数错误（1796）。 |
+| validator | TopUpSelfStake | top_up_self_stake | 39689 | 【功能】验证人 owner 为自己追加自押金额（满足/维持最低自押门槛 minimum_self_stake）。<br>【限制】签名者须为 owner（OwnerMismatch 1794）；金额须大于 0（1796）。 |
+| validator | RequestPoolRewardConfig | request_pool_reward_config | 17593 | 【功能】验证人 owner 申请变更佣金配置（费率/收款地址，PoolRewardConfig）：新配置记为待生效，过佣金变更延迟后自动启用。<br>【限制】签名者须为 owner（OwnerMismatch 1794）；配置须合法（InvalidParameters 1796）；存在待生效配置时再次申请将覆盖。 |
+| validator | ClaimPoolCommission | claim_pool_commission | 50141 | 【功能】验证人 owner 领取验证人池累计佣金（按佣金费率从注入奖励中切分）。<br>【返回】u64 实际领取数量（最小单位）；无可领返回 0。<br>【限制】签名者须为 owner（1794）；金库账实不一致报 RewardTreasuryBackingMismatch（1797）。 |
+| validator | SweepPoolResidual | sweep_pool_residual | 61791 | 【功能】验证人 owner 清理退出/关停后池内残留资金，转入 owner 账户。<br>【返回】u64 实际清扫金额（最小单位）；无可清扫返回 0。<br>【限制】签名者须为 owner（1794）。 |
+| validator | FundValidatorRewards | fund_validator_rewards | 27609 | 【功能】向验证人奖励预算注资（全局 ValidatorRewardBudget），作为各 epoch 验证人奖励的发放来源（任何持币人可资助，替代旧 FundValidatorRewardPolicy）。<br>【限制】余额不足透传 Token（1798）；金额须大于 0（1796）。 |
+| validator | RegisterValidator | register_validator | 51820 | 【功能】注册验证人：owner 与 consensus_account 双签名，登记共识/BLS/ed25519 三把公钥并缴纳初始自押（self_stake），返回验证人 ID（直连模型入口，注册后即可被引导进验证人集合）。<br>【返回】ValidatorId（B256，base58）。<br>【限制】不可重复注册（AlreadyRegistered 1792）；签名者须为该验证人 owner（OwnerMismatch 1794）；共识身份未就绪报 ConsensusIdentityMissing（1795）；参数非法报 InvalidParameters（1796）；公钥长度按曲线校验（BLS 48 字节 / ed25519 32 字节）。 |
+| validator | SettleValidatorEpoch | settle_validator_epoch | 15316 | 【功能】结算当前 epoch：按冻结快照结算出块活动并发放验证人奖励（自押利息/奖励预算切分）。<br>【限制】须先成功 FreezeValidatorEpoch；同一 epoch 不可重复结算；须验证人集合就绪（1801）。 |
 | keyless | BootstrapKeyless | bootstrap_keyless | 7470 | 【功能】初始化 keyless 注册表：注册内置 Google/Apple OIDC provider 与默认参数（无参数，args 传 {}）。<br>【限制】仅 genesis 块 0 可调（GenesisOnly 2113）；只能初始化一次（AlreadyBootstrapped 2114）。 |
 | keyless | InstallZkCircuit | install_zk_circuit | 18924 | 【功能】注册 Groth16 ZK 验证电路：验证密钥、约束哈希、公共输入数上限、支持的 JWT 算法集，并可同时开放 ZK 无密钥认证。<br>【限制】电路 ID 非法报 ZkCircuitIdInvalid（2122）；重复注册报 ZkCircuitAlreadyRegistered（2123）；电路参数非法报 ZkCircuitInvalid（2124）。 |
-| keyless | UpdateJwkReport | update_jwk_report | 50524 | 【功能】验证人上报某 provider 的 JWKS 快照（动态 JWK 共识：多验证人报告一致后被选中）。<br>【限制】validator_account 须为活跃验证人（ValidatorNotActive 2132）；验证人集合不可用报 ValidatorSetUnavailable（2133）；JWKS 格式非法报 DynamicJwkSetInvalid（2134）；thumbprint 非规范报 JwkThumbprintNonCanonical（2136）。 |
+| keyless | UpdateJwkReport | update_jwk_report | 50524 | 【功能】验证人上报某 provider 的 JWKS 快照（动态 JWK 共识：多验证人报告一致后被选中；交易须验证人签名授权，2026-11-20 起不再携带 validator_account 参数）。<br>【限制】验证人集合不可用报 ValidatorSetUnavailable（2131）；JWKS 格式非法报 DynamicJwkSetInvalid（2132）；thumbprint 非规范报 JwkThumbprintNonCanonical（2134）。 |
 | keyless | PruneInactiveJwkReports | prune_inactive_jwk_reports | 17484 | 【功能】清理不再活跃的验证人留下的 JWK 报告（无参数维护指令）。<br>【限制】仅系统/维护流程调用。 |
 | keyless | Authenticate | authenticate | 21310 | 【功能】用 Groth16 ZK 证明完成无密钥认证，建立链上会话（后续以会话公钥签名操作，gas 可由赞助池代付）：auth={circuit_id, claim, proof}，claim 承载 JWT 语义承诺（provider_id/issuer/kid/jwk_thumbprint/audience_hash/address_seed/ephemeral_pk/iat/exp/session_expiry_ms 等），链上仅验证证明与 claim 一致性。<br>【限制】ZK 认证未开放报 ZkAuthenticationDisabled（2125）；证明无效报 ZkProofInvalid（2126）；circuit_id 须已注册（ZkCircuitIdInvalid 2122）；会话公钥非法报 InvalidSessionPubkey（2089）；session_expiry 越界报 2087；公共赞助每会话仅一次（SessionSponsorshipAlreadyUsed 2091）。 |
 | keyless | Bind | bind | 59392 | 【功能】把 keyless 身份（经 Authenticate 认证后派生的地址）绑定到链上账户的一个 signer 槽位，使账户可无私钥托管；auth 为 Groth16 认证材料（结构同 Authenticate）。<br>【限制】该身份不可已被绑定（AlreadyBound 2099）；绑定有激活延迟（默认 1 天、下限 1 小时，active_at_ms = bound_at_ms + 延迟）；ZK 校验同 Authenticate；owner 须签名。 |
@@ -352,8 +347,8 @@
 | demo | SetLabel | set_label | 47391 | 【功能】修改池的标签。<br>【限制】池须存在（PoolNotFound 65024）。 |
 | demo | BatchCredit | batch_credit | 60858 | 【功能】给一批接收者在池内加积分（触发 EventCreditApplied 事件）。<br>【限制】池须存在（65280）；接收者须已在池内登记（RecipientNotFound 65026）。 |
 | demo | SetTierCap | set_tier_cap | 55600 | 【功能】设置某层级的积分上限（配合领用限速演示）。<br>【限制】池须存在（65280）。 |
-| demo | DrawU64 | draw_u64 | 1414 | 【功能】演示安全随机数：从链上安全随机源抽取一个 u64。<br>【返回】u64。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
-| demo | DrawBytes32 | draw_bytes32 | 52945 | 【功能】演示安全随机数：从链上安全随机源抽取 32 字节。<br>【返回】B256。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
+| demo | DrawU64 | draw_u_6_4 | 1414 | 【功能】演示安全随机数：从链上安全随机源抽取一个 u64。<br>【返回】u64。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
+| demo | DrawBytes32 | draw_bytes_3_2 | 52945 | 【功能】演示安全随机数：从链上安全随机源抽取 32 字节。<br>【返回】B256。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
 | demo | DrawRange | draw_range | 31302 | 【功能】演示安全随机数：从链上安全随机源抽取 [lo, hi] 区间内的一个 u64。<br>【返回】u64。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
 | demo | OpenGasSponsorPool | open_gas_sponsor_pool | 49440 | 【功能】注册 gas 赞助池，使 sponsor 标记的指令（keyless.Authenticate、lucky_box.Claim、demo.ClaimSponsoredScore 等）可由该池代付 gas。<br>【返回】u16 sponsor_seed（池编号，供赞助类指令引用）。<br>【限制】pool 地址的管理员（signer_lookup 从 pool 参数解析 admin）必须与交易付款人一致。 |
 | demo | ClaimSponsoredScore | claim_sponsored_score | 1595 | 【功能】演示从赞助池领取 gas 赞助并给领取者记积分。gas 由赞助池代付（sponsor）。<br>【限制】池须已注册（SponsorPoolNotFound 65031）。 |

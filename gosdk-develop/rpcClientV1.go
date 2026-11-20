@@ -493,34 +493,17 @@ func (c *rpcClientV1) BalanceOf(account *crypto.Address, token ...*crypto.Addres
 		return 0, err
 	}
 
-	wire, err := gen.Token.BalanceOf.Args(tokenAddr, account).Encode()
+	balance, err := ViewValue(c, gen.Token.BalanceOf.Args(tokenAddr, account).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
-		return 0, fmt.Errorf("failed to encode BalanceOf instruction: %w", err)
-	}
-
-	viewTxResult, err := c.View(wire)
-	if err != nil {
-		return 0, fmt.Errorf("failed to view BalanceOf: %w", err)
-	}
-	balance, err := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
-	if err != nil {
-		return 0, fmt.Errorf("failed to decode BalanceOf view: %w", err)
+		return 0, fmt.Errorf("failed to get BalanceOf: %w", err)
 	}
 	return balance, nil
 }
 
 func (c *rpcClientV1) ListAccountSigners(account *crypto.Address) ([]any, error) {
-	wire, err := gen.Account.ListSigners.Args(account).Encode()
+	out, err := ViewValue(c, gen.Account.ListSigners.Args(account).Encode, gen.Account.ListSigners.DecodeView)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode ListSigners view: %w", err)
-	}
-	viewResult, err := c.View(wire)
-	if err != nil {
-		return nil, fmt.Errorf("failed to call ListSigners view: %w", err)
-	}
-	out, err := gen.Account.ListSigners.DecodeView(viewResult.HTTPResponseBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode ListSigners view: %w", err)
+		return nil, fmt.Errorf("failed to get ListSigners: %w", err)
 	}
 	if len(out) < 2 {
 		return nil, fmt.Errorf("unexpected ListSigners result: %v", out)
@@ -559,19 +542,9 @@ func (c *rpcClientV1) AccountSignerBit(account *crypto.Address) (types.Bitmap64,
 }
 
 func (c *rpcClientV1) TokenMetadata(token *crypto.Address) (gen.TokenMetadata, error) {
-	wire, err := gen.Token.Metadata.Args(token).Encode()
+	metadata, err := ViewValue(c, gen.Token.Metadata.Args(token).Encode, gen.Token.Metadata.DecodeView)
 	if err != nil {
-		return gen.TokenMetadata{}, fmt.Errorf("failed to encode TokenMetadata instruction: %w", err)
-	}
-
-	viewTxResult, err := c.View(wire)
-	if err != nil {
-		return gen.TokenMetadata{}, fmt.Errorf("failed to view TokenMetadata: %w", err)
-	}
-
-	metadata, err := gen.Token.Metadata.DecodeView(viewTxResult.HTTPResponseBody)
-	if err != nil {
-		return gen.TokenMetadata{}, fmt.Errorf("failed to decode TokenMetadata view: %w", err)
+		return gen.TokenMetadata{}, fmt.Errorf("failed to get TokenMetadata: %w", err)
 	}
 	return metadata, nil
 }
@@ -600,6 +573,45 @@ func (c *rpcClientV1) SubmitTx(tx *lib.Transaction, opts ...RequestOption) (*Sub
 
 func (c *rpcClientV1) SubmitTxWithSponsorIxes(tx *lib.Transaction, sponsorIxes []uint8, opts ...RequestOption) (*SubmitTxResult, error) {
 	return c.submitTx(tx, sponsorIxes, opts...)
+}
+
+// SubmitAndWait submits a transaction and waits until its receipt is no longer
+// pending, returning the full receipt. Submission, waiting and on-chain
+// execution all collapse into a single error, so a caller that only needs the
+// committed transaction writes:
+//
+//	txHistory, err := client.SubmitAndWait(tx)
+//
+// Polling uses the client defaults (WithClientPollPeriod / WithClientPollTimeout)
+// and can be overridden per call with WaitOption.
+func (c *rpcClientV1) SubmitAndWait(tx *lib.Transaction, opts ...WaitOption) (*api.TxHistory, error) {
+	if tx == nil {
+		return nil, fmt.Errorf("transaction is nil")
+	}
+
+	if _, err := c.SubmitTx(tx); err != nil {
+		return nil, fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	result, err := c.WaitForTransaction(tx.TxHash(), opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to wait for transaction: %w", err)
+	}
+
+	// The state check mirrors helper.CheckTxSuccess; only the api package can be
+	// imported here, because helper imports this package for its RPC helpers.
+	txHistory := result.BodyTxHistory
+	if txHistory == nil {
+		return nil, fmt.Errorf("transaction history is nil")
+	}
+	if txHistory.Receipt.State != api.TxStateSuccess {
+		code := uint16(0)
+		if txHistory.Receipt.Error != nil {
+			code = *txHistory.Receipt.Error
+		}
+		return nil, fmt.Errorf("transaction failed on chain: error code = %d", code)
+	}
+	return txHistory, nil
 }
 
 // submitTx implements SubmitTx (sponsorIxes == nil) and
@@ -1280,6 +1292,12 @@ func (c *rpcClientV1) View(wire api.PackedInstruction, opts ...RequestOption) (*
 	}, nil
 }
 
+// ViewCaller is the minimal client surface ViewValue needs; both *Client and
+// the concrete RPC implementation satisfy it.
+type ViewCaller interface {
+	View(wire api.PackedInstruction, opts ...RequestOption) (*ViewSingleResult, error)
+}
+
 // validatePollConfig rejects polling settings that would never wait: a
 // non-positive period spins the loop and a non-positive timeout expires before
 // the first attempt is made.
@@ -1348,4 +1366,41 @@ func (c *rpcClientV1) WaitForTransaction(txHashOrTxIdRelaxed any, opts ...WaitOp
 		case <-ticker.C:
 		}
 	}
+}
+
+// ViewValue runs one view instruction end to end: it encodes the instruction,
+// calls View and decodes the response body with the generated DecodeView, so a
+// single view can be read in one call:
+//
+//	balance, err := milon.ViewValue(client,
+//		gen.Token.BalanceOf.Args(token, account).Encode,
+//		gen.Token.BalanceOf.DecodeView)
+//
+// The generated DecodeView already unwraps a TxFailurePayload, so a rejected
+// view surfaces as an error instead of a zero value. Go methods cannot carry
+// type parameters, so the type-safe form is a package-level function.
+func ViewValue[T any](client ViewCaller, encode func() (api.PackedInstruction, error), decode func([]byte) (T, error), opts ...RequestOption) (T, error) {
+	var zero T
+	if client == nil {
+		return zero, fmt.Errorf("client is nil")
+	}
+	if encode == nil || decode == nil {
+		return zero, fmt.Errorf("encode and decode funcs are required")
+	}
+
+	wire, err := encode()
+	if err != nil {
+		return zero, fmt.Errorf("failed to encode view instruction: %w", err)
+	}
+
+	result, err := client.View(wire, opts...)
+	if err != nil {
+		return zero, fmt.Errorf("failed to call view: %w", err)
+	}
+
+	out, err := decode(result.HTTPResponseBody)
+	if err != nil {
+		return zero, fmt.Errorf("failed to decode view: %w", err)
+	}
+	return out, nil
 }

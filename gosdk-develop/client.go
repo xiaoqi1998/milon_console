@@ -29,6 +29,7 @@ type RpcClientImpl interface {
 	GetChainHead(opts ...RequestOption) (*ChainHeadResult, error)
 	SubmitTx(transaction *lib.Transaction, opts ...RequestOption) (*SubmitTxResult, error)
 	SubmitTxWithSponsorIxes(tx *lib.Transaction, sponsorIx []uint8, opts ...RequestOption) (*SubmitTxResult, error)
+	SubmitAndWait(tx *lib.Transaction, opts ...WaitOption) (*api.TxHistory, error)
 	BatchSubmitTx(txs []*lib.Transaction, opts ...RequestOption) (*BatchSubmitTxResult, error)
 	SimulateTx(transaction *lib.Transaction, opts ...RequestOption) (*SimulateTxResult, error)
 	BatchSimulateTx(txs []*lib.Transaction, opts ...RequestOption) (*BatchSimulateTxResult, error)

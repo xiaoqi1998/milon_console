@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/milon-labs/milon-go-sdk"
+	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/gen"
+	"github.com/milon-labs/milon-go-sdk/lib"
 )
 
 // demoEntityRegistry walks the open organization directory flow: kycOrg onboards with
@@ -23,51 +25,85 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 		},
 		AvatarUri: "https://kyc.example.org/logo.png",
 	}
-	//submit(
-	//	client,
-	//	kycOrg,
-	//	"Create (organization DID)",
-	//	gen.Identity.Create.Args(kycOrg.addr, orgDoc).Encode,
-	//)
 
-	submit(
-		client,
-		kycOrg,
-		"Create (organization DID)",
-		gen.Identity.CreateWithAlias.Args(kycOrg.addr, orgDoc, gen.IdentityDidName{Alias: "Kyc", Suffix: didNameSuffix(kycOrg.addr, 0)}).Encode,
-	)
+	wire, err := gen.Identity.CreateWithAlias.Args(kycOrg.addr, orgDoc, gen.IdentityDidName{Alias: "Kyc", Suffix: didNameSuffix(kycOrg.addr, 0)}).Encode()
+	if err != nil {
+		panic("failed to encode CreateWithAlias: " + err.Error())
+	}
+	tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(kycOrg.addr).
+		AddIxesSig(*kycOrg.addr, kycOrg.sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *kycOrg.pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign CreateWithAlias: " + err.Error())
+	}
+	txHistory, err := client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait (CreateWithAlias): " + err.Error())
+	}
+	fmt.Printf("  [tx] CreateWithAlias ok, hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 
 	// the VcIssuer / KycProvider roles require at least one declared credential schema
-	submit(
-		client,
-		kycOrg,
-		"RegisterOrganization",
-		gen.Identity.RegisterOrganization.Args(
-			kycOrg.addr,
-			[]gen.IdentityEntityRole{{Variant: "VcIssuer"}},
-			[]string{"KycLevel2", "AgeOver18"},
-		).Encode,
-	)
+	wire, err = gen.Identity.RegisterOrganization.Args(
+		kycOrg.addr,
+		[]gen.IdentityEntityRole{{Variant: "VcIssuer"}},
+		[]string{"KycLevel2", "AgeOver18"},
+	).Encode()
+	if err != nil {
+		panic("failed to encode RegisterOrganization: " + err.Error())
+	}
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(kycOrg.addr).
+		AddIxesSig(*kycOrg.addr, kycOrg.sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *kycOrg.pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign RegisterOrganization: " + err.Error())
+	}
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait (RegisterOrganization): " + err.Error())
+	}
+	fmt.Printf("  [tx] RegisterOrganization ok, hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 
-	capabilities := view(client, "OrganizationCapabilities", gen.Identity.OrganizationCapabilities.Args(kycOrg.addr).Encode, gen.Identity.OrganizationCapabilities.DecodeView)
+	capabilities, err := milon.ViewValue(client, gen.Identity.OrganizationCapabilities.Args(kycOrg.addr).Encode, gen.Identity.OrganizationCapabilities.DecodeView)
+	if err != nil {
+		panic("failed to view OrganizationCapabilities: " + err.Error())
+	}
+	fmt.Printf("  [view] OrganizationCapabilities => %+v\n", capabilities)
 	if len(capabilities.Roles) != 1 || capabilities.Roles[0].Variant != "VcIssuer" || len(capabilities.CredentialSchemas) != 2 || capabilities.CredentialSchemas[0] != "KycLevel2" || capabilities.CredentialSchemas[1] != "AgeOver18" {
 		panic(fmt.Sprintf("unexpected capabilities: %+v", capabilities))
 	}
 
-	orgStatus := view(client, "OrganizationStatus", gen.Identity.OrganizationStatus.Args(kycOrg.addr).Encode, gen.Identity.OrganizationStatus.DecodeView)
+	orgStatus, err := milon.ViewValue(client, gen.Identity.OrganizationStatus.Args(kycOrg.addr).Encode, gen.Identity.OrganizationStatus.DecodeView)
+	if err != nil {
+		panic("failed to view OrganizationStatus: " + err.Error())
+	}
+	fmt.Printf("  [view] OrganizationStatus => %+v\n", orgStatus)
 	if orgStatus.Variant != "Active" {
 		panic(fmt.Sprintf("unexpected organization status: %+v", orgStatus))
 	}
 
-	view(client, "OrganizationUpdatedAt", gen.Identity.OrganizationUpdatedAt.Args(kycOrg.addr).Encode, gen.Identity.OrganizationUpdatedAt.DecodeView)
+	orgUpdatedAt, err := milon.ViewValue(client, gen.Identity.OrganizationUpdatedAt.Args(kycOrg.addr).Encode, gen.Identity.OrganizationUpdatedAt.DecodeView)
+	if err != nil {
+		panic("failed to view OrganizationUpdatedAt: " + err.Error())
+	}
+	fmt.Printf("  [view] OrganizationUpdatedAt => %+v\n", orgUpdatedAt)
 
 	// credential_id is deterministic: chain id + issuer address + schema
-	credentialID := view(client, "CredentialId(KycLevel2)", gen.Identity.CredentialId.Args(kycOrg.addr, "KycLevel2").Encode, gen.Identity.CredentialId.DecodeView)
+	credentialID, err := milon.ViewValue(client, gen.Identity.CredentialId.Args(kycOrg.addr, "KycLevel2").Encode, gen.Identity.CredentialId.DecodeView)
+	if err != nil {
+		panic("failed to view CredentialId(KycLevel2): " + err.Error())
+	}
+	fmt.Printf("  [view] CredentialId(KycLevel2) => %+v\n", credentialID)
 	if credentialID == "" {
 		panic("credential id must not be empty")
 	}
 
-	credentialDefinition := view(client, "CredentialDefinition", gen.Identity.CredentialDefinition.Args(credentialID).Encode, gen.Identity.CredentialDefinition.DecodeView)
+	credentialDefinition, err := milon.ViewValue(client, gen.Identity.CredentialDefinition.Args(credentialID).Encode, gen.Identity.CredentialDefinition.DecodeView)
+	if err != nil {
+		panic("failed to view CredentialDefinition: " + err.Error())
+	}
+	fmt.Printf("  [view] CredentialDefinition => %+v\n", credentialDefinition)
 	if *credentialDefinition.Issuer != *kycOrg.addr || credentialDefinition.CredentialSchema != "KycLevel2" {
 		panic(fmt.Sprintf("unexpected credential definition: %+v", credentialDefinition))
 	}
@@ -86,24 +122,46 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 	fmt.Printf("\n================ 8.Entity registry: update_organization_capabilities ================\n")
 
 	// update fully replaces the roles and the credential schemas
-	submit(
-		client,
-		kycOrg,
-		"UpdateOrganizationCapabilities",
-		gen.Identity.UpdateOrganizationCapabilities.Args(
-			kycOrg.addr,
-			[]gen.IdentityEntityRole{{Variant: "VcIssuer"}, {Variant: "KycProvider"}},
-			[]string{"KycLevel2", "AgeOver18", "IncomeRange"},
-		).Encode,
-	)
+	wire, err = gen.Identity.UpdateOrganizationCapabilities.Args(
+		kycOrg.addr,
+		[]gen.IdentityEntityRole{{Variant: "VcIssuer"}, {Variant: "KycProvider"}},
+		[]string{"KycLevel2", "AgeOver18", "IncomeRange"},
+	).Encode()
+	if err != nil {
+		panic("failed to encode UpdateOrganizationCapabilities: " + err.Error())
+	}
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(kycOrg.addr).
+		AddIxesSig(*kycOrg.addr, kycOrg.sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *kycOrg.pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign UpdateOrganizationCapabilities: " + err.Error())
+	}
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait (UpdateOrganizationCapabilities): " + err.Error())
+	}
+	fmt.Printf("  [tx] UpdateOrganizationCapabilities ok, hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 
-	capabilities = view(client, "OrganizationCapabilities", gen.Identity.OrganizationCapabilities.Args(kycOrg.addr).Encode, gen.Identity.OrganizationCapabilities.DecodeView)
+	capabilities, err = milon.ViewValue(client, gen.Identity.OrganizationCapabilities.Args(kycOrg.addr).Encode, gen.Identity.OrganizationCapabilities.DecodeView)
+	if err != nil {
+		panic("failed to view OrganizationCapabilities: " + err.Error())
+	}
+	fmt.Printf("  [view] OrganizationCapabilities => %+v\n", capabilities)
 	if len(capabilities.Roles) != 2 || len(capabilities.CredentialSchemas) != 3 {
 		panic(fmt.Sprintf("unexpected capabilities after update: %+v", capabilities))
 	}
 
-	incomeRangeID := view(client, "CredentialId(IncomeRange)", gen.Identity.CredentialId.Args(kycOrg.addr, "IncomeRange").Encode, gen.Identity.CredentialId.DecodeView)
-	incomeRangeDefinition := view(client, "CredentialDefinition", gen.Identity.CredentialDefinition.Args(incomeRangeID).Encode, gen.Identity.CredentialDefinition.DecodeView)
+	incomeRangeID, err := milon.ViewValue(client, gen.Identity.CredentialId.Args(kycOrg.addr, "IncomeRange").Encode, gen.Identity.CredentialId.DecodeView)
+	if err != nil {
+		panic("failed to view CredentialId(IncomeRange): " + err.Error())
+	}
+	fmt.Printf("  [view] CredentialId(IncomeRange) => %+v\n", incomeRangeID)
+	incomeRangeDefinition, err := milon.ViewValue(client, gen.Identity.CredentialDefinition.Args(incomeRangeID).Encode, gen.Identity.CredentialDefinition.DecodeView)
+	if err != nil {
+		panic("failed to view CredentialDefinition: " + err.Error())
+	}
+	fmt.Printf("  [view] CredentialDefinition => %+v\n", incomeRangeDefinition)
 	if *incomeRangeDefinition.Issuer != *kycOrg.addr || incomeRangeDefinition.CredentialSchema != "IncomeRange" {
 		panic(fmt.Sprintf("unexpected credential definition: %+v", incomeRangeDefinition))
 	}
@@ -117,31 +175,67 @@ func demoEntityRegistry(client *milon.Client, kycOrg, tempOrg *account) {
 		},
 		AvatarUri: "https://temp.example.org/logo.png",
 	}
-	//submit(
-	//	client,
-	//	tempOrg,
-	//	"Create (organization DID)",
-	//	gen.Identity.Create.Args(tempOrg.addr, tempDoc).Encode,
-	//)
 
-	submit(
-		client,
-		tempOrg,
-		"Create (organization DID)",
-		gen.Identity.CreateWithAlias.Args(tempOrg.addr, tempDoc, gen.IdentityDidName{Alias: "Kyc-Temp", Suffix: didNameSuffix(tempOrg.addr, 0)}).Encode,
-	)
+	wire, err = gen.Identity.CreateWithAlias.Args(tempOrg.addr, tempDoc, gen.IdentityDidName{Alias: "Kyc-Temp", Suffix: didNameSuffix(tempOrg.addr, 0)}).Encode()
+	if err != nil {
+		panic("failed to encode CreateWithAlias: " + err.Error())
+	}
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(tempOrg.addr).
+		AddIxesSig(*tempOrg.addr, tempOrg.sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *tempOrg.pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign CreateWithAlias: " + err.Error())
+	}
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait (CreateWithAlias tempOrg): " + err.Error())
+	}
+	fmt.Printf("  [tx] CreateWithAlias(tempOrg) ok, hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 
-	submit(client,
-		tempOrg,
-		"RegisterOrganization",
-		gen.Identity.RegisterOrganization.Args(
-			tempOrg.addr,
-			[]gen.IdentityEntityRole{{Variant: "KycProvider"}},
-			[]string{"EmploymentStatus"},
-		).Encode)
-	submit(client, tempOrg, "DeactivateOrganization", gen.Identity.DeactivateOrganization.Args(tempOrg.addr).Encode)
+	wire, err = gen.Identity.RegisterOrganization.Args(
+		tempOrg.addr,
+		[]gen.IdentityEntityRole{{Variant: "KycProvider"}},
+		[]string{"EmploymentStatus"},
+	).Encode()
+	if err != nil {
+		panic("failed to encode RegisterOrganization: " + err.Error())
+	}
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(tempOrg.addr).
+		AddIxesSig(*tempOrg.addr, tempOrg.sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *tempOrg.pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign RegisterOrganization: " + err.Error())
+	}
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait (RegisterOrganization tempOrg): " + err.Error())
+	}
+	fmt.Printf("  [tx] RegisterOrganization(tempOrg) ok, hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
 
-	tempStatus := view(client, "OrganizationStatus(tempOrg)", gen.Identity.OrganizationStatus.Args(tempOrg.addr).Encode, gen.Identity.OrganizationStatus.DecodeView)
+	wire, err = gen.Identity.DeactivateOrganization.Args(tempOrg.addr).Encode()
+	if err != nil {
+		panic("failed to encode DeactivateOrganization: " + err.Error())
+	}
+	tx, err = lib.NewTransactionBuilder([]api.PackedInstruction{wire}).
+		WithPayer(tempOrg.addr).
+		AddIxesSig(*tempOrg.addr, tempOrg.sk, []uint8{0}, true, lib.PubKeySignatureMode{PublicKey: *tempOrg.pk}).
+		Build()
+	if err != nil {
+		panic("failed to build and sign DeactivateOrganization: " + err.Error())
+	}
+	txHistory, err = client.SubmitAndWait(tx)
+	if err != nil {
+		panic("failed to submit and wait (DeactivateOrganization): " + err.Error())
+	}
+	fmt.Printf("  [tx] DeactivateOrganization ok, hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
+
+	tempStatus, err := milon.ViewValue(client, gen.Identity.OrganizationStatus.Args(tempOrg.addr).Encode, gen.Identity.OrganizationStatus.DecodeView)
+	if err != nil {
+		panic("failed to view OrganizationStatus(tempOrg): " + err.Error())
+	}
+	fmt.Printf("  [view] OrganizationStatus(tempOrg) => %+v\n", tempStatus)
 	if tempStatus.Variant != "Deactivated" {
 		panic(fmt.Sprintf("unexpected tempOrg status: %+v", tempStatus))
 	}

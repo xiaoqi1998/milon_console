@@ -156,17 +156,9 @@ func example(networkConfig milon.Network) {
 	fmt.Printf("Vote committed: tx %s, gas charged: %d\n\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
 	// 5. Query on-chain vote progress: GetVote -> tuple<VoteMeta, sig_bit, ready>.
-	getVoteWire, err := gen.Account.GetVote.Args(accountMultiSig, intentHash).Encode()
-	if err != nil {
-		panic("failed to encode GetVote view:" + err.Error())
-	}
-	viewResult, err := client.View(getVoteWire)
+	voteView, err := milon.ViewValue(client, gen.Account.GetVote.Args(accountMultiSig, intentHash).Encode, gen.Account.GetVote.DecodeView)
 	if err != nil {
 		panic("failed to query GetVote view:" + err.Error())
-	}
-	voteView, err := gen.Account.GetVote.DecodeView(viewResult.HTTPResponseBody)
-	if err != nil {
-		panic("failed to decode GetVote view:" + err.Error())
 	}
 	sigBit, sigBitOK := voteView[1].(uint64)
 	ready, readyOK := voteView[2].(bool)

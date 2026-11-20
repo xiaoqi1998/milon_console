@@ -6,61 +6,42 @@
   },
   "instructions": [
     {
-      "args": [
-        {
-          "name": "controller",
-          "role": "signer",
-          "type": "Signer"
-        }
-      ],
-      "discriminator": 51820,
-      "handler": "register_validator",
+      "args": [],
+      "discriminator": 23268,
+      "handler": "record_validator_activity",
       "kind": "entry",
-      "name": "RegisterValidator",
-      "returns": {
-        "type": "B256"
-      }
+      "name": "RecordValidatorActivity"
     },
     {
       "args": [
         {
-          "name": "controller",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "validator",
+          "name": "minimum_self_stake",
           "role": "input",
-          "type": "B256"
-        },
-        {
-          "name": "stake_asset",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "reward_asset",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "reward_config",
-          "role": "input",
-          "type": "PoolRewardConfig"
+          "type": "u64"
         }
       ],
-      "discriminator": 51696,
-      "handler": "create_validator_pool",
+      "discriminator": 54067,
+      "handler": "bootstrap_validator_rules",
       "kind": "entry",
-      "name": "CreateValidatorPool",
-      "returns": {
-        "type": "B256"
-      }
+      "name": "BootstrapValidatorRules"
     },
     {
       "args": [
         {
-          "name": "controller",
+          "name": "start_slot",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 32944,
+      "handler": "freeze_validator_epoch",
+      "kind": "entry",
+      "name": "FreezeValidatorEpoch"
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
           "role": "signer",
           "type": "Signer"
         },
@@ -70,15 +51,15 @@
           "type": "B256"
         }
       ],
-      "discriminator": 9233,
-      "handler": "pause_pool",
+      "discriminator": 9901,
+      "handler": "join_validator",
       "kind": "entry",
-      "name": "PausePool"
+      "name": "JoinValidator"
     },
     {
       "args": [
         {
-          "name": "controller",
+          "name": "owner",
           "role": "signer",
           "type": "Signer"
         },
@@ -88,15 +69,15 @@
           "type": "B256"
         }
       ],
-      "discriminator": 38150,
-      "handler": "resume_pool",
+      "discriminator": 47485,
+      "handler": "exit_validator",
       "kind": "entry",
-      "name": "ResumePool"
+      "name": "ExitValidator"
     },
     {
       "args": [
         {
-          "name": "controller",
+          "name": "owner",
           "role": "signer",
           "type": "Signer"
         },
@@ -104,17 +85,22 @@
           "name": "validator",
           "role": "input",
           "type": "B256"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
         }
       ],
-      "discriminator": 12323,
-      "handler": "close_pool",
+      "discriminator": 39689,
+      "handler": "top_up_self_stake",
       "kind": "entry",
-      "name": "ClosePool"
+      "name": "TopUpSelfStake"
     },
     {
       "args": [
         {
-          "name": "controller",
+          "name": "owner",
           "role": "signer",
           "type": "Signer"
         },
@@ -137,7 +123,7 @@
     {
       "args": [
         {
-          "name": "controller",
+          "name": "owner",
           "role": "signer",
           "type": "Signer"
         },
@@ -158,7 +144,7 @@
     {
       "args": [
         {
-          "name": "controller",
+          "name": "owner",
           "role": "signer",
           "type": "Signer"
         },
@@ -179,47 +165,9 @@
     {
       "args": [
         {
-          "name": "owner",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "stake_asset",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "reward_asset",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "reward_per_validator",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 57544,
-      "handler": "configure_validator_reward_policy",
-      "kind": "entry",
-      "name": "ConfigureValidatorRewardPolicy"
-    },
-    {
-      "args": [
-        {
           "name": "funder",
           "role": "signer",
           "type": "Signer"
-        },
-        {
-          "name": "stake_asset",
-          "role": "input",
-          "type": "Address"
-        },
-        {
-          "name": "reward_asset",
-          "role": "input",
-          "type": "Address"
         },
         {
           "name": "amount",
@@ -227,130 +175,113 @@
           "type": "u64"
         }
       ],
-      "discriminator": 17047,
-      "handler": "fund_validator_reward_policy",
+      "discriminator": 27609,
+      "handler": "fund_validator_rewards",
       "kind": "entry",
-      "name": "FundValidatorRewardPolicy"
+      "name": "FundValidatorRewards"
     },
     {
       "args": [
         {
-          "name": "controller",
+          "name": "owner",
           "role": "signer",
           "type": "Signer"
         },
         {
-          "name": "validator",
-          "role": "input",
-          "type": "B256"
-        }
-      ],
-      "discriminator": 45033,
-      "handler": "join_candidate_pool",
-      "kind": "entry",
-      "name": "JoinCandidatePool"
-    },
-    {
-      "args": [
-        {
-          "name": "controller",
+          "name": "consensus_account",
           "role": "signer",
           "type": "Signer"
         },
         {
-          "name": "validator",
+          "name": "consensus_pubkey",
           "role": "input",
-          "type": "B256"
-        }
-      ],
-      "discriminator": 52192,
-      "handler": "leave_candidate_pool",
-      "kind": "entry",
-      "name": "LeaveCandidatePool"
-    },
-    {
-      "args": [
-        {
-          "name": "controller",
-          "role": "signer",
-          "type": "Signer"
+          "type": "bytes"
         },
         {
-          "name": "validator",
+          "name": "bls_pubkey",
           "role": "input",
-          "type": "B256"
-        }
-      ],
-      "discriminator": 43639,
-      "handler": "declare_validator_availability",
-      "kind": "entry",
-      "name": "DeclareValidatorAvailability"
-    },
-    {
-      "args": [
-        {
-          "name": "stake_asset",
-          "role": "input",
-          "type": "Address"
+          "type": "bytes"
         },
         {
-          "name": "reward_asset",
+          "name": "bls_proof",
           "role": "input",
-          "type": "Address"
-        }
-      ],
-      "discriminator": 57655,
-      "handler": "validator_reward_policy",
-      "kind": "view",
-      "name": "ValidatorRewardPolicy",
-      "returns": {
-        "type": "ValidatorRewardPolicy"
-      }
-    },
-    {
-      "args": [],
-      "discriminator": 27560,
-      "handler": "validator_reward_policy_configured",
-      "kind": "view",
-      "name": "ValidatorRewardPolicyConfigured",
-      "returns": {
-        "type": "bool"
-      }
-    },
-    {
-      "args": [],
-      "discriminator": 65512,
-      "handler": "candidate_pool",
-      "kind": "view",
-      "name": "CandidatePool",
-      "returns": {
-        "type": "CandidatePool"
-      }
-    },
-    {
-      "args": [],
-      "discriminator": 7913,
-      "handler": "candidate_validators",
-      "kind": "view",
-      "name": "CandidateValidators",
-      "returns": {
-        "type": "vec<CandidateValidator>"
-      }
-    },
-    {
-      "args": [
+          "type": "bytes"
+        },
         {
-          "name": "target_epoch",
+          "name": "ed25519_pubkey",
+          "role": "input",
+          "type": "bytes"
+        },
+        {
+          "name": "self_stake",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "commission_rate_bps",
           "role": "input",
           "type": "u64"
         }
       ],
-      "discriminator": 21712,
-      "handler": "declared_validators",
-      "kind": "view",
-      "name": "DeclaredValidators",
+      "discriminator": 51820,
+      "handler": "register_validator",
+      "kind": "entry",
+      "name": "RegisterValidator",
       "returns": {
-        "type": "CandidatePool"
+        "type": "B256"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 15316,
+      "handler": "settle_validator_epoch",
+      "kind": "entry",
+      "name": "SettleValidatorEpoch"
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 46392,
+      "handler": "validator_epoch_activity",
+      "kind": "view",
+      "name": "ValidatorEpochActivity",
+      "returns": {
+        "type": "EpochActivity"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 43732,
+      "handler": "validator_memberships",
+      "kind": "view",
+      "name": "ValidatorMemberships",
+      "returns": {
+        "type": "vec<Membership>"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 32584,
+      "handler": "current_validator_pools",
+      "kind": "view",
+      "name": "CurrentValidatorPools",
+      "returns": {
+        "type": "ValidatorPoolList"
+      }
+    },
+    {
+      "args": [],
+      "discriminator": 24480,
+      "handler": "validator_reward_budget",
+      "kind": "view",
+      "name": "ValidatorRewardBudget",
+      "returns": {
+        "type": "u64"
       }
     },
     {
@@ -372,142 +303,70 @@
     {
       "args": [
         {
-          "name": "controller",
+          "name": "owner",
           "role": "input",
           "type": "Address"
         }
       ],
-      "discriminator": 61371,
-      "handler": "validator_for_controller",
+      "discriminator": 10754,
+      "handler": "validator_for_owner",
       "kind": "view",
-      "name": "ValidatorForController",
+      "name": "ValidatorForOwner",
       "returns": {
         "type": "B256"
       }
     },
     {
-      "args": [],
-      "discriminator": 32584,
-      "handler": "current_validator_pools",
+      "args": [
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "target_epoch",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 13504,
+      "handler": "validator_self_stake",
       "kind": "view",
-      "name": "CurrentValidatorPools",
+      "name": "ValidatorSelfStake",
       "returns": {
-        "type": "ValidatorPoolList"
+        "type": "u64"
       }
     },
     {
       "args": [],
-      "discriminator": 4184,
-      "handler": "candidate_validator_pools",
+      "discriminator": 19434,
+      "handler": "registered_validators",
       "kind": "view",
-      "name": "CandidateValidatorPools",
+      "name": "RegisteredValidators",
       "returns": {
-        "type": "ValidatorPoolList"
+        "type": "vec<B256>"
       }
     }
   ],
   "types": [
     {
-      "kind": "enum",
-      "name": "ValidatorIdentityStatus",
-      "typeTag": 2039065263709388929,
-      "variants": [
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "Registered"
-        },
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "Suspended"
-        },
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "Retired"
-        }
-      ]
-    },
-    {
-      "kind": "enum",
-      "name": "ValidatorSelectionStatus",
-      "typeTag": 17411245120379223379,
-      "variants": [
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "None"
-        },
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "Candidate"
-        },
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "Selected"
-        },
-        {
-          "fields": [],
-          "kind": "unit",
-          "name": "Leaving"
-        }
-      ]
-    },
-    {
       "fields": [
         {
           "name": "validator",
           "type": "B256"
         },
         {
-          "name": "controller",
+          "name": "owner",
           "type": "Address"
         },
         {
-          "name": "identity_status",
-          "type": "ValidatorIdentityStatus"
-        },
-        {
-          "name": "selection_status",
-          "type": "ValidatorSelectionStatus"
-        },
-        {
           "name": "pool_id",
-          "type": "option<B256>"
+          "type": "B256"
         }
       ],
       "kind": "struct",
       "name": "ValidatorProfile",
       "typeTag": 13667524927300449050
-    },
-    {
-      "fields": [
-        {
-          "name": "validators",
-          "type": "vec<B256>"
-        }
-      ],
-      "kind": "struct",
-      "name": "CandidatePool",
-      "typeTag": 16438948254081357680
-    },
-    {
-      "fields": [
-        {
-          "name": "validator",
-          "type": "B256"
-        },
-        {
-          "name": "consensus_account",
-          "type": "Address"
-        }
-      ],
-      "kind": "struct",
-      "name": "CandidateValidator",
-      "typeTag": 6579223508042650616
     },
     {
       "fields": [
@@ -556,7 +415,7 @@
         },
         {
           "name": "validator_set_hash",
-          "type": "option<B256>"
+          "type": "B256"
         },
         {
           "name": "validators",
@@ -570,59 +429,79 @@
     {
       "fields": [
         {
-          "name": "target_epoch",
+          "name": "blocks",
           "type": "u64"
         },
         {
-          "name": "validator",
-          "type": "B256"
+          "name": "signers",
+          "type": "u64"
         },
         {
-          "name": "controller",
-          "type": "Address"
+          "name": "last_block",
+          "type": "u64"
         }
       ],
       "kind": "struct",
-      "name": "AvailabilityDeclaration",
-      "typeTag": 9892382822654520502
+      "name": "EpochActivity",
+      "typeTag": 12255403643170472952
     },
     {
       "fields": [
         {
-          "name": "stake_asset",
-          "type": "Address"
+          "name": "previous_set_hash",
+          "type": "B256"
         },
         {
-          "name": "reward_asset",
-          "type": "Address"
+          "name": "freeze_block",
+          "type": "u64"
+        },
+        {
+          "name": "freeze_slot",
+          "type": "u64"
+        },
+        {
+          "name": "start_slot",
+          "type": "u64"
+        },
+        {
+          "name": "minimum_self_stake",
+          "type": "u64"
         },
         {
           "name": "reward_per_validator",
           "type": "u64"
         },
         {
-          "name": "available",
-          "type": "u64"
+          "name": "validator_set",
+          "type": "bytes"
         }
       ],
       "kind": "struct",
-      "name": "ValidatorRewardPolicy",
-      "typeTag": 5457600749461134614
+      "name": "FrozenEpoch",
+      "typeTag": 10270300266935636981
     },
     {
       "fields": [
         {
-          "name": "initialized",
-          "type": "bool"
+          "name": "validator",
+          "type": "B256"
         },
         {
-          "name": "last_settled_epoch",
+          "name": "join_epoch",
+          "type": "u64"
+        },
+        {
+          "name": "exit_epoch",
+          "type": "option<u64>"
+        },
+        {
+          "name": "minimum_self_stake",
           "type": "u64"
         }
       ],
       "kind": "struct",
-      "name": "RewardCursor",
-      "typeTag": 13878982144518937538
+      "name": "Membership",
+      "typeTag": 5003904180896082345
     },
     {
       "fields": [
@@ -651,8 +530,8 @@
     },
     {
       "kind": "builtin",
-      "name": "bool",
-      "typeTag": 14785269867199075517
+      "name": "bytes",
+      "typeTag": 10405529814227927951
     },
     {
       "kind": "builtin",
@@ -662,14 +541,24 @@
   ],
   "resources": [
     {
-      "name": "_ValidatorRewardPolicy",
-      "type": "ValidatorRewardPolicy",
-      "typeTag": 5457600749461134614
+      "name": "_EpochActivity",
+      "type": "EpochActivity",
+      "typeTag": 12255403643170472952
     },
     {
-      "name": "_RewardCursor",
-      "type": "RewardCursor",
-      "typeTag": 13878982144518937538
+      "name": "_EpochSelfStake",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_FrozenEpoch",
+      "type": "FrozenEpoch",
+      "typeTag": 10270300266935636981
+    },
+    {
+      "name": "_Memberships",
+      "type": "vec<Membership>",
+      "typeTag": 16079097394413548312
     },
     {
       "name": "_ValidatorRecord",
@@ -677,29 +566,14 @@
       "typeTag": 13667524927300449050
     },
     {
-      "name": "_ValidatorByController",
-      "type": "B256",
-      "typeTag": 14542707920151212342
-    },
-    {
-      "name": "_CandidatePool",
-      "type": "CandidatePool",
-      "typeTag": 16438948254081357680
-    },
-    {
-      "name": "_AvailabilityDeclaration",
-      "type": "AvailabilityDeclaration",
-      "typeTag": 9892382822654520502
-    },
-    {
-      "name": "_DeclaredByEpoch",
-      "type": "CandidatePool",
-      "typeTag": 16438948254081357680
+      "name": "_RegisteredValidators",
+      "type": "vec<B256>",
+      "typeTag": 7359110152451899916
     }
   ],
   "constants": [
     {
-      "name": "MIN_CANDIDATE_POOL_STAKE",
+      "name": "MIN_SELF_STAKE",
       "type": "u64",
       "value": 1
     }
@@ -717,54 +591,44 @@
     },
     {
       "code": 1794,
-      "message": "controller already assigned: {0:?}",
-      "name": "ControllerAlreadyAssigned"
+      "message": "signer is not the validator owner: {0:?}",
+      "name": "OwnerMismatch"
     },
     {
       "code": 1795,
-      "message": "controller does not own validator: {0:?}",
-      "name": "ControllerMismatch"
-    },
-    {
-      "code": 1796,
-      "message": "validator pool already bound: {0:?}",
-      "name": "PoolAlreadyBound"
-    },
-    {
-      "code": 1797,
       "message": "consensus identity not registered: {0:?}",
       "name": "ConsensusIdentityMissing"
     },
     {
-      "code": 1798,
+      "code": 1796,
       "message": "invalid validator parameter: {0}",
       "name": "InvalidParameters"
     },
     {
-      "code": 1799,
+      "code": 1797,
       "message": "Reward reserve backing mismatch: {0}, {1}",
       "name": "RewardTreasuryBackingMismatch"
     },
     {
-      "code": 1800,
+      "code": 1798,
       "message": "Transparent Token",
       "name": "Token",
       "transparent": true
     },
     {
-      "code": 1801,
+      "code": 1799,
       "message": "Transparent Staking",
       "name": "Staking",
       "transparent": true
     },
     {
-      "code": 1802,
+      "code": 1800,
       "message": "Transparent Context",
       "name": "Context",
       "transparent": true
     },
     {
-      "code": 1803,
+      "code": 1801,
       "message": "validator set unavailable: {0}",
       "name": "ValidatorSetUnavailable"
     }

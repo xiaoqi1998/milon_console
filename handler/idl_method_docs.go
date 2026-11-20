@@ -5,20 +5,20 @@ package handler
 // 限制条目括注的错误码均来自对应 IDL 的 errors 段。
 // 覆盖率由 idl_docs_test.go 保证：IDL 增删方法时测试会指出需要增删的条目。
 var idlMethodDocs = map[string]string{
-	// ==================== system 模块（协议/共识引导 + 升级治理，14 entry + 4 view）====================
+	// ==================== system 模块（协议/共识引导 + 升级治理，11 entry + 4 view）====================
 
 	"system.Noop":                 "【功能】空操作指令，无参数、无任何链上效果，常用于测试交易链路或触发账户资源的懒创建。\n【限制】无。",
 	"system.BootstrapChainParams": "【功能】引导阶段直接写入链参数键值对（键为 u16 编号、值为 opaque bytes），不经过提案投票流程。\n【限制】仅链引导（genesis）阶段调用。",
 
-	"system.Propose": "【功能】发起特性升级提案（投票通过后于后续高度激活，Urgent 走快速阈值）。\n【限制】提案人须为活跃验证人（UpgradeNotValidator 104）；feature_id 须具备提案资格（UpgradeNotEligible 105）且未激活（UpgradeFeatureActive 107）；同 feature_id 提案已存在报 UpgradeProposalExists（108）；该 kind 的提案槽被占报 UpgradeKindBusy（109）；须系统交易通道（UpgradeSystemTxOnly 116）。",
+	"system.Propose": "【功能】发起特性升级提案（投票通过后于后续高度激活，Urgent 走快速阈值）。\n【限制】交易须验证人签名授权（无显式 signer 参数，2026-11-20 起升级提案经验证人集合通道提交）；feature_id 未激活（UpgradeFeatureActive 105）；同 feature_id 提案不存在（UpgradeProposalExists 106）；该 kind 的提案槽空闲（UpgradeKindBusy 107）；须系统交易通道（UpgradeSystemTxOnly 114）。",
 
-	"system.ProposeParams": "【功能】发起链参数修改提案（params 键值对经投票通过后生效）。\n【限制】同 system.Propose；参数非法报 UpgradeInvalidParams（111）。",
+	"system.ProposeParams": "【功能】发起链参数修改提案（params 键值对经投票通过后生效）。\n【限制】同 system.Propose；参数非法报 UpgradeInvalidParams（109）。",
 
-	"system.Vote": "【功能】验证人对指定提案投赞成票。\n【限制】仅验证人可投（UpgradeNotValidator 104）；提案不存在报 UpgradeProposalNotFound（112）；投票期已结束报 UpgradeVotingClosed（113）；重复投票报 UpgradeAlreadyVoted（114）。",
+	"system.Vote": "【功能】验证人对指定提案投赞成票（交易须验证人签名授权）。\n【限制】提案不存在报 UpgradeProposalNotFound（110）；投票期已结束报 UpgradeVotingClosed（111）；重复投票报 UpgradeAlreadyVoted（112）。",
 
-	"system.Cancel": "【功能】提案发起人撤销提案。\n【限制】仅提案发起人可撤销（UpgradeNotProposer 115）；提案不存在报 UpgradeProposalNotFound（112）。",
+	"system.Cancel": "【功能】提案发起人撤销提案。\n【限制】仅提案发起人可撤销（UpgradeNotProposer 113）；提案不存在报 UpgradeProposalNotFound（110）。",
 
-	"system.CloseVote": "【功能】关闭投票期并结算提案：达标进入激活队列，未达标标记过期。\n【限制】提案不存在报 UpgradeProposalNotFound（112）。",
+	"system.CloseVote": "【功能】关闭投票期并结算提案：达标进入激活队列，未达标标记过期。\n【限制】提案不存在报 UpgradeProposalNotFound（110）。",
 
 	"system.UpgradeStatus": "【功能】查询升级治理全量状态：已激活特性、进行中提案（票数/合格人数/阈值）、当前链参数与提案历史。\n【返回】UpgradeStatus：{active:[{feature_id, activated_height}], proposals:[{proposal, votes, eligible, fast_threshold, pass_threshold}], params, history_len, history}。",
 
@@ -28,17 +28,11 @@ var idlMethodDocs = map[string]string{
 
 	"system.ProposalOutcome": "【功能】查询某提案（feature_id + 发起高度）的结算结局。\n【返回】option<ProposalOutcome>：{result: Passed|Expired|Cancelled, height}，无记录返回 null。",
 
-	"system.BootstrapEpochClock": "【功能】初始化协议 epoch 时钟（计时起点 + 最短纪元时长），是 staking 纪元结算（system.SettleStakingEpoch 及池周期调度）的前置条件。\n【限制】一次性初始化，重复调用会失败（EpochClockFailure）；仅在链引导阶段调用。",
+	"system.BootstrapEpochClock": "【功能】初始化协议 epoch 时钟（计时起点 + 最短纪元时长），是 staking 纪元结算与验证人 epoch 调度的前置条件。\n【限制】一次性初始化，重复调用会失败（EpochClockFailure）；仅在链引导阶段调用。",
 
 	"system.BootstrapValidatorSetConfig": "【功能】初始化验证人集合配置：最大验证人数，以及分组/出块/批次委员会三类阈值比例，全局一次性配置。\n【限制】一次性初始化；比例以「分子/分母」分数表示。",
 
-	"system.RegisterValidatorIdentity": "【功能】为验证人登记系统层共识身份：绑定 ValidatorId、controller 与共识账户，登记共识/BLS/ed25519 三把公钥，生成共识验证人身份记录（validator.CreateValidatorPool 的前置条件）。\n【限制】controller 与共识账户均须对交易签名；公钥长度按曲线校验（secp256k1 压缩 33 字节 / BLS 48 字节 / ed25519 32 字节）；地址与公钥唯一性由链上校验。",
-
-	"system.PrepareValidatorSet": "【功能】为目标 epoch 准备验证人集合：提交随机种子作为集合选举输入（两阶段提交第一步，之后 CommitValidatorSet 生效）。\n【限制】依赖 epoch 时钟已初始化；同一 epoch 不可重复准备。",
-
-	"system.SettleStakingEpoch": "【功能】结算当前 epoch 的质押：处理 pending 质押/解冻意向、候选池进出申请，并按配置发放奖励（即触发 staking 的 epoch 结算）。\n【限制】需 epoch 时钟就绪（先调 system.BootstrapEpochClock）；失败以 StakingFailure 包装返回；同一 epoch 不可重复结算。",
-
-	"system.CommitValidatorSet": "【功能】提交已准备的验证人集合并使其生效（PrepareValidatorSet 的第二步）。\n【限制】须先成功执行 PrepareValidatorSet，否则报 ValidatorSetFailure。",
+	"system.BootstrapRegisteredValidatorSet": "【功能】引导期一次性写入验证人集合：validators 为已完成 validator.RegisterValidator 注册的验证人 ID 列表（替代旧 RegisterValidatorIdentity/PrepareValidatorSet/CommitValidatorSet 三步流程）。\n【限制】仅链引导阶段调用；失败以 ValidatorSetFailure（99）包装。",
 
 	"system.CommitBlockSeed": "【功能】提交/更新区块随机种子（链上随机数信标的数据源）。\n【限制】种子未初始化时不可提交（BlockSeedNotInitialized）；重复初始化报 BlockSeedAlreadyInitialized；底层失败以 RandomnessFailure 包装。",
 
@@ -212,42 +206,29 @@ var idlMethodDocs = map[string]string{
 	"staking.Position": "【功能】查询某地址在某池的聚合持仓视图：激活本金、奖励进度、可领奖励/本金与各周期挂账（staking 查询主入口，取代旧按 stake_id 的逐单查询）。\n【返回】Position：{owner, pool_id, active_principal, reward_checkpoint, reward_fraction, claimable_rewards, claimable_principal, deposits: [{cycle, amount}], exits: [{cycle, amount}], tracked}。",
 	"staking.CommissionBalance": "【功能】查询某池佣金收款人当前可领佣金余额。\n【返回】u64（最小单位）。",
 
-	// ==================== validator 模块（app_id=7，13 entry + 9 view，验证人生命周期）====================
+	// ==================== validator 模块（app_id=7，12 entry + 8 view，验证人生命周期；2026-11-20 池模型改直连模型）====================
 
-	"validator.RegisterValidator": "【功能】注册验证人身份：由 controller 签名创建 ValidatorId，作为后续绑定共识身份、创建验证人池的入口。\n【返回】ValidatorId（新建验证人标识）。\n【限制】同一 controller 不可绑定多个 ValidatorId（ControllerAlreadyAssigned 1794）；不可重复注册（AlreadyRegistered 1792）。",
+	"validator.RegisterValidator": "【功能】注册验证人：owner 与 consensus_account 双签名，登记共识/BLS/ed25519 三把公钥并缴纳初始自押（self_stake），返回验证人 ID（直连模型入口，注册后即可被引导进验证人集合）。\n【返回】ValidatorId（B256，base58）。\n【限制】不可重复注册（AlreadyRegistered 1792）；签名者须为该验证人 owner（OwnerMismatch 1794）；共识身份未就绪报 ConsensusIdentityMissing（1795）；参数非法报 InvalidParameters（1796）；公钥长度按曲线校验（BLS 48 字节 / ed25519 32 字节）。",
+	"validator.JoinValidator": "【功能】验证人 owner 申请加入验证人集合（记录 Membership，join_epoch 为生效纪元，随 epoch 冻结进入集合）。\n【限制】ValidatorId 须已注册（NotRegistered 1793）；签名者须为 owner（OwnerMismatch 1794）。",
+	"validator.ExitValidator": "【功能】验证人 owner 申请退出验证人集合（Membership.exit_epoch 置位，随目标 epoch 结算退出）。\n【限制】ValidatorId 须已注册（1793）；签名者须为 owner（1794）；未在集合中报参数错误（1796）。",
+	"validator.TopUpSelfStake": "【功能】验证人 owner 为自己追加自押金额（满足/维持最低自押门槛 minimum_self_stake）。\n【限制】签名者须为 owner（OwnerMismatch 1794）；金额须大于 0（1796）。",
+	"validator.FundValidatorRewards": "【功能】向验证人奖励预算注资（全局 ValidatorRewardBudget），作为各 epoch 验证人奖励的发放来源（任何持币人可资助，替代旧 FundValidatorRewardPolicy）。\n【限制】余额不足透传 Token（1798）；金额须大于 0（1796）。",
+	"validator.FreezeValidatorEpoch": "【功能】冻结当前 epoch：锁定验证人集合、最低自押与每验证人奖励额度等参数为 FrozenEpoch 快照（previous_set_hash/freeze_block/freeze_slot/start_slot），是 SettleValidatorEpoch 的前置。\n【限制】须验证人集合就绪（ValidatorSetUnavailable 1801）；重复冻结报参数错误。",
+	"validator.SettleValidatorEpoch": "【功能】结算当前 epoch：按冻结快照结算出块活动并发放验证人奖励（自押利息/奖励预算切分）。\n【限制】须先成功 FreezeValidatorEpoch；同一 epoch 不可重复结算；须验证人集合就绪（1801）。",
+	"validator.RecordValidatorActivity": "【功能】记录当前验证人的出块活动（EpochActivity 的 blocks/signers/last_block 计数来源，通常由链内共识通道调用）。\n【限制】须验证人集合就绪（1801）。",
+	"validator.BootstrapValidatorRules": "【功能】引导期一次性设置验证人规则：最低自押门槛（minimum_self_stake）。\n【限制】仅链引导阶段调用，重复引导失败。",
+	"validator.RequestPoolRewardConfig": "【功能】验证人 owner 申请变更佣金配置（费率/收款地址，PoolRewardConfig）：新配置记为待生效，过佣金变更延迟后自动启用。\n【限制】签名者须为 owner（OwnerMismatch 1794）；配置须合法（InvalidParameters 1796）；存在待生效配置时再次申请将覆盖。",
+	"validator.ClaimPoolCommission": "【功能】验证人 owner 领取验证人池累计佣金（按佣金费率从注入奖励中切分）。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】签名者须为 owner（1794）；金库账实不一致报 RewardTreasuryBackingMismatch（1797）。",
+	"validator.SweepPoolResidual": "【功能】验证人 owner 清理退出/关停后池内残留资金，转入 owner 账户。\n【返回】u64 实际清扫金额（最小单位）；无可清扫返回 0。\n【限制】签名者须为 owner（1794）。",
 
-	"validator.CreateValidatorPool": "【功能】为验证人创建验证人质押池：绑定 ValidatorId 与质押/奖励代币、佣金配置，用户向该池质押即委托该验证人。\n【返回】PoolId（新建池 ID）。\n【限制】ValidatorId 须已注册（NotRegistered 1793）；须已有系统层共识身份（ConsensusIdentityMissing 1797，先调 system.RegisterValidatorIdentity）；一个验证人至多绑定一个池（PoolAlreadyBound 1796）；签名者须为该验证人 controller（1795）；佣金率 ≤10000 基点。",
-
-	"validator.JoinCandidatePool": "【功能】验证人申请加入候选池，参与后续 epoch 的验证人集合选举。\n【限制】签名者须为该验证人 controller（ControllerMismatch 1795）；ValidatorId 须已注册（1793）；重复申请报参数错误（1798）。",
-
-	"validator.LeaveCandidatePool": "【功能】验证人申请退出候选池（随目标 epoch 结算生效）。\n【限制】签名者须为 controller（1795）；ValidatorId 须已注册（1793）；不在候选池中报 1798。",
-
-	"validator.DeclareValidatorAvailability": "【功能】验证人为目标 epoch 声明出块可用性（声明记录含目标 epoch、ValidatorId 与 controller），供验证人集合选举采信。\n【限制】签名者须为 controller（1795）；ValidatorId 须已注册（1793）；验证人集合不可用时报 ValidatorSetUnavailable（1803）。",
-
-	"validator.CandidatePool": "【功能】查询当前候选池中的全部验证人（无参数）。\n【返回】CandidatePool：{validators: [ValidatorId 数组]}。",
-
-	"validator.CandidateValidators": "【功能】查询候选验证人明细（含共识账户地址）。\n【返回】vec<CandidateValidator>：每项 {validator, consensus_account}。",
-
-	"validator.DeclaredValidators": "【功能】查询某目标 epoch 已声明出块可用性的验证人列表。\n【返回】CandidatePool：{validators}。",
-
-	"validator.ValidatorProfile": "【功能】查询验证人档案：身份状态、候选/选中状态与绑定池。\n【返回】ValidatorProfile：{validator, controller, identity_status: Registered|Suspended|Retired, selection_status: None|Candidate|Selected|Leaving, pool_id}；未注册报 1793。",
-
-	"validator.ValidatorForController": "【功能】按 controller 地址反查其绑定的 ValidatorId。\n【返回】ValidatorId；未绑定报 1793。",
-
-	"validator.CurrentValidatorPools": "【功能】查询当前 epoch 全体验证人池总览。\n【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, active_staker_count}]}；集合未就绪报 1803。",
-
-	"validator.CandidateValidatorPools": "【功能】查询候选验证人池总览（结构与 CurrentValidatorPools 相同，范围限于候选集合）。\n【返回】ValidatorPoolList；集合未就绪报 1803。",
-
-	"validator.PausePool": "【功能】controller 暂停验证人质押池：暂停期间禁止新质押与解冻申请，已激活份额的奖励照常累计。\n【限制】签名者须为该验证人 controller（1795）；仅 Open 状态可暂停。",
-	"validator.ResumePool": "【功能】controller 恢复已暂停的验证人质押池至 Open 状态。\n【限制】签名者须为 controller（1795）；仅 Paused 状态可恢复。",
-	"validator.ClosePool": "【功能】controller 发起关池：池进入 Closing，按调度周期逐步结算存量质押，结算完毕后进入 Drained。\n【限制】签名者须为 controller（1795）；Closing 后不再接受新质押。",
-	"validator.RequestPoolRewardConfig": "【功能】controller 申请变更验证人池佣金配置（费率/收款地址）：新配置记为待生效，过佣金变更延迟后自动启用。\n【限制】签名者须为 controller（1795）；配置须合法（1798）；存在待生效配置时再次申请将覆盖。",
-	"validator.ClaimPoolCommission": "【功能】controller 领取验证人池累计佣金（按佣金费率从注入奖励中切分）。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】签名者须为 controller（1795）；金库账实不一致报 RewardTreasuryBackingMismatch（1799）。",
-	"validator.SweepPoolResidual": "【功能】清理关池后的池内残留资金，转入 controller 账户，池进入 Drained 终态。\n【返回】u64 实际清扫金额（最小单位）；无可清扫返回 0。\n【限制】签名者须为 controller（1795）；池须已完成排水结算。",
-	"validator.ConfigureValidatorRewardPolicy": "【功能】配置验证人奖励政策：按（质押代币, 奖励代币）二元组设定每验证人每周期固定奖励额度（reward_per_validator），供协议层向验证人池发放奖励。\n【限制】权限由链上校验（治理/协议级操作）；同资产组合重复配置将覆盖旧政策。",
-	"validator.FundValidatorRewardPolicy": "【功能】向验证人奖励政策金库注资，作为各周期验证人奖励的发放来源（任何持币人可资助）。\n【限制】余额不足透传 TokenError（1800）；金额须大于 0（1798）。",
-	"validator.ValidatorRewardPolicy": "【功能】查询指定（质押代币, 奖励代币）组合的验证人奖励政策。\n【返回】ValidatorRewardPolicy：{stake_asset, reward_asset, reward_per_validator, available（金库可发放余额）}；未配置返回空值。",
-	"validator.ValidatorRewardPolicyConfigured": "【功能】查询是否已配置验证人奖励政策（无参数）。\n【返回】bool。",
+	"validator.ValidatorEpochActivity": "【功能】查询某 epoch 的验证人出块活动统计。\n【返回】EpochActivity：{blocks（出块数）, signers（参与签名验证人数）, last_block（末块高度）}。",
+	"validator.ValidatorMemberships": "【功能】查询全体验证人集合成员关系。\n【返回】vec<Membership>：每项 {validator, join_epoch, exit_epoch（option，null 表示在任）, minimum_self_stake}。",
+	"validator.CurrentValidatorPools": "【功能】查询当前 epoch 全体验证人池总览。\n【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, position_count}]}；集合未就绪报 1801。",
+	"validator.ValidatorRewardBudget": "【功能】查询验证人奖励预算余额（FundValidatorRewards 注资的累计可发放额度）。\n【返回】u64（最小单位）。",
+	"validator.ValidatorProfile": "【功能】查询验证人档案。\n【返回】ValidatorProfile：{validator, owner, pool_id}；未注册报 1793。",
+	"validator.ValidatorForOwner": "【功能】按 owner 地址反查其绑定的 ValidatorId。\n【返回】ValidatorId（B256）；未绑定报 1793。",
+	"validator.ValidatorSelfStake": "【功能】查询某验证人在目标 epoch 的自押金额（快照值）。\n【返回】u64（最小单位）。",
+	"validator.RegisteredValidators": "【功能】查询全体验证人 ID 列表。\n【返回】vec<B256>（base58）。",
 
 	// ==================== identity 模块（app_id=4，19 entry + 25 view）====================
 
@@ -504,7 +485,7 @@ var idlMethodDocs = map[string]string{
 	"keyless.IsKeylessAccount": "【功能】判断某地址是否已绑定 keyless 身份。\n【返回】bool。",
 	"keyless.InstallZkCircuit": "【功能】注册 Groth16 ZK 验证电路：验证密钥、约束哈希、公共输入数上限、支持的 JWT 算法集，并可同时开放 ZK 无密钥认证。\n【限制】电路 ID 非法报 ZkCircuitIdInvalid（2122）；重复注册报 ZkCircuitAlreadyRegistered（2123）；电路参数非法报 ZkCircuitInvalid（2124）。",
 
-	"keyless.UpdateJwkReport": "【功能】验证人上报某 provider 的 JWKS 快照（动态 JWK 共识：多验证人报告一致后被选中）。\n【限制】validator_account 须为活跃验证人（ValidatorNotActive 2132）；验证人集合不可用报 ValidatorSetUnavailable（2133）；JWKS 格式非法报 DynamicJwkSetInvalid（2134）；thumbprint 非规范报 JwkThumbprintNonCanonical（2136）。",
+	"keyless.UpdateJwkReport": "【功能】验证人上报某 provider 的 JWKS 快照（动态 JWK 共识：多验证人报告一致后被选中；交易须验证人签名授权，2026-11-20 起不再携带 validator_account 参数）。\n【限制】验证人集合不可用报 ValidatorSetUnavailable（2131）；JWKS 格式非法报 DynamicJwkSetInvalid（2132）；thumbprint 非规范报 JwkThumbprintNonCanonical（2134）。",
 
 	"keyless.PruneInactiveJwkReports": "【功能】清理不再活跃的验证人留下的 JWK 报告（无参数维护指令）。\n【限制】仅系统/维护流程调用。",
 
@@ -666,22 +647,18 @@ var idlMethodDocs = map[string]string{
 // IDL 参数中文文档映射。键为 "app.Method:arg"，值为一行说明（含义 + 输入格式 + 约束）。
 var idlArgDocs = map[string]string{
 	// ==================== system ====================
-	"system.CommitValidatorSet:rules_height": "规则集生效高度，十进制数字",
+	"system.BootstrapRegisteredValidatorSet:validators": "已注册验证人 ID 列表，base58 字符串数组（validator.RegisterValidator 返回值）",
 
 	"system.BootstrapChainParams:params": "链参数键值对，JSON 数组，每项 [键编号(u16), hex 字节串]",
 
-	"system.Propose:signer":     "提案发起人地址（活跃验证人），须其私钥参与交易签名",
 	"system.Propose:feature_id": "特性编号，十进制数字",
 	"system.Propose:kind":       "提案种类：Normal（常规）或 Urgent（加急，走快速阈值）",
 
-	"system.ProposeParams:signer": "提案发起人地址（活跃验证人），须其私钥参与交易签名",
 	"system.ProposeParams:params": "链参数键值对，格式同 BootstrapChainParams",
 	"system.ProposeParams:kind":   "提案种类：Normal 或 Urgent",
 
-	"system.Vote:signer":     "投票验证人地址，须其私钥参与交易签名",
 	"system.Vote:feature_id": "要投票的特性编号，十进制数字",
 
-	"system.Cancel:signer":     "提案发起人地址，须其私钥参与交易签名",
 	"system.Cancel:feature_id": "要撤销的特性编号，十进制数字",
 
 	"system.CloseVote:feature_id": "要关闭投票的特性编号，十进制数字",
@@ -703,15 +680,14 @@ var idlArgDocs = map[string]string{
 	"system.BootstrapValidatorSetConfig:batch_committee_ratio_num": "批次委员会比例分子",
 	"system.BootstrapValidatorSetConfig:batch_committee_ratio_den": "批次委员会比例分母（分子 ≤ 分母）",
 
-	"system.RegisterValidatorIdentity:validator": "ValidatorId 验证人标识（validator.RegisterValidator 返回值），base58 字符串",
-
-	"system.RegisterValidatorIdentity:controller": "控制人地址，须其私钥参与交易签名", "system.RegisterValidatorIdentity:consensus_account": "共识账户地址，须其私钥参与交易签名",
-	"system.RegisterValidatorIdentity:consensus_pubkey": "共识公钥，hex 字符串（可带 0x）",
-	"system.RegisterValidatorIdentity:bls_pubkey":       "BLS 公钥，hex 字符串（48 字节）",
-	"system.RegisterValidatorIdentity:ed25519_pubkey":   "ed25519 公钥，hex 字符串（32 字节）",
-
-	"system.PrepareValidatorSet:target_epoch":       "目标 epoch 编号，十进制数字",
-	"system.PrepareValidatorSet:validator_set_seed": "32 字节随机种子，64 位 hex 字符串（可带 0x）",
+	"validator.RegisterValidator:owner":             "验证人 owner 地址，须其私钥参与交易签名",
+	"validator.RegisterValidator:consensus_account": "共识账户地址，须其私钥参与交易签名",
+	"validator.RegisterValidator:consensus_pubkey":  "共识公钥，hex 字符串（可带 0x）",
+	"validator.RegisterValidator:bls_pubkey":        "BLS 公钥，hex 字符串（48 字节）",
+	"validator.RegisterValidator:bls_proof":         "BLS 所有权证明（proof of possession），hex 字符串",
+	"validator.RegisterValidator:ed25519_pubkey":    "ed25519 公钥，hex 字符串（32 字节）",
+	"validator.RegisterValidator:self_stake":        "初始自押金额，最小单位十进制数字",
+	"validator.RegisterValidator:commission_rate_bps": "佣金费率，万分比（基点，≤10000）",
 
 	// ==================== account ====================
 
@@ -907,7 +883,7 @@ var idlArgDocs = map[string]string{
 	"staking.CreatePool:cycle_config":                             "周期配置 JSON：{basis: Epoch|Block|Timestamp, stake_activation_delay, unstake_activation_delay, reward_distribution_delay, commission_change_delay}（延迟按 basis 单位）",
 	"staking.CreatePool:reward_config":                            "佣金配置 JSON：{commission_rate_bps（万分比）, commission_recipient}",
 	"staking.StakeIntoPool:owner":                                 "质押人地址，须其私钥参与交易签名",
-	"staking.StakeIntoPool:pool_id":                               "池 ID，base58 字符串（CreatePool/CreateValidatorPool 返回值）",
+	"staking.StakeIntoPool:pool_id":                               "池 ID，base58 字符串（CreatePool 返回值）",
 	"staking.StakeIntoPool:amount":                                "质押数量，最小单位",
 	"staking.AccruePoolReward:funder":                             "注资人地址，须其私钥参与交易签名",
 	"staking.AccruePoolReward:pool_id":                            "池 ID，base58 字符串",
@@ -948,46 +924,31 @@ var idlArgDocs = map[string]string{
 	"staking.Position:pool_id":                                       "池 ID，base58 字符串",
 	"staking.CommissionBalance:pool_id":                              "池 ID，base58 字符串",
 	"staking.CommissionBalance:recipient":                            "佣金收款地址，base58 字符串",
-	"validator.PausePool:controller":                                  "验证人 controller 地址，须其私钥参与交易签名",
-	"validator.PausePool:validator":                                   "ValidatorId，base58 字符串",
-	"validator.ResumePool:controller":                                 "验证人 controller 地址，须其私钥参与交易签名",
-	"validator.ResumePool:validator":                                  "ValidatorId，base58 字符串",
-	"validator.ClosePool:controller":                                  "验证人 controller 地址，须其私钥参与交易签名",
-	"validator.ClosePool:validator":                                   "ValidatorId，base58 字符串",
-	"validator.RequestPoolRewardConfig:controller":                    "验证人 controller 地址，须其私钥参与交易签名",
+	"validator.BootstrapValidatorRules:minimum_self_stake":            "最低自押门槛，最小单位十进制数字",
+	"validator.FreezeValidatorEpoch:start_slot":                       "冻结快照的起始 slot 高度，十进制数字",
+	"validator.JoinValidator:owner":                                   "验证人 owner 地址，须其私钥参与交易签名",
+	"validator.JoinValidator:validator":                               "ValidatorId 验证人标识（RegisterValidator 返回值），base58 字符串",
+	"validator.ExitValidator:owner":                                   "验证人 owner 地址，须其私钥参与交易签名",
+	"validator.ExitValidator:validator":                               "ValidatorId 验证人标识，base58 字符串",
+	"validator.TopUpSelfStake:owner":                                  "验证人 owner 地址，须其私钥参与交易签名",
+	"validator.TopUpSelfStake:validator":                              "ValidatorId 验证人标识，base58 字符串",
+	"validator.TopUpSelfStake:amount":                                 "追加自押金额，最小单位十进制数字",
+	"validator.FundValidatorRewards:funder":                           "注资人地址，须其私钥参与交易签名",
+	"validator.FundValidatorRewards:amount":                           "注资金额，最小单位十进制数字",
+	"validator.RequestPoolRewardConfig:owner":                         "验证人 owner 地址，须其私钥参与交易签名",
 	"validator.RequestPoolRewardConfig:validator":                     "ValidatorId，base58 字符串",
 	"validator.RequestPoolRewardConfig:config":                        "佣金配置 JSON：{commission_rate_bps（万分比）, commission_recipient}",
-	"validator.ClaimPoolCommission:controller":                        "验证人 controller 地址，须其私钥参与交易签名",
+	"validator.ClaimPoolCommission:owner":                             "验证人 owner 地址，须其私钥参与交易签名",
 	"validator.ClaimPoolCommission:validator":                         "ValidatorId，base58 字符串",
-	"validator.SweepPoolResidual:controller":                          "验证人 controller 地址，须其私钥参与交易签名",
+	"validator.SweepPoolResidual:owner":                               "验证人 owner 地址，须其私钥参与交易签名",
 	"validator.SweepPoolResidual:validator":                           "ValidatorId，base58 字符串",
-	"validator.ConfigureValidatorRewardPolicy:owner":                  "治理/协议授权地址，须其私钥参与交易签名",
-	"validator.ConfigureValidatorRewardPolicy:stake_asset":            "质押代币资源地址，base58 字符串",
-	"validator.ConfigureValidatorRewardPolicy:reward_asset":           "奖励代币资源地址，base58 字符串",
-	"validator.ConfigureValidatorRewardPolicy:reward_per_validator":   "每验证人每周期固定奖励额度，最小单位十进制数字",
-	"validator.FundValidatorRewardPolicy:funder":                      "注资人地址，须其私钥参与交易签名",
-	"validator.FundValidatorRewardPolicy:stake_asset":                 "质押代币资源地址，base58 字符串",
-	"validator.FundValidatorRewardPolicy:reward_asset":                "奖励代币资源地址，base58 字符串",
-	"validator.FundValidatorRewardPolicy:amount":                      "注资金额，最小单位十进制数字",
-	"validator.ValidatorRewardPolicy:stake_asset":                     "质押代币资源地址，base58 字符串",
-	"validator.ValidatorRewardPolicy:reward_asset":                    "奖励代币资源地址，base58 字符串",
 	// ==================== validator ====================
 
-	"validator.RegisterValidator:controller":            "控制人地址，须其私钥参与交易签名",
-	"validator.CreateValidatorPool:controller":          "验证人控制人地址，须其私钥参与交易签名",
-	"validator.CreateValidatorPool:validator":           "ValidatorId 验证人标识（RegisterValidator 返回值），base58 字符串",
-	"validator.CreateValidatorPool:stake_asset":         "质押代币资源地址，base58 字符串",
-	"validator.CreateValidatorPool:reward_asset":        "奖励代币资源地址，base58 字符串",
-	"validator.CreateValidatorPool:reward_config":       "佣金配置 JSON：{commission_rate_bps, commission_recipient}",
-	"validator.JoinCandidatePool:controller":            "验证人控制人地址，须其私钥参与交易签名",
-	"validator.JoinCandidatePool:validator":             "ValidatorId 验证人标识，base58 字符串",
-	"validator.LeaveCandidatePool:controller":           "验证人控制人地址，须其私钥参与交易签名",
-	"validator.LeaveCandidatePool:validator":            "ValidatorId 验证人标识，base58 字符串",
-	"validator.DeclareValidatorAvailability:controller": "验证人控制人地址，须其私钥参与交易签名",
-	"validator.DeclareValidatorAvailability:validator":  "ValidatorId 验证人标识，base58 字符串",
-	"validator.DeclaredValidators:target_epoch":         "目标 epoch 序号，u64",
+	"validator.ValidatorEpochActivity:epoch":            "epoch 序号，十进制数字",
 	"validator.ValidatorProfile:validator":              "ValidatorId 验证人标识，base58 字符串",
-	"validator.ValidatorForController:controller":       "控制人地址，base58 字符串",
+	"validator.ValidatorForOwner:owner":                 "验证人 owner 地址，base58 字符串",
+	"validator.ValidatorSelfStake:validator":            "ValidatorId 验证人标识，base58 字符串",
+	"validator.ValidatorSelfStake:target_epoch":         "目标 epoch 序号，十进制数字",
 	// ==================== identity ====================
 
 	"identity.Create:subject":                                    "DID 主体地址，须其私钥参与交易签名",
@@ -1353,7 +1314,6 @@ var idlArgDocs = map[string]string{
 
 	"keyless.UpdateJwkReport:provider_id":       "provider 标识，64 位 hex 字符串",
 	"keyless.UpdateJwkReport:jwks":              "JWK 集合，JSON 字符串数组（每项为一个 JWK JSON）",
-	"keyless.UpdateJwkReport:validator_account": "验证人账户地址，须其私钥参与交易签名",
 
 
 	"keyless.GetJwkReport:validator":   "验证人 ID（ValidatorId），32 字节 hex 或 base58 字符串",

@@ -11,3 +11,5 @@
 /example/identity_test
 /example/token_test
 /example/token_vest_test
+/example/create_multisig_vote2
+/example/sft_demo2

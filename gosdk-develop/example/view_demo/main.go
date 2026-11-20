@@ -171,11 +171,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err := client.View(balanceAccount1Wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wire0ViewDecode, err := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wire0ViewDecode, err := milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account1).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
@@ -186,11 +182,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View(balanceAccount2Wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wire1ViewDecode, err := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wire1ViewDecode, err := milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account2).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account2 balance DecodeView error:%v \n", err.Error())
 	} else {
@@ -201,13 +193,11 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode BalanceOf:" + err.Error())
 	}
-	viewTxResult, err = client.View(balanceAccount3Wire)
+	wire2ViewDecode, err := milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account3).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		// account3 never received this token, so the single view RPC fails as a
 		// whole, while BatchView below reports the same failure per item.
 		fmt.Printf("❌ token account3 balance: %v \n", err)
-	} else if wire2ViewDecode, decodeErr := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody); decodeErr != nil {
-		fmt.Printf("token account3 balance DecodeView error:%v \n", decodeErr.Error())
 	} else {
 		fmt.Printf("token account3 balance: %+v \n", wire2ViewDecode)
 	}
@@ -216,11 +206,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode Metadata:" + err.Error())
 	}
-	viewTxResult, err = client.View(metadataWire)
-	if err != nil {
-		panic("failed to view Metadata:" + err.Error())
-	}
-	wire3ViewDecode, err := gen.Token.Metadata.DecodeView(viewTxResult.HTTPResponseBody)
+	wire3ViewDecode, err := milon.ViewValue(client, gen.Token.Metadata.Args(token).Encode, gen.Token.Metadata.DecodeView)
 	if err != nil {
 		fmt.Printf("token Metadata DecodeView error:%v \n", err.Error())
 	} else {
@@ -231,11 +217,7 @@ func example(networkConfig milon.Network) {
 	if err != nil {
 		panic("failed to encode TotalSupply:" + err.Error())
 	}
-	viewTxResult, err = client.View(totalSupplyWire)
-	if err != nil {
-		panic("failed to view TotalSupply:" + err.Error())
-	}
-	wire4ViewDecode, err := gen.Token.TotalSupply.DecodeView(viewTxResult.HTTPResponseBody)
+	wire4ViewDecode, err := milon.ViewValue(client, gen.Token.TotalSupply.Args(token).Encode, gen.Token.TotalSupply.DecodeView)
 	if err != nil {
 		fmt.Printf("token TotalSupply DecodeView error:%v \n", err.Error())
 	} else {

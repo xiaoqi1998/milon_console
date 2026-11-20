@@ -87,7 +87,7 @@ func main() {
 ```text
 ├── client.go                  NewClient / MustNewClient、Client（内嵌 RpcClientImpl）、RequestOption / WaitOption
 ├── network.go                 网络配置（LocalNet / DevNet / 自定义 Network）
-├── rpcClientV1.go             RPC 实现：JSON / postcard 传输、IDL 加载、各方法结果结构体
+├── rpcClientV1.go             RPC 实现：JSON / postcard 传输、IDL 加载、各方法结果结构体、ViewValue（包级泛型 view）
 ├── blockStream.go             gRPC 区块流：NewBlockStream 低层接口 + Client.StreamBlocks
 ├── framedHistory.go           区块流交易帧 FramedHistory 的 postcard 解码
 ├── printFramedHistory.go      PrintFramedHistory：打印交易帧完整明细
@@ -137,7 +137,7 @@ func main() {
 │
 ├── gen/                       由 tools/idlgen 生成的类型安全入口
 │   ├── gen.go                 应用绑定注册（RegisterApp / BindAll）
-│   └── idl_gen.go             自动生成：DefaultIDLs + 11 个应用对象 + 结构体类型
+│   └── idl_gen.go             idlgen 自动生成（勿手改）：DefaultIDLs + 11 个应用对象 + 结构体类型
 │
 ├── helper/                    常用辅助函数（失败时返回 error，不 panic）
 │   ├── checkTxSuccess.go      CheckTxSuccess：回执非成功时返回 error
@@ -149,6 +149,20 @@ func main() {
 │
 ├── postcard/                  Postcard 序列化 / 反序列化（与链约定）
 ├── types/                     Bitmap64 位图（bitbap.go）
+│
+├── example/                   可独立运行的完整示例（每目录一个 main，清单见「示例索引」）
+│   ├── account_create_four_crypto/  四种密码学算法创建账户
+│   ├── account_demo/                账户创建与多签管理
+│   ├── create_multisig_demo/        多签账户 + 多签转账
+│   ├── create_multisig_vote/        多签投票与执行（分付）
+│   ├── grpc_demo/                   gRPC 区块流订阅
+│   ├── identity_demo/               DID / 机构注册 / VC 合规
+│   ├── multi_ix_demo/               单交易多条指令
+│   ├── pubkey_signature_mode_demo/  SkipPubKey 签名模式
+│   ├── sft_demo/                    SFT 完整生命周期
+│   ├── token_demo/                  代币创建 / 增发 / 转账
+│   └── view_demo/                   只读查询与批量解码
+│
 └── tools/                     HTTP 工具与 IDL 代码生成器
     ├── http.go                HTTP 客户端（连接池；读请求 5xx 重试，提交类写请求不自动重试）
     └── idlgen/                IDL → Go 代码生成器
@@ -173,6 +187,14 @@ wire, err := gen.Token.BalanceOf.Args(token, account).Encode()
 ```
 
 `gen` 下共有 11 个应用对象：`System`、`Account`、`Token`、`Staking`、`Identity`、`Sftoken`、`Dex`、`Validator`、`Keyless`、`Social`、`Demo`，与 `provider/IDL/index.json` 的注册应用一一对应。
+
+`gen/idl_gen.go` 是**生成产物，不要手改**（文件头声明 `DO NOT EDIT`）：它是 `provider/IDL/index.json` 及其引用的各 IDL JSON 的编译期镜像。IDL 只要有变更（增删指令、改参数或返回类型、改 `types` / `resources` / `events`），都必须重跑：
+
+```bash
+go run ./tools/idlgen -index provider/IDL/index.json
+```
+
+这一条命令一次性刷新全部生成内容：`DefaultIDLs`（`NewClient` 内嵌加载的 IDL 数据）、自定义 struct / enum 的 Go 类型与 `ToValue` / `fromXxx` 转换、类型化指令构建器 `gen.Xxx.Method.Args(...).Encode()`、`view` 方法的 `DecodeView`，以及 `init()` 中的 `RegisterApp` 绑定。漏跑时旧签名仍能编译，但参数编码与返回解码会同链上 IDL 脱节（字段错位 / 类型不符），表现为 `Encode` 报错或链上 `ApiFailure`。详见 [自定义 IDL](#自定义-idl)。
 
 ### 交易构建与四种付款模式
 
@@ -287,7 +309,7 @@ tx.AddSignature(*account, *sig)
 
 ### MIP-25 投票门控签名
 
-多签投票通过后，执行交易可由“投票门控签名 + 赞助方”完成（对应 `example/create_multisig_vote`、`example/create_multisig_vote2`）：
+多签投票通过后，执行交易可由“投票门控签名 + 赞助方”完成（对应 `example/create_multisig_vote`）：
 
 ```go
 // 1. 投票门控签名：bit62 + 授权 ix 位，无公钥 / 无签名体
@@ -324,7 +346,7 @@ tx, err := lib.NewTransactionBuilder([]api.PackedInstruction{transferWire}).
 - **UnifiedPayer**（`tx.Payer != nil`）：payer 必须签名并授权 bit63，`sponsorIx` 在此模式下不生效
 - **SplitPayerSelfPay**（`tx.Payer == nil`）：每条未赞助指令都需要有人同时授权 bit63 与该 ix；仅授权 bit63 属于付款模式冲突
 
-`Client.SubmitTx` 内部调用 `ValidateWire`，`Client.SubmitTxWithSponsorIxes(tx, sponsorIxes)` 内部调用 `ValidateWireWith(sponsorIxes)`。
+`Client.SubmitTx` 内部调用 `ValidateWire`，`Client.SubmitTxWithSponsorIxes(tx, sponsorIxes)` 内部调用 `ValidateWireWith(sponsorIxes)`；`Client.SubmitAndWait` 内部先走 `SubmitTx`，因此同样带有 wire 校验。
 
 ### 上链交互：提交 / 模拟 / 等待
 
@@ -336,6 +358,22 @@ client.SubmitTxWithSponsorIxes(tx, []uint8{0})     // ValidateWireWith 校验后
 ```
 
 传输与重试：提交 / 模拟类方法走 `application/x-milon+postcard`，其余走 `application/x-milon+json`（body 仍为 postcard 字节）；`Submit*` 不自动重试（响应丢失后重试会重复提交同一笔交易），`Simulate*` 与查询类对网络错误 / 5xx 自动重试。完整对照见 [传输与重试](#传输与重试)。
+
+#### 提交并等待（SubmitAndWait）
+
+不需要分步处理时，用 `SubmitAndWait` 把「提交 → 轮询等待 → 回执校验」合成一次调用，只返回一个 error（`example/` 中所有交易都走这个入口）：
+
+```go
+txHistory, err := client.SubmitAndWait(tx)
+if err != nil {
+	panic(err) // 提交失败 / 等待超时 / 链上执行失败，统一从这里返回
+}
+fmt.Printf("tx hash: %s, gas charged: %d\n", tx.TxHash(), txHistory.Receipt.GasCharged)
+```
+
+- 内部先 `SubmitTx`（含 `ValidateWire`）再 `WaitForTransaction`，两类错误分别包装为 `failed to submit transaction: ...` 与 `failed to wait for transaction: ...`
+- 返回前校验回执：`Receipt.State != api.TxStateSuccess` 时返回 `transaction failed on chain: error code = N`（判定与 `helper.CheckTxSuccess` 等价），因此成功返回的 `txHistory` 一定已上链且执行成功，可直接取 `txHistory.Receipt.GasCharged` / `txHistory.Receipt.Access`，或再用 `EventsByTxHash` 取事件
+- 只接受 `...WaitOption`（轮询间隔 / 超时 / context），提交阶段使用默认 context；需要给提交请求单独设置 context 或 request ID 时，改用 `SubmitTx` + `WaitForTransaction` 分步调用
 
 #### 模拟执行（可选，估 gas）
 
@@ -368,7 +406,7 @@ tx, err := txBuilder.Build()
 result, err := client.WaitForTransaction(tx.TxHash())
 ```
 
-`WaitForTransaction` 轮询 `GetTxByHash`，直到回执状态不是 `TxStatePending`；每次轮询使用新的 request ID（避免命中节点请求缓存），轮询期间的网络错误不会立即返回，而是记录最后一次错误继续重试。`pollPeriod` 与 `pollTimeout` 都必须为正数，否则直接返回错误；超时判断在每次查询之后进行，保证超时前一定完成过最后一次尝试。需要校验链上执行结果时可用 `helper.CheckTxSuccess(result.BodyTxHistory)`。`helper` 包的解码 / 显示函数（`DisplayTxHistory`、`DisplayEventsByTxHash`、`DisplayGetAccount`、`DisplayAccountGetListSigners`）同样只返回 error 而不 panic，示例中统一 `panic(err)` 处理。
+只关心「交易已成功上链」时不必手写这两步，直接用 `SubmitAndWait`（见上一节）。`WaitForTransaction` 轮询 `GetTxByHash`，直到回执状态不是 `TxStatePending`；每次轮询使用新的 request ID（避免命中节点请求缓存），轮询期间的网络错误不会立即返回，而是记录最后一次错误继续重试。`pollPeriod` 与 `pollTimeout` 都必须为正数，否则直接返回错误；超时判断在每次查询之后进行，保证超时前一定完成过最后一次尝试。需要校验链上执行结果时可用 `helper.CheckTxSuccess(result.BodyTxHistory)`。`helper` 包的解码 / 显示函数（`DisplayTxHistory`、`DisplayEventsByTxHash`、`DisplayGetAccount`、`DisplayAccountGetListSigners`）同样只返回 error 而不 panic，示例中统一 `panic(err)` 处理。
 
 ## IDL 类型系统
 
@@ -400,7 +438,7 @@ Provider 基于 IDL JSON 实现合约方法的序列化与反序列化。动态�
 
 ### Client 与 RpcClientImpl
 
-`milon.NewClient(...)` 返回的 `*Client` 直接内嵌 `RpcClientImpl` 接口（34 个方法），全部 RPC 方法都提升到 `*Client` 上，调用时不需要经过 `.RpcClient` 转发层：
+`milon.NewClient(...)` 返回的 `*Client` 直接内嵌 `RpcClientImpl` 接口（35 个方法），全部 RPC 方法都提升到 `*Client` 上，调用时不需要经过 `.RpcClient` 转发层：
 
 ```go
 client, err := milon.NewClient(milon.DevNet)
@@ -421,7 +459,7 @@ client.StreamBlocks(0, onBlock) // Client 自有方法（gRPC 区块流）
 
 ### 方法一览
 
-`RpcClientImpl` 共 34 个方法，按用途分组：
+`RpcClientImpl` 共 35 个方法，按用途分组：
 
 | 分类 | 方法 | 说明 |
 |------|------|------|
@@ -433,6 +471,7 @@ client.StreamBlocks(0, onBlock) // Client 自有方法（gRPC 区块流）
 | | `TokenMetadata(token)` | 查询代币元数据（名称 / 符号 / 精度 / 图标 / URI） |
 | 交易 | `SubmitTx(tx, opts...)` | `ValidateWire` 校验后提交（postcard，不重试） |
 | | `SubmitTxWithSponsorIxes(tx, sponsorIxes, opts...)` | `ValidateWireWith` 校验后提交（postcard，不重试） |
+| | `SubmitAndWait(tx, opts...)` | 提交 + 轮询等待 + 回执校验，返回 `*api.TxHistory`（只收 `WaitOption`） |
 | | `BatchSubmitTx(txs, opts...)` | 批量提交（postcard，不重试；逐笔返回 tx hash / 失败原因） |
 | | `SimulateTx(tx, opts...)` | 模拟执行估算 gas（postcard，自动重试） |
 | | `BatchSimulateTx(txs, opts...)` | 批量模拟（postcard，自动重试） |
@@ -453,6 +492,8 @@ client.StreamBlocks(0, onBlock) // Client 自有方法（gRPC 区块流）
 | 元数据 | `GetAllPd()` | 获取全部已加载 Provider（IDL 名 → Provider） |
 | | `GetProviderManager()` | 获取 `*provider.IDLRegistry`（指令 / 事件 / 资源 / View 解码） |
 | | `FindIDLTypeByTag(typeTag)` | 按 type_tag 解析 `(*provider.Provider, *provider.IDLType)`（`Client` 自有方法） |
+
+接口之外还有两个一步到位入口：包级泛型函数 `milon.ViewValue`（编码 + `View` + 解码，见 [只读查询](#只读查询view)）与方法 `client.SubmitAndWait`（提交 + 等待 + 回执校验）。
 
 结果结构体统一带 `HTTPResponseBody []byte`（原始响应体，供 `DecodeView` 等后续解码）与 `BodyXxx` 字段（已解析结构）。批量方法的每一项按**请求顺序**一一对应，且为 Ok / Failure 二选一（`Value` / `Block` / `Data` + `Failure *api.ApiFailure`），单项失败不影响其余项。
 
@@ -497,7 +538,7 @@ client.StreamBlocks(0, onBlock) // Client 自有方法（gRPC 区块流）
 
 ## 请求选项（RequestOption / WaitOption）
 
-所有 RPC 方法接受 `...RequestOption`，`WaitForTransaction` 接受 `...WaitOption`，两者均为类型安全的函数式选项。
+所有 RPC 方法接受 `...RequestOption`；`WaitForTransaction` 与 `SubmitAndWait` 接受 `...WaitOption`。两者均为类型安全的函数式选项。
 
 ### RequestOption（RPC 方法通用）
 
@@ -514,7 +555,7 @@ client.GetChainHead(milon.WithContext(ctx))
 client.GetTxByHash(txHash, milon.WithRequestID(12345))
 ```
 
-### WaitOption（WaitForTransaction 专用）
+### WaitOption（WaitForTransaction / SubmitAndWait 专用）
 
 | 选项 | 说明 |
 |------|------|
@@ -535,13 +576,17 @@ if err != nil {
 }
 ```
 
-**2. 单次覆盖（WaitForTransaction 级别，优先级高于全局）**
+**2. 单次覆盖（WaitForTransaction / SubmitAndWait 级别，优先级高于全局）**
 
 ```go
 result, err := client.WaitForTransaction(txHash,
 	milon.WithWaitPollPeriod(200*time.Millisecond),
 	milon.WithWaitPollTimeout(20*time.Second),
 	milon.WithWaitContext(ctx),
+)
+
+txHistory, err := client.SubmitAndWait(tx,
+	milon.WithWaitPollTimeout(60*time.Second), // 仅作用于等待阶段，提交阶段用默认 context
 )
 ```
 
@@ -604,8 +649,21 @@ if err != nil {
 fmt.Printf("balance: %d\n", balance) // uint64
 ```
 
+```go
+// 一步完成编码 + 查询 + 解码（等价于上面的三步）
+balance, err := milon.ViewValue(client,
+	gen.Token.BalanceOf.Args(api.MILToken, account).Encode,
+	gen.Token.BalanceOf.DecodeView,
+)
+if err != nil {
+	panic(err)
+}
+```
+
+- `milon.ViewValue[T](client, encode, decode, opts...)` 是包级泛型函数（Go 不支持泛型方法），内部完成 encode + `client.View` + `DecodeView`，任一步失败都带阶段包装返回 error：`failed to encode view instruction` / `failed to call view` / `failed to decode view`
+- 第一个参数类型为 `milon.ViewCaller`（只要求 `View(wire, opts...)`），`*milon.Client` 与具体 RPC 实现都满足，便于单测替换实现；`client`、`encode`、`decode` 为 nil 时直接返回 error
 - `DecodeView` 传入 `client.View` / `client.BatchView` 返回的原始响应体（`HTTPResponseBody`），返回类型跟随 IDL：`u64 → uint64`、`String → string`、struct → 生成的结构体（如 `gen.TokenMetadata`）
-- `DecodeView` 自动处理 Ok/Err 分支，链上返回失败（`ApiFailure`）会转为 error
+- `DecodeView` 自动处理 Ok/Err 分支，链上返回失败（`ApiFailure`）会转为 error；`RequestOption` 作为可变参数透传给 `client.View`
 
 多条 view 一次查询 + 批量解码（结果按 `"appName::methodName"` 顺序对应）：
 
@@ -689,6 +747,30 @@ wire, err := pd.Encode("BalanceOf", provider.Args{"token": api.MILToken, "accoun
 // wire 为 []byte，可直接作为 api.PackedInstruction 使用
 ```
 
+#### IDL 变更后重新生成 gen 代码
+
+`tools/idlgen` 把 `index.json` 注册的全部 IDL 一次性翻译为 `gen/idl_gen.go`，这是 SDK 中唯一需要手动触发的代码生成步骤：
+
+```bash
+go run ./tools/idlgen -index provider/IDL/index.json
+# idlgen: wrote gen/idl_gen.go (11 apps)
+```
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `-index` | `provider/IDL/index.json` | 入口索引；按 `apps[].idl` 相对该文件所在目录逐个读取 IDL JSON |
+| `-out` | `gen/idl_gen.go` | 生成文件路径 |
+| `-pkg` | `gen` | 生成包名（非 `gen` 时绑定调用自动改写为 `gen.RegisterApp`） |
+
+生成文件包含四部分：
+
+- `DefaultIDLs`：全部 IDL 以 Go 字面量内联，`NewClient` 用它初始化 Provider，运行期不再读文件
+- 自定义 struct / enum 的 Go 类型（如 `TokenMetadata`、`TokenComplianceMode`）及 `ToValue` / `fromXxx` / `toXxxValue` 转换
+- 每个应用对象的类型化指令构建器：`Args(...)` → `Encode()`；`view` 指令附带 `DecodeView(body)`
+- `init()` 中的 `RegisterApp` 绑定，使 `NewClient` 每次加载 IDL 后把生成对象重新绑定到最新 Provider
+
+因此修改任何 `provider/IDL/*.json` 后必须重跑该命令并提交 `gen/idl_gen.go` 的差异：手改会在下次生成时被覆盖，且与 IDL 不同步时编解码行为不可预测。
+
 ## 网络配置
 
 ```go
@@ -723,34 +805,25 @@ if err != nil {
 
 ## 示例索引
 
-`example/` 下每个目录都是可独立运行的完整示例：
+`example/` 下每个目录都是可独立运行的完整示例；下表为主要示例，本地调试用示例不在此列：
 
-| 目录                                 | 内容 |
-|------------------------------------|------|
-| `account_create_four_crypto`       | 用四种密码学算法创建账户 |
-| `account_demo`                     | 账户创建与多签管理（AddSigner / SetThreshold / SetSignerWeight / RemoveSigner） |
-| `chainhead_block`                  | 查询链头与按高度查询区块 |
-| `create_multisig_demo`             | 多签账户创建 + 多签转账（含占位签名模拟 → 真实签名） |
-| `create_multisig_vote`             | 多签投票与执行（拆分付款） |
-| `create_multisig_vote2`            | 多签投票与执行（统一付款） |
-| `get_tx_history_proof`             | 查询交易历史证明 |
-| `grpc_demo`                        | gRPC 区块流订阅（StreamBlocks + PrintFramedHistory） |
-| `identity_demo`                    | 链上身份：DID / 机构注册 / VC 合规 |
-| `identity_test`                    | 身份合约多场景：VC 冻结 / 披露 / 签发者校验 |
-| `multi_ix_demo`                    | 单交易多条指令 |
-| `pubkey_signature_mode_demo`       | `SkipPubKey` 签名模式 |
-| `sft_demo`                         | SFT 完整生命周期：create_sft / slot / mint / split / transfer / approve / transfer_from / freeze / merge |
-| `sft_demo2`                        | SFT 简单场景：一次 mint，同一 token_id 由三人共持 |
-| `token_create_split`               | 建币（SplitPayerSelfPay 付款模式） |
-| `token_create_unified_separate_ix` | 建币（UnifiedPayerSeparateIx 付款模式） |
-| `token_create_unified_sign_all`    | 建币（UnifiedPayerSignAll 付款模式） |
-| `token_demo`                       | 代币创建 / 增发 / 转账 / 查询余额 |
-| `token_test`                       | 代币 VC 披露（Create / DiscloseTokenVcAttestation） |
-| `view_demo`                        | 只读查询与批量解码 |
-| `debug`                            | 调试用指令全集（Account / Demo / Identity / Sftoken / Token 各方法） |
+| 目录                              | 内容 |
+|-----------------------------------|------|
+| `account_create_four_crypto`      | 用四种密码学算法创建账户 |
+| `account_demo`                    | 账户创建与多签管理（AddSigner / SetThreshold / SetSignerWeight / RemoveSigner） |
+| `create_multisig_demo`            | 多签账户创建 + 多签转账（含占位签名模拟 → 真实签名） |
+| `create_multisig_vote`            | 多签投票与执行（拆分付款） |
+| `grpc_demo`                       | gRPC 区块流订阅（StreamBlocks + PrintFramedHistory） |
+| `identity_demo`                   | 链上身份：DID / 机构注册 / VC 合规 |
+| `multi_ix_demo`                   | 单交易多条指令 |
+| `pubkey_signature_mode_demo`      | `SkipPubKey` 签名模式 |
+| `sft_demo`                        | SFT 完整生命周期：create_sft / slot / mint / split / transfer / approve / transfer_from / freeze / merge |
+| `token_demo`                      | 代币创建 / 增发 / 转账 / 查询余额 |
+| `view_demo`                       | 只读查询与批量解码 |
 
 运行方式：
 
 ```bash
 go run ./example/create_multisig_demo
 ```
+````

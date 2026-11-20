@@ -139,15 +139,7 @@ func example(networkConfig milon.Network) {
 	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
-	if err != nil {
-		panic("failed to encode BalanceOf:" + err.Error())
-	}
-	viewTxResult, err := client.View(wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wireViewDecode, err := gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err := milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account1).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
@@ -188,15 +180,7 @@ func example(networkConfig milon.Network) {
 	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
-	if err != nil {
-		panic("failed to encode BalanceOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account1).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
@@ -231,15 +215,7 @@ func example(networkConfig milon.Network) {
 	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
-	if err != nil {
-		panic("failed to encode BalanceOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account1).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
@@ -274,30 +250,14 @@ func example(networkConfig milon.Network) {
 	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
-	if err != nil {
-		panic("failed to encode BalanceOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account1).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
 		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	wire, err = gen.Token.FrozenOf.Args(token, account1).Encode()
-	if err != nil {
-		panic("failed to encode FrozenOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view FrozenOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.FrozenOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.FrozenOf.Args(token, account1).Encode, gen.Token.FrozenOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 frozen query error:%v \n", err.Error())
 	} else {
@@ -331,30 +291,14 @@ func example(networkConfig milon.Network) {
 	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
-	if err != nil {
-		panic("failed to encode BalanceOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account1).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
 		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	wire, err = gen.Token.FrozenOf.Args(token, account1).Encode()
-	if err != nil {
-		panic("failed to encode FrozenOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view FrozenOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.FrozenOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.FrozenOf.Args(token, account1).Encode, gen.Token.FrozenOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 frozen query error:%v \n", err.Error())
 	} else {
@@ -388,30 +332,14 @@ func example(networkConfig milon.Network) {
 	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
-	if err != nil {
-		panic("failed to encode BalanceOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account1).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
 		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	wire, err = gen.Token.ApprovalOf.Args(token, account1, spender).Encode()
-	if err != nil {
-		panic("failed to encode BalanceOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.ApprovalOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.ApprovalOf.Args(token, account1, spender).Encode, gen.Token.ApprovalOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token spender approval query error:%v \n", err.Error())
 	} else {
@@ -446,30 +374,14 @@ func example(networkConfig milon.Network) {
 	}
 	fmt.Printf("submit transaction hash: %s, gas charged: %d\n", tx.TxHash(), getTxByHashResult.BodyTxHistory.Receipt.GasCharged)
 
-	wire, err = gen.Token.BalanceOf.Args(token, account1).Encode()
-	if err != nil {
-		panic("failed to encode BalanceOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.BalanceOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.BalanceOf.Args(token, account1).Encode, gen.Token.BalanceOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token account1 balance query error:%v \n", err.Error())
 	} else {
 		fmt.Printf("token account1 balance: %+v \n", wireViewDecode)
 	}
 
-	wire, err = gen.Token.ApprovalOf.Args(token, account1, spender).Encode()
-	if err != nil {
-		panic("failed to encode BalanceOf:" + err.Error())
-	}
-	viewTxResult, err = client.View(wire)
-	if err != nil {
-		panic("failed to view BalanceOf:" + err.Error())
-	}
-	wireViewDecode, err = gen.Token.ApprovalOf.DecodeView(viewTxResult.HTTPResponseBody)
+	wireViewDecode, err = milon.ViewValue(client, gen.Token.ApprovalOf.Args(token, account1, spender).Encode, gen.Token.ApprovalOf.DecodeView)
 	if err != nil {
 		fmt.Printf("token spender approval query error:%v \n", err.Error())
 	} else {
