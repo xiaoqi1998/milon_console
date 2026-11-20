@@ -3979,3 +3979,6 @@ body {
 .seed-key { margin-right: 6px; letter-spacing: 0.3px; }
 .seed-ov-card { margin-bottom: 12px; }
 .seed-table .btn-sm { padding: 2px 8px; font-size: 10px; margin-left: 4px; }
+
+/* 播种页随机构造勾选后参数框禁用态(20261120 分配计划) */
+.vc-row input:disabled { opacity: 0.45; cursor: not-allowed; background: var(--bg-secondary); }

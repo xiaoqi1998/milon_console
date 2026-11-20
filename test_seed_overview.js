@@ -182,7 +182,7 @@ function domChecks() {
   // 11. 版本 bump
   check('seed.js 版本 bump 20261120', htmlSrc.includes('seed.js?v=20261120'));
   check('seed_overview.js 已引入', /seed_overview\.js\?v=\d+/.test(htmlSrc));
-  check('style.css 版本 bump 20261103', htmlSrc.includes('style.css?v=20261103'));
+  check('style.css 版本 bump 20261120', htmlSrc.includes('style.css?v=20261120'));
   check('.seed-warn 样式存在', fs.readFileSync(path.join(ROOT, 'static', 'css', 'style.css'), 'utf8').includes('.seed-warn'));
 
   // 11.5 账号固定保护补强:孤儿配置(configHash 不在数据集)也须警告

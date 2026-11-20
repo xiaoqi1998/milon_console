@@ -74,7 +74,7 @@ check('版本 bump 20261120', htmlSrc.includes('seed.js?v=20261120'));
 // 7. seed 视图内部滚动(应用外壳 .view overflow:hidden,v2 内容超一屏须自建滚动容器)
 const cssSrc = fs.readFileSync(path.join(ROOT, 'static', 'css', 'style.css'), 'utf8');
 check('#view-seed 滚动容器', /#view-seed\s*{[^}]*overflow-y:\s*auto/.test(cssSrc));
-check('style.css 版本 bump 20261103', htmlSrc.includes('style.css?v=20261103'));
+check('style.css 版本 bump 20261120', htmlSrc.includes('style.css?v=20261120'));
 
 // 8. 分配计划(vesting)旋钮组 20261120
 for (const id of ['seedVestPlans', 'seedVestRecipients', 'seedVestNames', 'seedVestRandom',
