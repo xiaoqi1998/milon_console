@@ -16,7 +16,10 @@ services:
       - ALLOWED_ORIGINS=*
       - ENABLE_UTIL_SIGN=true # 启用工具签名功能
       # - SIGNER_PRIVATE_KEY=your_private_key_here
-      - MILON_RPC_URL=https://devnet.milonlabs.com/v1/rpc
+      # MILON_RPC_URL 会覆盖 SDK 内置 devNet 端点(含 chainId 绑定),端点迁移时
+      # 忘了同步就会把流量指回废弃节点(2026-11-20 devnet.milonlabs.com 停摆教训),
+      # 缺省不设、跟随 gosdk 内置值即可;确需临时覆盖再解开:
+      # - MILON_RPC_URL=https://dev-api.milonlabs.com/v1/rpc
     volumes:
       - /etc/localtime:/etc/localtime:ro
     networks:
