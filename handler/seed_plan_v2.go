@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"strings"
 )
@@ -17,11 +19,37 @@ type SeedSummary struct {
 	SftSets          int      `json:"sftSets"`
 	SftSlots         int      `json:"sftSlots"`
 	SftTokens        int      `json:"sftTokens"`
+	Vestings         int      `json:"vestings"`
 	TxEstimate       int      `json:"txEstimate"`
 	Warnings         []string `json:"warnings,omitempty"`
 }
 
 func seedMultisigName(i int) string { return fmt.Sprintf("ms%02d", i+1) }
+
+// seedPrng splitmix64 确定性伪随机(跨版本稳定,不依赖 math/rand 全局实现)。
+// 用于 vesting 随机构造:同 seedPhrase+config → 同随机序列。
+type seedPrng struct{ s uint64 }
+
+func newSeedPrng(seed string) *seedPrng {
+	sum := sha256.Sum256([]byte(seed))
+	return &seedPrng{s: binary.LittleEndian.Uint64(sum[:8])}
+}
+
+func (p *seedPrng) next() uint64 {
+	p.s += 0x9e3779b97f4a7c15
+	z := p.s
+	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9
+	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
+	return z ^ (z >> 31)
+}
+
+// uintn 均匀取 [0,n);n≤1 恒 0。
+func (p *seedPrng) uintn(n uint64) uint64 {
+	if n <= 1 {
+		return 0
+	}
+	return p.next() % n
+}
 
 // seedTokenSymbol 普通代币符号:ST01..ST20(确定性,与合规代币 SCUSD* 不冲突)。
 func seedTokenSymbol(i int) string { return fmt.Sprintf("ST%02d", i+1) }
@@ -185,6 +213,96 @@ func BuildSeedPlanV2(cfg SeedConfig) (SeedPlan, error) {
 		})
 	}
 
+	// 分配计划(Vesting):每计划绑一个非合规代币——复用 tokens 模块建的非合规代币
+	// (池不足补建 VT01..,mint 给 admin 作托管出资);同 token 第二笔恒 539。
+	// 取人:names 名单优先(trim,计划间循环),否则 users 接续轮转。
+	// 参数:非 random 按 index 轮转去重并 sanitize 到 537 合法;random 由
+	// seedPhrase+configHash 派生 PRNG,同配置结果可复现。
+	if cfg.Vesting.Plans > 0 {
+		pool := make([]string, 0, cfg.Tokens.Count)
+		for i := cfg.Tokens.ComplianceCount; i < cfg.Tokens.Count; i++ {
+			pool = append(pool, seedTokenSymbol(i))
+		}
+		recNames := cfg.Vesting.Names
+		m := cfg.Vesting.Recipients
+		if len(recNames) > 0 {
+			m = len(recNames)
+		}
+		prng := newSeedPrng(cfg.SeedPhrase + "|vesting|" + SeedConfigHash(cfg))
+		supplemented := 0
+		for i := 0; i < cfg.Vesting.Plans; i++ {
+			spec := SeedVestingSpec{
+				Key:               fmt.Sprintf("vp%02d", i+1),
+				StartDelaySeconds: cfg.Vesting.StartDelaySeconds,
+				Claim:             cfg.Vesting.Claim,
+			}
+			if len(pool) > 0 {
+				spec.ReuseToken = pool[0]
+				pool = pool[1:]
+				spec.Symbol = spec.ReuseToken
+			} else {
+				supplemented++
+				symbol := fmt.Sprintf("VT%02d", supplemented)
+				spec.TokenSpec = &SeedTokenSpec{
+					Symbol: symbol, Decimals: 6,
+					Name: "Seed Vesting Token " + symbol + " 6dp",
+					IconURL: seedTokenIconURL(symbol), URI: seedTokenURI(symbol),
+				}
+				spec.Symbol = symbol
+			}
+			recs := make([]SeedVestingRecipientSpec, m)
+			for j := 0; j < m; j++ {
+				if len(recNames) > 0 {
+					recs[j].Name = recNames[j%len(recNames)]
+				} else {
+					recs[j].Name = names[(i*m+j)%len(names)]
+				}
+				if cfg.Vesting.Random {
+					// 安全范围:total 1万..50万、首释 0..20%、cliff 0..300s、每期 30..120s、3..12 期
+					recs[j].Total = 10_000 + prng.uintn(490_001)
+					recs[j].Initial = prng.uintn(recs[j].Total/5 + 1)
+					recs[j].InitialPeriodSeconds = prng.uintn(301)
+					recs[j].PeriodSeconds = 30 + prng.uintn(91)
+					recs[j].Periods = 3 + prng.uintn(10)
+				} else {
+					total := cfg.Vesting.Total + cfg.Vesting.Total/10*uint64(j)
+					init := cfg.Vesting.Initial * (uint64(j)%3 + 1)
+					cliff := cfg.Vesting.CliffSeconds * (uint64(j)%2 + 1)
+					ps := cfg.Vesting.PeriodSeconds + 15*uint64(j)
+					pd := cfg.Vesting.Periods + uint64(j)
+					// sanitize 到链端 537 合法:首释≤总额半数、每期释放 floor≥1
+					if init > total/2 {
+						init = total / 2
+					}
+					if total-init < pd {
+						pd = (total - init) / 2
+						if pd < 1 {
+							pd = 1
+						}
+					}
+					recs[j].Total, recs[j].Initial, recs[j].InitialPeriodSeconds =
+						total, init, cliff
+					recs[j].PeriodSeconds, recs[j].Periods = ps, pd
+				}
+			}
+			spec.Recipients = recs
+			if spec.TokenSpec != nil {
+				var sum uint64
+				for _, r := range recs {
+					sum += r.Total
+				}
+				spec.TokenSpec.MintAmounts = map[string]uint64{"admin": sum}
+			}
+			p.Vestings = append(p.Vestings, spec)
+		}
+		if cfg.Vesting.Random {
+			// random 模式起始延迟也在安全范围(60..600s);非 random 用旋钮值
+			for i := range p.Vestings {
+				p.Vestings[i].StartDelaySeconds = 60 + prng.uintn(541)
+			}
+		}
+	}
+
 	// SFT:场景按 cfg 轮转铺满 slotsPerSft;tokensPerSlot 决定每 slot 分发笔数
 	// (merge 场景配 tokensPerSlot<2 的警告由 SeedPlanSummary 重算,此处无需标记)
 	for s := 0; s < cfg.SFT.Count; s++ {
@@ -251,7 +369,8 @@ func BuildSeedPlanV2(cfg SeedConfig) (SeedPlan, error) {
 func SeedPlanSummary(p SeedPlan) SeedSummary {
 	c := p.Config
 	s := SeedSummary{Accounts: len(p.Users) + 1, Multisig: len(p.Multisig),
-		Tokens: len(p.Tokens), TokensCompliance: len(p.Compliance), SftSets: len(p.Sfts)}
+		Tokens: len(p.Tokens), TokensCompliance: len(p.Compliance), SftSets: len(p.Sfts),
+		Vestings: len(p.Vestings)}
 	for _, sft := range p.Sfts {
 		s.SftSlots += len(sft.Scenarios)
 		for _, sc := range sft.Scenarios {
@@ -318,6 +437,16 @@ func SeedEstimateTxs(p SeedPlan) int {
 		n += len(p.VcLifecycle)
 	}
 	n += len(p.Compliance) * 6 // credential/create/mode/requirements/mint/accept
+	// vesting:每计划 CreateVesting 1;补建代币 create+mint 2;claim 开启每人领 1
+	for _, v := range p.Vestings {
+		n++
+		if v.TokenSpec != nil {
+			n += 2
+		}
+		if v.Claim {
+			n += len(v.Recipients)
+		}
+	}
 	n += len(p.Txs.MilTransfers) + 1 + len(p.Txs.Failures)
 	return n
 }

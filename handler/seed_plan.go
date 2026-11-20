@@ -209,6 +209,29 @@ type SeedMultisigSpec struct {
 	DID         bool     `json:"did"`
 }
 
+// SeedVestingRecipientSpec 单领款人的释放参数(链端 VestingRecipient 同构)。
+type SeedVestingRecipientSpec struct {
+	Name                 string `json:"name"` // 播种账号名;链端 name 仅展示
+	Total                uint64 `json:"total"`
+	Initial              uint64 `json:"initial"`
+	InitialPeriodSeconds uint64 `json:"initialPeriodSeconds"` // cliff
+	PeriodSeconds        uint64 `json:"periodSeconds"`
+	Periods              uint64 `json:"periods"`
+}
+
+// SeedVestingSpec 一笔分配计划 = 一次 CreateVesting。
+// 每 token 仅可挂一笔计划(同 token 第二笔恒 539,2026-11-20 实测),故每计划
+// 绑定独立代币:ReuseToken 复用 tokens 模块非合规代币,否则 TokenSpec 补建 VT01..
+type SeedVestingSpec struct {
+	Key                       string                     `json:"key"`
+	Symbol                    string                     `json:"symbol"`               // 绑定代币符号(展示)
+	ReuseToken                string                     `json:"reuseToken,omitempty"` // 复用的 tokens 模块代币符号
+	TokenSpec                 *SeedTokenSpec             `json:"tokenSpec,omitempty"`  // 补建代币规格(mint 给 admin 作托管出资)
+	StartDelaySeconds         uint64                     `json:"startDelaySeconds"`    // start = 执行时 now + 延迟(537:不可在过去)
+	Recipients                []SeedVestingRecipientSpec `json:"recipients"`
+	Claim                     bool                       `json:"claim,omitempty"` // postOps:建成后各领一次
+}
+
 type SeedPlan struct {
 	Scale       string               `json:"scale"`      // 模板键 minimal|standard|full 或 custom
 	ConfigHash  string               `json:"configHash"` // 配置命名空间哈希
@@ -223,6 +246,7 @@ type SeedPlan struct {
 	VcIssuers   []SeedVcIssuerSpec   `json:"vcIssuers"`
 	VcLifecycle []SeedLifecycleOp    `json:"vcLifecycle"`
 	Compliance  []SeedComplianceSpec `json:"compliance"`
+	Vestings    []SeedVestingSpec    `json:"vestings,omitempty"`
 	Txs         SeedTxsSpec          `json:"txs"`
 }
 
