@@ -12,7 +12,7 @@ type NetworkInfo struct {
 	Name    string `json:"name"`
 	ChainId uint64 `json:"chainId"`
 	RpcUrl  string `json:"rpcUrl"`
-	InxUrl  string `json:"inxUrl"`
+	InxUrl  string `json:"inxUrl,omitempty"`
 	Current bool   `json:"current"`
 }
 
@@ -63,7 +63,6 @@ func (nm *NetworkManager) ListNetworks() []NetworkInfo {
 			Name:    cfg.Name,
 			ChainId: cfg.ChainId,
 			RpcUrl:  cfg.RpcUrl,
-			InxUrl:  cfg.InxUrl,
 			Current: cfg.Name == nm.currentNetwork,
 		})
 	}

@@ -1,12 +1,12 @@
 # Milon IDL 函数清单
 
-> 导出自 `gosdk-develop/provider/IDL/`，共 **12** 个 app、**337** 个函数（view 126 + entry 211）。
+> 导出自 `gosdk-develop/provider/IDL/`，共 **12** 个 app、**339** 个函数（view 127 + entry 212）。
 
 > 表格列：`appname`(应用名) · `meth`(方法名/指令名) · `handler`(链上入口名) · `id`(discriminator 指令编号) · `说明`(中文释义，来自 handler/idl_method_docs.go 的文档映射，与 /api/idl/metadata 输出一致)
 
 ## View（只读查询，kind=view）
 
-共 **126** 个。
+共 **127** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -103,6 +103,7 @@
 | keyless | GetProvider | get_provider | 20071 | 【功能】按 ID 查询单个 provider。<br>【返回】KeylessProvider 或 null。 |
 | keyless | GetProviderStatus | get_provider_status | 62602 | 【功能】查询 provider 的启用状态与会话版本。<br>【返回】{enabled, session_version} 或 null。 |
 | keyless | GetJwkReport | get_jwk_report | 44193 | 【功能】查询某验证人对某 provider 的 JWK 报告。<br>【返回】option<ValidatorJwkReport>：{validator, keys:[JWK JSON]}，无报告返回 null。 |
+| keyless | GetVersionedJwkReport | get_versioned_jwk_report | 40699 | 【功能】查询某验证人对某 provider 的带版本 JWKS 报告。<br>【返回】option<VersionedValidatorJwkReport>：{validator, issuer, report_version, keys:[JWK JSON]}，无报告返回 null。 |
 | keyless | GetSelectedJwk | get_selected_jwk | 65396 | 【功能】查询共识当前选中的某 provider/issuer/kid/algorithm 的 JWK。<br>【返回】option<String>（JWK JSON），未选中返回 null。 |
 | keyless | GetAudience | get_audience | 13840 | 【功能】查询某 provider 下某 audience 的注册信息。<br>【返回】{provider_id, audience, registered_at_ms} 或 null。 |
 | keyless | GetParams | get_params | 12312 | 【功能】查询 keyless 全局参数（无参数）。<br>【返回】KeylessParams：{max_session_ttl_ms（默认 1 天）, bind_activation_delay_ms（默认 1 天）}。 |
@@ -139,7 +140,7 @@
 
 ## Entry（写状态交易，kind=entry）
 
-共 **211** 个。
+共 **212** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -291,6 +292,7 @@
 | keyless | BootstrapKeyless | bootstrap_keyless | 7470 | 【功能】初始化 keyless 注册表：注册内置 Google/Apple OIDC provider 与默认参数（无参数，args 传 {}）。<br>【限制】仅 genesis 块 0 可调（GenesisOnly 2113）；只能初始化一次（AlreadyBootstrapped 2114）。 |
 | keyless | InstallZkCircuit | install_zk_circuit | 18924 | 【功能】注册 Groth16 ZK 验证电路：验证密钥、约束哈希、公共输入数上限、支持的 JWT 算法集，并可同时开放 ZK 无密钥认证。<br>【限制】电路 ID 非法报 ZkCircuitIdInvalid（2122）；重复注册报 ZkCircuitAlreadyRegistered（2123）；电路参数非法报 ZkCircuitInvalid（2124）。 |
 | keyless | UpdateJwkReport | update_jwk_report | 50524 | 【功能】验证人上报某 provider 的 JWKS 快照（动态 JWK 共识：多验证人报告一致后被选中；交易须验证人签名授权，2026-11-20 起不再携带 validator_account 参数）。<br>【限制】验证人集合不可用报 ValidatorSetUnavailable（2131）；JWKS 格式非法报 DynamicJwkSetInvalid（2132）；thumbprint 非规范报 JwkThumbprintNonCanonical（2134）。 |
+| keyless | UpdateVersionedJwkReport | update_versioned_jwk_report | 51814 | 【功能】验证人上报带版本号的某 provider JWKS 快照（动态 JWK 共识的可控升级版：report_version 须与 provider 当前配置版本一致，多验证人报告一致且达到验证人绝对多数阈值后被选中）。<br>【限制】交易须验证人签名授权；版本不匹配报 JwkReportVersionMismatch（2138）；投票未达绝对多数报 JwkVoteQuorumNotReached（2137）。 |
 | keyless | PruneInactiveJwkReports | prune_inactive_jwk_reports | 17484 | 【功能】清理不再活跃的验证人留下的 JWK 报告（无参数维护指令）。<br>【限制】仅系统/维护流程调用。 |
 | keyless | Authenticate | authenticate | 21310 | 【功能】用 Groth16 ZK 证明完成无密钥认证，建立链上会话（后续以会话公钥签名操作，gas 可由赞助池代付）：auth={circuit_id, claim, proof}，claim 承载 JWT 语义承诺（provider_id/issuer/kid/jwk_thumbprint/audience_hash/address_seed/ephemeral_pk/iat/exp/session_expiry_ms 等），链上仅验证证明与 claim 一致性。<br>【限制】ZK 认证未开放报 ZkAuthenticationDisabled（2125）；证明无效报 ZkProofInvalid（2126）；circuit_id 须已注册（ZkCircuitIdInvalid 2122）；会话公钥非法报 InvalidSessionPubkey（2089）；session_expiry 越界报 2087；公共赞助每会话仅一次（SessionSponsorshipAlreadyUsed 2091）。 |
 | keyless | Bind | bind | 59392 | 【功能】把 keyless 身份（经 Authenticate 认证后派生的地址）绑定到链上账户的一个 signer 槽位，使账户可无私钥托管；auth 为 Groth16 认证材料（结构同 Authenticate）。<br>【限制】该身份不可已被绑定（AlreadyBound 2099）；绑定有激活延迟（默认 1 天、下限 1 小时，active_at_ms = bound_at_ms + 延迟）；ZK 校验同 Authenticate；owner 须签名。 |

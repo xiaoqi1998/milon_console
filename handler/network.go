@@ -33,7 +33,6 @@ func (h *NetworkHandler) GetCurrentNetwork(c *gin.Context) {
 		Name:    cfg.Name,
 		ChainId: cfg.ChainId,
 		RpcUrl:  cfg.RpcUrl,
-		InxUrl:  cfg.InxUrl,
 		Current: true,
 	}
 	c.JSON(http.StatusOK, types.SuccessResponse(info, "ok"))

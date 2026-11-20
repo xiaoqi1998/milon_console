@@ -2,11 +2,14 @@ package milon
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
@@ -74,10 +77,23 @@ type BlockStream struct {
 // after the stream breaks and reconnects the server resends the same block and fails again, getting stuck on that block forever; raise it to 32MB to accommodate oversized blocks.
 const streamMaxRecvMsgSize = 32 << 20
 
+// tlsPort is the port treated as TLS: public gRPC endpoints are published on 443
+const tlsPort = "443"
+
 // NewBlockStream connects to the node's gRPC bidirectional stream
+//
+// The transport is picked by port: 443 is assumed to be TLS. Public nodes sit behind
+// Cloudflare, where a plaintext h2c preface is answered with a literal HTTP/1.1 400
+// (grpc-go then reports frame too large, the frame header looked like an HTTP/1.1 header);
+// every other port keeps the plaintext h2c path of self-hosted nodes.
 func NewBlockStream(ctx context.Context, addr string) (*BlockStream, error) {
+	creds := insecure.NewCredentials()
+	if host, port, err := net.SplitHostPort(addr); err == nil && port == tlsPort {
+		creds = credentials.NewTLS(&tls.Config{ServerName: host, MinVersion: tls.VersionTLS12})
+	}
+
 	conn, err := grpc.NewClient(addr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithTransportCredentials(creds),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                20 * time.Second,
 			Timeout:             10 * time.Second,
@@ -141,9 +157,10 @@ func decodeStreamFrame(payload []byte) (*StreamFrame, error) {
 	frame := &StreamFrame{Kind: kind}
 	switch kind {
 	case FrameKindBlock:
+		var envelopeVersion uint64
 		//V2 BlockEnvelopeHeader(block_envelope.rs): u16/u64/u32 are all varint, hash is fixed-length;
-		//field order: envelopeVersion/chainID/height/epoch/slot/blockHash/parentHash/stateHash/txRoot/txCount/timestampMsecs/schemaSetID/payloadChecksum
-		if _, err = r.varint(); err != nil { //envelopeVersion u16(=1)
+		//field order: envelopeVersion/chainID/height/epoch/slot/blockHash/parentHash/stateHash/(membershipHash, v2+)/txRoot/txCount/timestampMsecs/schemaSetID/payloadChecksum
+		if envelopeVersion, err = r.varint(); err != nil { //envelopeVersion
 			return nil, err
 		}
 		if _, err = r.varint(); err != nil { //chainID
@@ -166,6 +183,13 @@ func decodeStreamFrame(payload []byte) (*StreamFrame, error) {
 		}
 		if _, err = r.fixed(32); err != nil { //stateHash
 			return nil, err
+		}
+		if envelopeVersion >= 2 {
+			//v2 inserts membershipHash[32] right after stateHash (frozen next-epoch inputs, all zero for ordinary blocks).
+			//Skipping it shifts every following field by 32 bytes: block_raw length is read as an absurd number and the frame dies with unexpected EOF.
+			if _, err = r.fixed(32); err != nil { //membershipHash
+				return nil, err
+			}
 		}
 		if _, err = r.fixed(32); err != nil { //txRoot
 			return nil, err

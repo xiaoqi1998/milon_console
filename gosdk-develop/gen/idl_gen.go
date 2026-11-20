@@ -11322,6 +11322,34 @@ provider.IDL{
 				Name: "UpdateJwkReport",
 			},
 			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "provider_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "issuer",
+						Role: "input",
+						Type: "String",
+					},
+					provider.Arg{
+						Name: "report_version",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "jwks",
+						Role: "input",
+						Type: "vec<String>",
+					},
+				},
+				Discriminator: 51814,
+				Handler: "update_versioned_jwk_report",
+				Kind: "entry",
+				Name: "UpdateVersionedJwkReport",
+			},
+			provider.Instruction{
 				Args: nil,
 				Discriminator: 17484,
 				Handler: "prune_inactive_jwk_reports",
@@ -11573,6 +11601,27 @@ provider.IDL{
 				Name: "GetJwkReport",
 				Returns: provider.ReturnValue{
 					Type: "option<ValidatorJwkReport>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "validator",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "provider_id",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 40699,
+				Handler: "get_versioned_jwk_report",
+				Kind: "view",
+				Name: "GetVersionedJwkReport",
+				Returns: provider.ReturnValue{
+					Type: "option<VersionedValidatorJwkReport>",
 				},
 			},
 			provider.Instruction{
@@ -12053,6 +12102,40 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
+						Name: "validator",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "issuer",
+						Type: "String",
+					},
+					provider.StructField{
+						Name: "report_version",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "keys",
+						Type: "vec<String>",
+					},
+				},
+				Kind: "struct",
+				Name: "VersionedValidatorJwkReport",
+				TypeTag: 4681731807847511843,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "reports",
+						Type: "vec<VersionedValidatorJwkReport>",
+					},
+				},
+				Kind: "struct",
+				Name: "KeylessVersionedJwkReports",
+				TypeTag: 16210363338209716802,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
 						Name: "circuit_id",
 						Type: "u32",
 					},
@@ -12282,6 +12365,11 @@ provider.IDL{
 				Name: "_KeylessJwkReports",
 				Type: "KeylessJwkReports",
 				TypeTag: 5913680928839638407,
+			},
+			provider.Resource{
+				Name: "_KeylessVersionedJwkReports",
+				Type: "KeylessVersionedJwkReports",
+				TypeTag: 16210363338209716802,
 			},
 			provider.Resource{
 				Name: "_KeylessZkCircuit",
@@ -12724,6 +12812,16 @@ provider.IDL{
 				Code: 2134,
 				Message: "JWK base64url member is not canonical",
 				Name: "JwkThumbprintNonCanonical",
+			},
+			provider.ErrorDef{
+				Code: 2137,
+				Message: "JWK candidate did not reach the validator supermajority threshold",
+				Name: "JwkVoteQuorumNotReached",
+			},
+			provider.ErrorDef{
+				Code: 2138,
+				Message: "JWK report version does not match provider configuration: expected {0}, got {1}",
+				Name: "JwkReportVersionMismatch",
 			},
 		},
 		Constants: []provider.Constant{
@@ -18887,6 +18985,53 @@ func (v KeylessKeylessJwkReports) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
+// KeylessVersionedValidatorJwkReport matches the IDL struct VersionedValidatorJwkReport.
+type KeylessVersionedValidatorJwkReport struct {
+	Validator [32]byte
+	Issuer string
+	ReportVersion uint64
+	Keys []string
+}
+
+// ToValue converts KeylessVersionedValidatorJwkReport into the provider wire value (map[string]any).
+func (v KeylessVersionedValidatorJwkReport) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// validator: B256
+	out["validator"] = v.Validator
+	// issuer: String
+	out["issuer"] = v.Issuer
+	// report_version: u64
+	out["report_version"] = v.ReportVersion
+	// keys: vec<String>
+	v0 := make([]any, len(v.Keys))
+	for v1, v2 := range v.Keys {
+		v0[v1] = v2
+	}
+	out["keys"] = v0
+	return out, nil
+}
+
+// KeylessKeylessVersionedJwkReports matches the IDL struct KeylessVersionedJwkReports.
+type KeylessKeylessVersionedJwkReports struct {
+	Reports []KeylessVersionedValidatorJwkReport
+}
+
+// ToValue converts KeylessKeylessVersionedJwkReports into the provider wire value (map[string]any).
+func (v KeylessKeylessVersionedJwkReports) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 1)
+	// reports: vec<VersionedValidatorJwkReport>
+	v0 := make([]any, len(v.Reports))
+	for v1, v2 := range v.Reports {
+		v3, err := toKeylessVersionedValidatorJwkReportValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v0[v1] = v3
+	}
+	out["reports"] = v0
+	return out, nil
+}
+
 // KeylessKeylessZkCircuit matches the IDL struct KeylessZkCircuit.
 type KeylessKeylessZkCircuit struct {
 	CircuitId uint32
@@ -24506,6 +24651,78 @@ func fromKeylessKeylessJwkReports(v any) (out KeylessKeylessJwkReports, err erro
 	return out, nil
 }
 
+// fromKeylessVersionedValidatorJwkReport converts a decoded IDL value into KeylessVersionedValidatorJwkReport.
+func fromKeylessVersionedValidatorJwkReport(v any) (out KeylessVersionedValidatorJwkReport, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// validator: B256
+	{
+		v0, err := toFixed32(m["validator"])
+		if err != nil {
+			return out, err
+		}
+		out.Validator = v0
+	}
+	// issuer: String
+	{
+		v1, err := toString(m["issuer"])
+		if err != nil {
+			return out, err
+		}
+		out.Issuer = v1
+	}
+	// report_version: u64
+	{
+		v2, err := toUint64(m["report_version"])
+		if err != nil {
+			return out, err
+		}
+		out.ReportVersion = v2
+	}
+	// keys: vec<String>
+	{
+		v3, err := toSlice(m["keys"])
+		if err != nil {
+			return out, err
+		}
+		out.Keys = make([]string, len(v3))
+		for v4, v5 := range v3 {
+			v6, err := toString(v5)
+			if err != nil {
+				return out, err
+			}
+			out.Keys[v4] = v6
+		}
+	}
+	return out, nil
+}
+
+// fromKeylessKeylessVersionedJwkReports converts a decoded IDL value into KeylessKeylessVersionedJwkReports.
+func fromKeylessKeylessVersionedJwkReports(v any) (out KeylessKeylessVersionedJwkReports, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// reports: vec<VersionedValidatorJwkReport>
+	{
+		v0, err := toSlice(m["reports"])
+		if err != nil {
+			return out, err
+		}
+		out.Reports = make([]KeylessVersionedValidatorJwkReport, len(v0))
+		for v1, v2 := range v0 {
+			v3, err := fromKeylessVersionedValidatorJwkReport(v2)
+			if err != nil {
+				return out, err
+			}
+			out.Reports[v1] = v3
+		}
+	}
+	return out, nil
+}
+
 // fromKeylessKeylessZkCircuit converts a decoded IDL value into KeylessKeylessZkCircuit.
 func fromKeylessKeylessZkCircuit(v any) (out KeylessKeylessZkCircuit, err error) {
 	m, err := toRecord(v)
@@ -27128,6 +27345,36 @@ func toKeylessKeylessJwkReportsValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected KeylessKeylessJwkReports, got %T", v)
+	}
+}
+
+// toKeylessVersionedValidatorJwkReportValue converts any into KeylessVersionedValidatorJwkReport for provider serialization.
+func toKeylessVersionedValidatorJwkReportValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessVersionedValidatorJwkReport:
+		return x.ToValue()
+	case *KeylessVersionedValidatorJwkReport:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessVersionedValidatorJwkReport")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessVersionedValidatorJwkReport, got %T", v)
+	}
+}
+
+// toKeylessKeylessVersionedJwkReportsValue converts any into KeylessKeylessVersionedJwkReports for provider serialization.
+func toKeylessKeylessVersionedJwkReportsValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case KeylessKeylessVersionedJwkReports:
+		return x.ToValue()
+	case *KeylessKeylessVersionedJwkReports:
+		if x == nil {
+			return nil, fmt.Errorf("nil KeylessKeylessVersionedJwkReports")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected KeylessKeylessVersionedJwkReports, got %T", v)
 	}
 }
 
@@ -38842,6 +39089,7 @@ type KeylessApp struct {
 	BootstrapKeyless *KeylessBootstrapKeylessIx
 	InstallZkCircuit *KeylessInstallZkCircuitIx
 	UpdateJwkReport *KeylessUpdateJwkReportIx
+	UpdateVersionedJwkReport *KeylessUpdateVersionedJwkReportIx
 	PruneInactiveJwkReports *KeylessPruneInactiveJwkReportsIx
 	Authenticate *KeylessAuthenticateIx
 	Bind *KeylessBindIx
@@ -38856,6 +39104,7 @@ type KeylessApp struct {
 	GetProvider *KeylessGetProviderIx
 	GetProviderStatus *KeylessGetProviderStatusIx
 	GetJwkReport *KeylessGetJwkReportIx
+	GetVersionedJwkReport *KeylessGetVersionedJwkReportIx
 	GetSelectedJwk *KeylessGetSelectedJwkIx
 	GetAudience *KeylessGetAudienceIx
 	GetParams *KeylessGetParamsIx
@@ -38866,6 +39115,7 @@ var Keyless = &KeylessApp{
 	BootstrapKeyless: &KeylessBootstrapKeylessIx{},
 	InstallZkCircuit: &KeylessInstallZkCircuitIx{},
 	UpdateJwkReport: &KeylessUpdateJwkReportIx{},
+	UpdateVersionedJwkReport: &KeylessUpdateVersionedJwkReportIx{},
 	PruneInactiveJwkReports: &KeylessPruneInactiveJwkReportsIx{},
 	Authenticate: &KeylessAuthenticateIx{},
 	Bind: &KeylessBindIx{},
@@ -38880,6 +39130,7 @@ var Keyless = &KeylessApp{
 	GetProvider: &KeylessGetProviderIx{},
 	GetProviderStatus: &KeylessGetProviderStatusIx{},
 	GetJwkReport: &KeylessGetJwkReportIx{},
+	GetVersionedJwkReport: &KeylessGetVersionedJwkReportIx{},
 	GetSelectedJwk: &KeylessGetSelectedJwkIx{},
 	GetAudience: &KeylessGetAudienceIx{},
 	GetParams: &KeylessGetParamsIx{},
@@ -38891,6 +39142,7 @@ func (a *KeylessApp) bind(pd *provider.Provider) {
 	a.BootstrapKeyless.pd = pd
 	a.InstallZkCircuit.pd = pd
 	a.UpdateJwkReport.pd = pd
+	a.UpdateVersionedJwkReport.pd = pd
 	a.PruneInactiveJwkReports.pd = pd
 	a.Authenticate.pd = pd
 	a.Bind.pd = pd
@@ -38905,6 +39157,7 @@ func (a *KeylessApp) bind(pd *provider.Provider) {
 	a.GetProvider.pd = pd
 	a.GetProviderStatus.pd = pd
 	a.GetJwkReport.pd = pd
+	a.GetVersionedJwkReport.pd = pd
 	a.GetSelectedJwk.pd = pd
 	a.GetAudience.pd = pd
 	a.GetParams.pd = pd
@@ -39029,6 +39282,54 @@ func (a *KeylessUpdateJwkReportArgs) Encode() (api.PackedInstruction, error) {
 	}
 	args["jwks"] = v0
 	wire, err := a.pd.Encode("UpdateJwkReport", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type KeylessUpdateVersionedJwkReportIx struct {
+	pd *provider.Provider
+}
+
+type KeylessUpdateVersionedJwkReportArgs struct {
+	provider_id [32]byte
+	issuer string
+	report_version uint64
+	jwks []string
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of UpdateVersionedJwkReport.
+func (ix *KeylessUpdateVersionedJwkReportIx) Args(provider_id [32]byte, issuer string, report_version uint64, jwks []string) *KeylessUpdateVersionedJwkReportArgs {
+	return &KeylessUpdateVersionedJwkReportArgs{
+		provider_id: provider_id,
+		issuer: issuer,
+		report_version: report_version,
+		jwks: jwks,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessUpdateVersionedJwkReportArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
+	// issuer: String
+	args["issuer"] = a.issuer
+	// report_version: u64
+	args["report_version"] = a.report_version
+	// jwks: vec<String>
+	v0 := make([]any, len(a.jwks))
+	for v1, v2 := range a.jwks {
+		v0[v1] = v2
+	}
+	args["jwks"] = v0
+	wire, err := a.pd.Encode("UpdateVersionedJwkReport", args)
 	if err != nil {
 		return nil, err
 	}
@@ -39682,6 +39983,65 @@ func (ix *KeylessGetJwkReportIx) DecodeView(body []byte) (out *KeylessValidatorJ
 	} else {
 		var v0 KeylessValidatorJwkReport
 		v1, err := fromKeylessValidatorJwkReport(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
+	}
+	return out, nil
+}
+
+type KeylessGetVersionedJwkReportIx struct {
+	pd *provider.Provider
+}
+
+type KeylessGetVersionedJwkReportArgs struct {
+	validator [32]byte
+	provider_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of GetVersionedJwkReport.
+func (ix *KeylessGetVersionedJwkReportIx) Args(validator [32]byte, provider_id [32]byte) *KeylessGetVersionedJwkReportArgs {
+	return &KeylessGetVersionedJwkReportArgs{
+		validator: validator,
+		provider_id: provider_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *KeylessGetVersionedJwkReportArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// validator: B256
+	args["validator"] = a.validator
+	// provider_id: B256
+	args["provider_id"] = a.provider_id
+	wire, err := a.pd.Encode("GetVersionedJwkReport", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of GetVersionedJwkReport into *KeylessVersionedValidatorJwkReport.
+func (ix *KeylessGetVersionedJwkReportIx) DecodeView(body []byte) (out *KeylessVersionedValidatorJwkReport, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app keyless is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("GetVersionedJwkReport", body)
+	if err != nil {
+		return out, err
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 KeylessVersionedValidatorJwkReport
+		v1, err := fromKeylessVersionedValidatorJwkReport(v)
 		if err != nil {
 			return out, err
 		}

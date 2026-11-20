@@ -3077,12 +3077,12 @@ var API_DOCS = {
   'net-list': {
     desc: '获取所有可用网络列表，返回每个网络的名称、链 ID、RPC 地址及是否为当前网络。',
     params: [],
-    response: { success: true, code: 0, message: 'ok', data: [{ name: 'devNet', chainId: 900000001, rpcUrl: 'http://...', inxUrl: '', current: true }] },
+    response: { success: true, code: 0, message: 'ok', data: [{ name: 'devNet', chainId: 900000001, rpcUrl: 'http://...', current: true }] },
   },
   'net-current': {
     desc: '获取当前正在使用的网络配置。',
     params: [],
-    response: { success: true, code: 0, message: 'ok', data: { name: 'devNet', chainId: 900000001, rpcUrl: 'http://...', inxUrl: '', current: true } },
+    response: { success: true, code: 0, message: 'ok', data: { name: 'devNet', chainId: 900000001, rpcUrl: 'http://...', current: true } },
   },
   'net-switch': {
     desc: '切换当前网络。支持 devNet、localNet。',
@@ -4377,7 +4377,7 @@ var IDL_EXAMPLE_ARGS = {
   'validator.ValidatorForOwner': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'validator.ValidatorSelfStake': {validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e', target_epoch: 0},
   'validator.RegisteredValidators': {},
-  // ==================== keyless 模块（app_id=8，21 个方法：11 entry + 10 view）====================
+  // ==================== keyless 模块（app_id=8，23 个方法：12 entry + 11 view）====================
   'keyless.BootstrapKeyless': {},
   'keyless.InstallZkCircuit': {
     circuit_id: 3,
@@ -4389,6 +4389,12 @@ var IDL_EXAMPLE_ARGS = {
   },
   'keyless.UpdateJwkReport': {
     provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
+    jwks: ['{"kty":"EC","crv":"P-256"}'],
+  },
+  'keyless.UpdateVersionedJwkReport': {
+    provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
+    issuer: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
+    report_version: 1,
     jwks: ['{"kty":"EC","crv":"P-256"}'],
   },
   'keyless.PruneInactiveJwkReports': {},
@@ -4423,6 +4429,10 @@ var IDL_EXAMPLE_ARGS = {
   'keyless.GetProvider': {provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561'},
   'keyless.GetProviderStatus': {provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561'},
   'keyless.GetJwkReport': {
+    validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e',
+    provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
+  },
+  'keyless.GetVersionedJwkReport': {
     validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e',
     provider_id: '0x26f5416a8b0fc9b04792c35e2f370f2b41b14523d13caaf8b3d4324dff947561',
   },
@@ -4729,10 +4739,11 @@ var IDL_EXAMPLE_PAYMENT = {
     signerHint: '该方法需 owner + consensus_account 双签名，使用 multi_signer 模式通过 /api/simulate 或 /api/write 调用',
   },
   'validator.SettleValidatorEpoch': {paymentMode: 'unified_payer_all'},
-  // keyless 模块（11 entry）
+  // keyless 模块（12 entry）
   'keyless.BootstrapKeyless': {paymentMode: 'unified_payer_all'},
   'keyless.InstallZkCircuit': {paymentMode: 'unified_payer_all'},
   'keyless.UpdateJwkReport': {paymentMode: 'unified_payer_all'},
+  'keyless.UpdateVersionedJwkReport': {paymentMode: 'unified_payer_all'},
   'keyless.PruneInactiveJwkReports': {paymentMode: 'unified_payer_all'},
   'keyless.Authenticate': {paymentMode: 'unified_payer_all'},
   'keyless.Bind': {paymentMode: 'unified_payer_all', payerRole: 'owner'},

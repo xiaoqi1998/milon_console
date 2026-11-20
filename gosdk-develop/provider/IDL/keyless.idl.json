@@ -73,6 +73,38 @@
       "validator_signer_mode": "any_signer"
     },
     {
+      "args": [
+        {
+          "name": "provider_id",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "issuer",
+          "role": "input",
+          "type": "String"
+        },
+        {
+          "name": "report_version",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "jwks",
+          "role": "input",
+          "type": "vec<String>"
+        }
+      ],
+      "discriminator": 51814,
+      "gas_exempt": true,
+      "handler": "update_versioned_jwk_report",
+      "kind": "entry",
+      "name": "UpdateVersionedJwkReport",
+      "requires_pq_signature": true,
+      "validator": true,
+      "validator_signer_mode": "any_signer"
+    },
+    {
       "args": [],
       "discriminator": 17484,
       "handler": "prune_inactive_jwk_reports",
@@ -324,6 +356,27 @@
       "name": "GetJwkReport",
       "returns": {
         "type": "option<ValidatorJwkReport>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "validator",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "provider_id",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 40699,
+      "handler": "get_versioned_jwk_report",
+      "kind": "view",
+      "name": "GetVersionedJwkReport",
+      "returns": {
+        "type": "option<VersionedValidatorJwkReport>"
       }
     },
     {
@@ -804,6 +857,40 @@
     {
       "fields": [
         {
+          "name": "validator",
+          "type": "B256"
+        },
+        {
+          "name": "issuer",
+          "type": "String"
+        },
+        {
+          "name": "report_version",
+          "type": "u64"
+        },
+        {
+          "name": "keys",
+          "type": "vec<String>"
+        }
+      ],
+      "kind": "struct",
+      "name": "VersionedValidatorJwkReport",
+      "typeTag": 4681731807847511843
+    },
+    {
+      "fields": [
+        {
+          "name": "reports",
+          "type": "vec<VersionedValidatorJwkReport>"
+        }
+      ],
+      "kind": "struct",
+      "name": "KeylessVersionedJwkReports",
+      "typeTag": 16210363338209716802
+    },
+    {
+      "fields": [
+        {
           "name": "circuit_id",
           "type": "u32"
         },
@@ -1033,6 +1120,11 @@
       "name": "_KeylessJwkReports",
       "type": "KeylessJwkReports",
       "typeTag": 5913680928839638407
+    },
+    {
+      "name": "_KeylessVersionedJwkReports",
+      "type": "KeylessVersionedJwkReports",
+      "typeTag": 16210363338209716802
     },
     {
       "name": "_KeylessZkCircuit",
@@ -1629,6 +1721,16 @@
       "code": 2134,
       "message": "JWK base64url member is not canonical",
       "name": "JwkThumbprintNonCanonical"
+    },
+    {
+      "code": 2137,
+      "message": "JWK candidate did not reach the validator supermajority threshold",
+      "name": "JwkVoteQuorumNotReached"
+    },
+    {
+      "code": 2138,
+      "message": "JWK report version does not match provider configuration: expected {0}, got {1}",
+      "name": "JwkReportVersionMismatch"
     }
   ]
 }

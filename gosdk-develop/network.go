@@ -7,7 +7,6 @@ type Network struct {
 	Name     string
 	ChainId  uint64 // required: mixed into tx / ix / auth hashes
 	RpcUrl   string
-	InxUrl   string
 	GrpcAddr string // block stream gRPC address, host:port, used by StreamBlocks / NewBlockStream
 }
 
@@ -22,7 +21,7 @@ var LocalNet = Network{
 
 var DevNet = Network{
 	Name:     "devNet",
-	ChainId:  900_000_001,
-	RpcUrl:   "https://devnet.milonlabs.com/v1/rpc",
-	GrpcAddr: "8.218.101.239:50051",
+	ChainId:  100_10,
+	RpcUrl:   "https://dev-api.milonlabs.com/v1/rpc",
+	GrpcAddr: "dev-api-grpc.milonlabs.com:443",
 }
