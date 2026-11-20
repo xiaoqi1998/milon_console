@@ -241,13 +241,16 @@ func BuildSeedPlanV2(cfg SeedConfig) (SeedPlan, error) {
 				pool = pool[1:]
 				spec.Symbol = spec.ReuseToken
 			} else {
+				// 补建代币直接进 plan.Tokens:tokens 模块统一创建+mint,
+				// 资源账户由 SeedBuildAccounts 按符号派生,执行层零特判
 				supplemented++
 				symbol := fmt.Sprintf("VT%02d", supplemented)
-				spec.TokenSpec = &SeedTokenSpec{
-					Symbol: symbol, Decimals: 6,
+				d := uint8(6)
+				p.Tokens = append(p.Tokens, SeedTokenSpec{
+					Symbol: symbol, Decimals: d,
 					Name: "Seed Vesting Token " + symbol + " 6dp",
 					IconURL: seedTokenIconURL(symbol), URI: seedTokenURI(symbol),
-				}
+				})
 				spec.Symbol = symbol
 			}
 			recs := make([]SeedVestingRecipientSpec, m)
@@ -286,12 +289,15 @@ func BuildSeedPlanV2(cfg SeedConfig) (SeedPlan, error) {
 				}
 			}
 			spec.Recipients = recs
-			if spec.TokenSpec != nil {
+			if spec.ReuseToken == "" {
+				// 补建代币的 admin 铸额 = Σ 每人 total(托管出资),改写刚 append 的 tokens 条目
 				var sum uint64
 				for _, r := range recs {
 					sum += r.Total
 				}
-				spec.TokenSpec.MintAmounts = map[string]uint64{"admin": sum}
+				vt := p.Tokens[len(p.Tokens)-1]
+				vt.MintAmounts = map[string]uint64{"admin": sum}
+				p.Tokens[len(p.Tokens)-1] = vt
 			}
 			p.Vestings = append(p.Vestings, spec)
 		}
@@ -437,12 +443,10 @@ func SeedEstimateTxs(p SeedPlan) int {
 		n += len(p.VcLifecycle)
 	}
 	n += len(p.Compliance) * 6 // credential/create/mode/requirements/mint/accept
-	// vesting:每计划 CreateVesting 1;补建代币 create+mint 2;claim 开启每人领 1
+	// vesting:每计划 CreateVesting 1;claim 开启每人领 1
+	// (补建代币已并入 p.Tokens,其 create+mint 计入上方 tokens 段)
 	for _, v := range p.Vestings {
 		n++
-		if v.TokenSpec != nil {
-			n += 2
-		}
 		if v.Claim {
 			n += len(v.Recipients)
 		}

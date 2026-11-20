@@ -22,6 +22,10 @@ func TestSeedNormalizeModules(t *testing.T) {
 	if len(got) != 2 || got[0] != "vc" || got[1] != "compliance" {
 		t.Fatalf("compliance 应自动补 vc 且有序: %v", got)
 	}
+	got, _ = seedNormalizeModules([]string{"vesting"})
+	if got[0] != "tokens" || got[1] != "vesting" {
+		t.Fatalf("vesting 应自动补 tokens(复用其代币)且有序: %v", got)
+	}
 	got, _ = seedNormalizeModules([]string{"txs", "tokens"})
 	if got[0] != "tokens" || got[1] != "txs" {
 		t.Fatalf("应按依赖顺序输出: %v", got)

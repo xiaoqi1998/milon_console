@@ -9,7 +9,7 @@ import (
 // 与 tools/seeder/seedlib/plan.py 逐项对齐(数据源同构):
 // 同一 seed 短语 + 同一规模,每次重建的地址/代币/SFT/证书矩阵完全一致。
 
-var SeedModuleOrder = []string{"accounts", "multisig", "tokens", "sft", "vc", "compliance", "txs"}
+var SeedModuleOrder = []string{"accounts", "multisig", "tokens", "vesting", "sft", "vc", "compliance", "txs"}
 
 const SeedDefaultPhrase = "milon-devnet-seed-v1"
 
@@ -221,15 +221,15 @@ type SeedVestingRecipientSpec struct {
 
 // SeedVestingSpec 一笔分配计划 = 一次 CreateVesting。
 // 每 token 仅可挂一笔计划(同 token 第二笔恒 539,2026-11-20 实测),故每计划
-// 绑定独立代币:ReuseToken 复用 tokens 模块非合规代币,否则 TokenSpec 补建 VT01..
+// 绑定独立代币:ReuseToken 复用 tokens 模块代币;不足时展开层补建 VT01.. 并
+// 并入 plan.Tokens(tokens 模块统一创建+mint,admin 持有作托管出资)。
 type SeedVestingSpec struct {
-	Key                       string                     `json:"key"`
-	Symbol                    string                     `json:"symbol"`               // 绑定代币符号(展示)
-	ReuseToken                string                     `json:"reuseToken,omitempty"` // 复用的 tokens 模块代币符号
-	TokenSpec                 *SeedTokenSpec             `json:"tokenSpec,omitempty"`  // 补建代币规格(mint 给 admin 作托管出资)
-	StartDelaySeconds         uint64                     `json:"startDelaySeconds"`    // start = 执行时 now + 延迟(537:不可在过去)
-	Recipients                []SeedVestingRecipientSpec `json:"recipients"`
-	Claim                     bool                       `json:"claim,omitempty"` // postOps:建成后各领一次
+	Key               string                     `json:"key"`
+	Symbol            string                     `json:"symbol"`               // 绑定代币符号(复用与补建一致)
+	ReuseToken        string                     `json:"reuseToken,omitempty"` // 非空 = 复用 tokens 模块代币
+	StartDelaySeconds uint64                     `json:"startDelaySeconds"`    // start = 执行时 now + 延迟(537:不可在过去)
+	Recipients        []SeedVestingRecipientSpec `json:"recipients"`
+	Claim             bool                       `json:"claim,omitempty"` // postOps:建成后各领一次
 }
 
 type SeedPlan struct {

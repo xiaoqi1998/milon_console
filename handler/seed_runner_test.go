@@ -67,7 +67,7 @@ func TestSeedFreezeAmount(t *testing.T) {
 }
 
 func TestSeedModuleOrderV2(t *testing.T) {
-	want := []string{"accounts", "multisig", "tokens", "sft", "vc", "compliance", "txs"}
+	want := []string{"accounts", "multisig", "tokens", "vesting", "sft", "vc", "compliance", "txs"}
 	if len(SeedModuleOrder) != len(want) {
 		t.Fatalf("模块数 %d", len(SeedModuleOrder))
 	}

@@ -38,34 +38,44 @@ func TestBuildSeedPlanV2_Vesting_ReuseNonComplianceTokens(t *testing.T) {
 	if vs[0].ReuseToken != "ST02" || vs[1].ReuseToken != "ST03" {
 		t.Fatalf("应依次复用 ST02/ST03, got %s / %s", vs[0].ReuseToken, vs[1].ReuseToken)
 	}
-	if vs[0].TokenSpec != nil || vs[1].TokenSpec != nil {
-		t.Fatal("复用模式不应携带补建代币规格")
+	if vs[0].ReuseToken == "" || vs[1].ReuseToken == "" {
+		t.Fatal("复用模式不应有补建代币(reuseToken 必填)")
 	}
 }
 
-// 非合规池不足:自动补建 VT01..,补建代币 mint 总额=Σ 每人 total(admin 托管出资)。
+// 非合规池不足:自动补建 VT01.. 并入 plan.Tokens(tokens 模块统一创建,
+// admin 铸额=Σ 每人 total 作托管出资);计划本身只记绑定符号。
 func TestBuildSeedPlanV2_Vesting_SupplementTokens(t *testing.T) {
 	c := vestPlanCfg()
 	c.Tokens.Count = 1
 	c.Tokens.ComplianceCount = 1 // 非合规池为空
-	vs := planVestings(t, c)
+	p, err := BuildSeedPlanV2(c)
+	if err != nil {
+		t.Fatalf("BuildSeedPlanV2: %v", err)
+	}
+	vs := p.Vestings
 	if len(vs) != 2 {
 		t.Fatalf("应展开 2 个计划, got %d", len(vs))
 	}
+	tokenBySymbol := map[string]SeedTokenSpec{}
+	for _, tk := range p.Tokens {
+		tokenBySymbol[tk.Symbol] = tk
+	}
 	for i, v := range vs {
 		want := "VT0" + string(rune('1'+i))
-		if v.ReuseToken != "" || v.TokenSpec == nil {
-			t.Fatalf("计划 %d 应补建代币 %s, got reuse=%q spec=%v", i, want, v.ReuseToken, v.TokenSpec)
+		if v.ReuseToken != "" || v.Symbol != want {
+			t.Fatalf("计划 %d 应绑定补建代币 %s, got reuse=%q symbol=%q", i, want, v.ReuseToken, v.Symbol)
 		}
-		if v.TokenSpec.Symbol != want {
-			t.Fatalf("补建代币符号应为 %s, got %s", want, v.TokenSpec.Symbol)
+		tk, ok := tokenBySymbol[want]
+		if !ok {
+			t.Fatalf("补建代币 %s 应进 plan.Tokens(tokens 模块创建)", want)
 		}
 		var sum uint64
 		for _, r := range v.Recipients {
 			sum += r.Total
 		}
-		if v.TokenSpec.MintAmounts["admin"] != sum {
-			t.Fatalf("补建代币 admin 铸额应=Σtotal(%d), got %d", sum, v.TokenSpec.MintAmounts["admin"])
+		if tk.MintAmounts["admin"] != sum {
+			t.Fatalf("补建代币 %s admin 铸额应=Σtotal(%d), got %d", want, sum, tk.MintAmounts["admin"])
 		}
 	}
 }
@@ -75,12 +85,23 @@ func TestBuildSeedPlanV2_Vesting_MixedPool(t *testing.T) {
 	c := vestPlanCfg()
 	c.Tokens.Count = 2
 	c.Tokens.ComplianceCount = 1
-	vs := planVestings(t, c)
+	p, err := BuildSeedPlanV2(c)
+	if err != nil {
+		t.Fatalf("BuildSeedPlanV2: %v", err)
+	}
+	vs := p.Vestings
 	if vs[0].ReuseToken != "ST02" {
 		t.Fatalf("计划 0 应复用 ST02, got %q", vs[0].ReuseToken)
 	}
-	if vs[1].TokenSpec == nil || vs[1].TokenSpec.Symbol != "VT01" {
-		t.Fatalf("计划 1 应补建 VT01, got reuse=%q", vs[1].ReuseToken)
+	if vs[1].ReuseToken != "" || vs[1].Symbol != "VT01" {
+		t.Fatalf("计划 1 应补建 VT01, got reuse=%q symbol=%q", vs[1].ReuseToken, vs[1].Symbol)
+	}
+	symbols := map[string]bool{}
+	for _, tk := range p.Tokens {
+		symbols[tk.Symbol] = true
+	}
+	if !symbols["VT01"] {
+		t.Fatal("VT01 应进 plan.Tokens")
 	}
 }
 

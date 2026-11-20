@@ -417,6 +417,10 @@ func seedNormalizeModules(modules []string) ([]string, error) {
 	if has["compliance"] && !has["vc"] {
 		has["vc"] = true
 	}
+	// vesting 复用 tokens 模块代币(复用/补建都在 tokens 模块落地),强制前置依赖
+	if has["vesting"] && !has["tokens"] {
+		has["tokens"] = true
+	}
 	out := []string{}
 	for _, m := range SeedModuleOrder {
 		if has[m] {

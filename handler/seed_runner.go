@@ -10,6 +10,7 @@ import (
 
 	milon "github.com/milon-labs/milon-go-sdk"
 	"github.com/milon-labs/milon-go-sdk/api"
+	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/lib"
 	"github.com/milon-labs/milon-go-sdk/provider"
 )
@@ -202,6 +203,8 @@ func (r *seedRunner) run(modules []string) error {
 			err = r.runMultisig()
 		case "tokens":
 			err = r.runTokens()
+		case "vesting":
+			err = r.runVesting()
 		case "sft":
 			err = r.runSft()
 		case "vc":
@@ -439,6 +442,131 @@ func (r *seedRunner) runTokens() error {
 		}
 	}
 	r.logf("tokens 模块完成: %d 个代币(精度 0~9)", len(r.plan.Tokens))
+	return nil
+}
+
+// ---------- vesting ----------
+
+// seedVestingCreatedTag 链端 VestingCreated 事件 typeTag(与 tools/verify_vesting.py 同源)。
+const seedVestingCreatedTag = 15060776178379885906
+
+// seedVestingAlreadyExists 539 = 该代币已有计划(同 token 第二笔恒 539,2026-11-20 实测)。
+func seedVestingAlreadyExists(msg string) bool {
+	return seedHasCode(msg, 539) || strings.Contains(msg, "vesting id already used")
+}
+
+// seedVestingRecipientsArgs 计划 → 链端 recipients 参数 + 托管出资总额(Σ total)。
+func seedVestingRecipientsArgs(v SeedVestingSpec, addrOf func(string) string) ([]map[string]any, uint64) {
+	recs := make([]map[string]any, len(v.Recipients))
+	var need uint64
+	for i, r := range v.Recipients {
+		recs[i] = map[string]any{
+			"recipient":              addrOf(r.Name),
+			"name":                   r.Name,
+			"total_amount":           r.Total,
+			"initial_amount":         r.Initial,
+			"initial_period_seconds": r.InitialPeriodSeconds,
+			"period_seconds":         r.PeriodSeconds,
+			"periods":                r.Periods,
+		}
+		need += r.Total
+	}
+	return recs, need
+}
+
+// seedVestingIdFromEventEntries 事件列表 → VestingCreated 事件的 vesting_id
+// (value 前 20 字节为地址原始字节);无匹配返回空。
+func seedVestingIdFromEventEntries(events []api.EventEntry) string {
+	for _, ev := range events {
+		if ev.Data.TypeTag == seedVestingCreatedTag && len(ev.Data.Value) >= 20 {
+			if addr, err := crypto.NewAddressFromBytes(ev.Data.Value[:20]); err == nil {
+				return addr.ToBase58()
+			}
+		}
+	}
+	return ""
+}
+
+// runVesting 分配计划模块:每计划一笔 CreateVesting(admin 托管出资)。
+// 幂等:计划 stage=vesting:<key>(vid 落盘供 claim 复用);重跑遇 539 视为已存在;
+// claim stage=claim:<key>:<name>,541(无可领,cliff 未到)容忍跳过。
+func (r *seedRunner) runVesting() error {
+	admin := r.acct("admin")
+	for _, v := range r.plan.Vestings {
+		tok := r.acct(v.Symbol)
+		stage := "vesting:" + v.Key
+		if !r.state.IsDone("vesting", stage) {
+			recs, need := seedVestingRecipientsArgs(v, func(name string) string {
+				return r.acct(name).Address
+			})
+			// 托管出资:admin 持币不足先补铸(复用代币可能没给 admin 铸足)
+			have, err := seedViewU64(r.mc, seedTokenApp, "BalanceOf",
+				provider.Args{"token": tok.Address, "account": admin.Address})
+			if err != nil {
+				return fmt.Errorf("balance %s: %w", v.Symbol, err)
+			}
+			if have < need {
+				if _, err := seedSendSingle(r.mc, seedTokenApp, "Mint", provider.Args{
+					"token": tok.Address, "to": admin.Address, "amount": need - have,
+				}, admin); err != nil {
+					return fmt.Errorf("mint %s for vesting: %w", v.Symbol, err)
+				}
+				r.logf("  %s 补铸 admin %d(托管出资)", v.Symbol, need-have)
+			}
+			startAt := uint64(time.Now().UnixMilli()) + v.StartDelaySeconds*1000
+			txHash, err := seedSendSingle(r.mc, seedTokenApp, "CreateVesting", provider.Args{
+				"creator": admin.Address, "token": tok.Address,
+				"start_at_ms": startAt, "recipients": recs,
+			}, admin)
+			vid := ""
+			if err != nil {
+				if !seedVestingAlreadyExists(err.Error()) {
+					return fmt.Errorf("create vesting %s: %w", v.Key, err)
+				}
+				r.logf("  %s(%s)计划已存在(539),跳过创建", v.Key, v.Symbol)
+			} else {
+				if res, evErr := r.mc.EventsByTxHash(txHash, nil); evErr == nil && res != nil && res.BodyEventsByTxHash != nil {
+					vid = seedVestingIdFromEventEntries(res.BodyEventsByTxHash.Events)
+				}
+				r.logf("  %s(%s × %d 人)创建 ✓ vid=%s start=now+%ds",
+					v.Key, v.Symbol, len(v.Recipients), shortAddr(vid), v.StartDelaySeconds)
+			}
+			r.state.Mark("vesting", stage, map[string]any{
+				"token": tok.Address, "symbol": v.Symbol, "vid": vid,
+			})
+			r.state.Save()
+		}
+		if !v.Claim {
+			continue
+		}
+		rec, _ := r.state.Get("vesting", stage).(map[string]any)
+		vid, _ := rec["vid"].(string)
+		if vid == "" {
+			r.logf("  %s claim 跳过:vesting_id 未知(创建被 539 容忍且无落盘 vid)", v.Key)
+			continue
+		}
+		for _, rr := range v.Recipients {
+			cstage := "claim:" + v.Key + ":" + rr.Name
+			if r.state.IsDone("vesting", cstage) {
+				continue
+			}
+			holder := r.acct(rr.Name)
+			if _, err := seedSendSingle(r.mc, seedTokenApp, "ClaimVesting", provider.Args{
+				"claimant": holder.Address, "vesting_id": vid,
+			}, holder); err != nil {
+				if seedHasCode(err.Error(), 541) {
+					r.logf("  %s %s 无可领(541,cliff 未到),跳过", v.Key, rr.Name)
+				} else {
+					return fmt.Errorf("claim vesting %s by %s: %w", v.Key, rr.Name, err)
+				}
+			} else {
+				r.logf("  %s %s 领取 ✓", v.Key, rr.Name)
+			}
+			r.state.Mark("vesting", cstage, map[string]any{"vid": vid, "claimant": rr.Name})
+			r.state.Save()
+		}
+	}
+	r.logf("vesting 模块完成: %d 个计划", len(r.plan.Vestings))
 	return nil
 }
 
