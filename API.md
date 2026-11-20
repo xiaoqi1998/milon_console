@@ -2760,6 +2760,7 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 | sft.count / slotsPerSft / tokensPerSlot | 1 / 1 / 3 | 2 / 2 / 3 | 3 / 2 / 3 |
 | sft.scenarios | transferable | 全部五场景 | 全部五场景 |
 | sft.postOps | false | true | true |
+| vesting.plans（recipients 等其余参数） | 0（关闭） | 0（关闭） | 0（关闭） |
 
 > 场景五键：`transferable`（可转+后置互转）/ `frozen`（铸后冻结）/ `merge`（两枚合一）/ `burn`（销毁一枚）/ `reject_transfer`（不可转 slot，转账预期被拒）。
 
@@ -2774,10 +2775,10 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 | `config` | SeedConfig | 否 | 完整配置直传（最高优先级，忽略 preset/overrides） |
 | `scale` | string | 否 | 兼容旧参数：`full`→full 模板、`small`→minimal 模板 |
 | `seedPhrase` | string | 否 | 种子短语，缺省 `milon-devnet-seed-v1` |
-| `modules` | string[] | 否 | 要执行的模块（缺省全序 accounts/multisig/tokens/sft/vc/compliance/txs；选 compliance 自动补 vc） |
+| `modules` | string[] | 否 | 要执行的模块（缺省全序 accounts/multisig/tokens/vesting/sft/vc/compliance/txs；选 compliance 自动补 vc，选 vesting 自动补 tokens——复用其代币） |
 | `reset` | bool | 否 | true 时清空 seed_state 后再跑（仅 POST /api/tool/seed 生效） |
 
-校验失败返回 400，`data` 为带字段路径的错误数组（如 `accounts.count: 须在 1..200, got 0`）；`/plan` 预览与 `/seed` 启动共享同一校验。校验通过时 `/plan` 返回 `{plan, summary}`：`plan` 为确定性播种计划（scale=custom/configHash/seedPhrase/admin/users/issuers/multisig/tokens/sfts/vcIssuers/vcLifecycle/compliance/txs），`summary` 为 `{accounts, multisig, tokens, tokensCompliance, sftSets, sftSlots, sftTokens, txEstimate, warnings?}`。
+校验失败返回 400，`data` 为带字段路径的错误数组（如 `accounts.count: 须在 1..200, got 0`）；`/plan` 预览与 `/seed` 启动共享同一校验。校验通过时 `/plan` 返回 `{plan, summary}`：`plan` 为确定性播种计划（scale=custom/configHash/seedPhrase/admin/users/issuers/multisig/tokens/sfts/vcIssuers/vcLifecycle/compliance/vestings/txs；`vestings` 每项 `{key, symbol, reuseToken?, startDelaySeconds, recipients[{name,total,initial,initialPeriodSeconds,periodSeconds,periods}], claim?}`——每计划绑定独立代币，非合规代币池不足时补建 `VT01..` 并入 `plan.tokens`（admin 铸额=Σ托管）），`summary` 为 `{accounts, multisig, tokens, tokensCompliance, sftSets, sftSlots, sftTokens, vestings, txEstimate, warnings?}`。
 
 `POST /api/tool/seed` 校验通过后立即返回 202 `{jobId, status:"running", preset, scale, modules}`；已有任务在运行时返回 409（message 附运行中任务的 id 与状态）。执行器任何 panic 转为任务失败，不拖垮进程。
 
@@ -2846,6 +2847,19 @@ curl http://localhost:8080/api/tool/seed/dataset
 | `sft.tokensPerSlot` | int | 3 | count>0 时 1..100 |
 | `sft.scenarios` | string[] | 五场景全选 | count>0 时非空、无重复（键见 71） |
 | `sft.postOps` | bool | true | — |
+| `vesting.plans` | int | 0 | 0..20；**0 = 整块关闭**（默认，三模板均关） |
+| `vesting.recipients` | int | 2 | plans>0 时 1..20 |
+| `vesting.names` | string[] | `[]` | 可选名单（账号名）；非空时按名单取人并循环复用（recipients 失效）；random=true 时被 Normalize 清空 |
+| `vesting.random` | bool | false | 随机构造：挑人+金额/周期走服务端安全范围（splitmix64 PRNG，同 seedPhrase+config 结果可复现）；true 时跳过下列参数范围校验 |
+| `vesting.total` | uint64 | 1000000 | 每人总额，random 时忽略；须 ≥1 |
+| `vesting.initial` | uint64 | 100000 | 首释量，须 0..total（链端 537） |
+| `vesting.cliffSeconds` | uint64 | 60 | 首释等待（cliff），≥0 |
+| `vesting.periodSeconds` | uint64 | 60 | 每期秒数，须 ≥1（537） |
+| `vesting.periods` | uint64 | 10 | 期数，须 ≥1（537）；每期释放 floor((total−initial)/periods) 须 ≥1，不满足报 `vesting.release` |
+| `vesting.startDelaySeconds` | uint64 | 120 | start = 执行时 now+延迟；须 ≥1（start 在过去报 537） |
+| `vesting.claim` | bool | false | postOps：计划建成后各领款人自签 `ClaimVesting` 领一次；无可领（541，cliff 未到）不落盘、续跑重试 |
+
+> **分配计划挂载约束（2026-11-20 链上实测）**：`vesting_id` 只由 token 派生——**同代币第二笔 CreateVesting 恒报 539**（start/recipients/name 均不参与派生，官方文档描述过时）。故每计划绑定独立代币：优先复用 `tokens` 模块建的非合规代币，池不足自动补建 `VT01..`（tokens 模块统一创建+mint，admin 持有作托管出资）；`plans` 上限受可用代币数约束（超出自建）。创建时 creator 须持有 Σ(每人 total) 进托管（不足由执行器自动补铸）。
 
 > merge 场景配 `tokensPerSlot<2` 时 summary 附加 warning「该 slot 将只分发不合并」。
 

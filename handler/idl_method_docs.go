@@ -134,7 +134,7 @@ var idlMethodDocs = map[string]string{
 
 	"token.FaucetCooldownRemaining": "【功能】查询某地址水龙头冷却剩余时间。\n【返回】u64 毫秒数；0 表示可立即领取。",
 
-	"token.CreateVesting": "【功能】创建分期释放（Vesting）：creator 锁定代币进托管，按名单分批释放给各领款人（每人独立配置总额/首释量/周期时长/期数/每期释放量，start_at_ms 为起算时间；name 仅作展示标签，每行可重复、不参与唯一性判定）。\n【限制】定义须自洽（InvalidVestingDefinition 537：periods>0、period_seconds>0、initial∈[0,total]、每期释放量 (total−initial)/periods 向下取整后须>0、start_at_ms 不能在过去、name 不能为空串；不整除时末期补足余数）。同 seed（creator+token+start_at_ms+recipients 全字段一致，name 亦计入）重复创建报 VestingAlreadyExists（539）；余额不足报 InsufficientBalance。",
+	"token.CreateVesting": "【功能】创建分期释放（Vesting）：creator 锁定代币进托管，按名单分批释放给各领款人（每人独立配置总额/首释量/周期时长/期数/每期释放量，start_at_ms 为起算时间；name 仅作展示标签，每行可重复、不参与唯一性判定）。\n【限制】定义须自洽（InvalidVestingDefinition 537：periods>0、period_seconds>0、initial∈[0,total]、每期释放量 (total−initial)/periods 向下取整后须>0、start_at_ms 不能在过去、name 不能为空串；不整除时末期补足余数）。重复创建报 VestingAlreadyExists（539）——2026-11-11/11-20 链上实测：vesting_id 只由 token 派生，同 token 第二笔恒 539（start_at_ms/recipients/name 均不参与派生，每代币仅可挂一笔计划）；创建时 creator 须持有 Σ(每人 total) 余额（不足报 InsufficientBalance）。",
 
 	"token.ClaimVesting": "【功能】领款人领取自己在某 Vesting 中当前累计可释放的代币（支持 sponsor 代付 gas）。\n【限制】Vesting 不存在报 VestingNotFound（538）；签名者不在领款名单报 VestingNotEligible（540）；当前无可领报 VestingNothingClaimable（541）；托管账实不一致报 543。",
 
