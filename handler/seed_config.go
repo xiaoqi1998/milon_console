@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // ==================== 播种器 v2:配置模型 ====================
@@ -32,6 +33,7 @@ type SeedConfig struct {
 	Multisig   SeedMultisigCfg `json:"multisig"`
 	Tokens     SeedTokensCfg   `json:"tokens"`
 	SFT        SeedSftCfg      `json:"sft"`
+	Vesting    SeedVestingCfg  `json:"vesting"`
 }
 
 type SeedAccountsCfg struct {
@@ -66,6 +68,24 @@ type SeedSftCfg struct {
 	PostOps       bool     `json:"postOps"`
 }
 
+// SeedVestingCfg 代币分配计划(Vesting)旋钮。plans=0 整块关闭。
+// 链端约束(2026-11-20 实测):vesting_id 只由 token 派生——同 token 第二笔
+// CreateVesting 恒 539,故每计划绑定独立代币(复用 tokens 模块非合规代币,
+// 不足由计划展开补建 VT01..);start 不能在过去(537),startDelaySeconds ≥1。
+type SeedVestingCfg struct {
+	Plans             int      `json:"plans"`
+	Recipients        int      `json:"recipients"`
+	Names             []string `json:"names"`   // 可选名单(覆盖 users 轮转;random 模式清空)
+	Random            bool     `json:"random"`  // 随机构造:挑人+金额/周期参数走安全范围
+	Total             uint64   `json:"total"`   // 每人总额(random 忽略)
+	Initial           uint64   `json:"initial"` // 首释量,0..total(random 忽略)
+	CliffSeconds      uint64   `json:"cliffSeconds"`
+	PeriodSeconds     uint64   `json:"periodSeconds"`
+	Periods           uint64   `json:"periods"`
+	StartDelaySeconds uint64   `json:"startDelaySeconds"` // start = 执行时 now + 延迟
+	Claim             bool     `json:"claim"`             // postOps:计划建好后领一次款
+}
+
 // SeedConfigDefaults 缺省配置(= standard 模板内容)。
 func SeedConfigDefaults() SeedConfig {
 	return SeedConfig{
@@ -84,13 +104,24 @@ func SeedConfigDefaults() SeedConfig {
 			Scenarios: []string{"transferable", "frozen", "merge", "burn", "reject_transfer"},
 			PostOps:   true,
 		},
+		// Vesting 默认关闭(plans=0):模板快照与既有行为不变,开启属显式选择。
+		Vesting: SeedVestingCfg{
+			Plans: 0, Recipients: 2, Random: false,
+			Total: 1_000_000, Initial: 100_000,
+			CliffSeconds: 60, PeriodSeconds: 60, Periods: 10,
+			StartDelaySeconds: 120, Claim: false,
+		},
 	}
 }
 
-// NormalizeSeedConfig 应用隐含规则:vcCert ⇒ did(证书挂 DID 主体)。
+// NormalizeSeedConfig 应用隐含规则:vcCert ⇒ did(证书挂 DID 主体);
+// vesting.random ⇒ 清空 names(随机模式挑人,与名单互斥)。
 func NormalizeSeedConfig(c SeedConfig) SeedConfig {
 	if c.Accounts.VcCert {
 		c.Accounts.DID = true
+	}
+	if c.Vesting.Random {
+		c.Vesting.Names = nil
 	}
 	return c
 }
@@ -201,6 +232,44 @@ func ValidateSeedConfig(c SeedConfig) []string {
 				addf("sft.scenarios[%s]: 重复", s)
 			}
 			sseen[s] = true
+		}
+	}
+
+	if c.Vesting.Plans < 0 || c.Vesting.Plans > 20 {
+		addf("vesting.plans: 须在 0..20, got %d", c.Vesting.Plans)
+	}
+	if c.Vesting.Plans > 0 {
+		if c.Vesting.Recipients < 1 || c.Vesting.Recipients > 20 {
+			addf("vesting.recipients: 须在 1..20, got %d", c.Vesting.Recipients)
+		}
+		for _, n := range c.Vesting.Names {
+			if strings.TrimSpace(n) == "" {
+				addf("vesting.names: 名单含空名(逗号分隔的账号名不能为空)")
+				break
+			}
+		}
+		// random=true:金额/周期参数走服务端安全范围随机,跳过范围校验;
+		// plans/recipients/names 仍校验(规模与名单不随机)。
+		if !c.Vesting.Random {
+			if c.Vesting.Total < 1 {
+				addf("vesting.total: 须 ≥1, got %d", c.Vesting.Total)
+			}
+			if c.Vesting.Initial > c.Vesting.Total {
+				addf("vesting.initial: 首释 %d 超总额 %d(链端 537)", c.Vesting.Initial, c.Vesting.Total)
+			}
+			if c.Vesting.Periods < 1 {
+				addf("vesting.periods: 须 ≥1, got %d", c.Vesting.Periods)
+			}
+			if c.Vesting.PeriodSeconds < 1 {
+				addf("vesting.periodSeconds: 须 ≥1, got %d", c.Vesting.PeriodSeconds)
+			}
+			// 每期释放量 floor((total−initial)/periods) 须 ≥1(链端 537)。
+			if c.Vesting.Total >= c.Vesting.Initial && c.Vesting.Total-c.Vesting.Initial < c.Vesting.Periods {
+				addf("vesting.release: 每期释放量须 ≥1——(total−initial)=%d 须 ≥ periods=%d", c.Vesting.Total-c.Vesting.Initial, c.Vesting.Periods)
+			}
+			if c.Vesting.StartDelaySeconds < 1 {
+				addf("vesting.startDelaySeconds: 须 ≥1, got %d(start 不能在过去,链端 537)", c.Vesting.StartDelaySeconds)
+			}
 		}
 	}
 	return errs

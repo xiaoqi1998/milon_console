@@ -1,0 +1,22 @@
+{
+ "admin": "2rHKRGW4vftL9rtWFnJSj7vhWNwJ",
+ "steps": {
+  "A_first": {
+   "ok": false,
+   "msg": "{\"success\": false, \"httpStatus\": 500, \"body\": \"{\\\"success\\\":false,\\\"message\\\":\\\"failed to write contract: submit_tx returned error status 6: {Message:simulate tx error: TxFailurePayload { code: 539, m",
+   "note": "已存在(重跑),视作基线成立"
+  },
+  "B1_diff_recipients": {
+   "ok": false,
+   "code": 539,
+   "msg": "{\"success\": false, \"httpStatus\": 500, \"body\": \"{\\\"success\\\":false,\\\"message\\\":\\\"failed to write contract: submit_tx returned error status 6: {Message:simulate tx error: TxFailurePayload { code: 539, m"
+  },
+  "B2_same_recipients_diff_start": {
+   "ok": false,
+   "code": 539,
+   "msg": "{\"success\": false, \"httpStatus\": 500, \"body\": \"{\\\"success\\\":false,\\\"message\\\":\\\"failed to write contract: submit_tx returned error status 6: {Message:simulate tx error: TxFailurePayload { code: 539, m"
+  }
+ },
+ "adminMil": 9998137593,
+ "conclusion": "同 token 第二笔恒 539(seed 只由 token 派生)——每计划须独立 token"
+}
