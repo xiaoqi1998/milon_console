@@ -68,13 +68,25 @@ try {
   check('buildSeedCfg 可执行', false, e.message);
 }
 
-// 6. 静态版本号已 bump(总览/账号本功能 20261103 一并 bump seed.js)
-check('版本 bump 20261103', htmlSrc.includes('seed.js?v=20261103'));
+// 6. 静态版本号已 bump(分配计划旋钮组 20261120 再 bump seed.js)
+check('版本 bump 20261120', htmlSrc.includes('seed.js?v=20261120'));
 
 // 7. seed 视图内部滚动(应用外壳 .view overflow:hidden,v2 内容超一屏须自建滚动容器)
 const cssSrc = fs.readFileSync(path.join(ROOT, 'static', 'css', 'style.css'), 'utf8');
 check('#view-seed 滚动容器', /#view-seed\s*{[^}]*overflow-y:\s*auto/.test(cssSrc));
 check('style.css 版本 bump 20261103', htmlSrc.includes('style.css?v=20261103'));
+
+// 8. 分配计划(vesting)旋钮组 20261120
+for (const id of ['seedVestPlans', 'seedVestRecipients', 'seedVestNames', 'seedVestRandom',
+  'seedVestTotal', 'seedVestInitial', 'seedVestCliff', 'seedVestPeriodS', 'seedVestPeriods',
+  'seedVestStartDelay', 'seedVestClaim']) {
+  check('HTML 锚点 #' + id, seedView.includes(id));
+}
+check('模块标签 vesting', /SEED_MODULE_LABELS\s*=\s*{[^}]*vesting/.test(jsSrc));
+check('buildSeedCfg 含 vesting 块', /vesting:\s*{/.test(jsSrc));
+check('seedFillForm 回填 vesting', jsSrc.includes('seedVestPlans'));
+check('random 勾选切换参数框禁用', jsSrc.includes('seedVestRandomToggle'));
+check('默认配置含 vesting 关闭态', /SEED_DEFAULT_CFG\s*=[\s\S]*vesting:\s*{[\s\S]*plans:\s*0/.test(jsSrc));
 
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

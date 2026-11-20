@@ -105,8 +105,18 @@ function seedGroupRows(rows) {
 
 // 数据集命名空间 → 展示产物:tokens.{SYM}.address、sfts.{KEY}.{address,slots.{scenario}.{slotId,tokenIds}}
 function seedDatasetArtifacts(dataset) {
-  var out = { configHash: dataset && dataset.configHash || '', tokens: {}, sfts: {}, stageCount: (dataset && dataset.stageCount) || 0 };
+  var out = { configHash: dataset && dataset.configHash || '', tokens: {}, sfts: {}, vestings: [], stageCount: (dataset && dataset.stageCount) || 0 };
   var mods = (dataset && dataset.modules) || {};
+  Object.keys(mods.vesting || {}).forEach(function (stage) {
+    // 形如 vesting:vp01 → {token, symbol, vid}
+    if (stage.indexOf('vesting:') === 0 && mods.vesting[stage]) {
+      var p = mods.vesting[stage];
+      out.vestings.push({
+        key: stage.slice(8), symbol: p.symbol || '-', vid: p.vid || '',
+        token: p.token || (out.tokens[p.symbol] || ''),
+      });
+    }
+  });
   Object.keys(mods.tokens || {}).forEach(function (stage) {
     if (stage.indexOf('create:') === 0 && mods.tokens[stage] && mods.tokens[stage].address) {
       out.tokens[stage.slice(7)] = mods.tokens[stage].address;
@@ -486,6 +496,11 @@ function seedRenderOverview() {
     null, { extraButtons: [{ text: '查链上持仓', onclick: fetchTokenHoldings }] }));
   box.appendChild(seedBuildCardTable('SFT', 'SFT 集合(mint authority)与 slot 产物;「查链上持仓」逐 tokenId 实查持有人', grouped.sfts, notes.sft,
     null, { extraButtons: [{ text: '查链上持仓', onclick: fetchSftHoldings }] }));
+  // 分配计划卡:dataset 产物含 vestings 才出现
+  var cur = seedCurrentArt();
+  if (cur && cur.vestings && cur.vestings.length) {
+    box.appendChild(seedRenderVestingCard(cur.vestings));
+  }
   // VC 证书卡:链上实查(懒加载)+ 计划参考
   box.appendChild(seedRenderVcCard());
   // 持仓明细卡(查过才出现)
@@ -497,7 +512,7 @@ function seedRenderOverview() {
 function seedIssueButtonFor(r) {
   return el('button', {
     class: 'btn btn-secondary btn-sm', text: '发证书',
-    onclick: function () { openVcIssuePanel(r); },
+    onclick: function () { openVcIssuePanel(r, this); },
   });
 }
 
@@ -555,6 +570,7 @@ function openVcIssuePanel(r, srcEl) {
     class: 'btn btn-secondary btn-sm', text: '取消',
     onclick: function () { if (panel.parentNode) panel.parentNode.removeChild(panel); },
   }));
+  panel.appendChild(td);
   tr.parentNode.insertBefore(panel, tr.nextSibling);
   if (typeof showToast === 'function') showToast('发证书面板已展开(幂等,重复签发自动跳过)', 'success');
 }
@@ -589,6 +605,32 @@ function submitVcIssue(r, panel, btn) {
       btn.removeAttribute('disabled');
       if (typeof showToast === 'function') showToast('签发失败: ' + (e && e.message || e), 'error');
     });
+}
+
+// 分配计划卡:dataset 产物中的 vesting 计划(每代币一笔;vid=链上 vesting_id)
+function seedRenderVestingCard(vestings) {
+  var card = el('div', { class: 'vc-card seed-ov-card' });
+  var header = el('div', { class: 'vc-card-header' });
+  header.appendChild(el('h3', { text: '分配计划' }));
+  header.appendChild(el('span', { class: 'vc-card-desc', text: 'Vesting 分期释放(每代币一笔,同代币第二笔恒 539)' }));
+  card.appendChild(header);
+  var tbl = el('table', { class: 'seed-table' });
+  var thead = el('thead', null);
+  var hrow = el('tr', null);
+  ['计划', '代币', 'vesting_id'].forEach(function (h) { hrow.appendChild(el('th', { text: h })); });
+  thead.appendChild(hrow);
+  tbl.appendChild(thead);
+  var tbody = el('tbody', null);
+  vestings.forEach(function (v) {
+    var tr = el('tr', null);
+    tr.appendChild(el('td', { text: v.key }));
+    tr.appendChild(el('td', { text: v.symbol }));
+    tr.appendChild(el('td', { text: v.vid || '-' }));
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  card.appendChild(el('div', { style: 'overflow-x:auto' }, tbl));
+  return card;
 }
 
 // 证书卡:链上实查区 + 计划参考

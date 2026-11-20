@@ -67,15 +67,19 @@ const dataset = {
       'create:set01': { address: 'AddrSft', recreated: true },
       'slot:set01:transferable': { slotId: 1, tokenIds: [1, 2, 3], transferable: true },
     },
+    vesting: { 'vesting:vp01': { token: 'AddrTok2', symbol: 'ST02', vid: 'Vid01' } },
   },
-  stageCount: 5,
+  stageCount: 6,
 };
 const art = seedDatasetArtifacts(dataset);
 check('产物 代币地址', art.tokens.ST01 === 'AddrTok');
 check('产物 SFT 地址', art.sfts.set01.address === 'AddrSft');
 check('产物 slot/tokenIds', art.sfts.set01.slots.transferable && art.sfts.set01.slots.transferable.slotId === 1 &&
   art.sfts.set01.slots.transferable.tokenIds.join() === '1,2,3');
-check('产物 阶段数', art.stageCount === 5);
+check('产物 阶段数', art.stageCount === 6);
+check('产物 分配计划解析', art.vestings && art.vestings.length === 1 &&
+  art.vestings[0].key === 'vp01' && art.vestings[0].symbol === 'ST02' && art.vestings[0].vid === 'Vid01',
+  JSON.stringify(art.vestings));
 
 // 5.5 发证书 + 三卡链上实查:纯函数
 const issuePayload = vcIssuePayload(
@@ -176,7 +180,7 @@ function domChecks() {
   check('seed.js 计划缓存供 VC 卡', seedSrc.includes('seedOverviewState.plan'));
 
   // 11. 版本 bump
-  check('seed.js 版本 bump 20261103', htmlSrc.includes('seed.js?v=20261103'));
+  check('seed.js 版本 bump 20261120', htmlSrc.includes('seed.js?v=20261120'));
   check('seed_overview.js 已引入', /seed_overview\.js\?v=\d+/.test(htmlSrc));
   check('style.css 版本 bump 20261103', htmlSrc.includes('style.css?v=20261103'));
   check('.seed-warn 样式存在', fs.readFileSync(path.join(ROOT, 'static', 'css', 'style.css'), 'utf8').includes('.seed-warn'));
@@ -228,6 +232,19 @@ function domChecks() {
   check('证书表含 test02 持证', allText.includes('SeedKyc1'));
   check('代币持仓卡渲染', allText.includes('代币持仓') && allText.includes('134'));
   check('SFT 持仓卡渲染', allText.includes('SFT 持仓') && allText.includes('transferable'));
+
+  // 14. 分配计划总览卡(dataset 产物含 vestings → 渲染;无 vestings 不出卡)
+  seedOverviewState.datasets = [{
+    configHash: seedOverviewState.configHash,
+    modules: { vesting: { 'vesting:vp01': { token: 'T1', symbol: 'ST02', vid: 'Vid01' } } },
+  }];
+  seedOverviewState.selectedDataset = seedOverviewState.configHash;
+  threw = '';
+  try { seedRenderOverview(); } catch (e) { threw = e.message; }
+  check('分配计划卡渲染可执行', threw === '', threw);
+  const vestText = JSON.stringify(made);
+  check('分配计划卡内容', vestText.includes('分配计划') && vestText.includes('vp01') &&
+    vestText.includes('ST02'), vestText.slice(-400));
 
   console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
   process.exit(failed === 0 ? 0 : 1);

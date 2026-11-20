@@ -25,7 +25,7 @@ var SEED_CHIP_LABELS = {
 };
 
 var SEED_MODULE_LABELS = {
-  accounts: '账户', multisig: '多签', tokens: '代币', sft: 'SFT',
+  accounts: '账户', multisig: '多签', tokens: '代币', vesting: '分配计划', sft: 'SFT',
   vc: 'VC', compliance: '合规', txs: '交易流',
 };
 
@@ -36,6 +36,8 @@ var SEED_DEFAULT_CFG = {
   multisig: { count: 1, signers: 5, threshold: 3, faucet: true, did: true },
   tokens: { count: 3, decimals: [0, 6, 9], complianceCount: 1, freezeDemo: true },
   sft: { count: 2, slotsPerSft: 2, tokensPerSlot: 3, scenarios: ['transferable', 'frozen', 'merge', 'burn', 'reject_transfer'], postOps: true },
+  // 分配计划默认关闭(= 服务端 SeedConfigDefaults);同代币第二笔恒 539,每计划绑一个代币
+  vesting: { plans: 0, recipients: 2, names: [], random: false, total: 1000000, initial: 100000, cliffSeconds: 60, periodSeconds: 60, periods: 10, startDelaySeconds: 120, claim: false },
 };
 
 // ---------- DOM 读取 ----------
@@ -107,7 +109,44 @@ function buildSeedCfg() {
       scenarios: seedChipsVals('seedScenariosChips'),
       postOps: seedBool('seedPostOps'),
     },
+    vesting: seedBuildVestCfg(),
   };
+}
+
+// 分配计划 DOM → SeedVestingCfg(names 逗号分隔文本 → 数组,空项剔除)
+function seedBuildVestCfg() {
+  var namesRaw = seedEl('seedVestNames') ? String(seedEl('seedVestNames').value || '') : '';
+  var names = namesRaw.split(/[,，\s]+/).filter(function (s) { return s.length > 0; });
+  return {
+    plans: seedInt('seedVestPlans', 0),
+    recipients: seedInt('seedVestRecipients', 2),
+    names: names,
+    random: seedBool('seedVestRandom'),
+    total: seedNum('seedVestTotal', 1000000),
+    initial: seedNum('seedVestInitial', 100000),
+    cliffSeconds: seedNum('seedVestCliff', 60),
+    periodSeconds: seedNum('seedVestPeriodS', 60),
+    periods: seedNum('seedVestPeriods', 10),
+    startDelaySeconds: seedNum('seedVestStartDelay', 120),
+    claim: seedBool('seedVestClaim'),
+  };
+}
+
+// 大金额输入解析(整数;非法回退默认)
+function seedNum(id, fallback) {
+  var node = seedEl(id);
+  var v = node ? parseInt(node.value, 10) : NaN;
+  return isNaN(v) ? fallback : v;
+}
+
+// 随机构造勾选 → 金额/周期参数框禁用(服务端走安全范围随机)
+function seedVestRandomToggle() {
+  var on = seedBool('seedVestRandom');
+  ['seedVestTotal', 'seedVestInitial', 'seedVestCliff', 'seedVestPeriodS', 'seedVestPeriods', 'seedVestStartDelay']
+    .forEach(function (id) {
+      var node = seedEl(id);
+      if (node) node.disabled = on;
+    });
 }
 
 // ---------- DOM 写入(模板/回填) ----------
@@ -126,6 +165,7 @@ function seedSetChips(id, values) {
 function seedFillForm(cfg) {
   if (!cfg) return;
   var a = cfg.accounts || {}, m = cfg.multisig || {}, t = cfg.tokens || {}, s = cfg.sft || {};
+  var v = cfg.vesting || {};
   if (seedEl('seedPhrase')) seedEl('seedPhrase').value = cfg.seedPhrase || '';
   if (seedEl('seedAcctCount')) seedEl('seedAcctCount').value = a.count != null ? a.count : 8;
   seedSetChips('seedCurvesChips', a.curves);
@@ -147,6 +187,18 @@ function seedFillForm(cfg) {
   if (seedEl('seedSftTokens')) seedEl('seedSftTokens').value = s.tokensPerSlot != null ? s.tokensPerSlot : 3;
   seedSetChips('seedScenariosChips', s.scenarios);
   if (seedEl('seedPostOps')) seedEl('seedPostOps').checked = !!s.postOps;
+  if (seedEl('seedVestPlans')) seedEl('seedVestPlans').value = v.plans != null ? v.plans : 0;
+  if (seedEl('seedVestRecipients')) seedEl('seedVestRecipients').value = v.recipients != null ? v.recipients : 2;
+  if (seedEl('seedVestNames')) seedEl('seedVestNames').value = Array.isArray(v.names) ? v.names.join(',') : '';
+  if (seedEl('seedVestRandom')) seedEl('seedVestRandom').checked = !!v.random;
+  if (seedEl('seedVestTotal')) seedEl('seedVestTotal').value = v.total != null ? v.total : 1000000;
+  if (seedEl('seedVestInitial')) seedEl('seedVestInitial').value = v.initial != null ? v.initial : 100000;
+  if (seedEl('seedVestCliff')) seedEl('seedVestCliff').value = v.cliffSeconds != null ? v.cliffSeconds : 60;
+  if (seedEl('seedVestPeriodS')) seedEl('seedVestPeriodS').value = v.periodSeconds != null ? v.periodSeconds : 60;
+  if (seedEl('seedVestPeriods')) seedEl('seedVestPeriods').value = v.periods != null ? v.periods : 10;
+  if (seedEl('seedVestStartDelay')) seedEl('seedVestStartDelay').value = v.startDelaySeconds != null ? v.startDelaySeconds : 120;
+  if (seedEl('seedVestClaim')) seedEl('seedVestClaim').checked = !!v.claim;
+  seedVestRandomToggle();
 }
 
 // Go []uint8 经 encoding/json 序列化为 base64 字符串(如 [0,6] → "AAY="):
@@ -472,17 +524,22 @@ function initSeedView() {
   seedLoadTemplates();
   // 数字/短语输入 → 防抖预览
   ['seedAcctCount', 'seedMsCount', 'seedMsSigners', 'seedMsThreshold',
-    'seedTokCount', 'seedCompCount', 'seedSftCount', 'seedSftSlots', 'seedSftTokens', 'seedPhrase'
+    'seedTokCount', 'seedCompCount', 'seedSftCount', 'seedSftSlots', 'seedSftTokens', 'seedPhrase',
+    'seedVestPlans', 'seedVestRecipients', 'seedVestTotal', 'seedVestInitial',
+    'seedVestCliff', 'seedVestPeriodS', 'seedVestPeriods', 'seedVestStartDelay'
   ].forEach(function (id) {
     var node = seedEl(id);
     if (node) node.addEventListener('input', refreshSeedPreview);
   });
   // 开关 → 防抖预览
-  ['seedAcctFaucet', 'seedAcctDid', 'seedAcctVc', 'seedMsFaucet', 'seedMsDid', 'seedFreezeDemo', 'seedPostOps', 'seedReset']
+  ['seedAcctFaucet', 'seedAcctDid', 'seedAcctVc', 'seedMsFaucet', 'seedMsDid', 'seedFreezeDemo', 'seedPostOps', 'seedReset',
+    'seedVestRandom', 'seedVestClaim']
     .forEach(function (id) {
       var node = seedEl(id);
       if (node) node.addEventListener('change', refreshSeedPreview);
     });
+  // 随机构造勾选 → 参数框禁用切换
+  if (seedEl('seedVestRandom')) seedEl('seedVestRandom').addEventListener('change', seedVestRandomToggle);
   if (seedEl('seedStartBtn')) seedEl('seedStartBtn').addEventListener('click', startSeedJob);
   if (seedEl('seedAddrCopy')) seedEl('seedAddrCopy').addEventListener('click', seedCopyTable);
   refreshSeedPreview();

@@ -736,6 +736,55 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
 
           <div class="vc-card">
             <div class="vc-card-header">
+              <h3>分配计划</h3>
+              <span class="vc-card-desc">代币 Vesting 分期释放;每计划绑一个代币(同代币第二笔恒 539),复用非合规代币不足自动补建 VT01..;计划数 0 = 不建</span>
+            </div>
+            <div class="vc-row">
+              <label>计划数(0..20)</label>
+              <input type="number" id="seedVestPlans" min="0" max="20" value="0" />
+            </div>
+            <div class="vc-row">
+              <label>每计划分配人数(1..20)</label>
+              <input type="number" id="seedVestRecipients" min="1" max="20" value="2" />
+            </div>
+            <div class="vc-row">
+              <label>分配人名单(可选,逗号分隔账号名;留空从播种用户轮转)</label>
+              <input type="text" id="seedVestNames" placeholder="如 test01,test03" />
+            </div>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seedVestRandom"> 随机构造(挑人 + 金额/周期走安全范围,同 seed 短语结果可复现)</label>
+            </div>
+            <div class="vc-row">
+              <label>每人总额</label>
+              <input type="number" id="seedVestTotal" min="1" value="1000000" />
+            </div>
+            <div class="vc-row">
+              <label>首释量(0..总额)</label>
+              <input type="number" id="seedVestInitial" min="0" value="100000" />
+            </div>
+            <div class="vc-row">
+              <label>Cliff 秒(首释等待)</label>
+              <input type="number" id="seedVestCliff" min="0" value="60" />
+            </div>
+            <div class="vc-row">
+              <label>每期秒数</label>
+              <input type="number" id="seedVestPeriodS" min="1" value="60" />
+            </div>
+            <div class="vc-row">
+              <label>期数</label>
+              <input type="number" id="seedVestPeriods" min="1" value="10" />
+            </div>
+            <div class="vc-row">
+              <label>起始延迟秒(start=执行时 now+延迟,不可为 0)</label>
+              <input type="number" id="seedVestStartDelay" min="1" value="120" />
+            </div>
+            <div class="vc-row">
+              <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seedVestClaim"> 建成后领取一次(领款人自付 gas,cliff 未到报 541 自动跳过)</label>
+            </div>
+          </div>
+
+          <div class="vc-card">
+            <div class="vc-card-header">
               <h3>计划预览</h3>
               <span class="vc-card-desc">POST /api/tool/seed/plan — 不上链;配置非法时在此列出全部错误</span>
             </div>
@@ -882,7 +931,7 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
 </div>
 <script src="/static/js/app.js?v=20261015a"></script>
 <script src="/static/js/saved-instructions.js?v=20261013"></script>
-<script src="/static/js/seed.js?v=20261103"></script>
+<script src="/static/js/seed.js?v=20261120"></script>
 <script src="/static/js/seed_overview.js?v=20261104"></script>
 <script src="/static/js/account_book.js?v=20261103"></script>
 </body>
