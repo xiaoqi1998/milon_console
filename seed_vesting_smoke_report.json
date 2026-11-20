@@ -1,0 +1,106 @@
+{
+ "checks": [
+  {
+   "check": "预览 summary.vestings=2",
+   "ok": true,
+   "detail": "{'accounts': 9, 'multisig': 0, 'tokens': 3, 'tokensCompliance': 0, 'sftSets': 0, 'sftSlots': 0, 'sftTokens': 0, 'vestings': 2, 'txEstimate': 23}"
+  },
+  {
+   "check": "预览计划数=2",
+   "ok": true,
+   "detail": "[{'key': 'vp01', 'symbol': 'ST01', 'reuseToken': 'ST01', 'startDelaySeconds': 5, 'recipients': [{'name': 'test01', 'total': 1000000, 'initial': 100000, 'initialPeriodSeconds': 5, 'periodSeconds': 5, 'periods': 10}, {'name': 'test02', 'total': 1100000, 'initial': 200000, 'initialPeriodSeconds': 10, '"
+  },
+  {
+   "check": "复用 ST01/ST02",
+   "ok": true,
+   "detail": "[{\"key\": \"vp01\", \"symbol\": \"ST01\", \"reuseToken\": \"ST01\", \"startDelaySeconds\": 5, \"recipients\": [{\"name\": \"test01\", \"total\": 1000000, \"initial\": 100000, \"initialPeriodSeconds\": 5, \"periodSeconds\": 5, \"periods\": 10}, {\"name\": \"test02\", \"total\": 1100000, \"initial\": 200000, \"initialPeriodSeconds\": 10, \""
+  },
+  {
+   "check": "每人参数 537 合法",
+   "ok": true,
+   "detail": "[{\"key\": \"vp01\", \"symbol\": \"ST01\", \"reuseToken\": \"ST01\", \"startDelaySeconds\": 5, \"recipients\": [{\"name\": \"test01\", \"total\": 1000000, \"initial\": 100000, \"initialPeriodSeconds\": 5, \"periodSeconds\": 5, \"periods\": 10}, {\"name\": \"test02\", \"total\": 1100000, \"initial\": 200000, \"initialPeriodSeconds\": 10, \""
+  },
+  {
+   "check": "预览 configHash",
+   "ok": true,
+   "detail": "['plan', 'summary']"
+  },
+  {
+   "check": "第一轮 completed",
+   "ok": true,
+   "detail": "{\"id\": \"1795156121240443800\", \"scale\": \"\", \"modules\": [\"accounts\", \"multisig\", \"tokens\", \"vesting\", \"sft\", \"vc\", \"compliance\", \"txs\"], \"status\": \"completed\", \"startedAt\": 1795156121240, \"finishedAt\": 1795156131864, \"configHash\": \"428c52f6b561d22f\", \"config\": {\"seedPhrase\": \"milon-devnet-seed-v1\", \"a"
+  },
+  {
+   "check": "vp01 vid 落盘",
+   "ok": true,
+   "detail": "{'symbol': 'ST01', 'token': '2sEFRnfuZPM3qDsYSdkHAvZYMUbb', 'vid': '3zdoH7aEbLboFpKQ5Umhst6CNQ3H'}"
+  },
+  {
+   "check": "vp01 链上 VestingInfo 可读",
+   "ok": true,
+   "detail": "{\"claimed_amounts\": [1000000, 609090], \"creator\": \"2rHKRGW4vftL9rtWFnJSj7vhWNwJ\", \"gas_budget\": 2400000, \"gas_refunded\": false, \"recipients\": [{\"initial_amount\": 100000, \"initial_period_seconds\": 5, \""
+  },
+  {
+   "check": "vp01 链上人数=2",
+   "ok": true,
+   "detail": "[{\"initial_amount\": 100000, \"initial_period_seconds\": 5, \"name\": \"test01\", \"period_seconds\": 5, \"periods\": 10, \"recipient\": \"3stHPVEDHkA9Y97hBpJV5cXgJxKz\", \"total_amount\": 1000000}, {\"initial_amount\":"
+  },
+  {
+   "check": "vp02 vid 落盘",
+   "ok": true,
+   "detail": "{'symbol': 'ST02', 'token': '4RmKvFJstR1EwjRR2wgrNgiKXX78', 'vid': '3RjRqPAW9MLT5QtH1xssRzSjT9J8'}"
+  },
+  {
+   "check": "vp02 链上 VestingInfo 可读",
+   "ok": true,
+   "detail": "{\"claimed_amounts\": [1000000, 609090], \"creator\": \"2rHKRGW4vftL9rtWFnJSj7vhWNwJ\", \"gas_budget\": 2400000, \"gas_refunded\": false, \"recipients\": [{\"initial_amount\": 100000, \"initial_period_seconds\": 5, \""
+  },
+  {
+   "check": "vp02 链上人数=2",
+   "ok": true,
+   "detail": "[{\"initial_amount\": 100000, \"initial_period_seconds\": 5, \"name\": \"test03\", \"period_seconds\": 5, \"periods\": 10, \"recipient\": \"3jUoi2bKdt2HmYxZyybTHt8Akeqi\", \"total_amount\": 1000000}, {\"initial_amount\":"
+  },
+  {
+   "check": "第二轮启动",
+   "ok": true,
+   "detail": "{\"success\": true, \"data\": {\"jobId\": \"1795156134231794900\", \"modules\": [\"accounts\", \"multisig\", \"tokens\", \"vesting\", \"sft\", \"vc\", \"compliance\", \"txs\"], \"preset\": \"\", \"scale\": \"\", \"status\": \"running\"}, "
+  },
+  {
+   "check": "第二轮 completed",
+   "ok": true,
+   "detail": "{\"id\": \"1795156134231794900\", \"scale\": \"\", \"modules\": [\"accounts\", \"multisig\", \"tokens\", \"vesting\", \"sft\", \"vc\", \"compliance\", \"txs\"], \"status\": \"completed\", \"startedAt\": 1795156134231, \"finishedAt\": 1795156145815, \"configHash\": \"428c52f6b561d22f\", \"config\": {\"seedPhrase\": \"milon-devnet-seed-v1\", \"a"
+  },
+  {
+   "check": "第二轮含领取成功",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "claim 到账 test01(3zdoH7aE)",
+   "ok": true,
+   "detail": "claimed=1000000"
+  },
+  {
+   "check": "claim 到账 test02(3zdoH7aE)",
+   "ok": true,
+   "detail": "claimed=609090"
+  },
+  {
+   "check": "claim 到账 test03(3RjRqPAW)",
+   "ok": true,
+   "detail": "claimed=1000000"
+  },
+  {
+   "check": "claim 到账 test04(3RjRqPAW)",
+   "ok": true,
+   "detail": "claimed=609090"
+  },
+  {
+   "check": "至少一人 claim 到账",
+   "ok": true,
+   "detail": "[\"3zdoH7aEbLboFpKQ5Umhst6CNQ3H\", \"3RjRqPAW9MLT5QtH1xssRzSjT9J8\"]"
+  }
+ ],
+ "job1": "completed",
+ "job2": "completed"
+}

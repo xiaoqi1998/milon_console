@@ -555,13 +555,13 @@ func (r *seedRunner) runVesting() error {
 				"claimant": holder.Address, "vesting_id": vid,
 			}, holder); err != nil {
 				if seedHasCode(err.Error(), 541) {
-					r.logf("  %s %s 无可领(541,cliff 未到),跳过", v.Key, rr.Name)
-				} else {
-					return fmt.Errorf("claim vesting %s by %s: %w", v.Key, rr.Name, err)
+					// cliff 未到暂无可领:不落盘,续跑播种时自动重试
+					r.logf("  %s %s 无可领(541,cliff 未到),续跑可重试", v.Key, rr.Name)
+					continue
 				}
-			} else {
-				r.logf("  %s %s 领取 ✓", v.Key, rr.Name)
+				return fmt.Errorf("claim vesting %s by %s: %w", v.Key, rr.Name, err)
 			}
+			r.logf("  %s %s 领取 ✓", v.Key, rr.Name)
 			r.state.Mark("vesting", cstage, map[string]any{"vid": vid, "claimant": rr.Name})
 			r.state.Save()
 		}
