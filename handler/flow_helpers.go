@@ -195,10 +195,12 @@ func isTolerableChainError(errMsg string, tolerable ...string) bool {
 
 // isAccountNotFoundErr 判断是否为「账户不存在」错误(code=512):
 // 全新账户首次上链前查余额的预期错误,应视为余额 0 而非失败。
+// v1 view 路径(rpcClientV1.View)以英文 "account does not exist"(status 6)返回同一语义。
 func isAccountNotFoundErr(msg string) bool {
 	return strings.Contains(msg, "code=512") ||
 		strings.Contains(msg, "账户不存在") ||
-		strings.Contains(msg, "account not exist")
+		strings.Contains(msg, "account not exist") ||
+		strings.Contains(msg, "account does not exist")
 }
 
 // resolveFlowParty 解析流程参与方身份:私钥必填。

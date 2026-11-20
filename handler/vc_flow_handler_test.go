@@ -349,6 +349,8 @@ func TestIsAccountNotFoundErr(t *testing.T) {
 	yes := []string{
 		`view BalanceOf failed: code=512 msg="账户不存在 (token: M11on…, account: 3DhN…)"`,
 		"account not exist",
+		// v1 view 路径(rpcClientV1.View)的英文措辞:status 6 + "does not exist"
+		"failed to view BalanceOf: view returned error status 6: {Message:account does not exist (token: M11on1111111111111111111111, account: 2rHKRGW4vftL9rtWFnJSj7vhWNwJ) Code:0xc00044d6b0 Data:0xc000318588}",
 	}
 	no := []string{
 		"view BalanceOf failed: code=513 msg=\"other\"",
