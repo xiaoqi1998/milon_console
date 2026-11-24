@@ -69,11 +69,11 @@ func TestSeedAccountsEndpoint_Derived(t *testing.T) {
 		got = append(got, row{name, role, curve, addr})
 	}
 	for _, want := range []struct{ name, role, curve string }{
-		{"admin", "admin", "secp256k1"},
-		{"test01", "user", "secp256k1"},
-		{"test02", "user", "ed25519"},
-		{"kycorg", "issuer", "ed25519"},
-		{"ms01", "multisig", "secp256k1"},
+		{"admin", "admin", "fndsa512"},
+		{"test01", "user", "fndsa512"},
+		{"test02", "user", "fndsa512"},
+		{"kycorg", "issuer", "fndsa512"},
+		{"ms01", "multisig", "fndsa512"},
 	} {
 		found := false
 		for _, g := range got {

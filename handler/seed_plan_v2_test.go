@@ -41,12 +41,21 @@ func TestBuildSeedPlanV2_Matrix(t *testing.T) {
 	if len(p.Users) != 8 {
 		t.Fatalf("用户数 %d", len(p.Users))
 	}
-	// 曲线轮转:8 人双曲线(secp/ed 交替)——fndsa512 播种器确定性派生不支持
-	wantCurves := []string{"secp256k1", "ed25519", "secp256k1", "ed25519", "secp256k1", "ed25519", "secp256k1", "ed25519"}
+	// 曲线:默认全 fndsa512(抗量子,2026-11-24 起)——单曲线即全轮转同值
+	wantCurves := []string{"fndsa512", "fndsa512", "fndsa512", "fndsa512", "fndsa512", "fndsa512", "fndsa512", "fndsa512"}
 	for i, w := range wantCurves {
 		if p.Users[i].Curve != w {
 			t.Errorf("users[%d].Curve=%s want %s", i, p.Users[i].Curve, w)
 		}
+	}
+	if p.Admin.Curve != "fndsa512" {
+		t.Errorf("admin.Curve=%s want fndsa512", p.Admin.Curve)
+	}
+	if len(p.Issuers) > 0 && p.Issuers[0].Curve != "fndsa512" {
+		t.Errorf("issuer.Curve=%s want fndsa512", p.Issuers[0].Curve)
+	}
+	if len(p.Multisig) > 0 && p.Multisig[0].Curve != "fndsa512" {
+		t.Errorf("multisig.Curve=%s want fndsa512", p.Multisig[0].Curve)
 	}
 	if len(p.Tokens) != 2 { // 3 代币 − 1 合规 = 2 普通代币
 		t.Fatalf("普通代币数 %d", len(p.Tokens))

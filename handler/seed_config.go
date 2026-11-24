@@ -19,7 +19,7 @@ var seedBalanceTiers = map[string]uint64{
 }
 
 // seedValidCurves 合法密钥曲线(链端三选一)。
-// fndsa512 仍为链端合法键,但播种器确定性派生不支持——ValidateSeedConfig 单独快速失败。
+// 2026-11-24 起播种器支持 fndsa512 确定性派生(sha256 种子直接作 fndsa KeyGen 种子)。
 var seedValidCurves = map[string]bool{"secp256k1": true, "ed25519": true, "fndsa512": true}
 
 // seedScenarioKeys 合法 SFT 场景键。
@@ -91,8 +91,8 @@ func SeedConfigDefaults() SeedConfig {
 	return SeedConfig{
 		SeedPhrase: SeedDefaultPhrase,
 		Accounts: SeedAccountsCfg{
-			// 播种器确定性派生仅支持双曲线:Go SDK FnDsa512Public 未实现,无法从种子派生 fndsa512 公钥。
-			Count: 8, Curves: []string{"secp256k1", "ed25519"},
+			// 默认抗量子曲线(2026-11-24):fndsa512 确定性派生已支持。
+			Count: 8, Curves: []string{"fndsa512"},
 			Faucet: true, BalanceTiers: []string{"thousand"}, DID: true, VcCert: true,
 		},
 		Multisig: SeedMultisigCfg{Count: 1, Signers: 5, Threshold: 3, Faucet: true, DID: true},
@@ -141,11 +141,7 @@ func ValidateSeedConfig(c SeedConfig) []string {
 	cseen := map[string]bool{}
 	for _, cv := range c.Accounts.Curves {
 		if !seedValidCurves[cv] {
-			addf("accounts.curves[%s]: 非法曲线(可选 secp256k1/ed25519)", cv)
-		}
-		// fndsa512 是链端合法曲线,但 Go SDK 无法从种子确定性派生公钥,播种器路径必须快速失败。
-		if cv == "fndsa512" {
-			addf("accounts.curves[%s]: 播种器确定性派生不支持 fndsa512(Go SDK 无法从种子派生公钥)——请用 secp256k1/ed25519,fndsa512 账号请走配置账户路径", cv)
+			addf("accounts.curves[%s]: 非法曲线(可选 secp256k1/ed25519/fndsa512)", cv)
 		}
 		if cseen[cv] {
 			addf("accounts.curves[%s]: 重复", cv)

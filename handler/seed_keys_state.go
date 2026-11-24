@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"milon-api-server/types"
 
 	"github.com/milon-labs/milon-go-sdk/crypto"
+	"github.com/pornin/go-fn-dsa/fndsa"
 )
 
 // ==================== 播种器:确定性派生 + 断点状态 ====================
@@ -40,20 +42,74 @@ func SeedDeriveKey(seedPhrase, role, name string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// SeedFndsaKeyPair 是一次 fndsa512 确定性派生的产物。
+type SeedFndsaKeyPair struct {
+	PrivateKey string // 1281 字节 hex(2562 字符)
+	PublicKey  string // 897 字节 base58
+	Address    string
+}
+
+// SeedDeriveFndsaKeyPair fndsa512 确定性派生:fndsa.KeyGen 从 rng 恰读 32 字节
+// 种子且 keygen_inner 对种子确定性——sha256("{seed}:{role}:{name}") 直接作种子
+// 喂入 bytes.Reader 即可复现同一密钥对(与经典曲线同一条派生公式,断点续跑
+// 语义不变)。Go SDK 无法从 fndsa512 私钥反推公钥,故派生时一次性带出三者。
+func SeedDeriveFndsaKeyPair(seedPhrase, role, name string) (SeedFndsaKeyPair, error) {
+	sum := sha256.Sum256([]byte(seedPhrase + ":" + role + ":" + name))
+	signKey, verifyKey, err := fndsa.KeyGen(9, bytes.NewReader(sum[:]))
+	if err != nil {
+		return SeedFndsaKeyPair{}, fmt.Errorf("fndsa512 keygen: %w", err)
+	}
+	if len(signKey) != crypto.FnDsa512KeySize || len(verifyKey) != 897 {
+		return SeedFndsaKeyPair{}, fmt.Errorf("fndsa512 keygen 长度异常: sk=%d pk=%d", len(signKey), len(verifyKey))
+	}
+	pub, err := crypto.NewPublicKeyFromBytes(verifyKey)
+	if err != nil {
+		return SeedFndsaKeyPair{}, fmt.Errorf("fndsa512 public key: %w", err)
+	}
+	addr, err := crypto.NewAddressFromPublicKey(pub)
+	if err != nil {
+		return SeedFndsaKeyPair{}, fmt.Errorf("fndsa512 address: %w", err)
+	}
+	return SeedFndsaKeyPair{
+		PrivateKey: hex.EncodeToString(signKey),
+		PublicKey:  pub.ToBase58(),
+		Address:    addr.ToBase58(),
+	}, nil
+}
+
 // SeedParseSecretKey 把 hex 私钥解析为 SDK SecretKeyer(曲线无关;
 // 公钥派生时用 derivePublicKeyByType 指定曲线)。
 func SeedParseSecretKey(privHex, curve string) (crypto.SecretKeyer, error) {
 	return types.ParseSecretKey(privHex)
 }
 
-// SeedEnsureAccount 补齐 publicKey/address(幂等)。地址派生必须走 SDK 口径:
-// 同一 32 字节在不同曲线下地址不同,不本地臆造。
+// SeedEnsureAccount 补齐 SK/publicKey/address(幂等)。地址派生必须走 SDK 口径:
+// 同一 32 字节在不同曲线下地址不同,不本地臆造。fndsa512 特例:公钥无法从
+// 私钥派生——自带 publicKey+address 时只装 SK;仅给私钥则明确报错。
 func SeedEnsureAccount(acct *SeedPlanAccount) error {
-	if acct.SK == nil || acct.PublicKey == "" || acct.Address == "" {
-		sk, err := SeedParseSecretKey(acct.PrivateKey, acct.Curve)
-		if err != nil {
-			return fmt.Errorf("parse %s key: %w", acct.Name, err)
+	if acct.SK != nil && acct.PublicKey != "" && acct.Address != "" {
+		return nil
+	}
+	sk, err := SeedParseSecretKey(acct.PrivateKey, acct.Curve)
+	if err != nil {
+		return fmt.Errorf("parse %s key: %w", acct.Name, err)
+	}
+	if acct.Curve == "fndsa512" {
+		if acct.PublicKey == "" || acct.Address == "" {
+			return fmt.Errorf("%s: fndsa512 无法从私钥派生公钥(Go SDK 未实现),须自带 publicKey 与 address", acct.Name)
 		}
+		pub, err := types.ParsePublicKey(acct.PublicKey)
+		if err != nil {
+			return fmt.Errorf("parse %s public key: %w", acct.Name, err)
+		}
+		adr, err := parseSeedAddress(acct.Address)
+		if err != nil {
+			return fmt.Errorf("parse %s address: %w", acct.Name, err)
+		}
+		acct.SK, acct.PUB, acct.ADR = sk, pub, adr
+		return nil
+	}
+	if acct.SK == nil || acct.PublicKey == "" || acct.Address == "" {
 		pub, err := derivePublicKeyByType(sk, acct.Curve)
 		if err != nil {
 			return fmt.Errorf("derive %s public key: %w", acct.Name, err)
@@ -92,7 +148,16 @@ func SeedBuildAccounts(plan SeedPlan) (map[string]*SeedPlanAccount, error) {
 			Name: name, Role: spec.Role, Curve: spec.Curve,
 			SubjectType: spec.SubjectType, Alias: spec.Alias,
 			AliasSuffix: spec.AliasSuffix, AvatarURL: spec.AvatarURL,
-			PrivateKey: SeedDeriveKey(plan.SeedPhrase, spec.Role, name),
+		}
+		if spec.Curve == "fndsa512" {
+			// fndsa512:派生时一次性带出私钥+公钥+地址(公钥无法事后反推)。
+			pair, err := SeedDeriveFndsaKeyPair(plan.SeedPhrase, spec.Role, name)
+			if err != nil {
+				return err
+			}
+			acct.PrivateKey, acct.PublicKey, acct.Address = pair.PrivateKey, pair.PublicKey, pair.Address
+		} else {
+			acct.PrivateKey = SeedDeriveKey(plan.SeedPhrase, spec.Role, name)
 		}
 		if err := SeedEnsureAccount(acct); err != nil {
 			return err
@@ -121,19 +186,19 @@ func SeedBuildAccounts(plan SeedPlan) (map[string]*SeedPlanAccount, error) {
 		}
 	}
 	for _, tk := range plan.Tokens {
-		spec := SeedAccountSpec{Name: tk.Symbol, Role: "token", Curve: "secp256k1"}
+		spec := SeedAccountSpec{Name: tk.Symbol, Role: "token", Curve: "fndsa512"}
 		if err := reg(spec, tk.Symbol); err != nil {
 			return nil, err
 		}
 	}
 	for _, cm := range plan.Compliance {
-		spec := SeedAccountSpec{Name: cm.Symbol, Role: "token", Curve: "secp256k1"}
+		spec := SeedAccountSpec{Name: cm.Symbol, Role: "token", Curve: "fndsa512"}
 		if err := reg(spec, cm.Symbol); err != nil {
 			return nil, err
 		}
 	}
 	for _, s := range plan.Sfts {
-		spec := SeedAccountSpec{Name: s.Key, Role: "sft", Curve: "ed25519"}
+		spec := SeedAccountSpec{Name: s.Key, Role: "sft", Curve: "fndsa512"}
 		if err := reg(spec, s.Key); err != nil {
 			return nil, err
 		}

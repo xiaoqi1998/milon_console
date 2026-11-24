@@ -13,7 +13,7 @@ var seedTemplateCache = null;
 
 // chips 容器 → 字段映射(data-key 为配置原值,.on 为选中态)
 var SEED_CHIPS = {
-  seedCurvesChips: { list: ['secp256k1', 'ed25519'], field: 'curves' }, // fndsa512 服务端恒 400(Go SDK 无法种子派生),UI 不提供
+  seedCurvesChips: { list: ['fndsa512', 'secp256k1', 'ed25519'], field: 'curves' }, // fndsa512 默认(2026-11-24 起服务端支持确定性派生)
   seedTiersChips: { list: ['hundred', 'thousand', 'ten_k'], field: 'balanceTiers' },
   seedDecimalsChips: { list: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], field: 'decimals' },
   seedScenariosChips: { list: ['transferable', 'frozen', 'merge', 'burn', 'reject_transfer'], field: 'scenarios' },
@@ -32,7 +32,7 @@ var SEED_MODULE_LABELS = {
 // 初始默认 = 服务端 standard 模板内容(handler.SeedConfigDefaults)
 var SEED_DEFAULT_CFG = {
   seedPhrase: SEED_DEFAULT_PHRASE,
-  accounts: { count: 8, curves: ['secp256k1', 'ed25519'], faucet: true, balanceTiers: ['thousand'], did: true, vcCert: true },
+  accounts: { count: 8, curves: ['fndsa512'], faucet: true, balanceTiers: ['thousand'], did: true, vcCert: true },
   multisig: { count: 1, signers: 5, threshold: 3, faucet: true, did: true },
   tokens: { count: 3, decimals: [0, 6, 9], complianceCount: 1, freezeDemo: true },
   sft: { count: 2, slotsPerSft: 2, tokensPerSlot: 3, scenarios: ['transferable', 'frozen', 'merge', 'burn', 'reject_transfer'], postOps: true },

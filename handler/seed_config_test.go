@@ -13,6 +13,23 @@ func TestValidateSeedConfig_AcceptsDefaults(t *testing.T) {
 	}
 }
 
+// 默认曲线(抗量子):2026-11-24 起播种器全量改 fndsa512 确定性派生。
+func TestSeedConfigDefaults_Fndsa512Curves(t *testing.T) {
+	c := SeedConfigDefaults()
+	if len(c.Accounts.Curves) != 1 || c.Accounts.Curves[0] != "fndsa512" {
+		t.Fatalf("默认曲线应为 ['fndsa512'], got %v", c.Accounts.Curves)
+	}
+	if errs := ValidateSeedConfig(c); len(errs) != 0 {
+		t.Fatalf("fndsa512 默认配置应合法, got %v", errs)
+	}
+	// 混合曲线也合法(旧行为保留)。
+	mix := SeedConfigDefaults()
+	mix.Accounts.Curves = []string{"secp256k1", "ed25519", "fndsa512"}
+	if errs := ValidateSeedConfig(mix); len(errs) != 0 {
+		t.Fatalf("混合曲线应合法, got %v", errs)
+	}
+}
+
 func TestValidateSeedConfig_FieldPathErrors(t *testing.T) {
 	cases := []struct {
 		name string
@@ -22,8 +39,6 @@ func TestValidateSeedConfig_FieldPathErrors(t *testing.T) {
 		{"账号数越界", func(c *SeedConfig) { c.Accounts.Count = 0 }, "accounts.count"},
 		{"曲线为空", func(c *SeedConfig) { c.Accounts.Curves = nil }, "accounts.curves"},
 		{"非法曲线", func(c *SeedConfig) { c.Accounts.Curves = []string{"rsa"} }, "accounts.curves[rsa]"},
-		// fndsa512 虽是链端合法曲线,但 Go SDK 无法从种子确定性派生,播种器必须快速失败。
-		{"fndsa512 不支持", func(c *SeedConfig) { c.Accounts.Curves = []string{"secp256k1", "fndsa512"} }, "fndsa512"},
 		{"精度越界", func(c *SeedConfig) { c.Tokens.Decimals = []uint8{10} }, "tokens.decimals[10]"},
 		{"合规数超代币数", func(c *SeedConfig) { c.Tokens.ComplianceCount = 9 }, "tokens.complianceCount"},
 		{"合规但无证书", func(c *SeedConfig) { c.Tokens.ComplianceCount = 1; c.Accounts.VcCert = false }, "tokens.complianceCount"},

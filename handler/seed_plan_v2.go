@@ -151,7 +151,7 @@ func BuildSeedPlanV2(cfg SeedConfig) (SeedPlan, error) {
 		SeedPhrase: cfg.SeedPhrase,
 		Config:     &cfg,
 	}
-	p.Admin = SeedAccountSpec{Name: "admin", Role: "admin", Curve: "secp256k1",
+	p.Admin = SeedAccountSpec{Name: "admin", Role: "admin", Curve: "fndsa512",
 		SubjectType: "Personal", Alias: "seed-admin", AliasSuffix: 3001,
 		AvatarURL: seedAvatarURL("admin")}
 	p.Users = seedUserSpecsV2(names, 1001, cfg.Accounts.Curves)
@@ -160,7 +160,7 @@ func BuildSeedPlanV2(cfg SeedConfig) (SeedPlan, error) {
 	needIssuers := cfg.Accounts.VcCert || cfg.Tokens.ComplianceCount > 0
 	if needIssuers {
 		p.Issuers = []SeedAccountSpec{
-			{Name: "kycorg", Role: "issuer", Curve: "ed25519", SubjectType: "Organization",
+			{Name: "kycorg", Role: "issuer", Curve: "fndsa512", SubjectType: "Organization",
 				Alias: "seed-kycorg", AliasSuffix: 2011, AvatarURL: seedAvatarURL("kycorg")},
 		}
 	}
@@ -172,7 +172,7 @@ func BuildSeedPlanV2(cfg SeedConfig) (SeedPlan, error) {
 			signers[j] = names[j%len(names)]
 		}
 		p.Multisig = append(p.Multisig, SeedMultisigSpec{
-			Name: msNames[i], Curve: "secp256k1",
+			Name: msNames[i], Curve: "fndsa512",
 			Alias: "seed-" + msNames[i], AliasSuffix: uint32(4001 + i),
 			SignerNames: signers, Threshold: uint8(cfg.Multisig.Threshold),
 			Faucet: cfg.Multisig.Faucet, DID: cfg.Multisig.DID,

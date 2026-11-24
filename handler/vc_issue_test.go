@@ -51,9 +51,16 @@ func TestVcIssueResolve(t *testing.T) {
 	if subject.Role != "user" || subject.Name != "test01" || subject.Address == "" {
 		t.Fatalf("subject 解析异常: %+v", subject)
 	}
-	// 与 SeedDeriveKey 同口径:私钥 = sha256(短语:角色:名)
-	if issuer.PrivateKey != SeedDeriveKey(cfg.SeedPhrase, "issuer", "kycorg") {
-		t.Fatal("issuer 私钥派生口径漂移")
+	// issuer 为 fndsa512:私钥 = SeedDeriveFndsaKeyPair 确定性派生(1281 字节 hex)
+	if issuer.Curve != "fndsa512" {
+		t.Fatalf("issuer 曲线应为 fndsa512, got %s", issuer.Curve)
+	}
+	fpair, err := SeedDeriveFndsaKeyPair(cfg.SeedPhrase, "issuer", "kycorg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if issuer.PrivateKey != fpair.PrivateKey || issuer.PublicKey == "" {
+		t.Fatal("issuer fndsa512 派生口径漂移")
 	}
 	if subject.PrivateKey != SeedDeriveKey(cfg.SeedPhrase, "user", "test01") {
 		t.Fatal("subject 私钥派生口径漂移")
