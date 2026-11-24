@@ -2889,7 +2889,7 @@ curl http://localhost:8080/api/tool/seed/dataset
 | `POST` | 批量/单条 upsert（name 为 ID，同名覆盖），返回全量。body 四种形态：平铺数组 / `{accounts:[…]}` / `{owner,users,newUsers}`（sft_1000_testdata.json 三段式可直接粘）/ 单对象 |
 | `DELETE /:name` | 删除单条，返回剩余全量；不存在返回 404 |
 
-条目字段：`{name(必填), address?, privateKey?, publicKey?, keyType?(缺省 secp256k1), note?}`。校验：name 缺失、私钥与地址均缺、私钥无法解析 → 400（错误信息带条目名）。
+条目字段：`{name(必填), address?, privateKey?, publicKey?, keyType?(缺省 secp256k1), note?}`。校验：name 缺失、私钥与地址均缺、私钥无法解析 → 400（错误信息带条目名）。fndsa512 条目公钥无法从私钥派生——自带 `publicKey+address` 直接收录；仅给私钥则 400 提示须带公钥/地址。控制台「账号本」页提供表单逐条录入（曲线缺省 fndsa512,私钥形状自动启发）与「从账户管理导入」勾选,粘贴 JSON 通道保留。
 
 ```bash
 # 导入 sft_1000_testdata.json 三段式(owner/users/newUsers 一次进)
@@ -2903,6 +2903,22 @@ curl -X POST http://localhost:8080/api/tool/account-book -H 'Content-Type: appli
 curl http://localhost:8080/api/tool/account-book
 curl -X DELETE http://localhost:8080/api/tool/account-book/u1
 ```
+
+#### 76a. GET /api/tool/vc-by-account
+
+查某地址持有（已披露）的证书摘要（控制台总览/账号本账户行「证书」展开的后端）。走 `identity.DisclosedVcs(subject, 0, 100)` 视图。
+
+| 参数 | 必填 | 说明 |
+| --- | --- | --- |
+| `address` | 是 | base58 地址，非法返回 400 |
+
+响应 `data`：`{address, held: [{schema, issuer, credentialHash(32B hex), validUntilMs?, status(Active/Revoked/Frozen), isValid}]}`。**发布方视角链端无按 issuer 枚举视图**——前端对各账户 held 结果聚合 `issuer==该地址` 得出；未披露上链的证书无法枚举（链端硬限制）。
+
+```bash
+curl 'http://localhost:8080/api/tool/vc-by-account?address=3uo5PfaRw8oMD8sZP6CC9j9E1Nzn'
+```
+
+> 播种器曲线（2026-11-24 起）：默认/模板/全部角色（admin/users/issuers/multisig/token/sft）统一 **fndsa512 抗量子**确定性派生——`privkey = fndsa.KeyGen(seed=sha256(短语:角色:名))`（KeyGen 从 rng 恰读 32 字节种子且对种子确定性），同短语同配置可复现同一密钥组；`accounts.curves` 仍可传 secp256k1/ed25519 走经典曲线轮转。fndsa512 私钥 1281 字节 hex，断点状态与 dataset 中私钥回显变长属预期。
 
 #### 77. POST /api/tool/vc-issue
 

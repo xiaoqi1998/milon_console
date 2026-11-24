@@ -104,6 +104,8 @@ const ENDPOINTS = [
     bodyTemplate: JSON.stringify({ count: 1000, toAddress: 'RqcF3s4kzLQ4cJGWhsMxbJa1xMA', concurrency: 16 }, null, 2) },
   { id: 'bulk-transfer-status', method: 'GET', path: '/api/tool/bulk-transfer/:id', summary: '查询归集任务进度', group: '工具',
     pathParams: [{ name: 'id', ph: '任务ID (jobId)' }] },
+  { id: 'vc-by-account', method: 'GET', path: '/api/tool/vc-by-account', summary: '按地址查持有(已披露)证书(identity.DisclosedVcs;发布方视角由前端聚合)', group: '工具',
+    queryParams: [{ name: 'address', ph: 'base58地址' }] },
   { id: 'vc-flow', method: 'POST', path: '/api/tool/vc-flow', summary: 'VC签发披露全流程(领水+DID+组织+凭证)', group: '工具',
     bodyTemplate: JSON.stringify({
       issuerPrivateKey: 'hex或base58私钥(颁发者,仅Ed25519/FN-DSA-512,可用 /api/accounts/generate?keyType=ed25519 生成)',
