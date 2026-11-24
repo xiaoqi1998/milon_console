@@ -2,6 +2,7 @@ package milon
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/milon-labs/milon-go-sdk/api"
 )
@@ -11,6 +12,12 @@ import (
 // a big block can have thousands of resources, so without sharding the body risks being too large/timing out.
 // Any failed batch returns an error for the upper layer to break the stream and retry (never silently skipped, ensuring complete paths for the whole block).
 const resolvePathBatchSize = 128
+
+// resolvePathConcurrency is how many BatchGetResourcePathByHash calls are in
+// flight at once. The shards are independent RPCs, so a block with thousands of
+// resources resolves in parallel instead of one round trip at a time; the cap
+// keeps a single block from flooding the node.
+const resolvePathConcurrency = 8
 
 // ResolveResourcePaths queries resource paths per block in batches, fetching the path of every resource in the block via batched RPC;
 // on RPC failure it returns an error so the caller aborts processing the block, avoiding a whole block's missing paths being silently skipped.
@@ -25,18 +32,46 @@ func ResolveResourcePaths(client *Client, rsHashSet map[api.RsHash]struct{}) (ma
 		rsHashList = append(rsHashList, rs)
 	}
 
-	for start := 0; start < len(rsHashList); start += resolvePathBatchSize {
-		end := start + resolvePathBatchSize
-		if end > len(rsHashList) {
-			end = len(rsHashList)
-		}
+	// Each shard writes only to its own slot, so no lock is needed; results are
+	// merged in shard order once every goroutine has finished.
+	type batchOutcome struct {
+		infos []*api.BatchGetResourcePathInfo
+		err   error
+	}
 
-		batchResult, err := client.BatchGetResourcePathByHash(rsHashList[start:end])
-		if err != nil {
-			return nil, fmt.Errorf("BatchGetResourcePathByHash failed (items %d-%d of %d): %w", start, end, len(rsHashList), err)
-		}
+	batchCount := (len(rsHashList) + resolvePathBatchSize - 1) / resolvePathBatchSize
+	outcomes := make([]batchOutcome, batchCount)
 
-		for _, info := range batchResult.BodyBatchResourcePathList {
+	sem := make(chan struct{}, resolvePathConcurrency)
+	var wg sync.WaitGroup
+	for i := range batchCount {
+		start := i * resolvePathBatchSize
+		end := min(start+resolvePathBatchSize, len(rsHashList))
+
+		wg.Add(1)
+		index := i
+		go func() {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			batchResult, err := client.BatchGetResourcePathByHash(rsHashList[start:end])
+			if err != nil {
+				outcomes[index].err = fmt.Errorf("BatchGetResourcePathByHash failed (items %d-%d of %d): %w", start, end, len(rsHashList), err)
+				return
+			}
+			outcomes[index].infos = batchResult.BodyBatchResourcePathList
+		}()
+	}
+	wg.Wait()
+
+	// Report the first failure by shard position rather than by completion order,
+	// so the same failing block always yields the same error.
+	for i := range outcomes {
+		if outcomes[i].err != nil {
+			return nil, outcomes[i].err
+		}
+		for _, info := range outcomes[i].infos {
 			if info.ErrMsg != "" {
 				pathMap[info.RsHash] = "<err: " + info.ErrMsg + ">"
 				continue

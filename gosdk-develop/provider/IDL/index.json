@@ -51,6 +51,16 @@
       "name": "social"
     },
     {
+      "app_id": 11,
+      "idl": "./funds.idl.json",
+      "name": "funds"
+    },
+    {
+      "app_id": 12,
+      "idl": "./commission.idl.json",
+      "name": "commission"
+    },
+    {
       "app_id": 254,
       "idl": "./demo.idl.json",
       "name": "demo"

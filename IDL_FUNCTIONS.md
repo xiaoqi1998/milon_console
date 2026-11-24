@@ -1,12 +1,13 @@
 # Milon IDL 函数清单
 
-> 导出自 `gosdk-develop/provider/IDL/`，共 **12** 个 app、**339** 个函数（view 127 + entry 212）。
+> 导出自 `gosdk-develop/provider/IDL/`，共 **14** 个 app、**363** 个函数（view 139 + entry 224）。
 
 > 表格列：`appname`(应用名) · `meth`(方法名/指令名) · `handler`(链上入口名) · `id`(discriminator 指令编号) · `说明`(中文释义，来自 handler/idl_method_docs.go 的文档映射，与 /api/idl/metadata 输出一致)
 
+
 ## View（只读查询，kind=view）
 
-共 **127** 个。
+共 **139** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -35,6 +36,7 @@
 | staking | Pool | pool | 60310 | 【功能】查询池的全量记账快照。<br>【返回】Pool：{pool_id, owner, manager_app, app_permissions, stake_asset, reward_asset, cycle_config, commission 配置, 状态与记账字段}；不存在报 768。 |
 | staking | TotalStake | total_stake | 11487 | 【功能】查询池的总本金（principal_assets）。<br>【返回】u64（最小单位）；池不存在报 769。 |
 | staking | Position | position | 65179 | 【功能】查询某地址在某池的聚合持仓视图：激活本金、奖励进度、可领奖励/本金与各周期挂账（staking 查询主入口，取代旧按 stake_id 的逐单查询）。<br>【返回】Position：{owner, pool_id, active_principal, reward_checkpoint, reward_fraction, claimable_rewards, claimable_principal, deposits: [{cycle, amount}], exits: [{cycle, amount}], tracked}。 |
+| staking | AssetRewards | asset_rewards | 18235 | 【功能】查询某地址在某池、某资产下的资产奖励进度与可领余额。<br>【返回】map<Address, AssetReward>：键为资产地址，值为 {checkpoint, fraction, claimable}。 |
 | staking | PoolTreasuryBalance | pool_treasury_balance | 309 | 【功能】查询池奖励金库（reward_asset）当前托管余额。<br>【返回】u64（最小单位）；池不存在报 768。 |
 | staking | CommissionBalance | commission_balance | 51494 | 【功能】查询某池佣金收款人当前可领佣金余额。<br>【返回】u64（最小单位）。 |
 | identity | VcAttestationCore | vc_attestation_core | 18681 | 【功能】查询某 (subject, schema, issuer) 组合下 VC 凭证的不可变核心内容。<br>【返回】VcAttestationCore：{credential_schema, credential_hash, valid_until_ms}；不存在报 1033。 |
@@ -89,10 +91,9 @@
 | dex | OrderbookDepth | orderbook_depth | 46884 | 【功能】查询买卖各价位档的深度。<br>【返回】{bids: [{tick, order_count, total_base_lots}], asks: [...]}。<br>【限制】depth 上限 50（InvalidViewLimit 1552）。 |
 | dex | OrdersAtLevel | orders_at_level | 24461 | 【功能】分页查询某一价格档上的订单列表。<br>【返回】LevelOrderPage：{orders: [OrderInfo], next_order_id（翻页游标，0 表示没有更多）}。<br>【限制】limit 1..=100（1552）；档位不存在报 PriceLevelNotFound（1553）；游标非法报 InvalidOrderCursor（1554）。 |
 | dex | VaultLiability | vault_liability | 6759 | 【功能】查询市场金库对某代币的负债总额（所有用户托管资金之和）。<br>【返回】u64。 |
-| validator | ValidatorEpochActivity | validator_epoch_activity | 46392 | 【功能】查询某 epoch 的验证人出块活动统计。<br>【返回】EpochActivity：{blocks（出块数）, signers（参与签名验证人数）, last_block（末块高度）}。 |
 | validator | ValidatorMemberships | validator_memberships | 43732 | 【功能】查询全体验证人集合成员关系。<br>【返回】vec<Membership>：每项 {validator, join_epoch, exit_epoch（option，null 表示在任）, minimum_self_stake}。 |
-| validator | CurrentValidatorPools | current_validator_pools | 32584 | 【功能】查询当前 epoch 全体验证人池总览。<br>【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, position_count}]}；集合未就绪报 1801。 |
-| validator | ValidatorRewardBudget | validator_reward_budget | 24480 | 【功能】查询验证人奖励预算余额（FundValidatorRewards 注资的累计可发放额度）。<br>【返回】u64（最小单位）。 |
+| validator | CurrentValidatorPools | current_validator_pools | 32584 | 【功能】查询当前 epoch 全体验证人池总览。<br>【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, position_count}]}；集合未就绪报 1800。 |
+| validator | ValidatorProposalActivity | validator_proposal_activity | 4719 | 【功能】查询某 epoch 的验证人提案（出块）活动统计（取代旧 ValidatorEpochActivity/EpochActivity）。<br>【返回】ProposalActivity：{set_hash（验证人集合哈希）, counts（各验证人提案数数组）, total（提案总数）, last_block（末块高度）, frozen（是否已冻结快照）, denied（被拒提案数）}。 |
 | validator | ValidatorProfile | validator_profile | 37544 | 【功能】查询验证人档案。<br>【返回】ValidatorProfile：{validator, owner, pool_id}；未注册报 1793。 |
 | validator | ValidatorForOwner | validator_for_owner | 10754 | 【功能】按 owner 地址反查其绑定的 ValidatorId。<br>【返回】ValidatorId（B256）；未绑定报 1793。 |
 | validator | ValidatorSelfStake | validator_self_stake | 13504 | 【功能】查询某验证人在目标 epoch 的自押金额（快照值）。<br>【返回】u64（最小单位）。 |
@@ -124,6 +125,18 @@
 | social | CommunityMembership | community_membership | 36616 | 【功能】查询某地址是否为社区成员。<br>【返回】bool。 |
 | social | CanClaimCommunityHongbao | can_claim_community_hongbao | 16618 | 【功能】判断某地址当前能否领取某社区红包。<br>【返回】bool。 |
 | social | HongbaoCommunity | hongbao_community | 54956 | 【功能】查询社区红包所属的社区 ID。<br>【返回】u32。 |
+| funds | StandardFeeSplit | standard_fee_split | 59330 | 【功能】按标准费率策略试算一笔手续费的拆分结果（纯计算，无状态写入）：给定 total 与 FeePolicy（foundation_bps/staking_bps/promotion_bps）及是否带 promoted，返回 application/foundation/staking/promotion 四份金额（余数留 application）。<br>【返回】FeeSplit：{application, foundation, staking, promotion}（最小单位）。 |
+| funds | ApplicationRewardBudget | application_reward_budget | 649 | 【功能】查询某 epoch 的应用（gas）奖励预算分布（取代旧 validator.ValidatorRewardBudget 的应用侧额度）。<br>【返回】AppBudget：{assets（资产地址 → 可发放额度）, closed（该 epoch 预算是否已封账）}。 |
+| funds | OperatorReward | operator_reward | 45647 | 【功能】查询某地址在某资产上的累计可领 operator 奖励。<br>【返回】u64（最小单位）。 |
+| funds | RewardReserve | reward_reserve | 48531 | 【功能】查询某资产在奖励金库中的托管储备余额（尚未分配的协议费）。<br>【返回】u64（最小单位）。 |
+| commission | CollectionScheme | collection_scheme | 37758 | 【功能】按 scheme_id 查询收单方案全量配置。<br>【返回】option<CollectionScheme>：{id, owner, collection_address, gas_address, stopped, outstanding_orders, reserved_gas, rules}；不存在返回 null。 |
+| commission | CollectionOrderId | collection_order_id | 28641 | 【功能】由（收单地址, 订单键 B96）派生出该笔收单订单的链上地址。<br>【返回】Address。 |
+| commission | CollectionOrder | collection_order | 28347 | 【功能】查询收单侧订单附加状态（所属方案、预留 gas、已登记退款键）。<br>【返回】option<CollectionOrder>：{scheme_id, reserved_gas, refund_keys}；不存在返回 null。 |
+| commission | Order | order | 60520 | 【功能】按订单地址查询订单全量状态。<br>【返回】option<OrderState>：{source, payer, terms, paid_at_ms, refund_deadline_ms, settle_at_ms, refunded, remaining, settled, merchant_amount, commission_amount, merchant_claimed, promoter_claimed, busy}；不存在返回 null。 |
+| commission | OrderId | order_id | 5488 | 【功能】由（订单来源 OrderSource, 订单键 B96）派生出订单地址（非收单场景的通用下单入口）。<br>【返回】Address。 |
+| commission | RefundReceipt | refund_receipt | 38617 | 【功能】查询某订单某笔退款的凭据。<br>【返回】option<RefundReceipt>：{target, amount}；不存在返回 null。 |
+| commission | OrderOverview | order_overview | 53290 | 【功能】查询订单的对账总览（商户/推广人可领、可退金额与状态机终态判定）。<br>【返回】option<OrderOverview>：{order_id, asset, as_of_ms, status(Holding\|ReadyToSettle\|AwaitingClaims\|Refunded\|Closed), refund_deadline_ms, settle_at_ms, paid_amount, refunded_amount, remaining_principal, net_amount, merchant_amount, commission_amount, merchant_claimable, promoter_claimable, refundable_amount}；不存在返回 null。 |
+| commission | QuoteCommission | quote_commission | 57364 | 【功能】佣金试算（纯计算）：给定 amount 与 bps，返回佣金金额。<br>【返回】u64（最小单位）。 |
 | demo | TierCapDetail | tier_cap_detail | 30615 | 【功能】查询池中某积分等级的上限与设置人。<br>【返回】TierCap：{cap, set_by}。 |
 | demo | LabelChangesOf | label_changes_of | 54498 | 【功能】查询池累计的标签变更次数。<br>【返回】u64。 |
 | demo | OrderVault | order_vault | 9625 | 【功能】查询演示订单托管户头地址。<br>【返回】Address。 |
@@ -138,9 +151,10 @@
 | demo | SponsorPoolOf | sponsor_pool_of | 38217 | 【功能】按池编号查询赞助池地址。<br>【返回】Address。 |
 | demo | ScheduledWakeCount | scheduled_wake_count | 45310 | 【功能】查询当前已登记待执行的定时唤醒数量。<br>【返回】u64。 |
 
-## Entry（写状态交易，kind=entry）
 
-共 **212** 个。
+## Entry（状态变更，kind=entry）
+
+共 **224** 个。
 
 | appname | meth | handler | id | 说明 |
 |---------|------|---------|-----|------|
@@ -191,15 +205,17 @@
 | token | RemoveComplianceRequirement | remove_compliance_requirement | 14909 | 【功能】从合规要求列表批量移除凭证 ID（credential_ids 可一次移除多个）。<br>【限制】仅 owner 生效。 |
 | token | ClearComplianceRequirements | clear_compliance_requirements | 50437 | 【功能】清空全部合规凭证要求，代币恢复为无合规限制。<br>【限制】仅 owner 生效。 |
 | token | DiscloseTokenVcAttestation | disclose_token_vc_attestation | 39942 | 【功能】公开披露代币的 VC 认证材料：发行方对凭证（模式/哈希/有效期）的签名上链，供第三方核验代币合规背书。<br>【限制】issuer_signature 须为发行方私钥对凭证内容的签名；issuer_key_id 为发行方密钥序号；valid_until_ms 可空表示长期有效。 |
-| token | ClaimFaucet | claim_faucet | 63796 | 【功能】从水龙头领取原生 MIL 代币（新账户获取 gas 费用）。本指令 gas 由链上赞助池代付（sponsor）。<br>【限制】每次领取 10^10 最小单位（6 位精度下 10,000 token）；每地址 24 小时冷却，冷却期内任何尝试（含失败）都会触发/续期冷却（FaucetCooldownActive 523），脚本领水务必单次尝试；低链 ID 下水龙头禁用（FaucetDisabled 522）。 |
+| token | ClaimFaucet | claim_faucet | 63796 | 【功能】从水龙头领取原生 MIL 代币（新账户获取 gas 费用）。本指令 gas 由链上赞助池代付（sponsor）。<br>【限制】每次领取 10^6 最小单位（6 位精度下 1 token）；每地址 24 小时冷却，冷却期内任何尝试（含失败）都会触发/续期冷却（FaucetCooldownActive 523），脚本领水务必单次尝试；低链 ID 下水龙头禁用（FaucetDisabled 522）。 |
 | token | CreateEqualHongbao | create_equal_hongbao | 56849 | 【功能】创建均分红包：创建者托管 total_amount，供 claim_count 人均分领取；领取资格由 rules 约束（可选 VC 凭证要求 / 指定收款人名单 / 过期时间），可附言 message。hongbao_id 由链上派生，经交易事件或 HongbaoInfo 回读。<br>【限制】红包定义不合法报 InvalidHongbaoDefinition 529（claim_count 须非零等）；hongbao_id 不可重复（HongbaoAlreadyExists 525）；托管转入失败报 token 层错误。 |
 | token | CreateLuckyHongbao | create_lucky_hongbao | 32577 | 【功能】创建拼手气红包：创建者托管 total_amount，claim_count 人随机份额领取（份额由链上安全随机源决定），可附言 message。<br>【限制】同 CreateEqualHongbao；随机源不可用报 HongbaoRandomnessUnavailable 533。 |
 | token | CreateCredentialHongbao | create_credential_hongbao | 38296 | 【功能】创建凭证红包：创建者托管 total_amount，领取人须持有 credential_ids 列表中任一有效 VC 凭证方可领取，claim_count 人按 allocation（Equal/Lucky）分配，可设过期时间与附言。<br>【限制】同 CreateEqualHongbao；资格校验走 identity VC 体系（未持凭证报 HongbaoNotEligible 530）。 |
 | token | CreateSftHongbao | create_sft_hongbao | 18018 | 【功能】创建 SFT 红包：创建者托管 total_amount，领取人须持有不少于 min_amount 个指定 SFT（sft 地址）方可领取，claim_count 人按 allocation（Equal/Lucky）分配，可设过期时间与附言。<br>【限制】同 CreateEqualHongbao；SFT 校验失败透传 sftoken 层错误（SftError 544）。 |
 | token | ClaimHongbao | claim_hongbao | 46748 | 【功能】领取红包（claimant 签名）。<br>【限制】红包须存在（HongbaoNotFound 524）；须在有效期内（HongbaoExpired 526）；资格不符报 HongbaoNotEligible 530（rules 名单 / VC / SFT 要求）；不可重复领取（HongbaoAlreadyClaimed 531）。 |
 | token | RefundHongbao | refund_hongbao | 51292 | 【功能】红包过期后把剩余托管金额退回创建者。<br>【限制】红包须存在（524）；须已过期（HongbaoNotExpired 527）；仍在进行中报 HongbaoStillActive 528。 |
+| token | ScheduleHongbaoRefund | schedule_hongbao_refund | 55222 | 【功能】为已过期红包登记一笔定时退款任务（写入链上退款堆，到期后由 RunHongbaoRefund 执行），把剩余托管金额退回创建者。<br>【限制】红包须存在（HongbaoNotFound 524）；须已过期（HongbaoNotExpired 527）；仍在进行中报 HongbaoStillActive 528；托管账实不一致报 HongbaoEscrowInvariantViolation 532。 |
+| token | RunHongbaoRefund | run_hongbao_refund | 44896 | 【功能】执行到期的红包退款任务（gas 由链上赞助池代付，sponsor），退还剩余托管并发出 HongbaoRefunded 事件。<br>【限制】须先 ScheduleHongbaoRefund 登记且任务已到期；红包须已过期（HongbaoNotExpired 527）；退款被拒报 DeliveryRejected 536。 |
 | token | RunHongbaoCleanup | run_hongbao_cleanup | 43410 | 【功能】推进过期红包的清算（结算领取记录、回收托管），配合到期唤醒机制逐批执行。<br>【限制】红包须已过期（HongbaoStillActive 528）；清扫唤醒被拒报 HongbaoCleanupWakeRejected 534。 |
-| token | CreateVesting | create_vesting | 47760 | 【功能】创建分期释放（Vesting）：creator 锁定代币进托管，按名单分批释放给各领款人（每人独立配置总额/首释量/周期时长/期数/每期释放量，start_at_ms 为起算时间；name 仅作展示标签，每行可重复、不参与唯一性判定）。<br>【限制】定义须自洽（InvalidVestingDefinition 537：periods>0、period_seconds>0、initial∈[0,total]、每期释放量 (total−initial)/periods 向下取整后须>0、start_at_ms 不能在过去、name 不能为空串；不整除时末期补足余数）。同 seed（creator+token+start_at_ms+recipients 全字段一致，name 亦计入）重复创建报 VestingAlreadyExists（539）；余额不足报 InsufficientBalance。 |
+| token | CreateVesting | create_vesting | 47760 | 【功能】创建分期释放（Vesting）：creator 锁定代币进托管，按名单分批释放给各领款人（每人独立配置总额/首释量/周期时长/期数/每期释放量，start_at_ms 为起算时间；name 仅作展示标签，每行可重复、不参与唯一性判定）。<br>【限制】定义须自洽（InvalidVestingDefinition 537：periods>0、period_seconds>0、initial∈[0,total]、每期释放量 (total−initial)/periods 向下取整后须>0、start_at_ms 不能在过去、name 不能为空串；不整除时末期补足余数）。重复创建报 VestingAlreadyExists（539）——2026-11-11/11-20 链上实测：vesting_id 只由 token 派生，同 token 第二笔恒 539（start_at_ms/recipients/name 均不参与派生，每代币仅可挂一笔计划）；创建时 creator 须持有 Σ(每人 total) 余额（不足报 InsufficientBalance）。 |
 | token | ClaimVesting | claim_vesting | 14230 | 【功能】领款人领取自己在某 Vesting 中当前累计可释放的代币（支持 sponsor 代付 gas）。<br>【限制】Vesting 不存在报 VestingNotFound（538）；签名者不在领款名单报 VestingNotEligible（540）；当前无可领报 VestingNothingClaimable（541）；托管账实不一致报 543。 |
 | staking | CreatePool | create_pool | 52671 | 【功能】创建质押池：指定质押/奖励代币、周期配置（质押激活/解冻/奖励发放/佣金变更四类延迟，周期基准支持 Epoch/块高/时间戳）与佣金配置（费率+收款地址），返回池 ID。池主对池拥有暂停/关闭/佣金收取等全权。<br>【返回】PoolId（新建池 ID，base58 字符串）。<br>【限制】佣金率 ≤10000 基点；nonce 用于池 ID 确定性派生，非法报 InvalidParameters（768）；周期配置须合法（768）。 |
 | staking | PausePool | pause_pool | 55077 | 【功能】池主暂停池：暂停期间禁止新质押与解冻申请，已激活份额的奖励照常累计。<br>【限制】须为池主（769）；仅 Open 状态可暂停。 |
@@ -212,6 +228,7 @@
 | staking | CancelUnstake | cancel_unstake | 53570 | 【功能】撤销指定生效周期尚未生效的解冻意向，本金继续留在池内计息。<br>【限制】须为持仓所有者；对应解冻意向不存在报 768。 |
 | staking | ClaimPrincipal | claim_principal | 35421 | 【功能】领取某池中已过解冻延迟的可取本金。<br>【返回】u64 实际领取数量（最小单位）；无可领返回 0。<br>【限制】须为持仓所有者。 |
 | staking | ClaimRewards | claim_rewards | 49863 | 【功能】领取某池累计的可领奖励（按池奖励进度线性累计）。<br>【返回】u64 实际领取数量（最小单位）；无可领返回 0。<br>【限制】须为持仓所有者。 |
+| staking | ClaimAssetRewards | claim_asset_rewards | 13164 | 【功能】领取某池中以「非奖励代币」资产（asset，如第三方代币/合规资产）累计的奖励——按 (pool_id, asset) 独立记账的资产奖励指数结算（2026-11-24 新增，与 reward_asset 主奖励并行）。<br>【返回】u64 实际领取数量（最小单位）；无可领返回 0。<br>【限制】owner 须签名；池不存在或记账不变量被破坏报 InvariantViolation（769）。 |
 | staking | AccruePoolReward | accrue_pool_reward | 61672 | 【功能】向指定池注入奖励资金（reward_asset），使全体质押人按份额分享。任何持币人可为池充奖。<br>【限制】余额不足报 TokenError（771）；金额须大于 0（768）。 |
 | staking | ClaimCommission | claim_commission | 39476 | 【功能】佣金收款人领取某池累计佣金。<br>【返回】u64 实际领取数量（最小单位）；无可领返回 0。<br>【限制】仅佣金收款地址（recipient）可领。 |
 | staking | ClaimPoolCommission | claim_pool_commission | 17449 | 【功能】佣金收款人领取累计佣金（按佣金费率从注入奖励中切分）。<br>【返回】u64 实际领取佣金数量（最小单位）；无可领返回 0。<br>【限制】仅佣金收款地址（recipient）可领（769）。 |
@@ -279,16 +296,15 @@
 | dex | SetMarketStatus | set_market_status | 48095 | 【功能】切换市场状态：Active（正常交易）/ CancelOnly（只可撤单）/ Paused（暂停）。<br>【限制】仅市场 authority 生效（1546）。 |
 | validator | RecordValidatorActivity | record_validator_activity | 23268 | 【功能】记录当前验证人的出块活动（EpochActivity 的 blocks/signers/last_block 计数来源，通常由链内共识通道调用）。<br>【限制】须验证人集合就绪（1801）。 |
 | validator | BootstrapValidatorRules | bootstrap_validator_rules | 54067 | 【功能】引导期一次性设置验证人规则：最低自押门槛（minimum_self_stake）。<br>【限制】仅链引导阶段调用，重复引导失败。 |
-| validator | FreezeValidatorEpoch | freeze_validator_epoch | 32944 | 【功能】冻结当前 epoch：锁定验证人集合、最低自押与每验证人奖励额度等参数为 FrozenEpoch 快照（previous_set_hash/freeze_block/freeze_slot/start_slot），是 SettleValidatorEpoch 的前置。<br>【限制】须验证人集合就绪（ValidatorSetUnavailable 1801）；重复冻结报参数错误。 |
+| validator | FreezeValidatorEpoch | freeze_validator_epoch | 32944 | 【功能】冻结当前 epoch：锁定验证人集合、最低自押与每验证人奖励额度等参数为 FrozenEpoch 快照（previous_set_hash/freeze_block/freeze_slot/start_slot），是 SettleValidatorEpoch 的前置。<br>【限制】须验证人集合就绪（ValidatorSetUnavailable 1800）；重复冻结报参数错误。 |
 | validator | JoinValidator | join_validator | 9901 | 【功能】验证人 owner 申请加入验证人集合（记录 Membership，join_epoch 为生效纪元，随 epoch 冻结进入集合）。<br>【限制】ValidatorId 须已注册（NotRegistered 1793）；签名者须为 owner（OwnerMismatch 1794）。 |
 | validator | ExitValidator | exit_validator | 47485 | 【功能】验证人 owner 申请退出验证人集合（Membership.exit_epoch 置位，随目标 epoch 结算退出）。<br>【限制】ValidatorId 须已注册（1793）；签名者须为 owner（1794）；未在集合中报参数错误（1796）。 |
 | validator | TopUpSelfStake | top_up_self_stake | 39689 | 【功能】验证人 owner 为自己追加自押金额（满足/维持最低自押门槛 minimum_self_stake）。<br>【限制】签名者须为 owner（OwnerMismatch 1794）；金额须大于 0（1796）。 |
 | validator | RequestPoolRewardConfig | request_pool_reward_config | 17593 | 【功能】验证人 owner 申请变更佣金配置（费率/收款地址，PoolRewardConfig）：新配置记为待生效，过佣金变更延迟后自动启用。<br>【限制】签名者须为 owner（OwnerMismatch 1794）；配置须合法（InvalidParameters 1796）；存在待生效配置时再次申请将覆盖。 |
-| validator | ClaimPoolCommission | claim_pool_commission | 50141 | 【功能】验证人 owner 领取验证人池累计佣金（按佣金费率从注入奖励中切分）。<br>【返回】u64 实际领取数量（最小单位）；无可领返回 0。<br>【限制】签名者须为 owner（1794）；金库账实不一致报 RewardTreasuryBackingMismatch（1797）。 |
+| validator | ClaimPoolCommission | claim_pool_commission | 50141 | 【功能】验证人 owner 领取验证人池累计佣金（按佣金费率从注入奖励中切分）。<br>【返回】u64 实际领取数量（最小单位）；无可领返回 0。<br>【限制】签名者须为 owner（1794）；金库余额不足或记账异常透传 Token（1797）。 |
 | validator | SweepPoolResidual | sweep_pool_residual | 61791 | 【功能】验证人 owner 清理退出/关停后池内残留资金，转入 owner 账户。<br>【返回】u64 实际清扫金额（最小单位）；无可清扫返回 0。<br>【限制】签名者须为 owner（1794）。 |
-| validator | FundValidatorRewards | fund_validator_rewards | 27609 | 【功能】向验证人奖励预算注资（全局 ValidatorRewardBudget），作为各 epoch 验证人奖励的发放来源（任何持币人可资助，替代旧 FundValidatorRewardPolicy）。<br>【限制】余额不足透传 Token（1798）；金额须大于 0（1796）。 |
 | validator | RegisterValidator | register_validator | 51820 | 【功能】注册验证人：owner 与 consensus_account 双签名，登记共识/BLS/ed25519 三把公钥并缴纳初始自押（self_stake），返回验证人 ID（直连模型入口，注册后即可被引导进验证人集合）。<br>【返回】ValidatorId（B256，base58）。<br>【限制】不可重复注册（AlreadyRegistered 1792）；签名者须为该验证人 owner（OwnerMismatch 1794）；共识身份未就绪报 ConsensusIdentityMissing（1795）；参数非法报 InvalidParameters（1796）；公钥长度按曲线校验（BLS 48 字节 / ed25519 32 字节）。 |
-| validator | SettleValidatorEpoch | settle_validator_epoch | 15316 | 【功能】结算当前 epoch：按冻结快照结算出块活动并发放验证人奖励（自押利息/奖励预算切分）。<br>【限制】须先成功 FreezeValidatorEpoch；同一 epoch 不可重复结算；须验证人集合就绪（1801）。 |
+| validator | SettleValidatorEpoch | settle_validator_epoch | 15316 | 【功能】结算当前 epoch：按冻结快照结算出块活动并发放验证人奖励（自押利息/奖励预算切分）。<br>【限制】须先成功 FreezeValidatorEpoch；同一 epoch 不可重复结算；须验证人集合就绪（1800）。 |
 | keyless | BootstrapKeyless | bootstrap_keyless | 7470 | 【功能】初始化 keyless 注册表：注册内置 Google/Apple OIDC provider 与默认参数（无参数，args 传 {}）。<br>【限制】仅 genesis 块 0 可调（GenesisOnly 2113）；只能初始化一次（AlreadyBootstrapped 2114）。 |
 | keyless | InstallZkCircuit | install_zk_circuit | 18924 | 【功能】注册 Groth16 ZK 验证电路：验证密钥、约束哈希、公共输入数上限、支持的 JWT 算法集，并可同时开放 ZK 无密钥认证。<br>【限制】电路 ID 非法报 ZkCircuitIdInvalid（2122）；重复注册报 ZkCircuitAlreadyRegistered（2123）；电路参数非法报 ZkCircuitInvalid（2124）。 |
 | keyless | UpdateJwkReport | update_jwk_report | 50524 | 【功能】验证人上报某 provider 的 JWKS 快照（动态 JWK 共识：多验证人报告一致后被选中；交易须验证人签名授权，2026-11-20 起不再携带 validator_account 参数）。<br>【限制】验证人集合不可用报 ValidatorSetUnavailable（2131）；JWKS 格式非法报 DynamicJwkSetInvalid（2132）；thumbprint 非规范报 JwkThumbprintNonCanonical（2134）。 |
@@ -337,6 +353,16 @@
 | social | RemoveCommunityMember | remove_community_member | 7071 | 【功能】管理员移除某成员。<br>【限制】须管理员（2582）；目标须是成员（2588）；不能移除 owner（CannotRemoveCommunityOwner 2583）。 |
 | social | CreateHongbao | create_hongbao | 7621 | 【功能】创建社区红包：创建者向社区（community_id）发放 token 红包，total_amount 供 claim_count 人按 allocation（Equal 均分 / Lucky 拼手气）领取，可设过期时间与附言 message。<br>【限制】创建者须有有效 DID（DidNotActive 2560）；社区须存在（CommunityNotFound 2578）；社区已解散报 CommunityDissolved（2598）；托管转入失败透传 token 层错误（TokenError 2595）。 |
 | social | ClaimHongbao | claim_hongbao | 40045 | 【功能】领取社区红包（claimant 签名）。<br>【限制】红包须存在（CommunityHongbaoNotFound 2596）；社区已解散报 2598；领取规则校验同 token 红包语义。 |
+| funds | ClaimOperatorReward | claim_operator_reward | 31792 | 【功能】领取某资产在本账本中累计给 operator/验证人 的可领奖励（费用按 FeePolicy 拆分后归集到 _Claimable）。<br>【返回】u64 实际领取数量（最小单位）；无可领返回 0。<br>【限制】owner 须签名；资产须存在对应可领余额，否则领取量为 0。 |
+| commission | CreateCollection | create_collection | 44293 | 【功能】创建收单方案（CollectionScheme）：owner 签名登记不可变规则（收款资产、商户收款人、可选推广人、佣金基点、退款模式/窗口、结算延迟、退款权限地址、订单有效期上限、最小/固定金额），链上分配 scheme_id 并派生 collection_address（付款入口）与 gas_address（任务执行账户）。<br>【限制】规则自洽校验（InvalidScheme 3093：佣金 0..=10000bps 且无推广人时必须为 0、退款模式须 0/1/2、退款窗口与订单有效期不溢出）；scheme_id 耗尽报 SchemeIdExhausted（3097）。 |
+| commission | StopCollection | stop_collection | 29185 | 【功能】停止收单方案的「新付款」入口（已有订单仍可结算/退款）。<br>【限制】须方案 owner 签名（owner_signer）；方案须存在（SchemeNotFound 3092）；已停止再停报 SchemeStopped（3094）。 |
+| commission | DestroyCollection | destroy_collection | 1711 | 【功能】销毁收单方案，回收其 gas 储备。<br>【限制】须方案 owner 签名；方案须存在（3092）；仍有未结清订单报 SchemeOutstanding（3096）。 |
+| commission | PayCollection | pay_collection | 2795 | 【功能】按收单方案付款下单：payer 把 amount 转入案内托管，链上派生订单地址（OrderId）并登记付款条款（含 terms_hash 可选校验）。<br>【返回】订单地址可从 OrderId/交易事件回读。<br>【限制】方案须存在（3092）且未停止（3094）；金额须为正（InvalidAmount 3083）且满足最小/固定金额；资产不能为空（InvalidAsset 3084）；付款期限已到报 PaymentExpired（3091）。 |
+| commission | RunCollectionTask | run_collection_task | 5194 | 【功能】推进收单方案定时的后台任务（链上唤醒执行半程，任何人可用指定 gas 账户触发），处理到期结算/退款任务分片。<br>【限制】任务被拒报 CollectionTaskRejected（3100）；gas 储备不足报 InsufficientSettlementGas（3098）；订单/退款凭据容量超限报 CollectionCapacity（3101）。 |
+| commission | RefundOrder | refund_order | 63257 | 【功能】退款权限人（authority）对已付款订单发起（增量）退款：把 target_refunded 作为累计退款目标，从托管退回付款人。<br>【限制】订单须存在（NotFound 3073）；已付才可退（否则 3073）；退款窗口已关报 RefundClosed（3077）；权限不符报 UnauthorizedRefund（3076）；退款目标须递增且不超过已付额（InvalidRefundTarget 3080）；与历史退款结果冲突报 RefundConflict（3079）；托管不变量破坏报 CustodyInvariant（3081）。 |
+| commission | SettleOrder | settle_order | 44200 | 【功能】结算已付款订单：把净额分给商户（与推广人佣金），商户/推广人可随后领取。<br>【限制】订单须存在（3073）；未到结算时间报 NotDue（3078）；操作进行中报 Busy（3075）；托管不变量破坏报 3081。 |
+| commission | ClaimMerchant | claim_merchant | 4649 | 【功能】商户领取某订单结算后的商户应收款。<br>【限制】订单须存在（3073）；无可领或已领取报 NotFound（3073）/AlreadyPaid（3074）。 |
+| commission | ClaimPromoter | claim_promoter | 30103 | 【功能】推广人领取某订单结算后的佣金。<br>【限制】订单须存在（3073）；无推广人或无可领报 NotFound（3073）；已领取报 AlreadyPaid（3074）。 |
 | demo | SetScore | set_score | 9531 | 【功能】由池管理侧直接设置某账户在池中的积分值（管理类指令，区别于 Draw 等玩法产出）。<br>【限制】池须存在（PoolNotFound 65024）；参数非法报 InvalidParameters（65027）。 |
 | demo | OpenOrder | open_order | 47185 | 【功能】演示订单支付流第一步：operator 开一个演示订单（收款托管户头）。<br>【限制】order_id 不可重复（OrderAlreadyExists 65029）。 |
 | demo | RejectOrderInbound | reject_order_inbound | 33284 | 【功能】演示订单拒收入账：operator 主动拒绝订单托管户头收到的最新一笔入账转账。<br>【限制】订单须存在（OrderNotFound 65028）；须开单 operator 本人（OrderOperatorMismatch 65030）；无可拒入账或状态不符报 InboundRejected 65032。 |
@@ -349,8 +375,8 @@
 | demo | SetLabel | set_label | 47391 | 【功能】修改池的标签。<br>【限制】池须存在（PoolNotFound 65024）。 |
 | demo | BatchCredit | batch_credit | 60858 | 【功能】给一批接收者在池内加积分（触发 EventCreditApplied 事件）。<br>【限制】池须存在（65280）；接收者须已在池内登记（RecipientNotFound 65026）。 |
 | demo | SetTierCap | set_tier_cap | 55600 | 【功能】设置某层级的积分上限（配合领用限速演示）。<br>【限制】池须存在（65280）。 |
-| demo | DrawU64 | draw_u_6_4 | 1414 | 【功能】演示安全随机数：从链上安全随机源抽取一个 u64。<br>【返回】u64。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
-| demo | DrawBytes32 | draw_bytes_3_2 | 52945 | 【功能】演示安全随机数：从链上安全随机源抽取 32 字节。<br>【返回】B256。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
+| demo | DrawU64 | draw_u64 | 1414 | 【功能】演示安全随机数：从链上安全随机源抽取一个 u64。<br>【返回】u64。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
+| demo | DrawBytes32 | draw_bytes32 | 52945 | 【功能】演示安全随机数：从链上安全随机源抽取 32 字节。<br>【返回】B256。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
 | demo | DrawRange | draw_range | 31302 | 【功能】演示安全随机数：从链上安全随机源抽取 [lo, hi] 区间内的一个 u64。<br>【返回】u64。<br>【限制】随机源不可用报 RandomnessUnavailable 65034。 |
 | demo | OpenGasSponsorPool | open_gas_sponsor_pool | 49440 | 【功能】注册 gas 赞助池，使 sponsor 标记的指令（keyless.Authenticate、lucky_box.Claim、demo.ClaimSponsoredScore 等）可由该池代付 gas。<br>【返回】u16 sponsor_seed（池编号，供赞助类指令引用）。<br>【限制】pool 地址的管理员（signer_lookup 从 pool 参数解析 admin）必须与交易付款人一致。 |
 | demo | ClaimSponsoredScore | claim_sponsored_score | 1595 | 【功能】演示从赞助池领取 gas 赞助并给领取者记积分。gas 由赞助池代付（sponsor）。<br>【限制】池须已注册（SponsorPoolNotFound 65031）。 |

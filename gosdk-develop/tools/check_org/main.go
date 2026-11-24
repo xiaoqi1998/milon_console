@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/milon-labs/milon-go-sdk"
-	"github.com/milon-labs/milon-go-sdk/api"
 	"github.com/milon-labs/milon-go-sdk/crypto"
 	"github.com/milon-labs/milon-go-sdk/gen"
 )
@@ -16,12 +15,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	client := milon.NewClient(milon.DevNet)
+	client, err := milon.NewClient(milon.DevNet)
+	if err != nil {
+		panic(err)
+	}
 
 	// 1) DID Core
 	{
 		wire, _ := gen.Identity.Core.Args(issuer).Encode()
-		res, err := client.View([]api.PackedInstruction{wire})
+		res, err := client.View(wire)
 		if err != nil {
 			fmt.Println("Core view err:", err)
 		} else if core, err := gen.Identity.Core.DecodeView(res.HTTPResponseBody); err != nil {
@@ -34,7 +36,7 @@ func main() {
 	// 2) Organization status
 	{
 		wire, _ := gen.Identity.OrganizationStatus.Args(issuer).Encode()
-		res, err := client.View([]api.PackedInstruction{wire})
+		res, err := client.View(wire)
 		if err != nil {
 			fmt.Println("OrganizationStatus view err:", err)
 		} else if st, err := gen.Identity.OrganizationStatus.DecodeView(res.HTTPResponseBody); err != nil {
@@ -47,7 +49,7 @@ func main() {
 	// 3) Organization capabilities (declared roles + credential_schemas)
 	{
 		wire, _ := gen.Identity.OrganizationCapabilities.Args(issuer).Encode()
-		res, err := client.View([]api.PackedInstruction{wire})
+		res, err := client.View(wire)
 		if err != nil {
 			fmt.Println("OrganizationCapabilities view err:", err)
 		} else if cap, err := gen.Identity.OrganizationCapabilities.DecodeView(res.HTTPResponseBody); err != nil {

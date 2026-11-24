@@ -980,6 +980,33 @@
           "type": "Address"
         }
       ],
+      "discriminator": 55222,
+      "handler": "schedule_hongbao_refund",
+      "kind": "entry",
+      "name": "ScheduleHongbaoRefund"
+    },
+    {
+      "args": [
+        {
+          "name": "hongbao_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 44896,
+      "handler": "run_hongbao_refund",
+      "kind": "entry",
+      "name": "RunHongbaoRefund",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "hongbao_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
       "discriminator": 43410,
       "handler": "run_hongbao_cleanup",
       "kind": "entry",
@@ -1411,6 +1438,21 @@
     {
       "fields": [
         {
+          "name": "due",
+          "type": "u64"
+        },
+        {
+          "name": "hongbao_id",
+          "type": "Address"
+        }
+      ],
+      "kind": "struct",
+      "name": "HongbaoRefundTask",
+      "typeTag": 2796899193011756712
+    },
+    {
+      "fields": [
+        {
           "name": "recipient",
           "type": "Address"
         },
@@ -1632,6 +1674,26 @@
       "typeTag": 631772817358541784
     },
     {
+      "name": "_HongbaoRefundHeapSize",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_HongbaoRefundTask",
+      "type": "HongbaoRefundTask",
+      "typeTag": 2796899193011756712
+    },
+    {
+      "name": "_HongbaoRefundSlot",
+      "type": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "name": "_HongbaoCleanupDue",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
       "name": "_Vesting",
       "type": "VestingState",
       "typeTag": 5151897875976358800
@@ -1661,7 +1723,7 @@
     {
       "name": "FAUCET_AMOUNT",
       "type": "u64",
-      "value": "10000 * 1_000_000"
+      "value": "1 * 1_000_000"
     },
     {
       "name": "FAUCET_COOLDOWN_MS",
@@ -1750,6 +1812,32 @@
       ],
       "name": "HongbaoCreated",
       "typeTag": 5552105765182429402
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "hongbao_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "creator",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "token",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "HongbaoRefunded",
+      "typeTag": 1205551104664398759
     },
     {
       "fields": [

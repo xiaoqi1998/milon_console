@@ -1244,16 +1244,6 @@
       "value": 4
     },
     {
-      "name": "STAGED_JWT_RS256_CIRCUIT_ID",
-      "type": "u32",
-      "value": 7
-    },
-    {
-      "name": "STAGED_JWT_ES256_CIRCUIT_ID",
-      "type": "u32",
-      "value": 8
-    },
-    {
       "name": "COMPACT_STAGED_JWT_RS256_CIRCUIT_ID",
       "type": "u32",
       "value": 5

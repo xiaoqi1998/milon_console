@@ -1,0 +1,388 @@
+{
+  "metadata": {
+    "app_id": 11,
+    "name": "funds",
+    "description": "Milon funds app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "asset",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 31792,
+      "handler": "claim_operator_reward",
+      "kind": "entry",
+      "name": "ClaimOperatorReward",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "app",
+          "role": "input",
+          "type": "u8"
+        },
+        {
+          "name": "asset",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "total",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "policy",
+          "role": "input",
+          "type": "FeePolicy"
+        },
+        {
+          "name": "promoted",
+          "role": "input",
+          "type": "bool"
+        }
+      ],
+      "discriminator": 59330,
+      "handler": "standard_fee_split",
+      "kind": "view",
+      "name": "StandardFeeSplit",
+      "returns": {
+        "type": "FeeSplit"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 649,
+      "handler": "application_reward_budget",
+      "kind": "view",
+      "name": "ApplicationRewardBudget",
+      "returns": {
+        "type": "AppBudget"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "asset",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 45647,
+      "handler": "operator_reward",
+      "kind": "view",
+      "name": "OperatorReward",
+      "returns": {
+        "type": "u64"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "asset",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 48531,
+      "handler": "reward_reserve",
+      "kind": "view",
+      "name": "RewardReserve",
+      "returns": {
+        "type": "u64"
+      }
+    }
+  ],
+  "types": [
+    {
+      "fields": [
+        {
+          "name": "application",
+          "type": "u64"
+        },
+        {
+          "name": "foundation",
+          "type": "u64"
+        },
+        {
+          "name": "staking",
+          "type": "u64"
+        },
+        {
+          "name": "promotion",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "FeeSplit",
+      "typeTag": 5116823057170717441
+    },
+    {
+      "fields": [
+        {
+          "name": "assets",
+          "type": "map<Address,u64>"
+        },
+        {
+          "name": "closed",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "AppBudget",
+      "typeTag": 5557752805704797021
+    },
+    {
+      "fields": [
+        {
+          "name": "foundation_bps",
+          "type": "u16"
+        },
+        {
+          "name": "staking_bps",
+          "type": "u16"
+        },
+        {
+          "name": "promotion_bps",
+          "type": "u16"
+        }
+      ],
+      "kind": "struct",
+      "name": "FeePolicy",
+      "typeTag": 4473674291598375997
+    },
+    {
+      "fields": [
+        {
+          "name": "protocol",
+          "type": "u64"
+        },
+        {
+          "name": "foundation",
+          "type": "u64"
+        },
+        {
+          "name": "promotion",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "SplitCarry",
+      "typeTag": 7885346034409931958
+    },
+    {
+      "fields": [
+        {
+          "name": "ix_index",
+          "type": "u8"
+        },
+        {
+          "name": "fee_sequence",
+          "type": "u32"
+        }
+      ],
+      "kind": "struct",
+      "name": "FeeReference",
+      "typeTag": 16793876211028395616
+    },
+    {
+      "fields": [
+        {
+          "name": "gas",
+          "type": "u64"
+        },
+        {
+          "name": "gas_closed",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "EpochBudget",
+      "typeTag": 15951919452964169208
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "u8",
+      "typeTag": 631772817358541784
+    }
+  ],
+  "resources": [
+    {
+      "name": "_AppBudget",
+      "type": "AppBudget",
+      "typeTag": 5557752805704797021
+    },
+    {
+      "name": "_SplitCarry",
+      "type": "SplitCarry",
+      "typeTag": 7885346034409931958
+    },
+    {
+      "name": "_EpochBudget",
+      "type": "EpochBudget",
+      "typeTag": 15951919452964169208
+    },
+    {
+      "name": "_Claimable",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_Reserve",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_GasSplitRemainder",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    }
+  ],
+  "events": [
+    {
+      "fields": [
+        {
+          "indexed": false,
+          "name": "ix_index",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "fee_sequence",
+          "type": "u32"
+        },
+        {
+          "indexed": false,
+          "name": "app",
+          "type": "u8"
+        },
+        {
+          "indexed": true,
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "source",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "total",
+          "type": "u64"
+        }
+      ],
+      "name": "FeeDebited",
+      "typeTag": 17811253492375370012
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "tx_index",
+          "type": "u32"
+        },
+        {
+          "indexed": false,
+          "name": "ix_index",
+          "type": "u8"
+        },
+        {
+          "indexed": false,
+          "name": "fee_sequence",
+          "type": "u32"
+        },
+        {
+          "indexed": false,
+          "name": "app",
+          "type": "u8"
+        },
+        {
+          "indexed": true,
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "total",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "application",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "foundation",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "staking",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "promotion",
+          "type": "u64"
+        },
+        {
+          "indexed": true,
+          "name": "promoter",
+          "type": "Address"
+        }
+      ],
+      "name": "FeeDistributed",
+      "typeTag": 1660378381402298022
+    }
+  ]
+}

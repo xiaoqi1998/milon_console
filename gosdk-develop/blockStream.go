@@ -75,7 +75,7 @@ type BlockStream struct {
 
 // streamMaxRecvMsgSize is the per-frame receive limit: gRPC defaults to 4MB and exceeding it reports ResourceExhausted;
 // after the stream breaks and reconnects the server resends the same block and fails again, getting stuck on that block forever; raise it to 32MB to accommodate oversized blocks.
-const streamMaxRecvMsgSize = 32 << 20
+const streamMaxRecvMsgSize = 64 << 20
 
 // tlsPort is the port treated as TLS: public gRPC endpoints are published on 443
 const tlsPort = "443"

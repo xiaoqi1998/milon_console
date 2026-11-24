@@ -11,15 +11,16 @@ import (
 func TestBlock_MarshalPostcard(t *testing.T) {
 	t.Run("round trip with all fields populated", func(t *testing.T) {
 		original := api.Block{
-			Number:    1234567890,
-			Epoch:     42,
-			Slot:      100,
-			Hash:      api.TxHash{1, 2, 3, 4, 5},
-			PrevHash:  api.TxHash{6, 7, 8, 9, 10},
-			StateHash: api.TxHash{11, 12, 13, 14, 15},
-			TxRoot:    api.TxHash{16, 17, 18, 19, 20},
-			TxCount:   7,
-			Timestamp: 9876543210,
+			Number:         1234567890,
+			Epoch:          42,
+			Slot:           100,
+			Hash:           api.TxHash{1, 2, 3, 4, 5},
+			PrevHash:       api.TxHash{6, 7, 8, 9, 10},
+			StateHash:      api.TxHash{11, 12, 13, 14, 15},
+			MembershipHash: api.TxHash{21, 22, 23},
+			TxRoot:         api.TxHash{16, 17, 18, 19, 20},
+			TxCount:        7,
+			Timestamp:      9876543210,
 		}
 
 		data, err := postcard.SerializePostcard(&original)
@@ -38,15 +39,16 @@ func TestBlock_MarshalPostcard(t *testing.T) {
 
 	t.Run("max uint64 values", func(t *testing.T) {
 		original := api.Block{
-			Number:    18446744073709551615,
-			Epoch:     18446744073709551615,
-			Slot:      18446744073709551615,
-			Hash:      api.TxHash{1, 2, 3, 4, 5},
-			PrevHash:  api.TxHash{6, 7, 8, 9, 10},
-			StateHash: api.TxHash{11, 12, 13, 14, 15},
-			TxRoot:    api.TxHash{16, 17, 18, 19, 20},
-			TxCount:   4294967295,
-			Timestamp: 18446744073709551615,
+			Number:         18446744073709551615,
+			Epoch:          18446744073709551615,
+			Slot:           18446744073709551615,
+			Hash:           api.TxHash{1, 2, 3, 4, 5},
+			PrevHash:       api.TxHash{6, 7, 8, 9, 10},
+			StateHash:      api.TxHash{11, 12, 13, 14, 15},
+			MembershipHash: api.TxHash{21, 22, 23},
+			TxRoot:         api.TxHash{16, 17, 18, 19, 20},
+			TxCount:        4294967295,
+			Timestamp:      18446744073709551615,
 		}
 
 		data, err := postcard.SerializePostcard(&original)
@@ -65,27 +67,29 @@ func TestBlock_MarshalPostcard(t *testing.T) {
 
 	t.Run("serialized data is deterministic", func(t *testing.T) {
 		block1 := api.Block{
-			Number:    999,
-			Epoch:     1,
-			Slot:      11,
-			Hash:      api.TxHash{1, 2, 3},
-			PrevHash:  api.TxHash{4, 5, 6},
-			StateHash: api.TxHash{7, 8, 9},
-			TxRoot:    api.TxHash{10, 11, 12},
-			TxCount:   3,
-			Timestamp: 888,
+			Number:         999,
+			Epoch:          1,
+			Slot:           11,
+			Hash:           api.TxHash{1, 2, 3},
+			PrevHash:       api.TxHash{4, 5, 6},
+			StateHash:      api.TxHash{7, 8, 9},
+			MembershipHash: api.TxHash{13, 14},
+			TxRoot:         api.TxHash{10, 11, 12},
+			TxCount:        3,
+			Timestamp:      888,
 		}
 
 		block2 := api.Block{
-			Number:    999,
-			Epoch:     1,
-			Slot:      11,
-			Hash:      api.TxHash{1, 2, 3},
-			PrevHash:  api.TxHash{4, 5, 6},
-			StateHash: api.TxHash{7, 8, 9},
-			TxRoot:    api.TxHash{10, 11, 12},
-			TxCount:   3,
-			Timestamp: 888,
+			Number:         999,
+			Epoch:          1,
+			Slot:           11,
+			Hash:           api.TxHash{1, 2, 3},
+			PrevHash:       api.TxHash{4, 5, 6},
+			StateHash:      api.TxHash{7, 8, 9},
+			MembershipHash: api.TxHash{13, 14},
+			TxRoot:         api.TxHash{10, 11, 12},
+			TxCount:        3,
+			Timestamp:      888,
 		}
 
 		data1, err := postcard.SerializePostcard(&block1)
@@ -124,15 +128,16 @@ func TestBlock_DeserializeErrors(t *testing.T) {
 
 	t.Run("trailing bytes not allowed", func(t *testing.T) {
 		original := api.Block{
-			Number:    1234567890,
-			Epoch:     42,
-			Slot:      100,
-			Hash:      api.TxHash{1, 2, 3},
-			PrevHash:  api.TxHash{4, 5, 6},
-			StateHash: api.TxHash{7, 8, 9},
-			TxRoot:    api.TxHash{10, 11, 12},
-			TxCount:   3,
-			Timestamp: 9876543210,
+			Number:         1234567890,
+			Epoch:          42,
+			Slot:           100,
+			Hash:           api.TxHash{1, 2, 3},
+			PrevHash:       api.TxHash{4, 5, 6},
+			StateHash:      api.TxHash{7, 8, 9},
+			MembershipHash: api.TxHash{13, 14},
+			TxRoot:         api.TxHash{10, 11, 12},
+			TxCount:        3,
+			Timestamp:      9876543210,
 		}
 
 		data, err := postcard.SerializePostcard(&original)
@@ -152,15 +157,16 @@ func TestBlock_DeserializeErrors(t *testing.T) {
 
 	t.Run("trailing bytes allowed", func(t *testing.T) {
 		original := api.Block{
-			Number:    1234567890,
-			Epoch:     42,
-			Slot:      100,
-			Hash:      api.TxHash{1, 2, 3},
-			PrevHash:  api.TxHash{4, 5, 6},
-			StateHash: api.TxHash{7, 8, 9},
-			TxRoot:    api.TxHash{10, 11, 12},
-			TxCount:   3,
-			Timestamp: 9876543210,
+			Number:         1234567890,
+			Epoch:          42,
+			Slot:           100,
+			Hash:           api.TxHash{1, 2, 3},
+			PrevHash:       api.TxHash{4, 5, 6},
+			StateHash:      api.TxHash{7, 8, 9},
+			MembershipHash: api.TxHash{13, 14},
+			TxRoot:         api.TxHash{10, 11, 12},
+			TxCount:        3,
+			Timestamp:      9876543210,
 		}
 
 		data, err := postcard.SerializePostcard(&original)

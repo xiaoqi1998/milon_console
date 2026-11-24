@@ -15,7 +15,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	client := milon.NewClient(milon.DevNet)
+	client, err := milon.NewClient(milon.DevNet)
+	if err != nil {
+		panic(err)
+	}
 	res, err := client.GetAccount(issuer)
 	if err != nil {
 		panic(err)

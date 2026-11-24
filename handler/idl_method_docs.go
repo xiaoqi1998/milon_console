@@ -72,7 +72,7 @@ var idlMethodDocs = map[string]string{
 	"account.ListActiveVotes":   "【功能】列出账户当前全部活跃投票意图。\n【返回】[[VoteMeta, 已投票位图, 是否达标], ...] 数组。",
 	"account.SweepExpiredVotes": "【功能】一次性清理自己名下已过期的投票意向，腾出投票索引位。\n【限制】仅可清理已过期意向（VoteExpired 276）；清扫手续费不足报 VoteSweepFeeInsufficient 285；清扫唤醒被拒报 VoteWakeRejected 286。",
 
-	// ==================== token 模块（app_id=2，33 entry + 13 view）====================
+	// ==================== token 模块（app_id=2，35 entry + 13 view）====================
 
 	"token.Create": "【功能】创建新代币资源：登记名称/符号/精度/图标等元数据并设定 owner（管理权限）。发币方调用；token 地址由专用密钥对派生，且该密钥必须参与交易签名。\n【限制】token 地址已被占用报 TokenAlreadyExists（516）；token 私钥必须签名，否则报 AddressNotSignatured（519）。",
 
@@ -118,7 +118,7 @@ var idlMethodDocs = map[string]string{
 
 	"token.ClearComplianceRequirements": "【功能】清空全部合规凭证要求，代币恢复为无合规限制。\n【限制】仅 owner 生效。",
 
-	"token.ClaimFaucet": "【功能】从水龙头领取原生 MIL 代币（新账户获取 gas 费用）。本指令 gas 由链上赞助池代付（sponsor）。\n【限制】每次领取 10^10 最小单位（6 位精度下 10,000 token）；每地址 24 小时冷却，冷却期内任何尝试（含失败）都会触发/续期冷却（FaucetCooldownActive 523），脚本领水务必单次尝试；低链 ID 下水龙头禁用（FaucetDisabled 522）。",
+	"token.ClaimFaucet": "【功能】从水龙头领取原生 MIL 代币（新账户获取 gas 费用）。本指令 gas 由链上赞助池代付（sponsor）。\n【限制】每次领取 10^6 最小单位（6 位精度下 1 token）；每地址 24 小时冷却，冷却期内任何尝试（含失败）都会触发/续期冷却（FaucetCooldownActive 523），脚本领水务必单次尝试；低链 ID 下水龙头禁用（FaucetDisabled 522）。",
 
 	"token.BalanceOf": "【功能】查询某地址在某代币上的余额。\n【返回】u64，最小单位。",
 
@@ -150,12 +150,14 @@ var idlMethodDocs = map[string]string{
 	"token.ClaimHongbao":            "【功能】领取红包（claimant 签名）。\n【限制】红包须存在（HongbaoNotFound 524）；须在有效期内（HongbaoExpired 526）；资格不符报 HongbaoNotEligible 530（rules 名单 / VC / SFT 要求）；不可重复领取（HongbaoAlreadyClaimed 531）。",
 	"token.RefundHongbao":           "【功能】红包过期后把剩余托管金额退回创建者。\n【限制】红包须存在（524）；须已过期（HongbaoNotExpired 527）；仍在进行中报 HongbaoStillActive 528。",
 	"token.RunHongbaoCleanup":       "【功能】推进过期红包的清算（结算领取记录、回收托管），配合到期唤醒机制逐批执行。\n【限制】红包须已过期（HongbaoStillActive 528）；清扫唤醒被拒报 HongbaoCleanupWakeRejected 534。",
+	"token.ScheduleHongbaoRefund":   "【功能】为已过期红包登记一笔定时退款任务（写入链上退款堆，到期后由 RunHongbaoRefund 执行），把剩余托管金额退回创建者。\n【限制】红包须存在（HongbaoNotFound 524）；须已过期（HongbaoNotExpired 527）；仍在进行中报 HongbaoStillActive 528；托管账实不一致报 HongbaoEscrowInvariantViolation 532。",
+	"token.RunHongbaoRefund":        "【功能】执行到期的红包退款任务（gas 由链上赞助池代付，sponsor），退还剩余托管并发出 HongbaoRefunded 事件。\n【限制】须先 ScheduleHongbaoRefund 登记且任务已到期；红包须已过期（HongbaoNotExpired 527）；退款被拒报 DeliveryRejected 536。",
 	"token.HongbaoInfo":             "【功能】查询红包实时状态。\n【返回】HongbaoState：{creator, hongbao_id, token, total_amount, remaining_amount, claim_count, claimed_count, expires_at_ms, allocation, eligibility, claimed_recipients}。",
 	"token.HongbaoSettlement":       "【功能】查询红包清算进度。\n【返回】HongbaoSettlement：{creator, status, claim_records, cleanup_cursor}。",
 	"token.HongbaoMessage":          "【功能】查询红包附言（创建时 message 参数）。\n【返回】String。",
 	"token.CanClaimHongbao":         "【功能】判断某地址当前能否领取某红包。\n【返回】bool。",
 
-	// ==================== staking 模块（app_id=3，15 entry + 5 view，Pool 模型）====================
+	// ==================== staking 模块（app_id=3，16 entry + 6 view，Pool 模型）====================
 
 	"staking.CreatePool": "【功能】创建质押池：指定质押/奖励代币、周期配置（质押激活/解冻/奖励发放/佣金变更四类延迟，周期基准支持 Epoch/块高/时间戳）与佣金配置（费率+收款地址），返回池 ID。池主对池拥有暂停/关闭/佣金收取等全权。\n【返回】PoolId（新建池 ID，base58 字符串）。\n【限制】佣金率 ≤10000 基点；nonce 用于池 ID 确定性派生，非法报 InvalidParameters（768）；周期配置须合法（768）。",
 
@@ -189,26 +191,26 @@ var idlMethodDocs = map[string]string{
 	"staking.ClaimCommission":    "【功能】佣金收款人领取某池累计佣金。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】仅佣金收款地址（recipient）可领。",
 	"staking.Position":           "【功能】查询某地址在某池的聚合持仓视图：激活本金、奖励进度、可领奖励/本金与各周期挂账（staking 查询主入口，取代旧按 stake_id 的逐单查询）。\n【返回】Position：{owner, pool_id, active_principal, reward_checkpoint, reward_fraction, claimable_rewards, claimable_principal, deposits: [{cycle, amount}], exits: [{cycle, amount}], tracked}。",
 	"staking.CommissionBalance":  "【功能】查询某池佣金收款人当前可领佣金余额。\n【返回】u64（最小单位）。",
+	"staking.ClaimAssetRewards":  "【功能】领取某池中以「非奖励代币」资产（asset，如第三方代币/合规资产）累计的奖励——按 (pool_id, asset) 独立记账的资产奖励指数结算（2026-11-24 新增，与 reward_asset 主奖励并行）。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】owner 须签名；池不存在或记账不变量被破坏报 InvariantViolation（769）。",
+	"staking.AssetRewards":       "【功能】查询某地址在某池、某资产下的资产奖励进度与可领余额。\n【返回】map<Address, AssetReward>：键为资产地址，值为 {checkpoint, fraction, claimable}。",
 
-	// ==================== validator 模块（app_id=7，12 entry + 8 view，验证人生命周期；2026-11-20 池模型改直连模型）====================
+	// ==================== validator 模块（app_id=7，11 entry + 7 view，验证人生命周期；2026-11-24 奖励预算移交 funds 模块）====================
 
 	"validator.RegisterValidator":       "【功能】注册验证人：owner 与 consensus_account 双签名，登记共识/BLS/ed25519 三把公钥并缴纳初始自押（self_stake），返回验证人 ID（直连模型入口，注册后即可被引导进验证人集合）。\n【返回】ValidatorId（B256，base58）。\n【限制】不可重复注册（AlreadyRegistered 1792）；签名者须为该验证人 owner（OwnerMismatch 1794）；共识身份未就绪报 ConsensusIdentityMissing（1795）；参数非法报 InvalidParameters（1796）；公钥长度按曲线校验（BLS 48 字节 / ed25519 32 字节）。",
 	"validator.JoinValidator":           "【功能】验证人 owner 申请加入验证人集合（记录 Membership，join_epoch 为生效纪元，随 epoch 冻结进入集合）。\n【限制】ValidatorId 须已注册（NotRegistered 1793）；签名者须为 owner（OwnerMismatch 1794）。",
 	"validator.ExitValidator":           "【功能】验证人 owner 申请退出验证人集合（Membership.exit_epoch 置位，随目标 epoch 结算退出）。\n【限制】ValidatorId 须已注册（1793）；签名者须为 owner（1794）；未在集合中报参数错误（1796）。",
 	"validator.TopUpSelfStake":          "【功能】验证人 owner 为自己追加自押金额（满足/维持最低自押门槛 minimum_self_stake）。\n【限制】签名者须为 owner（OwnerMismatch 1794）；金额须大于 0（1796）。",
-	"validator.FundValidatorRewards":    "【功能】向验证人奖励预算注资（全局 ValidatorRewardBudget），作为各 epoch 验证人奖励的发放来源（任何持币人可资助，替代旧 FundValidatorRewardPolicy）。\n【限制】余额不足透传 Token（1798）；金额须大于 0（1796）。",
-	"validator.FreezeValidatorEpoch":    "【功能】冻结当前 epoch：锁定验证人集合、最低自押与每验证人奖励额度等参数为 FrozenEpoch 快照（previous_set_hash/freeze_block/freeze_slot/start_slot），是 SettleValidatorEpoch 的前置。\n【限制】须验证人集合就绪（ValidatorSetUnavailable 1801）；重复冻结报参数错误。",
-	"validator.SettleValidatorEpoch":    "【功能】结算当前 epoch：按冻结快照结算出块活动并发放验证人奖励（自押利息/奖励预算切分）。\n【限制】须先成功 FreezeValidatorEpoch；同一 epoch 不可重复结算；须验证人集合就绪（1801）。",
+	"validator.FreezeValidatorEpoch":    "【功能】冻结当前 epoch：锁定验证人集合、最低自押与每验证人奖励额度等参数为 FrozenEpoch 快照（previous_set_hash/freeze_block/freeze_slot/start_slot），是 SettleValidatorEpoch 的前置。\n【限制】须验证人集合就绪（ValidatorSetUnavailable 1800）；重复冻结报参数错误。",
+	"validator.SettleValidatorEpoch":    "【功能】结算当前 epoch：按冻结快照结算出块活动并发放验证人奖励（自押利息/奖励预算切分）。\n【限制】须先成功 FreezeValidatorEpoch；同一 epoch 不可重复结算；须验证人集合就绪（1800）。",
 	"validator.RecordValidatorActivity": "【功能】记录当前验证人的出块活动（EpochActivity 的 blocks/signers/last_block 计数来源，通常由链内共识通道调用）。\n【限制】须验证人集合就绪（1801）。",
 	"validator.BootstrapValidatorRules": "【功能】引导期一次性设置验证人规则：最低自押门槛（minimum_self_stake）。\n【限制】仅链引导阶段调用，重复引导失败。",
 	"validator.RequestPoolRewardConfig": "【功能】验证人 owner 申请变更佣金配置（费率/收款地址，PoolRewardConfig）：新配置记为待生效，过佣金变更延迟后自动启用。\n【限制】签名者须为 owner（OwnerMismatch 1794）；配置须合法（InvalidParameters 1796）；存在待生效配置时再次申请将覆盖。",
-	"validator.ClaimPoolCommission":     "【功能】验证人 owner 领取验证人池累计佣金（按佣金费率从注入奖励中切分）。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】签名者须为 owner（1794）；金库账实不一致报 RewardTreasuryBackingMismatch（1797）。",
+	"validator.ClaimPoolCommission":     "【功能】验证人 owner 领取验证人池累计佣金（按佣金费率从注入奖励中切分）。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】签名者须为 owner（1794）；金库余额不足或记账异常透传 Token（1797）。",
 	"validator.SweepPoolResidual":       "【功能】验证人 owner 清理退出/关停后池内残留资金，转入 owner 账户。\n【返回】u64 实际清扫金额（最小单位）；无可清扫返回 0。\n【限制】签名者须为 owner（1794）。",
 
-	"validator.ValidatorEpochActivity": "【功能】查询某 epoch 的验证人出块活动统计。\n【返回】EpochActivity：{blocks（出块数）, signers（参与签名验证人数）, last_block（末块高度）}。",
 	"validator.ValidatorMemberships":   "【功能】查询全体验证人集合成员关系。\n【返回】vec<Membership>：每项 {validator, join_epoch, exit_epoch（option，null 表示在任）, minimum_self_stake}。",
-	"validator.CurrentValidatorPools":  "【功能】查询当前 epoch 全体验证人池总览。\n【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, position_count}]}；集合未就绪报 1801。",
-	"validator.ValidatorRewardBudget":  "【功能】查询验证人奖励预算余额（FundValidatorRewards 注资的累计可发放额度）。\n【返回】u64（最小单位）。",
+	"validator.CurrentValidatorPools":  "【功能】查询当前 epoch 全体验证人池总览。\n【返回】ValidatorPoolList：{epoch, validator_set_hash, validators: [{validator, consensus_account, pool_id, stake_asset, reward_asset, total_stake, commission_rate_bps, position_count}]}；集合未就绪报 1800。",
+	"validator.ValidatorProposalActivity": "【功能】查询某 epoch 的验证人提案（出块）活动统计（取代旧 ValidatorEpochActivity/EpochActivity）。\n【返回】ProposalActivity：{set_hash（验证人集合哈希）, counts（各验证人提案数数组）, total（提案总数）, last_block（末块高度）, frozen（是否已冻结快照）, denied（被拒提案数）}。",
 	"validator.ValidatorProfile":       "【功能】查询验证人档案。\n【返回】ValidatorProfile：{validator, owner, pool_id}；未注册报 1793。",
 	"validator.ValidatorForOwner":      "【功能】按 owner 地址反查其绑定的 ValidatorId。\n【返回】ValidatorId（B256）；未绑定报 1793。",
 	"validator.ValidatorSelfStake":     "【功能】查询某验证人在目标 epoch 的自押金额（快照值）。\n【返回】u64（最小单位）。",
@@ -574,6 +576,34 @@ var idlMethodDocs = map[string]string{
 	"social.DissolveCommunity":        "【功能】解散社区：解散后社区红包领取与成员变更被阻断（CommunityDissolved 2598）。\n【限制】签名者须为社区 owner（CommunityOwnerRequired 2581）；社区须存在（2578）。",
 	"social.IsCommunityDissolved":     "【功能】查询社区是否已解散。\n【返回】bool。",
 
+	// ==================== funds 模块（app_id=11，1 entry + 4 view，协议费拆分与奖励金库；2026-11-24 新增）====================
+
+	"funds.ClaimOperatorReward": "【功能】领取某资产在本账本中累计给 operator/验证人 的可领奖励（费用按 FeePolicy 拆分后归集到 _Claimable）。\n【返回】u64 实际领取数量（最小单位）；无可领返回 0。\n【限制】owner 须签名；资产须存在对应可领余额，否则领取量为 0。",
+	"funds.StandardFeeSplit": "【功能】按标准费率策略试算一笔手续费的拆分结果（纯计算，无状态写入）：给定 total 与 FeePolicy（foundation_bps/staking_bps/promotion_bps）及是否带 promoted，返回 application/foundation/staking/promotion 四份金额（余数留 application）。\n【返回】FeeSplit：{application, foundation, staking, promotion}（最小单位）。",
+	"funds.ApplicationRewardBudget": "【功能】查询某 epoch 的应用（gas）奖励预算分布（取代旧 validator.ValidatorRewardBudget 的应用侧额度）。\n【返回】AppBudget：{assets（资产地址 → 可发放额度）, closed（该 epoch 预算是否已封账）}。",
+	"funds.OperatorReward": "【功能】查询某地址在某资产上的累计可领 operator 奖励。\n【返回】u64（最小单位）。",
+	"funds.RewardReserve": "【功能】查询某资产在奖励金库中的托管储备余额（尚未分配的协议费）。\n【返回】u64（最小单位）。",
+
+	// ==================== commission 模块（app_id=12，9 entry + 8 view，订单收单/佣金结算；2026-11-24 新增）====================
+
+	"commission.CreateCollection": "【功能】创建收单方案（CollectionScheme）：owner 签名登记不可变规则（收款资产、商户收款人、可选推广人、佣金基点、退款模式/窗口、结算延迟、退款权限地址、订单有效期上限、最小/固定金额），链上分配 scheme_id 并派生 collection_address（付款入口）与 gas_address（任务执行账户）。\n【限制】规则自洽校验（InvalidScheme 3093：佣金 0..=10000bps 且无推广人时必须为 0、退款模式须 0/1/2、退款窗口与订单有效期不溢出）；scheme_id 耗尽报 SchemeIdExhausted（3097）。",
+	"commission.StopCollection": "【功能】停止收单方案的「新付款」入口（已有订单仍可结算/退款）。\n【限制】须方案 owner 签名（owner_signer）；方案须存在（SchemeNotFound 3092）；已停止再停报 SchemeStopped（3094）。",
+	"commission.DestroyCollection": "【功能】销毁收单方案，回收其 gas 储备。\n【限制】须方案 owner 签名；方案须存在（3092）；仍有未结清订单报 SchemeOutstanding（3096）。",
+	"commission.PayCollection": "【功能】按收单方案付款下单：payer 把 amount 转入案内托管，链上派生订单地址（OrderId）并登记付款条款（含 terms_hash 可选校验）。\n【返回】订单地址可从 OrderId/交易事件回读。\n【限制】方案须存在（3092）且未停止（3094）；金额须为正（InvalidAmount 3083）且满足最小/固定金额；资产不能为空（InvalidAsset 3084）；付款期限已到报 PaymentExpired（3091）。",
+	"commission.RunCollectionTask": "【功能】推进收单方案定时的后台任务（链上唤醒执行半程，任何人可用指定 gas 账户触发），处理到期结算/退款任务分片。\n【限制】任务被拒报 CollectionTaskRejected（3100）；gas 储备不足报 InsufficientSettlementGas（3098）；订单/退款凭据容量超限报 CollectionCapacity（3101）。",
+	"commission.RefundOrder": "【功能】退款权限人（authority）对已付款订单发起（增量）退款：把 target_refunded 作为累计退款目标，从托管退回付款人。\n【限制】订单须存在（NotFound 3073）；已付才可退（否则 3073）；退款窗口已关报 RefundClosed（3077）；权限不符报 UnauthorizedRefund（3076）；退款目标须递增且不超过已付额（InvalidRefundTarget 3080）；与历史退款结果冲突报 RefundConflict（3079）；托管不变量破坏报 CustodyInvariant（3081）。",
+	"commission.SettleOrder": "【功能】结算已付款订单：把净额分给商户（与推广人佣金），商户/推广人可随后领取。\n【限制】订单须存在（3073）；未到结算时间报 NotDue（3078）；操作进行中报 Busy（3075）；托管不变量破坏报 3081。",
+	"commission.ClaimMerchant": "【功能】商户领取某订单结算后的商户应收款。\n【限制】订单须存在（3073）；无可领或已领取报 NotFound（3073）/AlreadyPaid（3074）。",
+	"commission.ClaimPromoter": "【功能】推广人领取某订单结算后的佣金。\n【限制】订单须存在（3073）；无推广人或无可领报 NotFound（3073）；已领取报 AlreadyPaid（3074）。",
+	"commission.CollectionScheme": "【功能】按 scheme_id 查询收单方案全量配置。\n【返回】option<CollectionScheme>：{id, owner, collection_address, gas_address, stopped, outstanding_orders, reserved_gas, rules}；不存在返回 null。",
+	"commission.CollectionOrderId": "【功能】由（收单地址, 订单键 B96）派生出该笔收单订单的链上地址。\n【返回】Address。",
+	"commission.CollectionOrder": "【功能】查询收单侧订单附加状态（所属方案、预留 gas、已登记退款键）。\n【返回】option<CollectionOrder>：{scheme_id, reserved_gas, refund_keys}；不存在返回 null。",
+	"commission.Order": "【功能】按订单地址查询订单全量状态。\n【返回】option<OrderState>：{source, payer, terms, paid_at_ms, refund_deadline_ms, settle_at_ms, refunded, remaining, settled, merchant_amount, commission_amount, merchant_claimed, promoter_claimed, busy}；不存在返回 null。",
+	"commission.OrderId": "【功能】由（订单来源 OrderSource, 订单键 B96）派生出订单地址（非收单场景的通用下单入口）。\n【返回】Address。",
+	"commission.RefundReceipt": "【功能】查询某订单某笔退款的凭据。\n【返回】option<RefundReceipt>：{target, amount}；不存在返回 null。",
+	"commission.OrderOverview": "【功能】查询订单的对账总览（商户/推广人可领、可退金额与状态机终态判定）。\n【返回】option<OrderOverview>：{order_id, asset, as_of_ms, status(Holding|ReadyToSettle|AwaitingClaims|Refunded|Closed), refund_deadline_ms, settle_at_ms, paid_amount, refunded_amount, remaining_principal, net_amount, merchant_amount, commission_amount, merchant_claimable, promoter_claimable, refundable_amount}；不存在返回 null。",
+	"commission.QuoteCommission": "【功能】佣金试算（纯计算）：给定 amount 与 bps，返回佣金金额。\n【返回】u64（最小单位）。",
+
 	// ==================== demo 模块（app_id=254，19 entry + 13 view）====================
 
 	"demo.OpenOrder": "【功能】演示订单支付流第一步：operator 开一个演示订单（收款托管户头）。\n【限制】order_id 不可重复（OrderAlreadyExists 65029）。",
@@ -855,6 +885,8 @@ var idlArgDocs = map[string]string{
 	"token.RefundHongbao:hongbao_id":                     "红包地址，base58 字符串",
 	"token.RunHongbaoCleanup:hongbao_id":                 "红包地址，base58 字符串",
 	"token.HongbaoInfo:hongbao_id":                       "红包地址，base58 字符串",
+	"token.ScheduleHongbaoRefund:hongbao_id":             "已过期红包地址，base58 字符串",
+	"token.RunHongbaoRefund:hongbao_id":                  "已登记退款任务的红包地址，base58 字符串",
 	"token.HongbaoSettlement:hongbao_id":                 "红包地址，base58 字符串",
 	"token.HongbaoMessage:hongbao_id":                    "红包地址，base58 字符串",
 	"token.CanClaimHongbao:hongbao_id":                   "红包地址，base58 字符串",
@@ -903,6 +935,11 @@ var idlArgDocs = map[string]string{
 	"staking.ClaimPrincipal:pool_id":                       "池 ID，base58 字符串",
 	"staking.ClaimRewards:owner":                           "质押人地址，须其私钥参与交易签名",
 	"staking.ClaimRewards:pool_id":                         "池 ID，base58 字符串",
+	"staking.ClaimAssetRewards:owner":                      "质押人地址，须其私钥参与交易签名",
+	"staking.ClaimAssetRewards:pool_id":                    "池 ID，base58 字符串",
+	"staking.ClaimAssetRewards:asset":                      "资产地址，base58 字符串（该池记账的奖励资产）",
+	"staking.AssetRewards:owner":                           "持仓地址，base58 字符串",
+	"staking.AssetRewards:pool_id":                         "池 ID，base58 字符串",
 	"staking.ClaimCommission:recipient":                    "佣金收款地址，须其私钥参与交易签名",
 	"staking.ClaimCommission:pool_id":                      "池 ID，base58 字符串",
 	"staking.Position:owner":                               "质押人地址，base58 字符串",
@@ -918,8 +955,6 @@ var idlArgDocs = map[string]string{
 	"validator.TopUpSelfStake:owner":                       "验证人 owner 地址，须其私钥参与交易签名",
 	"validator.TopUpSelfStake:validator":                   "ValidatorId 验证人标识，base58 字符串",
 	"validator.TopUpSelfStake:amount":                      "追加自押金额，最小单位十进制数字",
-	"validator.FundValidatorRewards:funder":                "注资人地址，须其私钥参与交易签名",
-	"validator.FundValidatorRewards:amount":                "注资金额，最小单位十进制数字",
 	"validator.RequestPoolRewardConfig:owner":              "验证人 owner 地址，须其私钥参与交易签名",
 	"validator.RequestPoolRewardConfig:validator":          "ValidatorId，base58 字符串",
 	"validator.RequestPoolRewardConfig:config":             "佣金配置 JSON：{commission_rate_bps（万分比）, commission_recipient}",
@@ -929,7 +964,7 @@ var idlArgDocs = map[string]string{
 	"validator.SweepPoolResidual:validator":                "ValidatorId，base58 字符串",
 	// ==================== validator ====================
 
-	"validator.ValidatorEpochActivity:epoch":    "epoch 序号，十进制数字",
+	"validator.ValidatorProposalActivity:epoch": "epoch 序号，十进制数字",
 	"validator.ValidatorProfile:validator":      "ValidatorId 验证人标识，base58 字符串",
 	"validator.ValidatorForOwner:owner":         "验证人 owner 地址，base58 字符串",
 	"validator.ValidatorSelfStake:validator":    "ValidatorId 验证人标识，base58 字符串",
@@ -1200,7 +1235,7 @@ var idlArgDocs = map[string]string{
 	"dex.PlaceLimitOrder:time_in_force":                 "有效期枚举：\"GoodTilCancel\" | \"ImmediateOrCancel\"（立即成交否则取消）| \"AddLiquidityOnly\"（只挂单不吃单）",
 	"dex.PlaceLimitOrder:self_trade_policy":             "自成交策略枚举：\"CancelTaker\" | \"CancelMaker\" | \"CancelBoth\"",
 	"dex.PlaceLimitOrder:max_fills":                     "本笔最多成交次数，十进制数字",
-	"dex.PlaceLimitOrder:channel":                       "返佣渠道地址，base58 字符串（无渠道可传零地址）",
+	"dex.PlaceLimitOrder:promoter":                      "推广返佣地址，base58 字符串（无推广人可传零地址；2026-11-24 由 channel 改名，费率拆为 foundation/staking/promotion 三份）",
 	"dex.CancelOrder:owner":                             "订单本人地址，须其私钥参与交易签名",
 	"dex.CancelOrder:market_id":                         "市场地址，base58 字符串",
 	"dex.CancelOrder:order_id":                          "链上订单编号，十进制数字",
@@ -1260,7 +1295,7 @@ var idlArgDocs = map[string]string{
 	"dex.SwapExactIn:worst_tick":                        "最差可成交价格档（u32 tick），超出即停止成交",
 	"dex.SwapExactIn:max_book_makers":                   "订单簿最多吃单档数",
 	"dex.SwapExactIn:max_amm_segments":                  "AMM 最多分段成交段数",
-	"dex.SwapExactIn:channel":                           "返佣渠道地址，base58 字符串（无渠道可传零地址）",
+	"dex.SwapExactIn:promoter":                          "推广返佣地址，base58 字符串（无推广人可传零地址；2026-11-24 由 channel 改名，费率拆为 foundation/staking/promotion 三份）",
 	"dex.AmmSwapEnabled:market_id":                      "市场地址，base58 字符串",
 
 	// ==================== keyless ====================
@@ -1449,6 +1484,53 @@ var idlArgDocs = map[string]string{
 	"social.JoinRequest:member":                     "成员地址，base58 字符串",
 	"social.CommunityMembership:community_id":       "社区 ID，十进制数字",
 	"social.CommunityMembership:member":             "成员地址，base58 字符串",
+
+	// ==================== funds ====================
+	"funds.ClaimOperatorReward:owner": "领取人地址，须其私钥参与交易签名",
+	"funds.ClaimOperatorReward:asset": "奖励资产地址，base58 字符串",
+	"funds.StandardFeeSplit:app":      "应用编号，十进制数字（app_id）",
+	"funds.StandardFeeSplit:asset":    "手续费资产地址，base58 字符串",
+	"funds.StandardFeeSplit:total":    "手续费总额，最小单位十进制数字",
+	"funds.StandardFeeSplit:policy":   "费率策略对象：{foundation_bps, staking_bps, promotion_bps}（基点，合计 ≤10000）",
+	"funds.StandardFeeSplit:promoted": "是否带推广人（true 时按 promotion_bps 切一份给推广）",
+	"funds.ApplicationRewardBudget:epoch": "epoch 序号，十进制数字",
+	"funds.OperatorReward:owner":      "账户地址，base58 字符串",
+	"funds.OperatorReward:asset":      "资产地址，base58 字符串",
+	"funds.RewardReserve:asset":       "资产地址，base58 字符串",
+
+	// ==================== commission ====================
+	"commission.CreateCollection:owner": "方案 owner 地址，须其私钥参与交易签名",
+	"commission.CreateCollection:rules": "收单规则对象 {asset, merchant_recipient, promoter?, commission_bps, refund_mode(0/1/2), refund_window_ms, settlement_delay_ms, refund_authority, max_order_validity_secs, min_amount, fixed_amount}",
+	"commission.StopCollection:owner_signer":    "方案 owner 地址，须其私钥参与交易签名",
+	"commission.StopCollection:scheme_id":       "收单方案编号，十进制数字",
+	"commission.DestroyCollection:owner_signer": "方案 owner 地址，须其私钥参与交易签名",
+	"commission.DestroyCollection:scheme_id":    "收单方案编号，十进制数字",
+	"commission.PayCollection:payer":              "付款人地址，须其私钥参与交易签名",
+	"commission.PayCollection:collection_address": "收单地址，base58 字符串（CreateCollection 返回的 collection_address）",
+	"commission.PayCollection:order_key":          "订单键，24 字节（B96）hex 或 base58 字符串",
+	"commission.PayCollection:amount":             "付款金额，最小单位十进制数字",
+	"commission.RunCollectionTask:order_id":   "待推进的订单地址，base58 字符串",
+	"commission.RunCollectionTask:gas_address": "任务执行 gas 账户地址，base58 字符串",
+	"commission.RunCollectionTask:step":       "任务步序号，十进制数字（u8，分片推进用）",
+	"commission.RefundOrder:authority":        "退款权限人地址，须其私钥参与交易签名",
+	"commission.RefundOrder:order_id":         "订单地址，base58 字符串",
+	"commission.RefundOrder:refund_key":       "退款凭据键，32 字节（B256）hex 或 base58 字符串",
+	"commission.RefundOrder:target_refunded":  "累计退款目标额，最小单位十进制数字（须递增且 ≤ 已付额）",
+	"commission.SettleOrder:order_id":         "订单地址，base58 字符串",
+	"commission.ClaimMerchant:order_id":       "订单地址，base58 字符串",
+	"commission.ClaimPromoter:order_id":       "订单地址，base58 字符串",
+	"commission.CollectionScheme:scheme_id":   "收单方案编号，十进制数字",
+	"commission.CollectionOrderId:collection_address": "收单地址，base58 字符串",
+	"commission.CollectionOrderId:order_key":          "订单键，24 字节（B96）",
+	"commission.CollectionOrder:order_id":     "订单地址，base58 字符串",
+	"commission.Order:order_id":               "订单地址，base58 字符串",
+	"commission.OrderId:source":               "订单来源对象 {app?(option<u8>), owner}",
+	"commission.OrderId:order_key":            "订单键，24 字节（B96）",
+	"commission.RefundReceipt:order_id":       "订单地址，base58 字符串",
+	"commission.RefundReceipt:refund_key":     "退款凭据键，32 字节（B256）",
+	"commission.OrderOverview:order_id":       "订单地址，base58 字符串",
+	"commission.QuoteCommission:amount":       "试算基数金额，最小单位十进制数字",
+	"commission.QuoteCommission:bps":          "佣金基点，0-10000 十进制数字",
 
 	// ==================== demo ====================
 

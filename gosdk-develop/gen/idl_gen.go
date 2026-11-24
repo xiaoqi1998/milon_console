@@ -575,20 +575,8 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "registered",
-						Type: "bool",
-					},
-					provider.StructField{
 						Name: "due_timestamp_ms",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "method",
-						Type: "bytes",
-					},
-					provider.StructField{
-						Name: "sponsor",
-						Type: "Address",
+						Type: "option<u64>",
 					},
 				},
 				Kind: "struct",
@@ -2628,6 +2616,33 @@ provider.IDL{
 						Type: "Address",
 					},
 				},
+				Discriminator: 55222,
+				Handler: "schedule_hongbao_refund",
+				Kind: "entry",
+				Name: "ScheduleHongbaoRefund",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "hongbao_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 44896,
+				Handler: "run_hongbao_refund",
+				Kind: "entry",
+				Name: "RunHongbaoRefund",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "hongbao_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
 				Discriminator: 43410,
 				Handler: "run_hongbao_cleanup",
 				Kind: "entry",
@@ -3059,6 +3074,21 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
+						Name: "due",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "hongbao_id",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "HongbaoRefundTask",
+				TypeTag: 2796899193011756712,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
 						Name: "recipient",
 						Type: "Address",
 					},
@@ -3280,6 +3310,26 @@ provider.IDL{
 				TypeTag: 631772817358541784,
 			},
 			provider.Resource{
+				Name: "_HongbaoRefundHeapSize",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_HongbaoRefundTask",
+				Type: "HongbaoRefundTask",
+				TypeTag: 2796899193011756712,
+			},
+			provider.Resource{
+				Name: "_HongbaoRefundSlot",
+				Type: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.Resource{
+				Name: "_HongbaoCleanupDue",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
 				Name: "_Vesting",
 				Type: "VestingState",
 				TypeTag: 5151897875976358800,
@@ -3311,6 +3361,30 @@ provider.IDL{
 					},
 				},
 				TypeTag: 5552105765182429402,
+			},
+			provider.Event{
+				Name: "HongbaoRefunded",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "hongbao_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "creator",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "token",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 1205551104664398759,
 			},
 			provider.Event{
 				Name: "VestingCreated",
@@ -3637,7 +3711,7 @@ provider.IDL{
 			provider.Constant{
 				Name: "FAUCET_AMOUNT",
 				Type: "u64",
-				Value: "10000 * 1_000_000",
+				Value: "1 * 1_000_000",
 			},
 			provider.Constant{
 				Name: "FAUCET_COOLDOWN_MS",
@@ -3966,6 +4040,32 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "asset",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 13164,
+				Handler: "claim_asset_rewards",
+				Kind: "entry",
+				Name: "ClaimAssetRewards",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
 						Name: "funder",
 						Role: "signer",
 						Type: "Signer",
@@ -4102,6 +4202,27 @@ provider.IDL{
 				Name: "Position",
 				Returns: provider.ReturnValue{
 					Type: "Position",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "pool_id",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 18235,
+				Handler: "asset_rewards",
+				Kind: "view",
+				Name: "AssetRewards",
+				Returns: provider.ReturnValue{
+					Type: "map<Address,AssetReward>",
 				},
 			},
 			provider.Instruction{
@@ -4403,16 +4524,8 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "reward_checkpoint",
-						Type: "u128",
-					},
-					provider.StructField{
-						Name: "reward_fraction",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "claimable_rewards",
-						Type: "u64",
+						Name: "rewards",
+						Type: "map<Address,AssetReward>",
 					},
 					provider.StructField{
 						Name: "claimable_principal",
@@ -4434,6 +4547,40 @@ provider.IDL{
 				Kind: "struct",
 				Name: "Position",
 				TypeTag: 877714062706965335,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "index",
+						Type: "u128",
+					},
+					provider.StructField{
+						Name: "remainder",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "AssetIndex",
+				TypeTag: 16830073715515562320,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "checkpoint",
+						Type: "u128",
+					},
+					provider.StructField{
+						Name: "fraction",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "claimable",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "AssetReward",
+				TypeTag: 18167640969593185507,
 			},
 			provider.IDLType{
 				Fields: []provider.StructField{
@@ -4480,12 +4627,8 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.StructField{
-						Name: "reward_index",
-						Type: "u128",
-					},
-					provider.StructField{
-						Name: "scaled_reward_remainder",
-						Type: "u64",
+						Name: "rewards",
+						Type: "map<Address,AssetIndex>",
 					},
 				},
 				Kind: "struct",
@@ -4499,8 +4642,8 @@ provider.IDL{
 						Type: "bool",
 					},
 					provider.StructField{
-						Name: "reward_index",
-						Type: "u128",
+						Name: "rewards",
+						Type: "map<Address,AssetIndex>",
 					},
 				},
 				Kind: "struct",
@@ -4695,6 +4838,10 @@ provider.IDL{
 					provider.EventField{
 						Name: "amount",
 						Type: "u64",
+					},
+					provider.EventField{
+						Name: "asset",
+						Type: "Address",
 					},
 				},
 				TypeTag: 18148718922460551977,
@@ -8493,7 +8640,7 @@ provider.IDL{
 						Type: "u16",
 					},
 					provider.Arg{
-						Name: "channel",
+						Name: "promoter",
 						Role: "input",
 						Type: "Address",
 					},
@@ -8697,7 +8844,7 @@ provider.IDL{
 						Type: "u16",
 					},
 					provider.Arg{
-						Name: "channel",
+						Name: "promoter",
 						Role: "input",
 						Type: "Address",
 					},
@@ -10083,7 +10230,7 @@ provider.IDL{
 						Type: "u64",
 					},
 					provider.EventField{
-						Name: "channel",
+						Name: "promoter",
 						Type: "Address",
 					},
 					provider.EventField{
@@ -10109,6 +10256,10 @@ provider.IDL{
 					provider.EventField{
 						Name: "fee_atoms",
 						Type: "u64",
+					},
+					provider.EventField{
+						Name: "fee_sequence",
+						Type: "option<u32>",
 					},
 				},
 				TypeTag: 960997472381498316,
@@ -10592,14 +10743,19 @@ provider.IDL{
 				Value: 5000,
 			},
 			provider.Constant{
-				Name: "CHANNEL_FEE_PPM",
-				Type: "u32",
-				Value: 500000,
+				Name: "FOUNDATION_FEE_BPS",
+				Type: "u16",
+				Value: 4000,
 			},
 			provider.Constant{
-				Name: "PLATFORM_FEE_ADDRESS",
-				Type: "Address",
-				Value: "Address { digest : [0 ; 20] }",
+				Name: "STAKING_FEE_BPS",
+				Type: "u16",
+				Value: 4000,
+			},
+			provider.Constant{
+				Name: "PROMOTION_FEE_BPS",
+				Type: "u16",
+				Value: 2000,
 			},
 			provider.Constant{
 				Name: "MAX_BATCH_CANCEL_ORDERS",
@@ -10785,24 +10941,6 @@ provider.IDL{
 			provider.Instruction{
 				Args: []provider.Arg{
 					provider.Arg{
-						Name: "funder",
-						Role: "signer",
-						Type: "Signer",
-					},
-					provider.Arg{
-						Name: "amount",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 27609,
-				Handler: "fund_validator_rewards",
-				Kind: "entry",
-				Name: "FundValidatorRewards",
-			},
-			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
 						Name: "owner",
 						Role: "signer",
 						Type: "Signer",
@@ -10859,22 +10997,6 @@ provider.IDL{
 				Name: "SettleValidatorEpoch",
 			},
 			provider.Instruction{
-				Args: []provider.Arg{
-					provider.Arg{
-						Name: "epoch",
-						Role: "input",
-						Type: "u64",
-					},
-				},
-				Discriminator: 46392,
-				Handler: "validator_epoch_activity",
-				Kind: "view",
-				Name: "ValidatorEpochActivity",
-				Returns: provider.ReturnValue{
-					Type: "EpochActivity",
-				},
-			},
-			provider.Instruction{
 				Args: nil,
 				Discriminator: 43732,
 				Handler: "validator_memberships",
@@ -10895,13 +11017,19 @@ provider.IDL{
 				},
 			},
 			provider.Instruction{
-				Args: nil,
-				Discriminator: 24480,
-				Handler: "validator_reward_budget",
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "epoch",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 4719,
+				Handler: "validator_proposal_activity",
 				Kind: "view",
-				Name: "ValidatorRewardBudget",
+				Name: "ValidatorProposalActivity",
 				Returns: provider.ReturnValue{
-					Type: "u64",
+					Type: "ProposalActivity",
 				},
 			},
 			provider.Instruction{
@@ -11049,25 +11177,6 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
-						Name: "blocks",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "signers",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "last_block",
-						Type: "u64",
-					},
-				},
-				Kind: "struct",
-				Name: "EpochActivity",
-				TypeTag: 12255403643170472952,
-			},
-			provider.IDLType{
-				Fields: []provider.StructField{
-					provider.StructField{
 						Name: "previous_set_hash",
 						Type: "B256",
 					},
@@ -11085,10 +11194,6 @@ provider.IDL{
 					},
 					provider.StructField{
 						Name: "minimum_self_stake",
-						Type: "u64",
-					},
-					provider.StructField{
-						Name: "reward_per_validator",
 						Type: "u64",
 					},
 					provider.StructField{
@@ -11126,6 +11231,37 @@ provider.IDL{
 			provider.IDLType{
 				Fields: []provider.StructField{
 					provider.StructField{
+						Name: "set_hash",
+						Type: "B256",
+					},
+					provider.StructField{
+						Name: "counts",
+						Type: "vec<u64>",
+					},
+					provider.StructField{
+						Name: "total",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "last_block",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "frozen",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "denied",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "ProposalActivity",
+				TypeTag: 195730631325514050,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
 						Name: "commission_rate_bps",
 						Type: "u64",
 					},
@@ -11150,6 +11286,11 @@ provider.IDL{
 			},
 			provider.IDLType{
 				Kind: "builtin",
+				Name: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.IDLType{
+				Kind: "builtin",
 				Name: "bytes",
 				TypeTag: 10405529814227927951,
 			},
@@ -11160,11 +11301,6 @@ provider.IDL{
 			},
 		},
 		Resources: []provider.Resource{
-			provider.Resource{
-				Name: "_EpochActivity",
-				Type: "EpochActivity",
-				TypeTag: 12255403643170472952,
-			},
 			provider.Resource{
 				Name: "_EpochSelfStake",
 				Type: "u64",
@@ -11179,6 +11315,11 @@ provider.IDL{
 				Name: "_Memberships",
 				Type: "vec<Membership>",
 				TypeTag: 16079097394413548312,
+			},
+			provider.Resource{
+				Name: "_ProposalActivity",
+				Type: "ProposalActivity",
+				TypeTag: 195730631325514050,
 			},
 			provider.Resource{
 				Name: "_ValidatorRecord",
@@ -11219,28 +11360,28 @@ provider.IDL{
 			},
 			provider.ErrorDef{
 				Code: 1797,
-				Message: "Reward reserve backing mismatch: {0}, {1}",
-				Name: "RewardTreasuryBackingMismatch",
-			},
-			provider.ErrorDef{
-				Code: 1798,
 				Message: "Transparent Token",
 				Name: "Token",
 			},
 			provider.ErrorDef{
-				Code: 1799,
+				Code: 1798,
 				Message: "Transparent Staking",
 				Name: "Staking",
 			},
 			provider.ErrorDef{
-				Code: 1800,
+				Code: 1799,
 				Message: "Transparent Context",
 				Name: "Context",
 			},
 			provider.ErrorDef{
-				Code: 1801,
+				Code: 1800,
 				Message: "validator set unavailable: {0}",
 				Name: "ValidatorSetUnavailable",
+			},
+			provider.ErrorDef{
+				Code: 1801,
+				Message: "Transparent Funds",
+				Name: "Funds",
 			},
 		},
 		Constants: []provider.Constant{
@@ -12936,16 +13077,6 @@ provider.IDL{
 				Value: 4,
 			},
 			provider.Constant{
-				Name: "STAGED_JWT_RS256_CIRCUIT_ID",
-				Type: "u32",
-				Value: 7,
-			},
-			provider.Constant{
-				Name: "STAGED_JWT_ES256_CIRCUIT_ID",
-				Type: "u32",
-				Value: 8,
-			},
-			provider.Constant{
 				Name: "COMPACT_STAGED_JWT_RS256_CIRCUIT_ID",
 				Type: "u32",
 				Value: 5,
@@ -14511,6 +14642,1560 @@ provider.IDL{
 	},
 provider.IDL{
 		Metadata: provider.Metadata{
+			AppID: 11,
+			Name: "funds",
+			Description: "Milon funds app IDL",
+		},
+		Instructions: []provider.Instruction{
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "asset",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 31792,
+				Handler: "claim_operator_reward",
+				Kind: "entry",
+				Name: "ClaimOperatorReward",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "app",
+						Role: "input",
+						Type: "u8",
+					},
+					provider.Arg{
+						Name: "asset",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "total",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "policy",
+						Role: "input",
+						Type: "FeePolicy",
+					},
+					provider.Arg{
+						Name: "promoted",
+						Role: "input",
+						Type: "bool",
+					},
+				},
+				Discriminator: 59330,
+				Handler: "standard_fee_split",
+				Kind: "view",
+				Name: "StandardFeeSplit",
+				Returns: provider.ReturnValue{
+					Type: "FeeSplit",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "epoch",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 649,
+				Handler: "application_reward_budget",
+				Kind: "view",
+				Name: "ApplicationRewardBudget",
+				Returns: provider.ReturnValue{
+					Type: "AppBudget",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "asset",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 45647,
+				Handler: "operator_reward",
+				Kind: "view",
+				Name: "OperatorReward",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "asset",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 48531,
+				Handler: "reward_reserve",
+				Kind: "view",
+				Name: "RewardReserve",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+		},
+		Types: []provider.IDLType{
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "application",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "foundation",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "staking",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "promotion",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "FeeSplit",
+				TypeTag: 5116823057170717441,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "assets",
+						Type: "map<Address,u64>",
+					},
+					provider.StructField{
+						Name: "closed",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "AppBudget",
+				TypeTag: 5557752805704797021,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "foundation_bps",
+						Type: "u16",
+					},
+					provider.StructField{
+						Name: "staking_bps",
+						Type: "u16",
+					},
+					provider.StructField{
+						Name: "promotion_bps",
+						Type: "u16",
+					},
+				},
+				Kind: "struct",
+				Name: "FeePolicy",
+				TypeTag: 4473674291598375997,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "protocol",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "foundation",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "promotion",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "SplitCarry",
+				TypeTag: 7885346034409931958,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "ix_index",
+						Type: "u8",
+					},
+					provider.StructField{
+						Name: "fee_sequence",
+						Type: "u32",
+					},
+				},
+				Kind: "struct",
+				Name: "FeeReference",
+				TypeTag: 16793876211028395616,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "gas",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "gas_closed",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "EpochBudget",
+				TypeTag: 15951919452964169208,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "Address",
+				TypeTag: 17438174819379414968,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u16",
+				TypeTag: 5558799945458185151,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u8",
+				TypeTag: 631772817358541784,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_AppBudget",
+				Type: "AppBudget",
+				TypeTag: 5557752805704797021,
+			},
+			provider.Resource{
+				Name: "_SplitCarry",
+				Type: "SplitCarry",
+				TypeTag: 7885346034409931958,
+			},
+			provider.Resource{
+				Name: "_EpochBudget",
+				Type: "EpochBudget",
+				TypeTag: 15951919452964169208,
+			},
+			provider.Resource{
+				Name: "_Claimable",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Reserve",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_GasSplitRemainder",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+		},
+		Events: []provider.Event{
+			provider.Event{
+				Name: "FeeDebited",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "ix_index",
+						Type: "u8",
+					},
+					provider.EventField{
+						Name: "fee_sequence",
+						Type: "u32",
+					},
+					provider.EventField{
+						Name: "app",
+						Type: "u8",
+					},
+					provider.EventField{
+						Name: "asset",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "source",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "total",
+						Type: "u64",
+					},
+				},
+				TypeTag: 17811253492375370012,
+			},
+			provider.Event{
+				Name: "FeeDistributed",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "tx_index",
+						Type: "u32",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "ix_index",
+						Type: "u8",
+					},
+					provider.EventField{
+						Name: "fee_sequence",
+						Type: "u32",
+					},
+					provider.EventField{
+						Name: "app",
+						Type: "u8",
+					},
+					provider.EventField{
+						Name: "asset",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "total",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "application",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "foundation",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "staking",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "promotion",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "promoter",
+						Type: "Address",
+						Indexed: true,
+					},
+				},
+				TypeTag: 1660378381402298022,
+			},
+		},
+	},
+provider.IDL{
+		Metadata: provider.Metadata{
+			AppID: 12,
+			Name: "commission",
+			Description: "Milon commission app IDL",
+		},
+		Instructions: []provider.Instruction{
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "rules",
+						Role: "input",
+						Type: "CollectionRules",
+					},
+				},
+				Discriminator: 44293,
+				Handler: "create_collection",
+				Kind: "entry",
+				Name: "CreateCollection",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner_signer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "scheme_id",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 29185,
+				Handler: "stop_collection",
+				Kind: "entry",
+				Name: "StopCollection",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "owner_signer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "scheme_id",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 1711,
+				Handler: "destroy_collection",
+				Kind: "entry",
+				Name: "DestroyCollection",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "payer",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "collection_address",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "order_key",
+						Role: "input",
+						Type: "B96",
+					},
+					provider.Arg{
+						Name: "amount",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 2795,
+				Handler: "pay_collection",
+				Kind: "entry",
+				Name: "PayCollection",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "gas_address",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "step",
+						Role: "input",
+						Type: "u8",
+					},
+				},
+				Discriminator: 5194,
+				Handler: "run_collection_task",
+				Kind: "entry",
+				Name: "RunCollectionTask",
+				Sponsor: true,
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "authority",
+						Role: "signer",
+						Type: "Signer",
+					},
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "refund_key",
+						Role: "input",
+						Type: "B256",
+					},
+					provider.Arg{
+						Name: "target_refunded",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 63257,
+				Handler: "refund_order",
+				Kind: "entry",
+				Name: "RefundOrder",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 44200,
+				Handler: "settle_order",
+				Kind: "entry",
+				Name: "SettleOrder",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 4649,
+				Handler: "claim_merchant",
+				Kind: "entry",
+				Name: "ClaimMerchant",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 30103,
+				Handler: "claim_promoter",
+				Kind: "entry",
+				Name: "ClaimPromoter",
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "scheme_id",
+						Role: "input",
+						Type: "u64",
+					},
+				},
+				Discriminator: 37758,
+				Handler: "collection_scheme",
+				Kind: "view",
+				Name: "CollectionScheme",
+				Returns: provider.ReturnValue{
+					Type: "option<CollectionScheme>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "collection_address",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "order_key",
+						Role: "input",
+						Type: "B96",
+					},
+				},
+				Discriminator: 28641,
+				Handler: "collection_order_id",
+				Kind: "view",
+				Name: "CollectionOrderId",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 28347,
+				Handler: "collection_order",
+				Kind: "view",
+				Name: "CollectionOrder",
+				Returns: provider.ReturnValue{
+					Type: "option<CollectionOrder>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 60520,
+				Handler: "order",
+				Kind: "view",
+				Name: "Order",
+				Returns: provider.ReturnValue{
+					Type: "option<OrderState>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "source",
+						Role: "input",
+						Type: "OrderSource",
+					},
+					provider.Arg{
+						Name: "order_key",
+						Role: "input",
+						Type: "B96",
+					},
+				},
+				Discriminator: 5488,
+				Handler: "order_id",
+				Kind: "view",
+				Name: "OrderId",
+				Returns: provider.ReturnValue{
+					Type: "Address",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "Address",
+					},
+					provider.Arg{
+						Name: "refund_key",
+						Role: "input",
+						Type: "B256",
+					},
+				},
+				Discriminator: 38617,
+				Handler: "refund_receipt",
+				Kind: "view",
+				Name: "RefundReceipt",
+				Returns: provider.ReturnValue{
+					Type: "option<RefundReceipt>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "order_id",
+						Role: "input",
+						Type: "Address",
+					},
+				},
+				Discriminator: 53290,
+				Handler: "order_overview",
+				Kind: "view",
+				Name: "OrderOverview",
+				Returns: provider.ReturnValue{
+					Type: "option<OrderOverview>",
+				},
+			},
+			provider.Instruction{
+				Args: []provider.Arg{
+					provider.Arg{
+						Name: "amount",
+						Role: "input",
+						Type: "u64",
+					},
+					provider.Arg{
+						Name: "bps",
+						Role: "input",
+						Type: "u16",
+					},
+				},
+				Discriminator: 57364,
+				Handler: "quote_commission",
+				Kind: "view",
+				Name: "QuoteCommission",
+				Returns: provider.ReturnValue{
+					Type: "u64",
+				},
+			},
+		},
+		Types: []provider.IDLType{
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "merchant_recipient",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "promoter",
+						Type: "option<Address>",
+					},
+					provider.StructField{
+						Name: "commission_bps",
+						Type: "u16",
+					},
+					provider.StructField{
+						Name: "refund_mode",
+						Type: "u8",
+					},
+					provider.StructField{
+						Name: "refund_window_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "settlement_delay_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "refund_authority",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "max_order_validity_secs",
+						Type: "u32",
+					},
+					provider.StructField{
+						Name: "min_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "fixed_amount",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "CollectionRules",
+				TypeTag: 15488354332635492500,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "id",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "owner",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "collection_address",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "gas_address",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "stopped",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "outstanding_orders",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "reserved_gas",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "rules",
+						Type: "CollectionRules",
+					},
+				},
+				Kind: "struct",
+				Name: "CollectionScheme",
+				TypeTag: 3192223671778686206,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "scheme_id",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "reserved_gas",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "refund_keys",
+						Type: "vec<B256>",
+					},
+				},
+				Kind: "struct",
+				Name: "CollectionOrder",
+				TypeTag: 6886062861590659611,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "order_id",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "gas_address",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "due_timestamp_ms",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "CollectionTask",
+				TypeTag: 10242133544504197548,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "order_key",
+						Type: "B96",
+					},
+					provider.StructField{
+						Name: "asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "merchant_recipient",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "promoter",
+						Type: "option<Address>",
+					},
+					provider.StructField{
+						Name: "commission_bps",
+						Type: "u16",
+					},
+					provider.StructField{
+						Name: "refund_mode",
+						Type: "u8",
+					},
+					provider.StructField{
+						Name: "refund_window_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "refund_authority",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "pay_before_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "terms_hash",
+						Type: "option<B256>",
+					},
+				},
+				Kind: "struct",
+				Name: "PaymentTerms",
+				TypeTag: 17565249257074929795,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "app",
+						Type: "option<u8>",
+					},
+					provider.StructField{
+						Name: "owner",
+						Type: "Address",
+					},
+				},
+				Kind: "struct",
+				Name: "OrderSource",
+				TypeTag: 348271013082722207,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "source",
+						Type: "OrderSource",
+					},
+					provider.StructField{
+						Name: "payer",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "terms",
+						Type: "PaymentTerms",
+					},
+					provider.StructField{
+						Name: "paid_at_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "refund_deadline_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "settle_at_ms",
+						Type: "option<u64>",
+					},
+					provider.StructField{
+						Name: "refunded",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "remaining",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "settled",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "merchant_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "commission_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "merchant_claimed",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "promoter_claimed",
+						Type: "bool",
+					},
+					provider.StructField{
+						Name: "busy",
+						Type: "bool",
+					},
+				},
+				Kind: "struct",
+				Name: "OrderState",
+				TypeTag: 13764258922507694983,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "target",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "RefundReceipt",
+				TypeTag: 1471384252932959876,
+			},
+			provider.IDLType{
+				Variants: []provider.EnumVariant{
+					provider.EnumVariant{
+						Name: "Holding",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "ReadyToSettle",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "AwaitingClaims",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Refunded",
+						Kind: "unit",
+						Fields: nil,
+					},
+					provider.EnumVariant{
+						Name: "Closed",
+						Kind: "unit",
+						Fields: nil,
+					},
+				},
+				Kind: "enum",
+				Name: "OrderStatus",
+				TypeTag: 2798372844217287980,
+			},
+			provider.IDLType{
+				Fields: []provider.StructField{
+					provider.StructField{
+						Name: "order_id",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "asset",
+						Type: "Address",
+					},
+					provider.StructField{
+						Name: "as_of_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "status",
+						Type: "OrderStatus",
+					},
+					provider.StructField{
+						Name: "refund_deadline_ms",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "settle_at_ms",
+						Type: "option<u64>",
+					},
+					provider.StructField{
+						Name: "paid_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "refunded_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "remaining_principal",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "net_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "merchant_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "commission_amount",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "merchant_claimable",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "promoter_claimable",
+						Type: "u64",
+					},
+					provider.StructField{
+						Name: "refundable_amount",
+						Type: "u64",
+					},
+				},
+				Kind: "struct",
+				Name: "OrderOverview",
+				TypeTag: 7320224591769319329,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "Address",
+				TypeTag: 17438174819379414968,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "B256",
+				TypeTag: 12016729314829497160,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "B96",
+				TypeTag: 10733962083880633390,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "bool",
+				TypeTag: 14785269867199075517,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u16",
+				TypeTag: 5558799945458185151,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u32",
+				TypeTag: 5560783464435099345,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.IDLType{
+				Kind: "builtin",
+				Name: "u8",
+				TypeTag: 631772817358541784,
+			},
+		},
+		Resources: []provider.Resource{
+			provider.Resource{
+				Name: "_NextCollectionId",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_CollectionScheme",
+				Type: "CollectionScheme",
+				TypeTag: 3192223671778686206,
+			},
+			provider.Resource{
+				Name: "_CollectionAddress",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_CollectionOrder",
+				Type: "CollectionOrder",
+				TypeTag: 6886062861590659611,
+			},
+			provider.Resource{
+				Name: "_CollectionTaskShard",
+				Type: "vec<CollectionTask>",
+				TypeTag: 18104485592292335375,
+			},
+			provider.Resource{
+				Name: "_CollectionShardHead",
+				Type: "u64",
+				TypeTag: 5563585020063213298,
+			},
+			provider.Resource{
+				Name: "_Order",
+				Type: "OrderState",
+				TypeTag: 13764258922507694983,
+			},
+			provider.Resource{
+				Name: "_RefundReceipt",
+				Type: "RefundReceipt",
+				TypeTag: 1471384252932959876,
+			},
+		},
+		Events: []provider.Event{
+			provider.Event{
+				Name: "CollectionCreated",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "scheme_id",
+						Type: "u64",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "owner",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "collection_address",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "gas_address",
+						Type: "Address",
+					},
+				},
+				TypeTag: 17165750801407412428,
+			},
+			provider.Event{
+				Name: "CollectionPaid",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "scheme_id",
+						Type: "u64",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "order_key",
+						Type: "B96",
+					},
+					provider.EventField{
+						Name: "order_id",
+						Type: "Address",
+					},
+				},
+				TypeTag: 18232308749046114522,
+			},
+			provider.Event{
+				Name: "CollectionDestroyed",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "scheme_id",
+						Type: "u64",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "returned_gas",
+						Type: "u64",
+					},
+				},
+				TypeTag: 4521787113928327719,
+			},
+			provider.Event{
+				Name: "OrderPaid",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "order_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "payer",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "merchant",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "asset",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "promoter",
+						Type: "option<Address>",
+					},
+					provider.EventField{
+						Name: "commission_bps",
+						Type: "u16",
+					},
+					provider.EventField{
+						Name: "refund_deadline_ms",
+						Type: "u64",
+					},
+				},
+				TypeTag: 9085254848095096670,
+			},
+			provider.Event{
+				Name: "OrderRefunded",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "order_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "refund_key",
+						Type: "B256",
+					},
+					provider.EventField{
+						Name: "payer",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "asset",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "refunded",
+						Type: "u64",
+					},
+				},
+				TypeTag: 3541440975636163443,
+			},
+			provider.Event{
+				Name: "OrderSettled",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "order_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "asset",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "merchant_amount",
+						Type: "u64",
+					},
+					provider.EventField{
+						Name: "commission_amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 4310159538867681105,
+			},
+			provider.Event{
+				Name: "MerchantClaimed",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "order_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "recipient",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "asset",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 9365702435352109885,
+			},
+			provider.Event{
+				Name: "CommissionClaimed",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "order_id",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "recipient",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "asset",
+						Type: "Address",
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 2987876547204411306,
+			},
+		},
+		Errors: []provider.ErrorDef{
+			provider.ErrorDef{
+				Code: 3072,
+				Message: "Transparent Token",
+				Name: "Token",
+			},
+			provider.ErrorDef{
+				Code: 3073,
+				Message: "order not found",
+				Name: "NotFound",
+			},
+			provider.ErrorDef{
+				Code: 3074,
+				Message: "order already paid",
+				Name: "AlreadyPaid",
+			},
+			provider.ErrorDef{
+				Code: 3075,
+				Message: "order operation in progress",
+				Name: "Busy",
+			},
+			provider.ErrorDef{
+				Code: 3076,
+				Message: "refund is not authorized",
+				Name: "UnauthorizedRefund",
+			},
+			provider.ErrorDef{
+				Code: 3077,
+				Message: "refund window has closed",
+				Name: "RefundClosed",
+			},
+			provider.ErrorDef{
+				Code: 3078,
+				Message: "order is not ready to settle",
+				Name: "NotDue",
+			},
+			provider.ErrorDef{
+				Code: 3079,
+				Message: "refund request conflicts with its previous result",
+				Name: "RefundConflict",
+			},
+			provider.ErrorDef{
+				Code: 3080,
+				Message: "refund target must increase and not exceed payment",
+				Name: "InvalidRefundTarget",
+			},
+			provider.ErrorDef{
+				Code: 3081,
+				Message: "order custody invariant violated",
+				Name: "CustodyInvariant",
+			},
+			provider.ErrorDef{
+				Code: 3082,
+				Message: "wrong creating application",
+				Name: "WrongApplication",
+			},
+			provider.ErrorDef{
+				Code: 3083,
+				Message: "payment amount must be positive",
+				Name: "InvalidAmount",
+			},
+			provider.ErrorDef{
+				Code: 3084,
+				Message: "payment asset must not be null",
+				Name: "InvalidAsset",
+			},
+			provider.ErrorDef{
+				Code: 3085,
+				Message: "order source owner must not be null",
+				Name: "InvalidSource",
+			},
+			provider.ErrorDef{
+				Code: 3086,
+				Message: "recipient must be non-null and different from order custody",
+				Name: "InvalidRecipient",
+			},
+			provider.ErrorDef{
+				Code: 3087,
+				Message: "commission must be within 0..=10000 bps and zero without a promoter",
+				Name: "InvalidCommission",
+			},
+			provider.ErrorDef{
+				Code: 3088,
+				Message: "refund mode must be 0, 1 or 2",
+				Name: "InvalidRefundMode",
+			},
+			provider.ErrorDef{
+				Code: 3089,
+				Message: "refund window is invalid or its deadline overflows",
+				Name: "InvalidRefundWindow",
+			},
+			provider.ErrorDef{
+				Code: 3090,
+				Message: "refund authority does not match the order source",
+				Name: "InvalidRefundAuthority",
+			},
+			provider.ErrorDef{
+				Code: 3091,
+				Message: "payment deadline has been reached",
+				Name: "PaymentExpired",
+			},
+			provider.ErrorDef{
+				Code: 3092,
+				Message: "collection scheme not found",
+				Name: "SchemeNotFound",
+			},
+			provider.ErrorDef{
+				Code: 3093,
+				Message: "invalid immutable collection rules",
+				Name: "InvalidScheme",
+			},
+			provider.ErrorDef{
+				Code: 3094,
+				Message: "scheme has stopped accepting payments",
+				Name: "SchemeStopped",
+			},
+			provider.ErrorDef{
+				Code: 3095,
+				Message: "scheme owner authorization required",
+				Name: "SchemeUnauthorized",
+			},
+			provider.ErrorDef{
+				Code: 3096,
+				Message: "scheme still has outstanding orders",
+				Name: "SchemeOutstanding",
+			},
+			provider.ErrorDef{
+				Code: 3097,
+				Message: "scheme id exhausted",
+				Name: "SchemeIdExhausted",
+			},
+			provider.ErrorDef{
+				Code: 3098,
+				Message: "collection gas reserve is insufficient",
+				Name: "InsufficientSettlementGas",
+			},
+			provider.ErrorDef{
+				Code: 3099,
+				Message: "order deadline is too far in the future",
+				Name: "InvalidOrderDeadline",
+			},
+			provider.ErrorDef{
+				Code: 3100,
+				Message: "scheduled collection task rejected",
+				Name: "CollectionTaskRejected",
+			},
+			provider.ErrorDef{
+				Code: 3101,
+				Message: "too many outstanding orders or refund receipts",
+				Name: "CollectionCapacity",
+			},
+		},
+		Constants: []provider.Constant{
+			provider.Constant{
+				Name: "MAX_ORDER_VALIDITY_SECS",
+				Type: "u32",
+				Value: 86400,
+			},
+			provider.Constant{
+				Name: "MAX_COLLECTION_ORDERS",
+				Type: "u64",
+				Value: 1024,
+			},
+			provider.Constant{
+				Name: "MAX_ORDER_REFUNDS",
+				Type: "usize",
+				Value: 32,
+			},
+			provider.Constant{
+				Name: "COLLECTION_STEP_BUDGET",
+				Type: "u64",
+				Value: 1e+06,
+			},
+			provider.Constant{
+				Name: "COLLECTION_ORDER_BUDGET",
+				Type: "u64",
+				Value: "2 * COLLECTION_STEP_BUDGET",
+			},
+			provider.Constant{
+				Name: "COLLECTION_QUEUE_SHARDS",
+				Type: "u8",
+				Value: 32,
+			},
+			provider.Constant{
+				Name: "COLLECTION_TASKS_PER_SHARD",
+				Type: "usize",
+				Value: 128,
+			},
+			provider.Constant{
+				Name: "MAX_REFUND_WINDOW_MS",
+				Type: "u64",
+				Value: "366 * 24 * 60 * 60 * 1000",
+			},
+		},
+	},
+provider.IDL{
+		Metadata: provider.Metadata{
 			AppID: 254,
 			Name: "demo",
 			Description: "Milon demo app IDL",
@@ -15942,23 +17627,18 @@ func (v SystemConsensusValidatorIdentity) ToValue() (map[string]any, error) {
 
 // SystemWakeRecord matches the IDL struct WakeRecord.
 type SystemWakeRecord struct {
-	Registered bool
-	DueTimestampMs uint64
-	Method []byte
-	Sponsor *crypto.Address
+	DueTimestampMs *uint64
 }
 
 // ToValue converts SystemWakeRecord into the provider wire value (map[string]any).
 func (v SystemWakeRecord) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
-	// registered: bool
-	out["registered"] = v.Registered
-	// due_timestamp_ms: u64
-	out["due_timestamp_ms"] = v.DueTimestampMs
-	// method: bytes
-	out["method"] = v.Method
-	// sponsor: Address
-	out["sponsor"] = v.Sponsor
+	out := make(map[string]any, 1)
+	// due_timestamp_ms: option<u64>
+	if v.DueTimestampMs == nil {
+		out["due_timestamp_ms"] = nil
+	} else {
+		out["due_timestamp_ms"] = *v.DueTimestampMs
+	}
 	return out, nil
 }
 
@@ -16366,6 +18046,22 @@ func (v TokenHongbaoCleanupQueueState) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
+// TokenHongbaoRefundTask matches the IDL struct HongbaoRefundTask.
+type TokenHongbaoRefundTask struct {
+	Due uint64
+	HongbaoId *crypto.Address
+}
+
+// ToValue converts TokenHongbaoRefundTask into the provider wire value (map[string]any).
+func (v TokenHongbaoRefundTask) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// due: u64
+	out["due"] = v.Due
+	// hongbao_id: Address
+	out["hongbao_id"] = v.HongbaoId
+	return out, nil
+}
+
 // TokenVestingRecipient matches the IDL struct VestingRecipient.
 type TokenVestingRecipient struct {
 	Recipient *crypto.Address
@@ -16727,9 +18423,7 @@ type StakingPosition struct {
 	Owner *crypto.Address
 	PoolId [32]byte
 	ActivePrincipal uint64
-	RewardCheckpoint *big.Int
-	RewardFraction uint64
-	ClaimableRewards uint64
+	Rewards map[*crypto.Address]StakingAssetReward
 	ClaimablePrincipal uint64
 	Deposits []StakingPendingAmount
 	Exits []StakingPendingAmount
@@ -16738,43 +18432,86 @@ type StakingPosition struct {
 
 // ToValue converts StakingPosition into the provider wire value (map[string]any).
 func (v StakingPosition) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 10)
+	out := make(map[string]any, 8)
 	// owner: Address
 	out["owner"] = v.Owner
 	// pool_id: B256
 	out["pool_id"] = v.PoolId
 	// active_principal: u64
 	out["active_principal"] = v.ActivePrincipal
-	// reward_checkpoint: u128
-	out["reward_checkpoint"] = v.RewardCheckpoint
-	// reward_fraction: u64
-	out["reward_fraction"] = v.RewardFraction
-	// claimable_rewards: u64
-	out["claimable_rewards"] = v.ClaimableRewards
+	// rewards: map<Address,AssetReward>
+	v0 := make(map[any]any, len(v.Rewards))
+	for v1, v2 := range v.Rewards {
+		var v3 any
+		var v4 any
+		v3 = v1
+		v5, err := toStakingAssetRewardValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v4 = v5
+		v0[v3] = v4
+	}
+	out["rewards"] = v0
 	// claimable_principal: u64
 	out["claimable_principal"] = v.ClaimablePrincipal
 	// deposits: vec<PendingAmount>
-	v0 := make([]any, len(v.Deposits))
-	for v1, v2 := range v.Deposits {
-		v3, err := toStakingPendingAmountValue(v2)
+	v6 := make([]any, len(v.Deposits))
+	for v7, v8 := range v.Deposits {
+		v9, err := toStakingPendingAmountValue(v8)
 		if err != nil {
 			return nil, err
 		}
-		v0[v1] = v3
+		v6[v7] = v9
 	}
-	out["deposits"] = v0
+	out["deposits"] = v6
 	// exits: vec<PendingAmount>
-	v4 := make([]any, len(v.Exits))
-	for v5, v6 := range v.Exits {
-		v7, err := toStakingPendingAmountValue(v6)
+	v10 := make([]any, len(v.Exits))
+	for v11, v12 := range v.Exits {
+		v13, err := toStakingPendingAmountValue(v12)
 		if err != nil {
 			return nil, err
 		}
-		v4[v5] = v7
+		v10[v11] = v13
 	}
-	out["exits"] = v4
+	out["exits"] = v10
 	// tracked: bool
 	out["tracked"] = v.Tracked
+	return out, nil
+}
+
+// StakingAssetIndex matches the IDL struct AssetIndex.
+type StakingAssetIndex struct {
+	Index *big.Int
+	Remainder uint64
+}
+
+// ToValue converts StakingAssetIndex into the provider wire value (map[string]any).
+func (v StakingAssetIndex) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// index: u128
+	out["index"] = v.Index
+	// remainder: u64
+	out["remainder"] = v.Remainder
+	return out, nil
+}
+
+// StakingAssetReward matches the IDL struct AssetReward.
+type StakingAssetReward struct {
+	Checkpoint *big.Int
+	Fraction uint64
+	Claimable uint64
+}
+
+// ToValue converts StakingAssetReward into the provider wire value (map[string]any).
+func (v StakingAssetReward) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// checkpoint: u128
+	out["checkpoint"] = v.Checkpoint
+	// fraction: u64
+	out["fraction"] = v.Fraction
+	// claimable: u64
+	out["claimable"] = v.Claimable
 	return out, nil
 }
 
@@ -16829,28 +18566,37 @@ func (v StakingRewardTerms) ToValue() (map[string]any, error) {
 type StakingPoolIndex struct {
 	Cursor uint64
 	ActivePrincipal uint64
-	RewardIndex *big.Int
-	ScaledRewardRemainder uint64
+	Rewards map[*crypto.Address]StakingAssetIndex
 }
 
 // ToValue converts StakingPoolIndex into the provider wire value (map[string]any).
 func (v StakingPoolIndex) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 4)
+	out := make(map[string]any, 3)
 	// cursor: u64
 	out["cursor"] = v.Cursor
 	// active_principal: u64
 	out["active_principal"] = v.ActivePrincipal
-	// reward_index: u128
-	out["reward_index"] = v.RewardIndex
-	// scaled_reward_remainder: u64
-	out["scaled_reward_remainder"] = v.ScaledRewardRemainder
+	// rewards: map<Address,AssetIndex>
+	v0 := make(map[any]any, len(v.Rewards))
+	for v1, v2 := range v.Rewards {
+		var v3 any
+		var v4 any
+		v3 = v1
+		v5, err := toStakingAssetIndexValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v4 = v5
+		v0[v3] = v4
+	}
+	out["rewards"] = v0
 	return out, nil
 }
 
 // StakingCheckpoint matches the IDL struct Checkpoint.
 type StakingCheckpoint struct {
 	Written bool
-	RewardIndex *big.Int
+	Rewards map[*crypto.Address]StakingAssetIndex
 }
 
 // ToValue converts StakingCheckpoint into the provider wire value (map[string]any).
@@ -16858,8 +18604,20 @@ func (v StakingCheckpoint) ToValue() (map[string]any, error) {
 	out := make(map[string]any, 2)
 	// written: bool
 	out["written"] = v.Written
-	// reward_index: u128
-	out["reward_index"] = v.RewardIndex
+	// rewards: map<Address,AssetIndex>
+	v0 := make(map[any]any, len(v.Rewards))
+	for v1, v2 := range v.Rewards {
+		var v3 any
+		var v4 any
+		v3 = v1
+		v5, err := toStakingAssetIndexValue(v2)
+		if err != nil {
+			return nil, err
+		}
+		v4 = v5
+		v0[v3] = v4
+	}
+	out["rewards"] = v0
 	return out, nil
 }
 
@@ -18447,25 +20205,6 @@ func (v ValidatorValidatorPoolList) ToValue() (map[string]any, error) {
 	return out, nil
 }
 
-// ValidatorEpochActivity matches the IDL struct EpochActivity.
-type ValidatorEpochActivity struct {
-	Blocks uint64
-	Signers uint64
-	LastBlock uint64
-}
-
-// ToValue converts ValidatorEpochActivity into the provider wire value (map[string]any).
-func (v ValidatorEpochActivity) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 3)
-	// blocks: u64
-	out["blocks"] = v.Blocks
-	// signers: u64
-	out["signers"] = v.Signers
-	// last_block: u64
-	out["last_block"] = v.LastBlock
-	return out, nil
-}
-
 // ValidatorFrozenEpoch matches the IDL struct FrozenEpoch.
 type ValidatorFrozenEpoch struct {
 	PreviousSetHash [32]byte
@@ -18473,13 +20212,12 @@ type ValidatorFrozenEpoch struct {
 	FreezeSlot uint64
 	StartSlot uint64
 	MinimumSelfStake uint64
-	RewardPerValidator uint64
 	ValidatorSet []byte
 }
 
 // ToValue converts ValidatorFrozenEpoch into the provider wire value (map[string]any).
 func (v ValidatorFrozenEpoch) ToValue() (map[string]any, error) {
-	out := make(map[string]any, 7)
+	out := make(map[string]any, 6)
 	// previous_set_hash: B256
 	out["previous_set_hash"] = v.PreviousSetHash
 	// freeze_block: u64
@@ -18490,8 +20228,6 @@ func (v ValidatorFrozenEpoch) ToValue() (map[string]any, error) {
 	out["start_slot"] = v.StartSlot
 	// minimum_self_stake: u64
 	out["minimum_self_stake"] = v.MinimumSelfStake
-	// reward_per_validator: u64
-	out["reward_per_validator"] = v.RewardPerValidator
 	// validator_set: bytes
 	out["validator_set"] = v.ValidatorSet
 	return out, nil
@@ -18520,6 +20256,38 @@ func (v ValidatorMembership) ToValue() (map[string]any, error) {
 	}
 	// minimum_self_stake: u64
 	out["minimum_self_stake"] = v.MinimumSelfStake
+	return out, nil
+}
+
+// ValidatorProposalActivity matches the IDL struct ProposalActivity.
+type ValidatorProposalActivity struct {
+	SetHash [32]byte
+	Counts []uint64
+	Total uint64
+	LastBlock uint64
+	Frozen bool
+	Denied uint64
+}
+
+// ToValue converts ValidatorProposalActivity into the provider wire value (map[string]any).
+func (v ValidatorProposalActivity) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 6)
+	// set_hash: B256
+	out["set_hash"] = v.SetHash
+	// counts: vec<u64>
+	v0 := make([]any, len(v.Counts))
+	for v1, v2 := range v.Counts {
+		v0[v1] = v2
+	}
+	out["counts"] = v0
+	// total: u64
+	out["total"] = v.Total
+	// last_block: u64
+	out["last_block"] = v.LastBlock
+	// frozen: bool
+	out["frozen"] = v.Frozen
+	// denied: u64
+	out["denied"] = v.Denied
 	return out, nil
 }
 
@@ -19344,6 +21112,490 @@ func (v SocialHongbaoAllocation) ToValue() (map[string]any, error) {
 	return nil, fmt.Errorf("unknown variant %q", v.Variant)
 }
 
+// FundsFeeSplit matches the IDL struct FeeSplit.
+type FundsFeeSplit struct {
+	Application uint64
+	Foundation uint64
+	Staking uint64
+	Promotion uint64
+}
+
+// ToValue converts FundsFeeSplit into the provider wire value (map[string]any).
+func (v FundsFeeSplit) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 4)
+	// application: u64
+	out["application"] = v.Application
+	// foundation: u64
+	out["foundation"] = v.Foundation
+	// staking: u64
+	out["staking"] = v.Staking
+	// promotion: u64
+	out["promotion"] = v.Promotion
+	return out, nil
+}
+
+// FundsAppBudget matches the IDL struct AppBudget.
+type FundsAppBudget struct {
+	Assets map[*crypto.Address]uint64
+	Closed bool
+}
+
+// ToValue converts FundsAppBudget into the provider wire value (map[string]any).
+func (v FundsAppBudget) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// assets: map<Address,u64>
+	v0 := make(map[any]any, len(v.Assets))
+	for v1, v2 := range v.Assets {
+		var v3 any
+		var v4 any
+		v3 = v1
+		v4 = v2
+		v0[v3] = v4
+	}
+	out["assets"] = v0
+	// closed: bool
+	out["closed"] = v.Closed
+	return out, nil
+}
+
+// FundsFeePolicy matches the IDL struct FeePolicy.
+type FundsFeePolicy struct {
+	FoundationBps uint16
+	StakingBps uint16
+	PromotionBps uint16
+}
+
+// ToValue converts FundsFeePolicy into the provider wire value (map[string]any).
+func (v FundsFeePolicy) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// foundation_bps: u16
+	out["foundation_bps"] = v.FoundationBps
+	// staking_bps: u16
+	out["staking_bps"] = v.StakingBps
+	// promotion_bps: u16
+	out["promotion_bps"] = v.PromotionBps
+	return out, nil
+}
+
+// FundsSplitCarry matches the IDL struct SplitCarry.
+type FundsSplitCarry struct {
+	Protocol uint64
+	Foundation uint64
+	Promotion uint64
+}
+
+// ToValue converts FundsSplitCarry into the provider wire value (map[string]any).
+func (v FundsSplitCarry) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// protocol: u64
+	out["protocol"] = v.Protocol
+	// foundation: u64
+	out["foundation"] = v.Foundation
+	// promotion: u64
+	out["promotion"] = v.Promotion
+	return out, nil
+}
+
+// FundsFeeReference matches the IDL struct FeeReference.
+type FundsFeeReference struct {
+	IxIndex uint8
+	FeeSequence uint32
+}
+
+// ToValue converts FundsFeeReference into the provider wire value (map[string]any).
+func (v FundsFeeReference) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// ix_index: u8
+	out["ix_index"] = v.IxIndex
+	// fee_sequence: u32
+	out["fee_sequence"] = v.FeeSequence
+	return out, nil
+}
+
+// FundsEpochBudget matches the IDL struct EpochBudget.
+type FundsEpochBudget struct {
+	Gas uint64
+	GasClosed bool
+}
+
+// ToValue converts FundsEpochBudget into the provider wire value (map[string]any).
+func (v FundsEpochBudget) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// gas: u64
+	out["gas"] = v.Gas
+	// gas_closed: bool
+	out["gas_closed"] = v.GasClosed
+	return out, nil
+}
+
+// CommissionCollectionRules matches the IDL struct CollectionRules.
+type CommissionCollectionRules struct {
+	Asset *crypto.Address
+	MerchantRecipient *crypto.Address
+	Promoter **crypto.Address
+	CommissionBps uint16
+	RefundMode uint8
+	RefundWindowMs uint64
+	SettlementDelayMs uint64
+	RefundAuthority *crypto.Address
+	MaxOrderValiditySecs uint32
+	MinAmount uint64
+	FixedAmount uint64
+}
+
+// ToValue converts CommissionCollectionRules into the provider wire value (map[string]any).
+func (v CommissionCollectionRules) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 11)
+	// asset: Address
+	out["asset"] = v.Asset
+	// merchant_recipient: Address
+	out["merchant_recipient"] = v.MerchantRecipient
+	// promoter: option<Address>
+	if v.Promoter == nil {
+		out["promoter"] = nil
+	} else {
+		out["promoter"] = *v.Promoter
+	}
+	// commission_bps: u16
+	out["commission_bps"] = v.CommissionBps
+	// refund_mode: u8
+	out["refund_mode"] = v.RefundMode
+	// refund_window_ms: u64
+	out["refund_window_ms"] = v.RefundWindowMs
+	// settlement_delay_ms: u64
+	out["settlement_delay_ms"] = v.SettlementDelayMs
+	// refund_authority: Address
+	out["refund_authority"] = v.RefundAuthority
+	// max_order_validity_secs: u32
+	out["max_order_validity_secs"] = v.MaxOrderValiditySecs
+	// min_amount: u64
+	out["min_amount"] = v.MinAmount
+	// fixed_amount: u64
+	out["fixed_amount"] = v.FixedAmount
+	return out, nil
+}
+
+// CommissionCollectionScheme matches the IDL struct CollectionScheme.
+type CommissionCollectionScheme struct {
+	Id uint64
+	Owner *crypto.Address
+	CollectionAddress *crypto.Address
+	GasAddress *crypto.Address
+	Stopped bool
+	OutstandingOrders uint64
+	ReservedGas uint64
+	Rules CommissionCollectionRules
+}
+
+// ToValue converts CommissionCollectionScheme into the provider wire value (map[string]any).
+func (v CommissionCollectionScheme) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 8)
+	// id: u64
+	out["id"] = v.Id
+	// owner: Address
+	out["owner"] = v.Owner
+	// collection_address: Address
+	out["collection_address"] = v.CollectionAddress
+	// gas_address: Address
+	out["gas_address"] = v.GasAddress
+	// stopped: bool
+	out["stopped"] = v.Stopped
+	// outstanding_orders: u64
+	out["outstanding_orders"] = v.OutstandingOrders
+	// reserved_gas: u64
+	out["reserved_gas"] = v.ReservedGas
+	// rules: CollectionRules
+	v0, err := toCommissionCollectionRulesValue(v.Rules)
+	if err != nil {
+		return nil, err
+	}
+	out["rules"] = v0
+	return out, nil
+}
+
+// CommissionCollectionOrder matches the IDL struct CollectionOrder.
+type CommissionCollectionOrder struct {
+	SchemeId uint64
+	ReservedGas uint64
+	RefundKeys [][32]byte
+}
+
+// ToValue converts CommissionCollectionOrder into the provider wire value (map[string]any).
+func (v CommissionCollectionOrder) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// scheme_id: u64
+	out["scheme_id"] = v.SchemeId
+	// reserved_gas: u64
+	out["reserved_gas"] = v.ReservedGas
+	// refund_keys: vec<B256>
+	v0 := make([]any, len(v.RefundKeys))
+	for v1, v2 := range v.RefundKeys {
+		v0[v1] = v2
+	}
+	out["refund_keys"] = v0
+	return out, nil
+}
+
+// CommissionCollectionTask matches the IDL struct CollectionTask.
+type CommissionCollectionTask struct {
+	OrderId *crypto.Address
+	GasAddress *crypto.Address
+	DueTimestampMs uint64
+}
+
+// ToValue converts CommissionCollectionTask into the provider wire value (map[string]any).
+func (v CommissionCollectionTask) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 3)
+	// order_id: Address
+	out["order_id"] = v.OrderId
+	// gas_address: Address
+	out["gas_address"] = v.GasAddress
+	// due_timestamp_ms: u64
+	out["due_timestamp_ms"] = v.DueTimestampMs
+	return out, nil
+}
+
+// CommissionPaymentTerms matches the IDL struct PaymentTerms.
+type CommissionPaymentTerms struct {
+	OrderKey [12]byte
+	Asset *crypto.Address
+	Amount uint64
+	MerchantRecipient *crypto.Address
+	Promoter **crypto.Address
+	CommissionBps uint16
+	RefundMode uint8
+	RefundWindowMs uint64
+	RefundAuthority *crypto.Address
+	PayBeforeMs uint64
+	TermsHash *[32]byte
+}
+
+// ToValue converts CommissionPaymentTerms into the provider wire value (map[string]any).
+func (v CommissionPaymentTerms) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 11)
+	// order_key: B96
+	out["order_key"] = v.OrderKey
+	// asset: Address
+	out["asset"] = v.Asset
+	// amount: u64
+	out["amount"] = v.Amount
+	// merchant_recipient: Address
+	out["merchant_recipient"] = v.MerchantRecipient
+	// promoter: option<Address>
+	if v.Promoter == nil {
+		out["promoter"] = nil
+	} else {
+		out["promoter"] = *v.Promoter
+	}
+	// commission_bps: u16
+	out["commission_bps"] = v.CommissionBps
+	// refund_mode: u8
+	out["refund_mode"] = v.RefundMode
+	// refund_window_ms: u64
+	out["refund_window_ms"] = v.RefundWindowMs
+	// refund_authority: Address
+	out["refund_authority"] = v.RefundAuthority
+	// pay_before_ms: u64
+	out["pay_before_ms"] = v.PayBeforeMs
+	// terms_hash: option<B256>
+	if v.TermsHash == nil {
+		out["terms_hash"] = nil
+	} else {
+		out["terms_hash"] = *v.TermsHash
+	}
+	return out, nil
+}
+
+// CommissionOrderSource matches the IDL struct OrderSource.
+type CommissionOrderSource struct {
+	App *uint8
+	Owner *crypto.Address
+}
+
+// ToValue converts CommissionOrderSource into the provider wire value (map[string]any).
+func (v CommissionOrderSource) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// app: option<u8>
+	if v.App == nil {
+		out["app"] = nil
+	} else {
+		out["app"] = *v.App
+	}
+	// owner: Address
+	out["owner"] = v.Owner
+	return out, nil
+}
+
+// CommissionOrderState matches the IDL struct OrderState.
+type CommissionOrderState struct {
+	Source CommissionOrderSource
+	Payer *crypto.Address
+	Terms CommissionPaymentTerms
+	PaidAtMs uint64
+	RefundDeadlineMs uint64
+	SettleAtMs *uint64
+	Refunded uint64
+	Remaining uint64
+	Settled bool
+	MerchantAmount uint64
+	CommissionAmount uint64
+	MerchantClaimed bool
+	PromoterClaimed bool
+	Busy bool
+}
+
+// ToValue converts CommissionOrderState into the provider wire value (map[string]any).
+func (v CommissionOrderState) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 14)
+	// source: OrderSource
+	v0, err := toCommissionOrderSourceValue(v.Source)
+	if err != nil {
+		return nil, err
+	}
+	out["source"] = v0
+	// payer: Address
+	out["payer"] = v.Payer
+	// terms: PaymentTerms
+	v1, err := toCommissionPaymentTermsValue(v.Terms)
+	if err != nil {
+		return nil, err
+	}
+	out["terms"] = v1
+	// paid_at_ms: u64
+	out["paid_at_ms"] = v.PaidAtMs
+	// refund_deadline_ms: u64
+	out["refund_deadline_ms"] = v.RefundDeadlineMs
+	// settle_at_ms: option<u64>
+	if v.SettleAtMs == nil {
+		out["settle_at_ms"] = nil
+	} else {
+		out["settle_at_ms"] = *v.SettleAtMs
+	}
+	// refunded: u64
+	out["refunded"] = v.Refunded
+	// remaining: u64
+	out["remaining"] = v.Remaining
+	// settled: bool
+	out["settled"] = v.Settled
+	// merchant_amount: u64
+	out["merchant_amount"] = v.MerchantAmount
+	// commission_amount: u64
+	out["commission_amount"] = v.CommissionAmount
+	// merchant_claimed: bool
+	out["merchant_claimed"] = v.MerchantClaimed
+	// promoter_claimed: bool
+	out["promoter_claimed"] = v.PromoterClaimed
+	// busy: bool
+	out["busy"] = v.Busy
+	return out, nil
+}
+
+// CommissionRefundReceipt matches the IDL struct RefundReceipt.
+type CommissionRefundReceipt struct {
+	Target uint64
+	Amount uint64
+}
+
+// ToValue converts CommissionRefundReceipt into the provider wire value (map[string]any).
+func (v CommissionRefundReceipt) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 2)
+	// target: u64
+	out["target"] = v.Target
+	// amount: u64
+	out["amount"] = v.Amount
+	return out, nil
+}
+
+// CommissionOrderStatus matches the IDL enum OrderStatus.
+type CommissionOrderStatus struct {
+	Variant string // Active variant name
+	Index   uint64 // Active variant index
+	Fields  []any  // Fields of the active variant, in declaration order; nil for unit variants
+}
+
+// ToValue converts CommissionOrderStatus into the provider wire value (map[string]any).
+func (v CommissionOrderStatus) ToValue() (map[string]any, error) {
+	if v.Variant == "" {
+		return nil, fmt.Errorf("enum OrderStatus: empty variant")
+	}
+	switch v.Variant {
+	case "Holding":
+		return map[string]any{"variant": "Holding"}, nil
+	case "ReadyToSettle":
+		return map[string]any{"variant": "ReadyToSettle"}, nil
+	case "AwaitingClaims":
+		return map[string]any{"variant": "AwaitingClaims"}, nil
+	case "Refunded":
+		return map[string]any{"variant": "Refunded"}, nil
+	case "Closed":
+		return map[string]any{"variant": "Closed"}, nil
+	}
+	return nil, fmt.Errorf("unknown variant %q", v.Variant)
+}
+
+// CommissionOrderOverview matches the IDL struct OrderOverview.
+type CommissionOrderOverview struct {
+	OrderId *crypto.Address
+	Asset *crypto.Address
+	AsOfMs uint64
+	Status CommissionOrderStatus
+	RefundDeadlineMs uint64
+	SettleAtMs *uint64
+	PaidAmount uint64
+	RefundedAmount uint64
+	RemainingPrincipal uint64
+	NetAmount uint64
+	MerchantAmount uint64
+	CommissionAmount uint64
+	MerchantClaimable uint64
+	PromoterClaimable uint64
+	RefundableAmount uint64
+}
+
+// ToValue converts CommissionOrderOverview into the provider wire value (map[string]any).
+func (v CommissionOrderOverview) ToValue() (map[string]any, error) {
+	out := make(map[string]any, 15)
+	// order_id: Address
+	out["order_id"] = v.OrderId
+	// asset: Address
+	out["asset"] = v.Asset
+	// as_of_ms: u64
+	out["as_of_ms"] = v.AsOfMs
+	// status: OrderStatus
+	v0, err := toCommissionOrderStatusValue(v.Status)
+	if err != nil {
+		return nil, err
+	}
+	out["status"] = v0
+	// refund_deadline_ms: u64
+	out["refund_deadline_ms"] = v.RefundDeadlineMs
+	// settle_at_ms: option<u64>
+	if v.SettleAtMs == nil {
+		out["settle_at_ms"] = nil
+	} else {
+		out["settle_at_ms"] = *v.SettleAtMs
+	}
+	// paid_amount: u64
+	out["paid_amount"] = v.PaidAmount
+	// refunded_amount: u64
+	out["refunded_amount"] = v.RefundedAmount
+	// remaining_principal: u64
+	out["remaining_principal"] = v.RemainingPrincipal
+	// net_amount: u64
+	out["net_amount"] = v.NetAmount
+	// merchant_amount: u64
+	out["merchant_amount"] = v.MerchantAmount
+	// commission_amount: u64
+	out["commission_amount"] = v.CommissionAmount
+	// merchant_claimable: u64
+	out["merchant_claimable"] = v.MerchantClaimable
+	// promoter_claimable: u64
+	out["promoter_claimable"] = v.PromoterClaimable
+	// refundable_amount: u64
+	out["refundable_amount"] = v.RefundableAmount
+	return out, nil
+}
+
 // DemoTierCap matches the IDL struct TierCap.
 type DemoTierCap struct {
 	Cap uint64
@@ -20022,37 +22274,19 @@ func fromSystemWakeRecord(v any) (out SystemWakeRecord, err error) {
 	if err != nil {
 		return out, err
 	}
-	// registered: bool
+	// due_timestamp_ms: option<u64>
 	{
-		v0, err := toBool(m["registered"])
-		if err != nil {
-			return out, err
+		if m["due_timestamp_ms"] == nil {
+			out.DueTimestampMs = nil
+		} else {
+			var v0 uint64
+			v1, err := toUint64(m["due_timestamp_ms"])
+			if err != nil {
+				return out, err
+			}
+			v0 = v1
+			out.DueTimestampMs = &v0
 		}
-		out.Registered = v0
-	}
-	// due_timestamp_ms: u64
-	{
-		v1, err := toUint64(m["due_timestamp_ms"])
-		if err != nil {
-			return out, err
-		}
-		out.DueTimestampMs = v1
-	}
-	// method: bytes
-	{
-		v2, err := toBytes(m["method"])
-		if err != nil {
-			return out, err
-		}
-		out.Method = v2
-	}
-	// sponsor: Address
-	{
-		v3, err := toAddress(m["sponsor"])
-		if err != nil {
-			return out, err
-		}
-		out.Sponsor = v3
 	}
 	return out, nil
 }
@@ -20629,6 +22863,31 @@ func fromTokenHongbaoCleanupQueueState(v any) (out TokenHongbaoCleanupQueueState
 			return out, err
 		}
 		out.Tail = v1
+	}
+	return out, nil
+}
+
+// fromTokenHongbaoRefundTask converts a decoded IDL value into TokenHongbaoRefundTask.
+func fromTokenHongbaoRefundTask(v any) (out TokenHongbaoRefundTask, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// due: u64
+	{
+		v0, err := toUint64(m["due"])
+		if err != nil {
+			return out, err
+		}
+		out.Due = v0
+	}
+	// hongbao_id: Address
+	{
+		v1, err := toAddress(m["hongbao_id"])
+		if err != nil {
+			return out, err
+		}
+		out.HongbaoId = v1
 	}
 	return out, nil
 }
@@ -21233,75 +23492,132 @@ func fromStakingPosition(v any) (out StakingPosition, err error) {
 		}
 		out.ActivePrincipal = v2
 	}
-	// reward_checkpoint: u128
+	// rewards: map<Address,AssetReward>
 	{
-		v3, err := toBigInt(m["reward_checkpoint"])
+		v3, err := toMap(m["rewards"])
 		if err != nil {
 			return out, err
 		}
-		out.RewardCheckpoint = v3
-	}
-	// reward_fraction: u64
-	{
-		v4, err := toUint64(m["reward_fraction"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardFraction = v4
-	}
-	// claimable_rewards: u64
-	{
-		v5, err := toUint64(m["claimable_rewards"])
-		if err != nil {
-			return out, err
-		}
-		out.ClaimableRewards = v5
-	}
-	// claimable_principal: u64
-	{
-		v6, err := toUint64(m["claimable_principal"])
-		if err != nil {
-			return out, err
-		}
-		out.ClaimablePrincipal = v6
-	}
-	// deposits: vec<PendingAmount>
-	{
-		v7, err := toSlice(m["deposits"])
-		if err != nil {
-			return out, err
-		}
-		out.Deposits = make([]StakingPendingAmount, len(v7))
-		for v8, v9 := range v7 {
-			v10, err := fromStakingPendingAmount(v9)
+		out.Rewards = make(map[*crypto.Address]StakingAssetReward, len(v3))
+		for v4, v5 := range v3 {
+			var v6 *crypto.Address
+			var v7 StakingAssetReward
+			v8, err := toAddress(v4)
 			if err != nil {
 				return out, err
 			}
-			out.Deposits[v8] = v10
+			v6 = v8
+			v9, err := fromStakingAssetReward(v5)
+			if err != nil {
+				return out, err
+			}
+			v7 = v9
+			out.Rewards[v6] = v7
 		}
 	}
-	// exits: vec<PendingAmount>
+	// claimable_principal: u64
 	{
-		v11, err := toSlice(m["exits"])
+		v10, err := toUint64(m["claimable_principal"])
 		if err != nil {
 			return out, err
 		}
-		out.Exits = make([]StakingPendingAmount, len(v11))
+		out.ClaimablePrincipal = v10
+	}
+	// deposits: vec<PendingAmount>
+	{
+		v11, err := toSlice(m["deposits"])
+		if err != nil {
+			return out, err
+		}
+		out.Deposits = make([]StakingPendingAmount, len(v11))
 		for v12, v13 := range v11 {
 			v14, err := fromStakingPendingAmount(v13)
 			if err != nil {
 				return out, err
 			}
-			out.Exits[v12] = v14
+			out.Deposits[v12] = v14
+		}
+	}
+	// exits: vec<PendingAmount>
+	{
+		v15, err := toSlice(m["exits"])
+		if err != nil {
+			return out, err
+		}
+		out.Exits = make([]StakingPendingAmount, len(v15))
+		for v16, v17 := range v15 {
+			v18, err := fromStakingPendingAmount(v17)
+			if err != nil {
+				return out, err
+			}
+			out.Exits[v16] = v18
 		}
 	}
 	// tracked: bool
 	{
-		v15, err := toBool(m["tracked"])
+		v19, err := toBool(m["tracked"])
 		if err != nil {
 			return out, err
 		}
-		out.Tracked = v15
+		out.Tracked = v19
+	}
+	return out, nil
+}
+
+// fromStakingAssetIndex converts a decoded IDL value into StakingAssetIndex.
+func fromStakingAssetIndex(v any) (out StakingAssetIndex, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// index: u128
+	{
+		v0, err := toBigInt(m["index"])
+		if err != nil {
+			return out, err
+		}
+		out.Index = v0
+	}
+	// remainder: u64
+	{
+		v1, err := toUint64(m["remainder"])
+		if err != nil {
+			return out, err
+		}
+		out.Remainder = v1
+	}
+	return out, nil
+}
+
+// fromStakingAssetReward converts a decoded IDL value into StakingAssetReward.
+func fromStakingAssetReward(v any) (out StakingAssetReward, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// checkpoint: u128
+	{
+		v0, err := toBigInt(m["checkpoint"])
+		if err != nil {
+			return out, err
+		}
+		out.Checkpoint = v0
+	}
+	// fraction: u64
+	{
+		v1, err := toUint64(m["fraction"])
+		if err != nil {
+			return out, err
+		}
+		out.Fraction = v1
+	}
+	// claimable: u64
+	{
+		v2, err := toUint64(m["claimable"])
+		if err != nil {
+			return out, err
+		}
+		out.Claimable = v2
 	}
 	return out, nil
 }
@@ -21392,21 +23708,28 @@ func fromStakingPoolIndex(v any) (out StakingPoolIndex, err error) {
 		}
 		out.ActivePrincipal = v1
 	}
-	// reward_index: u128
+	// rewards: map<Address,AssetIndex>
 	{
-		v2, err := toBigInt(m["reward_index"])
+		v2, err := toMap(m["rewards"])
 		if err != nil {
 			return out, err
 		}
-		out.RewardIndex = v2
-	}
-	// scaled_reward_remainder: u64
-	{
-		v3, err := toUint64(m["scaled_reward_remainder"])
-		if err != nil {
-			return out, err
+		out.Rewards = make(map[*crypto.Address]StakingAssetIndex, len(v2))
+		for v3, v4 := range v2 {
+			var v5 *crypto.Address
+			var v6 StakingAssetIndex
+			v7, err := toAddress(v3)
+			if err != nil {
+				return out, err
+			}
+			v5 = v7
+			v8, err := fromStakingAssetIndex(v4)
+			if err != nil {
+				return out, err
+			}
+			v6 = v8
+			out.Rewards[v5] = v6
 		}
-		out.ScaledRewardRemainder = v3
 	}
 	return out, nil
 }
@@ -21425,13 +23748,28 @@ func fromStakingCheckpoint(v any) (out StakingCheckpoint, err error) {
 		}
 		out.Written = v0
 	}
-	// reward_index: u128
+	// rewards: map<Address,AssetIndex>
 	{
-		v1, err := toBigInt(m["reward_index"])
+		v1, err := toMap(m["rewards"])
 		if err != nil {
 			return out, err
 		}
-		out.RewardIndex = v1
+		out.Rewards = make(map[*crypto.Address]StakingAssetIndex, len(v1))
+		for v2, v3 := range v1 {
+			var v4 *crypto.Address
+			var v5 StakingAssetIndex
+			v6, err := toAddress(v2)
+			if err != nil {
+				return out, err
+			}
+			v4 = v6
+			v7, err := fromStakingAssetIndex(v3)
+			if err != nil {
+				return out, err
+			}
+			v5 = v7
+			out.Rewards[v4] = v5
+		}
 	}
 	return out, nil
 }
@@ -23875,39 +26213,6 @@ func fromValidatorValidatorPoolList(v any) (out ValidatorValidatorPoolList, err 
 	return out, nil
 }
 
-// fromValidatorEpochActivity converts a decoded IDL value into ValidatorEpochActivity.
-func fromValidatorEpochActivity(v any) (out ValidatorEpochActivity, err error) {
-	m, err := toRecord(v)
-	if err != nil {
-		return out, err
-	}
-	// blocks: u64
-	{
-		v0, err := toUint64(m["blocks"])
-		if err != nil {
-			return out, err
-		}
-		out.Blocks = v0
-	}
-	// signers: u64
-	{
-		v1, err := toUint64(m["signers"])
-		if err != nil {
-			return out, err
-		}
-		out.Signers = v1
-	}
-	// last_block: u64
-	{
-		v2, err := toUint64(m["last_block"])
-		if err != nil {
-			return out, err
-		}
-		out.LastBlock = v2
-	}
-	return out, nil
-}
-
 // fromValidatorFrozenEpoch converts a decoded IDL value into ValidatorFrozenEpoch.
 func fromValidatorFrozenEpoch(v any) (out ValidatorFrozenEpoch, err error) {
 	m, err := toRecord(v)
@@ -23954,21 +26259,13 @@ func fromValidatorFrozenEpoch(v any) (out ValidatorFrozenEpoch, err error) {
 		}
 		out.MinimumSelfStake = v4
 	}
-	// reward_per_validator: u64
-	{
-		v5, err := toUint64(m["reward_per_validator"])
-		if err != nil {
-			return out, err
-		}
-		out.RewardPerValidator = v5
-	}
 	// validator_set: bytes
 	{
-		v6, err := toBytes(m["validator_set"])
+		v5, err := toBytes(m["validator_set"])
 		if err != nil {
 			return out, err
 		}
-		out.ValidatorSet = v6
+		out.ValidatorSet = v5
 	}
 	return out, nil
 }
@@ -24016,6 +26313,70 @@ func fromValidatorMembership(v any) (out ValidatorMembership, err error) {
 			return out, err
 		}
 		out.MinimumSelfStake = v4
+	}
+	return out, nil
+}
+
+// fromValidatorProposalActivity converts a decoded IDL value into ValidatorProposalActivity.
+func fromValidatorProposalActivity(v any) (out ValidatorProposalActivity, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// set_hash: B256
+	{
+		v0, err := toFixed32(m["set_hash"])
+		if err != nil {
+			return out, err
+		}
+		out.SetHash = v0
+	}
+	// counts: vec<u64>
+	{
+		v1, err := toSlice(m["counts"])
+		if err != nil {
+			return out, err
+		}
+		out.Counts = make([]uint64, len(v1))
+		for v2, v3 := range v1 {
+			v4, err := toUint64(v3)
+			if err != nil {
+				return out, err
+			}
+			out.Counts[v2] = v4
+		}
+	}
+	// total: u64
+	{
+		v5, err := toUint64(m["total"])
+		if err != nil {
+			return out, err
+		}
+		out.Total = v5
+	}
+	// last_block: u64
+	{
+		v6, err := toUint64(m["last_block"])
+		if err != nil {
+			return out, err
+		}
+		out.LastBlock = v6
+	}
+	// frozen: bool
+	{
+		v7, err := toBool(m["frozen"])
+		if err != nil {
+			return out, err
+		}
+		out.Frozen = v7
+	}
+	// denied: u64
+	{
+		v8, err := toUint64(m["denied"])
+		if err != nil {
+			return out, err
+		}
+		out.Denied = v8
 	}
 	return out, nil
 }
@@ -25184,6 +27545,898 @@ func fromSocialHongbaoAllocation(v any) (out SocialHongbaoAllocation, err error)
 	return out, nil
 }
 
+// fromFundsFeeSplit converts a decoded IDL value into FundsFeeSplit.
+func fromFundsFeeSplit(v any) (out FundsFeeSplit, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// application: u64
+	{
+		v0, err := toUint64(m["application"])
+		if err != nil {
+			return out, err
+		}
+		out.Application = v0
+	}
+	// foundation: u64
+	{
+		v1, err := toUint64(m["foundation"])
+		if err != nil {
+			return out, err
+		}
+		out.Foundation = v1
+	}
+	// staking: u64
+	{
+		v2, err := toUint64(m["staking"])
+		if err != nil {
+			return out, err
+		}
+		out.Staking = v2
+	}
+	// promotion: u64
+	{
+		v3, err := toUint64(m["promotion"])
+		if err != nil {
+			return out, err
+		}
+		out.Promotion = v3
+	}
+	return out, nil
+}
+
+// fromFundsAppBudget converts a decoded IDL value into FundsAppBudget.
+func fromFundsAppBudget(v any) (out FundsAppBudget, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// assets: map<Address,u64>
+	{
+		v0, err := toMap(m["assets"])
+		if err != nil {
+			return out, err
+		}
+		out.Assets = make(map[*crypto.Address]uint64, len(v0))
+		for v1, v2 := range v0 {
+			var v3 *crypto.Address
+			var v4 uint64
+			v5, err := toAddress(v1)
+			if err != nil {
+				return out, err
+			}
+			v3 = v5
+			v6, err := toUint64(v2)
+			if err != nil {
+				return out, err
+			}
+			v4 = v6
+			out.Assets[v3] = v4
+		}
+	}
+	// closed: bool
+	{
+		v7, err := toBool(m["closed"])
+		if err != nil {
+			return out, err
+		}
+		out.Closed = v7
+	}
+	return out, nil
+}
+
+// fromFundsFeePolicy converts a decoded IDL value into FundsFeePolicy.
+func fromFundsFeePolicy(v any) (out FundsFeePolicy, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// foundation_bps: u16
+	{
+		v0, err := toUint16(m["foundation_bps"])
+		if err != nil {
+			return out, err
+		}
+		out.FoundationBps = v0
+	}
+	// staking_bps: u16
+	{
+		v1, err := toUint16(m["staking_bps"])
+		if err != nil {
+			return out, err
+		}
+		out.StakingBps = v1
+	}
+	// promotion_bps: u16
+	{
+		v2, err := toUint16(m["promotion_bps"])
+		if err != nil {
+			return out, err
+		}
+		out.PromotionBps = v2
+	}
+	return out, nil
+}
+
+// fromFundsSplitCarry converts a decoded IDL value into FundsSplitCarry.
+func fromFundsSplitCarry(v any) (out FundsSplitCarry, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// protocol: u64
+	{
+		v0, err := toUint64(m["protocol"])
+		if err != nil {
+			return out, err
+		}
+		out.Protocol = v0
+	}
+	// foundation: u64
+	{
+		v1, err := toUint64(m["foundation"])
+		if err != nil {
+			return out, err
+		}
+		out.Foundation = v1
+	}
+	// promotion: u64
+	{
+		v2, err := toUint64(m["promotion"])
+		if err != nil {
+			return out, err
+		}
+		out.Promotion = v2
+	}
+	return out, nil
+}
+
+// fromFundsFeeReference converts a decoded IDL value into FundsFeeReference.
+func fromFundsFeeReference(v any) (out FundsFeeReference, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// ix_index: u8
+	{
+		v0, err := toUint8(m["ix_index"])
+		if err != nil {
+			return out, err
+		}
+		out.IxIndex = v0
+	}
+	// fee_sequence: u32
+	{
+		v1, err := toUint32(m["fee_sequence"])
+		if err != nil {
+			return out, err
+		}
+		out.FeeSequence = v1
+	}
+	return out, nil
+}
+
+// fromFundsEpochBudget converts a decoded IDL value into FundsEpochBudget.
+func fromFundsEpochBudget(v any) (out FundsEpochBudget, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// gas: u64
+	{
+		v0, err := toUint64(m["gas"])
+		if err != nil {
+			return out, err
+		}
+		out.Gas = v0
+	}
+	// gas_closed: bool
+	{
+		v1, err := toBool(m["gas_closed"])
+		if err != nil {
+			return out, err
+		}
+		out.GasClosed = v1
+	}
+	return out, nil
+}
+
+// fromCommissionCollectionRules converts a decoded IDL value into CommissionCollectionRules.
+func fromCommissionCollectionRules(v any) (out CommissionCollectionRules, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// asset: Address
+	{
+		v0, err := toAddress(m["asset"])
+		if err != nil {
+			return out, err
+		}
+		out.Asset = v0
+	}
+	// merchant_recipient: Address
+	{
+		v1, err := toAddress(m["merchant_recipient"])
+		if err != nil {
+			return out, err
+		}
+		out.MerchantRecipient = v1
+	}
+	// promoter: option<Address>
+	{
+		if m["promoter"] == nil {
+			out.Promoter = nil
+		} else {
+			var v2 *crypto.Address
+			v3, err := toAddress(m["promoter"])
+			if err != nil {
+				return out, err
+			}
+			v2 = v3
+			out.Promoter = &v2
+		}
+	}
+	// commission_bps: u16
+	{
+		v4, err := toUint16(m["commission_bps"])
+		if err != nil {
+			return out, err
+		}
+		out.CommissionBps = v4
+	}
+	// refund_mode: u8
+	{
+		v5, err := toUint8(m["refund_mode"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundMode = v5
+	}
+	// refund_window_ms: u64
+	{
+		v6, err := toUint64(m["refund_window_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundWindowMs = v6
+	}
+	// settlement_delay_ms: u64
+	{
+		v7, err := toUint64(m["settlement_delay_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.SettlementDelayMs = v7
+	}
+	// refund_authority: Address
+	{
+		v8, err := toAddress(m["refund_authority"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundAuthority = v8
+	}
+	// max_order_validity_secs: u32
+	{
+		v9, err := toUint32(m["max_order_validity_secs"])
+		if err != nil {
+			return out, err
+		}
+		out.MaxOrderValiditySecs = v9
+	}
+	// min_amount: u64
+	{
+		v10, err := toUint64(m["min_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.MinAmount = v10
+	}
+	// fixed_amount: u64
+	{
+		v11, err := toUint64(m["fixed_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.FixedAmount = v11
+	}
+	return out, nil
+}
+
+// fromCommissionCollectionScheme converts a decoded IDL value into CommissionCollectionScheme.
+func fromCommissionCollectionScheme(v any) (out CommissionCollectionScheme, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// id: u64
+	{
+		v0, err := toUint64(m["id"])
+		if err != nil {
+			return out, err
+		}
+		out.Id = v0
+	}
+	// owner: Address
+	{
+		v1, err := toAddress(m["owner"])
+		if err != nil {
+			return out, err
+		}
+		out.Owner = v1
+	}
+	// collection_address: Address
+	{
+		v2, err := toAddress(m["collection_address"])
+		if err != nil {
+			return out, err
+		}
+		out.CollectionAddress = v2
+	}
+	// gas_address: Address
+	{
+		v3, err := toAddress(m["gas_address"])
+		if err != nil {
+			return out, err
+		}
+		out.GasAddress = v3
+	}
+	// stopped: bool
+	{
+		v4, err := toBool(m["stopped"])
+		if err != nil {
+			return out, err
+		}
+		out.Stopped = v4
+	}
+	// outstanding_orders: u64
+	{
+		v5, err := toUint64(m["outstanding_orders"])
+		if err != nil {
+			return out, err
+		}
+		out.OutstandingOrders = v5
+	}
+	// reserved_gas: u64
+	{
+		v6, err := toUint64(m["reserved_gas"])
+		if err != nil {
+			return out, err
+		}
+		out.ReservedGas = v6
+	}
+	// rules: CollectionRules
+	{
+		v7, err := fromCommissionCollectionRules(m["rules"])
+		if err != nil {
+			return out, err
+		}
+		out.Rules = v7
+	}
+	return out, nil
+}
+
+// fromCommissionCollectionOrder converts a decoded IDL value into CommissionCollectionOrder.
+func fromCommissionCollectionOrder(v any) (out CommissionCollectionOrder, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// scheme_id: u64
+	{
+		v0, err := toUint64(m["scheme_id"])
+		if err != nil {
+			return out, err
+		}
+		out.SchemeId = v0
+	}
+	// reserved_gas: u64
+	{
+		v1, err := toUint64(m["reserved_gas"])
+		if err != nil {
+			return out, err
+		}
+		out.ReservedGas = v1
+	}
+	// refund_keys: vec<B256>
+	{
+		v2, err := toSlice(m["refund_keys"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundKeys = make([][32]byte, len(v2))
+		for v3, v4 := range v2 {
+			v5, err := toFixed32(v4)
+			if err != nil {
+				return out, err
+			}
+			out.RefundKeys[v3] = v5
+		}
+	}
+	return out, nil
+}
+
+// fromCommissionCollectionTask converts a decoded IDL value into CommissionCollectionTask.
+func fromCommissionCollectionTask(v any) (out CommissionCollectionTask, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// order_id: Address
+	{
+		v0, err := toAddress(m["order_id"])
+		if err != nil {
+			return out, err
+		}
+		out.OrderId = v0
+	}
+	// gas_address: Address
+	{
+		v1, err := toAddress(m["gas_address"])
+		if err != nil {
+			return out, err
+		}
+		out.GasAddress = v1
+	}
+	// due_timestamp_ms: u64
+	{
+		v2, err := toUint64(m["due_timestamp_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.DueTimestampMs = v2
+	}
+	return out, nil
+}
+
+// fromCommissionPaymentTerms converts a decoded IDL value into CommissionPaymentTerms.
+func fromCommissionPaymentTerms(v any) (out CommissionPaymentTerms, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// order_key: B96
+	{
+		v0, err := toFixed12(m["order_key"])
+		if err != nil {
+			return out, err
+		}
+		out.OrderKey = v0
+	}
+	// asset: Address
+	{
+		v1, err := toAddress(m["asset"])
+		if err != nil {
+			return out, err
+		}
+		out.Asset = v1
+	}
+	// amount: u64
+	{
+		v2, err := toUint64(m["amount"])
+		if err != nil {
+			return out, err
+		}
+		out.Amount = v2
+	}
+	// merchant_recipient: Address
+	{
+		v3, err := toAddress(m["merchant_recipient"])
+		if err != nil {
+			return out, err
+		}
+		out.MerchantRecipient = v3
+	}
+	// promoter: option<Address>
+	{
+		if m["promoter"] == nil {
+			out.Promoter = nil
+		} else {
+			var v4 *crypto.Address
+			v5, err := toAddress(m["promoter"])
+			if err != nil {
+				return out, err
+			}
+			v4 = v5
+			out.Promoter = &v4
+		}
+	}
+	// commission_bps: u16
+	{
+		v6, err := toUint16(m["commission_bps"])
+		if err != nil {
+			return out, err
+		}
+		out.CommissionBps = v6
+	}
+	// refund_mode: u8
+	{
+		v7, err := toUint8(m["refund_mode"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundMode = v7
+	}
+	// refund_window_ms: u64
+	{
+		v8, err := toUint64(m["refund_window_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundWindowMs = v8
+	}
+	// refund_authority: Address
+	{
+		v9, err := toAddress(m["refund_authority"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundAuthority = v9
+	}
+	// pay_before_ms: u64
+	{
+		v10, err := toUint64(m["pay_before_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.PayBeforeMs = v10
+	}
+	// terms_hash: option<B256>
+	{
+		if m["terms_hash"] == nil {
+			out.TermsHash = nil
+		} else {
+			var v11 [32]byte
+			v12, err := toFixed32(m["terms_hash"])
+			if err != nil {
+				return out, err
+			}
+			v11 = v12
+			out.TermsHash = &v11
+		}
+	}
+	return out, nil
+}
+
+// fromCommissionOrderSource converts a decoded IDL value into CommissionOrderSource.
+func fromCommissionOrderSource(v any) (out CommissionOrderSource, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// app: option<u8>
+	{
+		if m["app"] == nil {
+			out.App = nil
+		} else {
+			var v0 uint8
+			v1, err := toUint8(m["app"])
+			if err != nil {
+				return out, err
+			}
+			v0 = v1
+			out.App = &v0
+		}
+	}
+	// owner: Address
+	{
+		v2, err := toAddress(m["owner"])
+		if err != nil {
+			return out, err
+		}
+		out.Owner = v2
+	}
+	return out, nil
+}
+
+// fromCommissionOrderState converts a decoded IDL value into CommissionOrderState.
+func fromCommissionOrderState(v any) (out CommissionOrderState, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// source: OrderSource
+	{
+		v0, err := fromCommissionOrderSource(m["source"])
+		if err != nil {
+			return out, err
+		}
+		out.Source = v0
+	}
+	// payer: Address
+	{
+		v1, err := toAddress(m["payer"])
+		if err != nil {
+			return out, err
+		}
+		out.Payer = v1
+	}
+	// terms: PaymentTerms
+	{
+		v2, err := fromCommissionPaymentTerms(m["terms"])
+		if err != nil {
+			return out, err
+		}
+		out.Terms = v2
+	}
+	// paid_at_ms: u64
+	{
+		v3, err := toUint64(m["paid_at_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.PaidAtMs = v3
+	}
+	// refund_deadline_ms: u64
+	{
+		v4, err := toUint64(m["refund_deadline_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundDeadlineMs = v4
+	}
+	// settle_at_ms: option<u64>
+	{
+		if m["settle_at_ms"] == nil {
+			out.SettleAtMs = nil
+		} else {
+			var v5 uint64
+			v6, err := toUint64(m["settle_at_ms"])
+			if err != nil {
+				return out, err
+			}
+			v5 = v6
+			out.SettleAtMs = &v5
+		}
+	}
+	// refunded: u64
+	{
+		v7, err := toUint64(m["refunded"])
+		if err != nil {
+			return out, err
+		}
+		out.Refunded = v7
+	}
+	// remaining: u64
+	{
+		v8, err := toUint64(m["remaining"])
+		if err != nil {
+			return out, err
+		}
+		out.Remaining = v8
+	}
+	// settled: bool
+	{
+		v9, err := toBool(m["settled"])
+		if err != nil {
+			return out, err
+		}
+		out.Settled = v9
+	}
+	// merchant_amount: u64
+	{
+		v10, err := toUint64(m["merchant_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.MerchantAmount = v10
+	}
+	// commission_amount: u64
+	{
+		v11, err := toUint64(m["commission_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.CommissionAmount = v11
+	}
+	// merchant_claimed: bool
+	{
+		v12, err := toBool(m["merchant_claimed"])
+		if err != nil {
+			return out, err
+		}
+		out.MerchantClaimed = v12
+	}
+	// promoter_claimed: bool
+	{
+		v13, err := toBool(m["promoter_claimed"])
+		if err != nil {
+			return out, err
+		}
+		out.PromoterClaimed = v13
+	}
+	// busy: bool
+	{
+		v14, err := toBool(m["busy"])
+		if err != nil {
+			return out, err
+		}
+		out.Busy = v14
+	}
+	return out, nil
+}
+
+// fromCommissionRefundReceipt converts a decoded IDL value into CommissionRefundReceipt.
+func fromCommissionRefundReceipt(v any) (out CommissionRefundReceipt, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// target: u64
+	{
+		v0, err := toUint64(m["target"])
+		if err != nil {
+			return out, err
+		}
+		out.Target = v0
+	}
+	// amount: u64
+	{
+		v1, err := toUint64(m["amount"])
+		if err != nil {
+			return out, err
+		}
+		out.Amount = v1
+	}
+	return out, nil
+}
+
+// fromCommissionOrderStatus converts a decoded IDL value into CommissionOrderStatus.
+func fromCommissionOrderStatus(v any) (out CommissionOrderStatus, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	s, ok := m["variant"].(string)
+	if !ok {
+		return out, fmt.Errorf("enum OrderStatus: missing variant")
+	}
+	out.Variant = s
+	n, err := toUint(m["index"])
+	if err != nil {
+		return out, err
+	}
+	out.Index = n
+	return out, nil
+}
+
+// fromCommissionOrderOverview converts a decoded IDL value into CommissionOrderOverview.
+func fromCommissionOrderOverview(v any) (out CommissionOrderOverview, err error) {
+	m, err := toRecord(v)
+	if err != nil {
+		return out, err
+	}
+	// order_id: Address
+	{
+		v0, err := toAddress(m["order_id"])
+		if err != nil {
+			return out, err
+		}
+		out.OrderId = v0
+	}
+	// asset: Address
+	{
+		v1, err := toAddress(m["asset"])
+		if err != nil {
+			return out, err
+		}
+		out.Asset = v1
+	}
+	// as_of_ms: u64
+	{
+		v2, err := toUint64(m["as_of_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.AsOfMs = v2
+	}
+	// status: OrderStatus
+	{
+		v3, err := fromCommissionOrderStatus(m["status"])
+		if err != nil {
+			return out, err
+		}
+		out.Status = v3
+	}
+	// refund_deadline_ms: u64
+	{
+		v4, err := toUint64(m["refund_deadline_ms"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundDeadlineMs = v4
+	}
+	// settle_at_ms: option<u64>
+	{
+		if m["settle_at_ms"] == nil {
+			out.SettleAtMs = nil
+		} else {
+			var v5 uint64
+			v6, err := toUint64(m["settle_at_ms"])
+			if err != nil {
+				return out, err
+			}
+			v5 = v6
+			out.SettleAtMs = &v5
+		}
+	}
+	// paid_amount: u64
+	{
+		v7, err := toUint64(m["paid_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.PaidAmount = v7
+	}
+	// refunded_amount: u64
+	{
+		v8, err := toUint64(m["refunded_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundedAmount = v8
+	}
+	// remaining_principal: u64
+	{
+		v9, err := toUint64(m["remaining_principal"])
+		if err != nil {
+			return out, err
+		}
+		out.RemainingPrincipal = v9
+	}
+	// net_amount: u64
+	{
+		v10, err := toUint64(m["net_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.NetAmount = v10
+	}
+	// merchant_amount: u64
+	{
+		v11, err := toUint64(m["merchant_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.MerchantAmount = v11
+	}
+	// commission_amount: u64
+	{
+		v12, err := toUint64(m["commission_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.CommissionAmount = v12
+	}
+	// merchant_claimable: u64
+	{
+		v13, err := toUint64(m["merchant_claimable"])
+		if err != nil {
+			return out, err
+		}
+		out.MerchantClaimable = v13
+	}
+	// promoter_claimable: u64
+	{
+		v14, err := toUint64(m["promoter_claimable"])
+		if err != nil {
+			return out, err
+		}
+		out.PromoterClaimable = v14
+	}
+	// refundable_amount: u64
+	{
+		v15, err := toUint64(m["refundable_amount"])
+		if err != nil {
+			return out, err
+		}
+		out.RefundableAmount = v15
+	}
+	return out, nil
+}
+
 // fromDemoTierCap converts a decoded IDL value into DemoTierCap.
 func fromDemoTierCap(v any) (out DemoTierCap, err error) {
 	m, err := toRecord(v)
@@ -25833,6 +29086,21 @@ func toTokenHongbaoCleanupQueueStateValue(v any) (map[string]any, error) {
 	}
 }
 
+// toTokenHongbaoRefundTaskValue converts any into TokenHongbaoRefundTask for provider serialization.
+func toTokenHongbaoRefundTaskValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case TokenHongbaoRefundTask:
+		return x.ToValue()
+	case *TokenHongbaoRefundTask:
+		if x == nil {
+			return nil, fmt.Errorf("nil TokenHongbaoRefundTask")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected TokenHongbaoRefundTask, got %T", v)
+	}
+}
+
 // toTokenVestingRecipientValue converts any into TokenVestingRecipient for provider serialization.
 func toTokenVestingRecipientValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -25995,6 +29263,36 @@ func toStakingPositionValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected StakingPosition, got %T", v)
+	}
+}
+
+// toStakingAssetIndexValue converts any into StakingAssetIndex for provider serialization.
+func toStakingAssetIndexValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case StakingAssetIndex:
+		return x.ToValue()
+	case *StakingAssetIndex:
+		if x == nil {
+			return nil, fmt.Errorf("nil StakingAssetIndex")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected StakingAssetIndex, got %T", v)
+	}
+}
+
+// toStakingAssetRewardValue converts any into StakingAssetReward for provider serialization.
+func toStakingAssetRewardValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case StakingAssetReward:
+		return x.ToValue()
+	case *StakingAssetReward:
+		if x == nil {
+			return nil, fmt.Errorf("nil StakingAssetReward")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected StakingAssetReward, got %T", v)
 	}
 }
 
@@ -27033,21 +30331,6 @@ func toValidatorValidatorPoolListValue(v any) (map[string]any, error) {
 	}
 }
 
-// toValidatorEpochActivityValue converts any into ValidatorEpochActivity for provider serialization.
-func toValidatorEpochActivityValue(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case ValidatorEpochActivity:
-		return x.ToValue()
-	case *ValidatorEpochActivity:
-		if x == nil {
-			return nil, fmt.Errorf("nil ValidatorEpochActivity")
-		}
-		return x.ToValue()
-	default:
-		return nil, fmt.Errorf("expected ValidatorEpochActivity, got %T", v)
-	}
-}
-
 // toValidatorFrozenEpochValue converts any into ValidatorFrozenEpoch for provider serialization.
 func toValidatorFrozenEpochValue(v any) (map[string]any, error) {
 	switch x := v.(type) {
@@ -27075,6 +30358,21 @@ func toValidatorMembershipValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected ValidatorMembership, got %T", v)
+	}
+}
+
+// toValidatorProposalActivityValue converts any into ValidatorProposalActivity for provider serialization.
+func toValidatorProposalActivityValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case ValidatorProposalActivity:
+		return x.ToValue()
+	case *ValidatorProposalActivity:
+		if x == nil {
+			return nil, fmt.Errorf("nil ValidatorProposalActivity")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected ValidatorProposalActivity, got %T", v)
 	}
 }
 
@@ -27555,6 +30853,246 @@ func toSocialHongbaoAllocationValue(v any) (map[string]any, error) {
 		return x.ToValue()
 	default:
 		return nil, fmt.Errorf("expected SocialHongbaoAllocation, got %T", v)
+	}
+}
+
+// toFundsFeeSplitValue converts any into FundsFeeSplit for provider serialization.
+func toFundsFeeSplitValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case FundsFeeSplit:
+		return x.ToValue()
+	case *FundsFeeSplit:
+		if x == nil {
+			return nil, fmt.Errorf("nil FundsFeeSplit")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected FundsFeeSplit, got %T", v)
+	}
+}
+
+// toFundsAppBudgetValue converts any into FundsAppBudget for provider serialization.
+func toFundsAppBudgetValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case FundsAppBudget:
+		return x.ToValue()
+	case *FundsAppBudget:
+		if x == nil {
+			return nil, fmt.Errorf("nil FundsAppBudget")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected FundsAppBudget, got %T", v)
+	}
+}
+
+// toFundsFeePolicyValue converts any into FundsFeePolicy for provider serialization.
+func toFundsFeePolicyValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case FundsFeePolicy:
+		return x.ToValue()
+	case *FundsFeePolicy:
+		if x == nil {
+			return nil, fmt.Errorf("nil FundsFeePolicy")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected FundsFeePolicy, got %T", v)
+	}
+}
+
+// toFundsSplitCarryValue converts any into FundsSplitCarry for provider serialization.
+func toFundsSplitCarryValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case FundsSplitCarry:
+		return x.ToValue()
+	case *FundsSplitCarry:
+		if x == nil {
+			return nil, fmt.Errorf("nil FundsSplitCarry")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected FundsSplitCarry, got %T", v)
+	}
+}
+
+// toFundsFeeReferenceValue converts any into FundsFeeReference for provider serialization.
+func toFundsFeeReferenceValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case FundsFeeReference:
+		return x.ToValue()
+	case *FundsFeeReference:
+		if x == nil {
+			return nil, fmt.Errorf("nil FundsFeeReference")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected FundsFeeReference, got %T", v)
+	}
+}
+
+// toFundsEpochBudgetValue converts any into FundsEpochBudget for provider serialization.
+func toFundsEpochBudgetValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case FundsEpochBudget:
+		return x.ToValue()
+	case *FundsEpochBudget:
+		if x == nil {
+			return nil, fmt.Errorf("nil FundsEpochBudget")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected FundsEpochBudget, got %T", v)
+	}
+}
+
+// toCommissionCollectionRulesValue converts any into CommissionCollectionRules for provider serialization.
+func toCommissionCollectionRulesValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionCollectionRules:
+		return x.ToValue()
+	case *CommissionCollectionRules:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionCollectionRules")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionCollectionRules, got %T", v)
+	}
+}
+
+// toCommissionCollectionSchemeValue converts any into CommissionCollectionScheme for provider serialization.
+func toCommissionCollectionSchemeValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionCollectionScheme:
+		return x.ToValue()
+	case *CommissionCollectionScheme:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionCollectionScheme")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionCollectionScheme, got %T", v)
+	}
+}
+
+// toCommissionCollectionOrderValue converts any into CommissionCollectionOrder for provider serialization.
+func toCommissionCollectionOrderValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionCollectionOrder:
+		return x.ToValue()
+	case *CommissionCollectionOrder:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionCollectionOrder")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionCollectionOrder, got %T", v)
+	}
+}
+
+// toCommissionCollectionTaskValue converts any into CommissionCollectionTask for provider serialization.
+func toCommissionCollectionTaskValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionCollectionTask:
+		return x.ToValue()
+	case *CommissionCollectionTask:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionCollectionTask")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionCollectionTask, got %T", v)
+	}
+}
+
+// toCommissionPaymentTermsValue converts any into CommissionPaymentTerms for provider serialization.
+func toCommissionPaymentTermsValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionPaymentTerms:
+		return x.ToValue()
+	case *CommissionPaymentTerms:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionPaymentTerms")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionPaymentTerms, got %T", v)
+	}
+}
+
+// toCommissionOrderSourceValue converts any into CommissionOrderSource for provider serialization.
+func toCommissionOrderSourceValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionOrderSource:
+		return x.ToValue()
+	case *CommissionOrderSource:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionOrderSource")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionOrderSource, got %T", v)
+	}
+}
+
+// toCommissionOrderStateValue converts any into CommissionOrderState for provider serialization.
+func toCommissionOrderStateValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionOrderState:
+		return x.ToValue()
+	case *CommissionOrderState:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionOrderState")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionOrderState, got %T", v)
+	}
+}
+
+// toCommissionRefundReceiptValue converts any into CommissionRefundReceipt for provider serialization.
+func toCommissionRefundReceiptValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionRefundReceipt:
+		return x.ToValue()
+	case *CommissionRefundReceipt:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionRefundReceipt")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionRefundReceipt, got %T", v)
+	}
+}
+
+// toCommissionOrderStatusValue converts any into CommissionOrderStatus for provider serialization.
+func toCommissionOrderStatusValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionOrderStatus:
+		return x.ToValue()
+	case *CommissionOrderStatus:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionOrderStatus")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionOrderStatus, got %T", v)
+	}
+}
+
+// toCommissionOrderOverviewValue converts any into CommissionOrderOverview for provider serialization.
+func toCommissionOrderOverviewValue(v any) (map[string]any, error) {
+	switch x := v.(type) {
+	case CommissionOrderOverview:
+		return x.ToValue()
+	case *CommissionOrderOverview:
+		if x == nil {
+			return nil, fmt.Errorf("nil CommissionOrderOverview")
+		}
+		return x.ToValue()
+	default:
+		return nil, fmt.Errorf("expected CommissionOrderOverview, got %T", v)
 	}
 }
 
@@ -29201,6 +32739,8 @@ type TokenApp struct {
 	CreateSftHongbao *TokenCreateSftHongbaoIx
 	ClaimHongbao *TokenClaimHongbaoIx
 	RefundHongbao *TokenRefundHongbaoIx
+	ScheduleHongbaoRefund *TokenScheduleHongbaoRefundIx
+	RunHongbaoRefund *TokenRunHongbaoRefundIx
 	RunHongbaoCleanup *TokenRunHongbaoCleanupIx
 	CreateVesting *TokenCreateVestingIx
 	ClaimVesting *TokenClaimVestingIx
@@ -29250,6 +32790,8 @@ var Token = &TokenApp{
 	CreateSftHongbao: &TokenCreateSftHongbaoIx{},
 	ClaimHongbao: &TokenClaimHongbaoIx{},
 	RefundHongbao: &TokenRefundHongbaoIx{},
+	ScheduleHongbaoRefund: &TokenScheduleHongbaoRefundIx{},
+	RunHongbaoRefund: &TokenRunHongbaoRefundIx{},
 	RunHongbaoCleanup: &TokenRunHongbaoCleanupIx{},
 	CreateVesting: &TokenCreateVestingIx{},
 	ClaimVesting: &TokenClaimVestingIx{},
@@ -29300,6 +32842,8 @@ func (a *TokenApp) bind(pd *provider.Provider) {
 	a.CreateSftHongbao.pd = pd
 	a.ClaimHongbao.pd = pd
 	a.RefundHongbao.pd = pd
+	a.ScheduleHongbaoRefund.pd = pd
+	a.RunHongbaoRefund.pd = pd
 	a.RunHongbaoCleanup.pd = pd
 	a.CreateVesting.pd = pd
 	a.ClaimVesting.pd = pd
@@ -30890,6 +34434,70 @@ func (a *TokenRefundHongbaoArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type TokenScheduleHongbaoRefundIx struct {
+	pd *provider.Provider
+}
+
+type TokenScheduleHongbaoRefundArgs struct {
+	hongbao_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ScheduleHongbaoRefund.
+func (ix *TokenScheduleHongbaoRefundIx) Args(hongbao_id *crypto.Address) *TokenScheduleHongbaoRefundArgs {
+	return &TokenScheduleHongbaoRefundArgs{
+		hongbao_id: hongbao_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenScheduleHongbaoRefundArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("ScheduleHongbaoRefund", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type TokenRunHongbaoRefundIx struct {
+	pd *provider.Provider
+}
+
+type TokenRunHongbaoRefundArgs struct {
+	hongbao_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RunHongbaoRefund.
+func (ix *TokenRunHongbaoRefundIx) Args(hongbao_id *crypto.Address) *TokenRunHongbaoRefundArgs {
+	return &TokenRunHongbaoRefundArgs{
+		hongbao_id: hongbao_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *TokenRunHongbaoRefundArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app token is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// hongbao_id: Address
+	args["hongbao_id"] = a.hongbao_id
+	wire, err := a.pd.Encode("RunHongbaoRefund", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type TokenRunHongbaoCleanupIx struct {
 	pd *provider.Provider
 }
@@ -31424,6 +35032,7 @@ type StakingApp struct {
 	CancelUnstake *StakingCancelUnstakeIx
 	ClaimPrincipal *StakingClaimPrincipalIx
 	ClaimRewards *StakingClaimRewardsIx
+	ClaimAssetRewards *StakingClaimAssetRewardsIx
 	AccruePoolReward *StakingAccruePoolRewardIx
 	ClaimCommission *StakingClaimCommissionIx
 	ClaimPoolCommission *StakingClaimPoolCommissionIx
@@ -31431,6 +35040,7 @@ type StakingApp struct {
 	Pool *StakingPoolIx
 	TotalStake *StakingTotalStakeIx
 	Position *StakingPositionIx
+	AssetRewards *StakingAssetRewardsIx
 	PoolTreasuryBalance *StakingPoolTreasuryBalanceIx
 	CommissionBalance *StakingCommissionBalanceIx
 }
@@ -31447,6 +35057,7 @@ var Staking = &StakingApp{
 	CancelUnstake: &StakingCancelUnstakeIx{},
 	ClaimPrincipal: &StakingClaimPrincipalIx{},
 	ClaimRewards: &StakingClaimRewardsIx{},
+	ClaimAssetRewards: &StakingClaimAssetRewardsIx{},
 	AccruePoolReward: &StakingAccruePoolRewardIx{},
 	ClaimCommission: &StakingClaimCommissionIx{},
 	ClaimPoolCommission: &StakingClaimPoolCommissionIx{},
@@ -31454,6 +35065,7 @@ var Staking = &StakingApp{
 	Pool: &StakingPoolIx{},
 	TotalStake: &StakingTotalStakeIx{},
 	Position: &StakingPositionIx{},
+	AssetRewards: &StakingAssetRewardsIx{},
 	PoolTreasuryBalance: &StakingPoolTreasuryBalanceIx{},
 	CommissionBalance: &StakingCommissionBalanceIx{},
 }
@@ -31471,6 +35083,7 @@ func (a *StakingApp) bind(pd *provider.Provider) {
 	a.CancelUnstake.pd = pd
 	a.ClaimPrincipal.pd = pd
 	a.ClaimRewards.pd = pd
+	a.ClaimAssetRewards.pd = pd
 	a.AccruePoolReward.pd = pd
 	a.ClaimCommission.pd = pd
 	a.ClaimPoolCommission.pd = pd
@@ -31478,6 +35091,7 @@ func (a *StakingApp) bind(pd *provider.Provider) {
 	a.Pool.pd = pd
 	a.TotalStake.pd = pd
 	a.Position.pd = pd
+	a.AssetRewards.pd = pd
 	a.PoolTreasuryBalance.pd = pd
 	a.CommissionBalance.pd = pd
 }
@@ -31918,6 +35532,46 @@ func (a *StakingClaimRewardsArgs) Encode() (api.PackedInstruction, error) {
 	return api.PackedInstruction(wire), nil
 }
 
+type StakingClaimAssetRewardsIx struct {
+	pd *provider.Provider
+}
+
+type StakingClaimAssetRewardsArgs struct {
+	owner *crypto.Address
+	pool_id [32]byte
+	asset *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimAssetRewards.
+func (ix *StakingClaimAssetRewardsIx) Args(owner *crypto.Address, pool_id [32]byte, asset *crypto.Address) *StakingClaimAssetRewardsArgs {
+	return &StakingClaimAssetRewardsArgs{
+		owner: owner,
+		pool_id: pool_id,
+		asset: asset,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingClaimAssetRewardsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	// asset: Address
+	args["asset"] = a.asset
+	wire, err := a.pd.Encode("ClaimAssetRewards", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
 type StakingAccruePoolRewardIx struct {
 	pd *provider.Provider
 }
@@ -32222,6 +35876,74 @@ func (ix *StakingPositionIx) DecodeView(body []byte) (out StakingPosition, err e
 		return out, err
 	}
 	out = v0
+	return out, nil
+}
+
+type StakingAssetRewardsIx struct {
+	pd *provider.Provider
+}
+
+type StakingAssetRewardsArgs struct {
+	owner *crypto.Address
+	pool_id [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of AssetRewards.
+func (ix *StakingAssetRewardsIx) Args(owner *crypto.Address, pool_id [32]byte) *StakingAssetRewardsArgs {
+	return &StakingAssetRewardsArgs{
+		owner: owner,
+		pool_id: pool_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *StakingAssetRewardsArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Address
+	args["owner"] = a.owner
+	// pool_id: B256
+	args["pool_id"] = a.pool_id
+	wire, err := a.pd.Encode("AssetRewards", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of AssetRewards into map[*crypto.Address]StakingAssetReward.
+func (ix *StakingAssetRewardsIx) DecodeView(body []byte) (out map[*crypto.Address]StakingAssetReward, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app staking is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("AssetRewards", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toMap(v)
+	if err != nil {
+		return out, err
+	}
+	out = make(map[*crypto.Address]StakingAssetReward, len(v0))
+	for v1, v2 := range v0 {
+		var v3 *crypto.Address
+		var v4 StakingAssetReward
+		v5, err := toAddress(v1)
+		if err != nil {
+			return out, err
+		}
+		v3 = v5
+		v6, err := fromStakingAssetReward(v2)
+		if err != nil {
+			return out, err
+		}
+		v4 = v6
+		out[v3] = v4
+	}
 	return out, nil
 }
 
@@ -37327,12 +41049,12 @@ type DexSwapExactInArgs struct {
 	worst_tick uint32
 	max_book_makers uint16
 	max_amm_segments uint16
-	channel *crypto.Address
+	promoter *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of SwapExactIn.
-func (ix *DexSwapExactInIx) Args(owner *crypto.Address, market_id *crypto.Address, input_token *crypto.Address, amount_in uint64, min_amount_out uint64, worst_tick uint32, max_book_makers uint16, max_amm_segments uint16, channel *crypto.Address) *DexSwapExactInArgs {
+func (ix *DexSwapExactInIx) Args(owner *crypto.Address, market_id *crypto.Address, input_token *crypto.Address, amount_in uint64, min_amount_out uint64, worst_tick uint32, max_book_makers uint16, max_amm_segments uint16, promoter *crypto.Address) *DexSwapExactInArgs {
 	return &DexSwapExactInArgs{
 		owner: owner,
 		market_id: market_id,
@@ -37342,7 +41064,7 @@ func (ix *DexSwapExactInIx) Args(owner *crypto.Address, market_id *crypto.Addres
 		worst_tick: worst_tick,
 		max_book_makers: max_book_makers,
 		max_amm_segments: max_amm_segments,
-		channel: channel,
+		promoter: promoter,
 		pd: ix.pd,
 	}
 }
@@ -37369,8 +41091,8 @@ func (a *DexSwapExactInArgs) Encode() (api.PackedInstruction, error) {
 	args["max_book_makers"] = a.max_book_makers
 	// max_amm_segments: u16
 	args["max_amm_segments"] = a.max_amm_segments
-	// channel: Address
-	args["channel"] = a.channel
+	// promoter: Address
+	args["promoter"] = a.promoter
 	wire, err := a.pd.Encode("SwapExactIn", args)
 	if err != nil {
 		return nil, err
@@ -37613,12 +41335,12 @@ type DexPlaceLimitOrderArgs struct {
 	time_in_force DexOrderTimeInForce
 	self_trade_policy DexOrderSelfTradePolicy
 	max_fills uint16
-	channel *crypto.Address
+	promoter *crypto.Address
 	pd *provider.Provider
 }
 
 // Args builds the IDL arguments of PlaceLimitOrder.
-func (ix *DexPlaceLimitOrderIx) Args(owner *crypto.Address, market_id *crypto.Address, client_order_id uint64, side DexOrderSide, price_tick uint32, base_lots uint64, time_in_force DexOrderTimeInForce, self_trade_policy DexOrderSelfTradePolicy, max_fills uint16, channel *crypto.Address) *DexPlaceLimitOrderArgs {
+func (ix *DexPlaceLimitOrderIx) Args(owner *crypto.Address, market_id *crypto.Address, client_order_id uint64, side DexOrderSide, price_tick uint32, base_lots uint64, time_in_force DexOrderTimeInForce, self_trade_policy DexOrderSelfTradePolicy, max_fills uint16, promoter *crypto.Address) *DexPlaceLimitOrderArgs {
 	return &DexPlaceLimitOrderArgs{
 		owner: owner,
 		market_id: market_id,
@@ -37629,7 +41351,7 @@ func (ix *DexPlaceLimitOrderIx) Args(owner *crypto.Address, market_id *crypto.Ad
 		time_in_force: time_in_force,
 		self_trade_policy: self_trade_policy,
 		max_fills: max_fills,
-		channel: channel,
+		promoter: promoter,
 		pd: ix.pd,
 	}
 }
@@ -37670,8 +41392,8 @@ func (a *DexPlaceLimitOrderArgs) Encode() (api.PackedInstruction, error) {
 	args["self_trade_policy"] = v2
 	// max_fills: u16
 	args["max_fills"] = a.max_fills
-	// channel: Address
-	args["channel"] = a.channel
+	// promoter: Address
+	args["promoter"] = a.promoter
 	wire, err := a.pd.Encode("PlaceLimitOrder", args)
 	if err != nil {
 		return nil, err
@@ -38185,13 +41907,11 @@ type ValidatorApp struct {
 	RequestPoolRewardConfig *ValidatorRequestPoolRewardConfigIx
 	ClaimPoolCommission *ValidatorClaimPoolCommissionIx
 	SweepPoolResidual *ValidatorSweepPoolResidualIx
-	FundValidatorRewards *ValidatorFundValidatorRewardsIx
 	RegisterValidator *ValidatorRegisterValidatorIx
 	SettleValidatorEpoch *ValidatorSettleValidatorEpochIx
-	ValidatorEpochActivity *ValidatorValidatorEpochActivityIx
 	ValidatorMemberships *ValidatorValidatorMembershipsIx
 	CurrentValidatorPools *ValidatorCurrentValidatorPoolsIx
-	ValidatorRewardBudget *ValidatorValidatorRewardBudgetIx
+	ValidatorProposalActivity *ValidatorValidatorProposalActivityIx
 	ValidatorProfile *ValidatorValidatorProfileIx
 	ValidatorForOwner *ValidatorValidatorForOwnerIx
 	ValidatorSelfStake *ValidatorValidatorSelfStakeIx
@@ -38208,13 +41928,11 @@ var Validator = &ValidatorApp{
 	RequestPoolRewardConfig: &ValidatorRequestPoolRewardConfigIx{},
 	ClaimPoolCommission: &ValidatorClaimPoolCommissionIx{},
 	SweepPoolResidual: &ValidatorSweepPoolResidualIx{},
-	FundValidatorRewards: &ValidatorFundValidatorRewardsIx{},
 	RegisterValidator: &ValidatorRegisterValidatorIx{},
 	SettleValidatorEpoch: &ValidatorSettleValidatorEpochIx{},
-	ValidatorEpochActivity: &ValidatorValidatorEpochActivityIx{},
 	ValidatorMemberships: &ValidatorValidatorMembershipsIx{},
 	CurrentValidatorPools: &ValidatorCurrentValidatorPoolsIx{},
-	ValidatorRewardBudget: &ValidatorValidatorRewardBudgetIx{},
+	ValidatorProposalActivity: &ValidatorValidatorProposalActivityIx{},
 	ValidatorProfile: &ValidatorValidatorProfileIx{},
 	ValidatorForOwner: &ValidatorValidatorForOwnerIx{},
 	ValidatorSelfStake: &ValidatorValidatorSelfStakeIx{},
@@ -38232,13 +41950,11 @@ func (a *ValidatorApp) bind(pd *provider.Provider) {
 	a.RequestPoolRewardConfig.pd = pd
 	a.ClaimPoolCommission.pd = pd
 	a.SweepPoolResidual.pd = pd
-	a.FundValidatorRewards.pd = pd
 	a.RegisterValidator.pd = pd
 	a.SettleValidatorEpoch.pd = pd
-	a.ValidatorEpochActivity.pd = pd
 	a.ValidatorMemberships.pd = pd
 	a.CurrentValidatorPools.pd = pd
-	a.ValidatorRewardBudget.pd = pd
+	a.ValidatorProposalActivity.pd = pd
 	a.ValidatorProfile.pd = pd
 	a.ValidatorForOwner.pd = pd
 	a.ValidatorSelfStake.pd = pd
@@ -38565,42 +42281,6 @@ func (a *ValidatorSweepPoolResidualArgs) Encode() (api.PackedInstruction, error)
 	return api.PackedInstruction(wire), nil
 }
 
-type ValidatorFundValidatorRewardsIx struct {
-	pd *provider.Provider
-}
-
-type ValidatorFundValidatorRewardsArgs struct {
-	funder *crypto.Address
-	amount uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of FundValidatorRewards.
-func (ix *ValidatorFundValidatorRewardsIx) Args(funder *crypto.Address, amount uint64) *ValidatorFundValidatorRewardsArgs {
-	return &ValidatorFundValidatorRewardsArgs{
-		funder: funder,
-		amount: amount,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorFundValidatorRewardsArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// funder: Signer
-	args["funder"] = a.funder
-	// amount: u64
-	args["amount"] = a.amount
-	wire, err := a.pd.Encode("FundValidatorRewards", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
 type ValidatorRegisterValidatorIx struct {
 	pd *provider.Provider
 }
@@ -38687,55 +42367,6 @@ func (a *ValidatorSettleValidatorEpochArgs) Encode() (api.PackedInstruction, err
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
-}
-
-type ValidatorValidatorEpochActivityIx struct {
-	pd *provider.Provider
-}
-
-type ValidatorValidatorEpochActivityArgs struct {
-	epoch uint64
-	pd *provider.Provider
-}
-
-// Args builds the IDL arguments of ValidatorEpochActivity.
-func (ix *ValidatorValidatorEpochActivityIx) Args(epoch uint64) *ValidatorValidatorEpochActivityArgs {
-	return &ValidatorValidatorEpochActivityArgs{
-		epoch: epoch,
-		pd: ix.pd,
-	}
-}
-
-// Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorValidatorEpochActivityArgs) Encode() (api.PackedInstruction, error) {
-	if a.pd == nil {
-		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
-	}
-	args := provider.Args{}
-	// epoch: u64
-	args["epoch"] = a.epoch
-	wire, err := a.pd.Encode("ValidatorEpochActivity", args)
-	if err != nil {
-		return nil, err
-	}
-	return api.PackedInstruction(wire), nil
-}
-
-// DecodeView decodes the raw view response body of ValidatorEpochActivity into ValidatorEpochActivity.
-func (ix *ValidatorValidatorEpochActivityIx) DecodeView(body []byte) (out ValidatorEpochActivity, err error) {
-	if ix.pd == nil {
-		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
-	}
-	v, err := ix.pd.DecodeViewValue("ValidatorEpochActivity", body)
-	if err != nil {
-		return out, err
-	}
-	v0, err := fromValidatorEpochActivity(v)
-	if err != nil {
-		return out, err
-	}
-	out = v0
-	return out, nil
 }
 
 type ValidatorValidatorMembershipsIx struct {
@@ -38835,44 +42466,48 @@ func (ix *ValidatorCurrentValidatorPoolsIx) DecodeView(body []byte) (out Validat
 	return out, nil
 }
 
-type ValidatorValidatorRewardBudgetIx struct {
+type ValidatorValidatorProposalActivityIx struct {
 	pd *provider.Provider
 }
 
-type ValidatorValidatorRewardBudgetArgs struct {
+type ValidatorValidatorProposalActivityArgs struct {
+	epoch uint64
 	pd *provider.Provider
 }
 
-// Args builds the IDL arguments of ValidatorRewardBudget.
-func (ix *ValidatorValidatorRewardBudgetIx) Args() *ValidatorValidatorRewardBudgetArgs {
-	return &ValidatorValidatorRewardBudgetArgs{
+// Args builds the IDL arguments of ValidatorProposalActivity.
+func (ix *ValidatorValidatorProposalActivityIx) Args(epoch uint64) *ValidatorValidatorProposalActivityArgs {
+	return &ValidatorValidatorProposalActivityArgs{
+		epoch: epoch,
 		pd: ix.pd,
 	}
 }
 
 // Encode serializes the arguments into a PackedInstruction.
-func (a *ValidatorValidatorRewardBudgetArgs) Encode() (api.PackedInstruction, error) {
+func (a *ValidatorValidatorProposalActivityArgs) Encode() (api.PackedInstruction, error) {
 	if a.pd == nil {
 		return nil, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
 	args := provider.Args{}
-	wire, err := a.pd.Encode("ValidatorRewardBudget", args)
+	// epoch: u64
+	args["epoch"] = a.epoch
+	wire, err := a.pd.Encode("ValidatorProposalActivity", args)
 	if err != nil {
 		return nil, err
 	}
 	return api.PackedInstruction(wire), nil
 }
 
-// DecodeView decodes the raw view response body of ValidatorRewardBudget into uint64.
-func (ix *ValidatorValidatorRewardBudgetIx) DecodeView(body []byte) (out uint64, err error) {
+// DecodeView decodes the raw view response body of ValidatorProposalActivity into ValidatorProposalActivity.
+func (ix *ValidatorValidatorProposalActivityIx) DecodeView(body []byte) (out ValidatorProposalActivity, err error) {
 	if ix.pd == nil {
 		return out, fmt.Errorf("IDL app validator is not bound: call milon.NewClient first")
 	}
-	v, err := ix.pd.DecodeViewValue("ValidatorRewardBudget", body)
+	v, err := ix.pd.DecodeViewValue("ValidatorProposalActivity", body)
 	if err != nil {
 		return out, err
 	}
-	v0, err := toUint64(v)
+	v0, err := fromValidatorProposalActivity(v)
 	if err != nil {
 		return out, err
 	}
@@ -42427,6 +46062,1130 @@ func (ix *SocialHongbaoCommunityIx) DecodeView(body []byte) (out uint32, err err
 	return out, nil
 }
 
+// FundsApp exposes type-safe instruction builders for IDL app "funds".
+type FundsApp struct {
+	Pd *provider.Provider
+	ClaimOperatorReward *FundsClaimOperatorRewardIx
+	StandardFeeSplit *FundsStandardFeeSplitIx
+	ApplicationRewardBudget *FundsApplicationRewardBudgetIx
+	OperatorReward *FundsOperatorRewardIx
+	RewardReserve *FundsRewardReserveIx
+}
+
+var Funds = &FundsApp{
+	ClaimOperatorReward: &FundsClaimOperatorRewardIx{},
+	StandardFeeSplit: &FundsStandardFeeSplitIx{},
+	ApplicationRewardBudget: &FundsApplicationRewardBudgetIx{},
+	OperatorReward: &FundsOperatorRewardIx{},
+	RewardReserve: &FundsRewardReserveIx{},
+}
+
+func (a *FundsApp) bind(pd *provider.Provider) {
+	a.Pd = pd
+	a.ClaimOperatorReward.pd = pd
+	a.StandardFeeSplit.pd = pd
+	a.ApplicationRewardBudget.pd = pd
+	a.OperatorReward.pd = pd
+	a.RewardReserve.pd = pd
+}
+
+type FundsClaimOperatorRewardIx struct {
+	pd *provider.Provider
+}
+
+type FundsClaimOperatorRewardArgs struct {
+	owner *crypto.Address
+	asset *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimOperatorReward.
+func (ix *FundsClaimOperatorRewardIx) Args(owner *crypto.Address, asset *crypto.Address) *FundsClaimOperatorRewardArgs {
+	return &FundsClaimOperatorRewardArgs{
+		owner: owner,
+		asset: asset,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *FundsClaimOperatorRewardArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app funds is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// asset: Address
+	args["asset"] = a.asset
+	wire, err := a.pd.Encode("ClaimOperatorReward", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type FundsStandardFeeSplitIx struct {
+	pd *provider.Provider
+}
+
+type FundsStandardFeeSplitArgs struct {
+	app uint8
+	asset *crypto.Address
+	total uint64
+	policy FundsFeePolicy
+	promoted bool
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of StandardFeeSplit.
+func (ix *FundsStandardFeeSplitIx) Args(app uint8, asset *crypto.Address, total uint64, policy FundsFeePolicy, promoted bool) *FundsStandardFeeSplitArgs {
+	return &FundsStandardFeeSplitArgs{
+		app: app,
+		asset: asset,
+		total: total,
+		policy: policy,
+		promoted: promoted,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *FundsStandardFeeSplitArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app funds is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// app: u8
+	args["app"] = a.app
+	// asset: Address
+	args["asset"] = a.asset
+	// total: u64
+	args["total"] = a.total
+	// policy: FeePolicy
+	v0, err := toFundsFeePolicyValue(a.policy)
+	if err != nil {
+		return nil, err
+	}
+	args["policy"] = v0
+	// promoted: bool
+	args["promoted"] = a.promoted
+	wire, err := a.pd.Encode("StandardFeeSplit", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of StandardFeeSplit into FundsFeeSplit.
+func (ix *FundsStandardFeeSplitIx) DecodeView(body []byte) (out FundsFeeSplit, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app funds is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("StandardFeeSplit", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := fromFundsFeeSplit(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type FundsApplicationRewardBudgetIx struct {
+	pd *provider.Provider
+}
+
+type FundsApplicationRewardBudgetArgs struct {
+	epoch uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ApplicationRewardBudget.
+func (ix *FundsApplicationRewardBudgetIx) Args(epoch uint64) *FundsApplicationRewardBudgetArgs {
+	return &FundsApplicationRewardBudgetArgs{
+		epoch: epoch,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *FundsApplicationRewardBudgetArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app funds is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// epoch: u64
+	args["epoch"] = a.epoch
+	wire, err := a.pd.Encode("ApplicationRewardBudget", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of ApplicationRewardBudget into FundsAppBudget.
+func (ix *FundsApplicationRewardBudgetIx) DecodeView(body []byte) (out FundsAppBudget, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app funds is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("ApplicationRewardBudget", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := fromFundsAppBudget(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type FundsOperatorRewardIx struct {
+	pd *provider.Provider
+}
+
+type FundsOperatorRewardArgs struct {
+	owner *crypto.Address
+	asset *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of OperatorReward.
+func (ix *FundsOperatorRewardIx) Args(owner *crypto.Address, asset *crypto.Address) *FundsOperatorRewardArgs {
+	return &FundsOperatorRewardArgs{
+		owner: owner,
+		asset: asset,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *FundsOperatorRewardArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app funds is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Address
+	args["owner"] = a.owner
+	// asset: Address
+	args["asset"] = a.asset
+	wire, err := a.pd.Encode("OperatorReward", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of OperatorReward into uint64.
+func (ix *FundsOperatorRewardIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app funds is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("OperatorReward", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type FundsRewardReserveIx struct {
+	pd *provider.Provider
+}
+
+type FundsRewardReserveArgs struct {
+	asset *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RewardReserve.
+func (ix *FundsRewardReserveIx) Args(asset *crypto.Address) *FundsRewardReserveArgs {
+	return &FundsRewardReserveArgs{
+		asset: asset,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *FundsRewardReserveArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app funds is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// asset: Address
+	args["asset"] = a.asset
+	wire, err := a.pd.Encode("RewardReserve", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of RewardReserve into uint64.
+func (ix *FundsRewardReserveIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app funds is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("RewardReserve", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+// CommissionApp exposes type-safe instruction builders for IDL app "commission".
+type CommissionApp struct {
+	Pd *provider.Provider
+	CreateCollection *CommissionCreateCollectionIx
+	StopCollection *CommissionStopCollectionIx
+	DestroyCollection *CommissionDestroyCollectionIx
+	PayCollection *CommissionPayCollectionIx
+	RunCollectionTask *CommissionRunCollectionTaskIx
+	RefundOrder *CommissionRefundOrderIx
+	SettleOrder *CommissionSettleOrderIx
+	ClaimMerchant *CommissionClaimMerchantIx
+	ClaimPromoter *CommissionClaimPromoterIx
+	CollectionScheme *CommissionCollectionSchemeIx
+	CollectionOrderId *CommissionCollectionOrderIdIx
+	CollectionOrder *CommissionCollectionOrderIx
+	Order *CommissionOrderIx
+	OrderId *CommissionOrderIdIx
+	RefundReceipt *CommissionRefundReceiptIx
+	OrderOverview *CommissionOrderOverviewIx
+	QuoteCommission *CommissionQuoteCommissionIx
+}
+
+var Commission = &CommissionApp{
+	CreateCollection: &CommissionCreateCollectionIx{},
+	StopCollection: &CommissionStopCollectionIx{},
+	DestroyCollection: &CommissionDestroyCollectionIx{},
+	PayCollection: &CommissionPayCollectionIx{},
+	RunCollectionTask: &CommissionRunCollectionTaskIx{},
+	RefundOrder: &CommissionRefundOrderIx{},
+	SettleOrder: &CommissionSettleOrderIx{},
+	ClaimMerchant: &CommissionClaimMerchantIx{},
+	ClaimPromoter: &CommissionClaimPromoterIx{},
+	CollectionScheme: &CommissionCollectionSchemeIx{},
+	CollectionOrderId: &CommissionCollectionOrderIdIx{},
+	CollectionOrder: &CommissionCollectionOrderIx{},
+	Order: &CommissionOrderIx{},
+	OrderId: &CommissionOrderIdIx{},
+	RefundReceipt: &CommissionRefundReceiptIx{},
+	OrderOverview: &CommissionOrderOverviewIx{},
+	QuoteCommission: &CommissionQuoteCommissionIx{},
+}
+
+func (a *CommissionApp) bind(pd *provider.Provider) {
+	a.Pd = pd
+	a.CreateCollection.pd = pd
+	a.StopCollection.pd = pd
+	a.DestroyCollection.pd = pd
+	a.PayCollection.pd = pd
+	a.RunCollectionTask.pd = pd
+	a.RefundOrder.pd = pd
+	a.SettleOrder.pd = pd
+	a.ClaimMerchant.pd = pd
+	a.ClaimPromoter.pd = pd
+	a.CollectionScheme.pd = pd
+	a.CollectionOrderId.pd = pd
+	a.CollectionOrder.pd = pd
+	a.Order.pd = pd
+	a.OrderId.pd = pd
+	a.RefundReceipt.pd = pd
+	a.OrderOverview.pd = pd
+	a.QuoteCommission.pd = pd
+}
+
+type CommissionCreateCollectionIx struct {
+	pd *provider.Provider
+}
+
+type CommissionCreateCollectionArgs struct {
+	owner *crypto.Address
+	rules CommissionCollectionRules
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CreateCollection.
+func (ix *CommissionCreateCollectionIx) Args(owner *crypto.Address, rules CommissionCollectionRules) *CommissionCreateCollectionArgs {
+	return &CommissionCreateCollectionArgs{
+		owner: owner,
+		rules: rules,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionCreateCollectionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner: Signer
+	args["owner"] = a.owner
+	// rules: CollectionRules
+	v0, err := toCommissionCollectionRulesValue(a.rules)
+	if err != nil {
+		return nil, err
+	}
+	args["rules"] = v0
+	wire, err := a.pd.Encode("CreateCollection", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type CommissionStopCollectionIx struct {
+	pd *provider.Provider
+}
+
+type CommissionStopCollectionArgs struct {
+	owner_signer *crypto.Address
+	scheme_id uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of StopCollection.
+func (ix *CommissionStopCollectionIx) Args(owner_signer *crypto.Address, scheme_id uint64) *CommissionStopCollectionArgs {
+	return &CommissionStopCollectionArgs{
+		owner_signer: owner_signer,
+		scheme_id: scheme_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionStopCollectionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner_signer: Signer
+	args["owner_signer"] = a.owner_signer
+	// scheme_id: u64
+	args["scheme_id"] = a.scheme_id
+	wire, err := a.pd.Encode("StopCollection", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type CommissionDestroyCollectionIx struct {
+	pd *provider.Provider
+}
+
+type CommissionDestroyCollectionArgs struct {
+	owner_signer *crypto.Address
+	scheme_id uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of DestroyCollection.
+func (ix *CommissionDestroyCollectionIx) Args(owner_signer *crypto.Address, scheme_id uint64) *CommissionDestroyCollectionArgs {
+	return &CommissionDestroyCollectionArgs{
+		owner_signer: owner_signer,
+		scheme_id: scheme_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionDestroyCollectionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// owner_signer: Signer
+	args["owner_signer"] = a.owner_signer
+	// scheme_id: u64
+	args["scheme_id"] = a.scheme_id
+	wire, err := a.pd.Encode("DestroyCollection", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type CommissionPayCollectionIx struct {
+	pd *provider.Provider
+}
+
+type CommissionPayCollectionArgs struct {
+	payer *crypto.Address
+	collection_address *crypto.Address
+	order_key [12]byte
+	amount uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of PayCollection.
+func (ix *CommissionPayCollectionIx) Args(payer *crypto.Address, collection_address *crypto.Address, order_key [12]byte, amount uint64) *CommissionPayCollectionArgs {
+	return &CommissionPayCollectionArgs{
+		payer: payer,
+		collection_address: collection_address,
+		order_key: order_key,
+		amount: amount,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionPayCollectionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// payer: Signer
+	args["payer"] = a.payer
+	// collection_address: Address
+	args["collection_address"] = a.collection_address
+	// order_key: B96
+	args["order_key"] = a.order_key
+	// amount: u64
+	args["amount"] = a.amount
+	wire, err := a.pd.Encode("PayCollection", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type CommissionRunCollectionTaskIx struct {
+	pd *provider.Provider
+}
+
+type CommissionRunCollectionTaskArgs struct {
+	order_id *crypto.Address
+	gas_address *crypto.Address
+	step uint8
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RunCollectionTask.
+func (ix *CommissionRunCollectionTaskIx) Args(order_id *crypto.Address, gas_address *crypto.Address, step uint8) *CommissionRunCollectionTaskArgs {
+	return &CommissionRunCollectionTaskArgs{
+		order_id: order_id,
+		gas_address: gas_address,
+		step: step,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionRunCollectionTaskArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: Address
+	args["order_id"] = a.order_id
+	// gas_address: Address
+	args["gas_address"] = a.gas_address
+	// step: u8
+	args["step"] = a.step
+	wire, err := a.pd.Encode("RunCollectionTask", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type CommissionRefundOrderIx struct {
+	pd *provider.Provider
+}
+
+type CommissionRefundOrderArgs struct {
+	authority *crypto.Address
+	order_id *crypto.Address
+	refund_key [32]byte
+	target_refunded uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RefundOrder.
+func (ix *CommissionRefundOrderIx) Args(authority *crypto.Address, order_id *crypto.Address, refund_key [32]byte, target_refunded uint64) *CommissionRefundOrderArgs {
+	return &CommissionRefundOrderArgs{
+		authority: authority,
+		order_id: order_id,
+		refund_key: refund_key,
+		target_refunded: target_refunded,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionRefundOrderArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// authority: Signer
+	args["authority"] = a.authority
+	// order_id: Address
+	args["order_id"] = a.order_id
+	// refund_key: B256
+	args["refund_key"] = a.refund_key
+	// target_refunded: u64
+	args["target_refunded"] = a.target_refunded
+	wire, err := a.pd.Encode("RefundOrder", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type CommissionSettleOrderIx struct {
+	pd *provider.Provider
+}
+
+type CommissionSettleOrderArgs struct {
+	order_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of SettleOrder.
+func (ix *CommissionSettleOrderIx) Args(order_id *crypto.Address) *CommissionSettleOrderArgs {
+	return &CommissionSettleOrderArgs{
+		order_id: order_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionSettleOrderArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: Address
+	args["order_id"] = a.order_id
+	wire, err := a.pd.Encode("SettleOrder", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type CommissionClaimMerchantIx struct {
+	pd *provider.Provider
+}
+
+type CommissionClaimMerchantArgs struct {
+	order_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimMerchant.
+func (ix *CommissionClaimMerchantIx) Args(order_id *crypto.Address) *CommissionClaimMerchantArgs {
+	return &CommissionClaimMerchantArgs{
+		order_id: order_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionClaimMerchantArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: Address
+	args["order_id"] = a.order_id
+	wire, err := a.pd.Encode("ClaimMerchant", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type CommissionClaimPromoterIx struct {
+	pd *provider.Provider
+}
+
+type CommissionClaimPromoterArgs struct {
+	order_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of ClaimPromoter.
+func (ix *CommissionClaimPromoterIx) Args(order_id *crypto.Address) *CommissionClaimPromoterArgs {
+	return &CommissionClaimPromoterArgs{
+		order_id: order_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionClaimPromoterArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: Address
+	args["order_id"] = a.order_id
+	wire, err := a.pd.Encode("ClaimPromoter", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+type CommissionCollectionSchemeIx struct {
+	pd *provider.Provider
+}
+
+type CommissionCollectionSchemeArgs struct {
+	scheme_id uint64
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CollectionScheme.
+func (ix *CommissionCollectionSchemeIx) Args(scheme_id uint64) *CommissionCollectionSchemeArgs {
+	return &CommissionCollectionSchemeArgs{
+		scheme_id: scheme_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionCollectionSchemeArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// scheme_id: u64
+	args["scheme_id"] = a.scheme_id
+	wire, err := a.pd.Encode("CollectionScheme", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CollectionScheme into *CommissionCollectionScheme.
+func (ix *CommissionCollectionSchemeIx) DecodeView(body []byte) (out *CommissionCollectionScheme, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("CollectionScheme", body)
+	if err != nil {
+		return out, err
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 CommissionCollectionScheme
+		v1, err := fromCommissionCollectionScheme(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
+	}
+	return out, nil
+}
+
+type CommissionCollectionOrderIdIx struct {
+	pd *provider.Provider
+}
+
+type CommissionCollectionOrderIdArgs struct {
+	collection_address *crypto.Address
+	order_key [12]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CollectionOrderId.
+func (ix *CommissionCollectionOrderIdIx) Args(collection_address *crypto.Address, order_key [12]byte) *CommissionCollectionOrderIdArgs {
+	return &CommissionCollectionOrderIdArgs{
+		collection_address: collection_address,
+		order_key: order_key,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionCollectionOrderIdArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// collection_address: Address
+	args["collection_address"] = a.collection_address
+	// order_key: B96
+	args["order_key"] = a.order_key
+	wire, err := a.pd.Encode("CollectionOrderId", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CollectionOrderId into *crypto.Address.
+func (ix *CommissionCollectionOrderIdIx) DecodeView(body []byte) (out *crypto.Address, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("CollectionOrderId", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type CommissionCollectionOrderIx struct {
+	pd *provider.Provider
+}
+
+type CommissionCollectionOrderArgs struct {
+	order_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of CollectionOrder.
+func (ix *CommissionCollectionOrderIx) Args(order_id *crypto.Address) *CommissionCollectionOrderArgs {
+	return &CommissionCollectionOrderArgs{
+		order_id: order_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionCollectionOrderArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: Address
+	args["order_id"] = a.order_id
+	wire, err := a.pd.Encode("CollectionOrder", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of CollectionOrder into *CommissionCollectionOrder.
+func (ix *CommissionCollectionOrderIx) DecodeView(body []byte) (out *CommissionCollectionOrder, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("CollectionOrder", body)
+	if err != nil {
+		return out, err
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 CommissionCollectionOrder
+		v1, err := fromCommissionCollectionOrder(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
+	}
+	return out, nil
+}
+
+type CommissionOrderIx struct {
+	pd *provider.Provider
+}
+
+type CommissionOrderArgs struct {
+	order_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of Order.
+func (ix *CommissionOrderIx) Args(order_id *crypto.Address) *CommissionOrderArgs {
+	return &CommissionOrderArgs{
+		order_id: order_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionOrderArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: Address
+	args["order_id"] = a.order_id
+	wire, err := a.pd.Encode("Order", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of Order into *CommissionOrderState.
+func (ix *CommissionOrderIx) DecodeView(body []byte) (out *CommissionOrderState, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("Order", body)
+	if err != nil {
+		return out, err
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 CommissionOrderState
+		v1, err := fromCommissionOrderState(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
+	}
+	return out, nil
+}
+
+type CommissionOrderIdIx struct {
+	pd *provider.Provider
+}
+
+type CommissionOrderIdArgs struct {
+	source CommissionOrderSource
+	order_key [12]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of OrderId.
+func (ix *CommissionOrderIdIx) Args(source CommissionOrderSource, order_key [12]byte) *CommissionOrderIdArgs {
+	return &CommissionOrderIdArgs{
+		source: source,
+		order_key: order_key,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionOrderIdArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// source: OrderSource
+	v0, err := toCommissionOrderSourceValue(a.source)
+	if err != nil {
+		return nil, err
+	}
+	args["source"] = v0
+	// order_key: B96
+	args["order_key"] = a.order_key
+	wire, err := a.pd.Encode("OrderId", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of OrderId into *crypto.Address.
+func (ix *CommissionOrderIdIx) DecodeView(body []byte) (out *crypto.Address, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("OrderId", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toAddress(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
+type CommissionRefundReceiptIx struct {
+	pd *provider.Provider
+}
+
+type CommissionRefundReceiptArgs struct {
+	order_id *crypto.Address
+	refund_key [32]byte
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of RefundReceipt.
+func (ix *CommissionRefundReceiptIx) Args(order_id *crypto.Address, refund_key [32]byte) *CommissionRefundReceiptArgs {
+	return &CommissionRefundReceiptArgs{
+		order_id: order_id,
+		refund_key: refund_key,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionRefundReceiptArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: Address
+	args["order_id"] = a.order_id
+	// refund_key: B256
+	args["refund_key"] = a.refund_key
+	wire, err := a.pd.Encode("RefundReceipt", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of RefundReceipt into *CommissionRefundReceipt.
+func (ix *CommissionRefundReceiptIx) DecodeView(body []byte) (out *CommissionRefundReceipt, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("RefundReceipt", body)
+	if err != nil {
+		return out, err
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 CommissionRefundReceipt
+		v1, err := fromCommissionRefundReceipt(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
+	}
+	return out, nil
+}
+
+type CommissionOrderOverviewIx struct {
+	pd *provider.Provider
+}
+
+type CommissionOrderOverviewArgs struct {
+	order_id *crypto.Address
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of OrderOverview.
+func (ix *CommissionOrderOverviewIx) Args(order_id *crypto.Address) *CommissionOrderOverviewArgs {
+	return &CommissionOrderOverviewArgs{
+		order_id: order_id,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionOrderOverviewArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// order_id: Address
+	args["order_id"] = a.order_id
+	wire, err := a.pd.Encode("OrderOverview", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of OrderOverview into *CommissionOrderOverview.
+func (ix *CommissionOrderOverviewIx) DecodeView(body []byte) (out *CommissionOrderOverview, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("OrderOverview", body)
+	if err != nil {
+		return out, err
+	}
+	if v == nil {
+		out = nil
+	} else {
+		var v0 CommissionOrderOverview
+		v1, err := fromCommissionOrderOverview(v)
+		if err != nil {
+			return out, err
+		}
+		v0 = v1
+		out = &v0
+	}
+	return out, nil
+}
+
+type CommissionQuoteCommissionIx struct {
+	pd *provider.Provider
+}
+
+type CommissionQuoteCommissionArgs struct {
+	amount uint64
+	bps uint16
+	pd *provider.Provider
+}
+
+// Args builds the IDL arguments of QuoteCommission.
+func (ix *CommissionQuoteCommissionIx) Args(amount uint64, bps uint16) *CommissionQuoteCommissionArgs {
+	return &CommissionQuoteCommissionArgs{
+		amount: amount,
+		bps: bps,
+		pd: ix.pd,
+	}
+}
+
+// Encode serializes the arguments into a PackedInstruction.
+func (a *CommissionQuoteCommissionArgs) Encode() (api.PackedInstruction, error) {
+	if a.pd == nil {
+		return nil, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	args := provider.Args{}
+	// amount: u64
+	args["amount"] = a.amount
+	// bps: u16
+	args["bps"] = a.bps
+	wire, err := a.pd.Encode("QuoteCommission", args)
+	if err != nil {
+		return nil, err
+	}
+	return api.PackedInstruction(wire), nil
+}
+
+// DecodeView decodes the raw view response body of QuoteCommission into uint64.
+func (ix *CommissionQuoteCommissionIx) DecodeView(body []byte) (out uint64, err error) {
+	if ix.pd == nil {
+		return out, fmt.Errorf("IDL app commission is not bound: call milon.NewClient first")
+	}
+	v, err := ix.pd.DecodeViewValue("QuoteCommission", body)
+	if err != nil {
+		return out, err
+	}
+	v0, err := toUint64(v)
+	if err != nil {
+		return out, err
+	}
+	out = v0
+	return out, nil
+}
+
 // DemoApp exposes type-safe instruction builders for IDL app "demo".
 type DemoApp struct {
 	Pd *provider.Provider
@@ -44227,5 +48986,7 @@ func init() {
 	RegisterApp("validator", func(pd *provider.Provider) error { Validator.bind(pd); return nil })
 	RegisterApp("keyless", func(pd *provider.Provider) error { Keyless.bind(pd); return nil })
 	RegisterApp("social", func(pd *provider.Provider) error { Social.bind(pd); return nil })
+	RegisterApp("funds", func(pd *provider.Provider) error { Funds.bind(pd); return nil })
+	RegisterApp("commission", func(pd *provider.Provider) error { Commission.bind(pd); return nil })
 	RegisterApp("demo", func(pd *provider.Provider) error { Demo.bind(pd); return nil })
 }

@@ -6,15 +6,16 @@ import (
 )
 
 type Block struct {
-	Number    uint64
-	Epoch     uint64
-	Slot      uint64
-	Hash      TxHash
-	PrevHash  TxHash
-	StateHash TxHash
-	TxRoot    TxHash
-	TxCount   uint32
-	Timestamp uint64
+	Number         uint64
+	Epoch          uint64
+	Slot           uint64
+	Hash           TxHash
+	PrevHash       TxHash
+	StateHash      TxHash
+	MembershipHash TxHash
+	TxRoot         TxHash
+	TxCount        uint32
+	Timestamp      uint64
 }
 
 func (b *Block) MarshalPostcard(serializer *postcard.Serializer) error {
@@ -35,6 +36,8 @@ func (b *Block) MarshalPostcard(serializer *postcard.Serializer) error {
 	serializer.SerializeFixedBytes(b.PrevHash[:])
 
 	serializer.SerializeFixedBytes(b.StateHash[:])
+
+	serializer.SerializeFixedBytes(b.MembershipHash[:])
 
 	serializer.SerializeFixedBytes(b.TxRoot[:])
 
@@ -85,6 +88,12 @@ func (b *Block) UnmarshalPostcard(deserializer *postcard.Deserializer) error {
 		return fmt.Errorf("failed to deserialize StateHash: %w", err)
 	}
 	copy(b.StateHash[:], stateHash)
+
+	membershipHash, err := deserializer.DeserializeFixedBytes(TxHashLen)
+	if err != nil {
+		return fmt.Errorf("failed to deserialize MembershipHash: %w", err)
+	}
+	copy(b.MembershipHash[:], membershipHash)
 
 	txRoot, err := deserializer.DeserializeFixedBytes(TxHashLen)
 	if err != nil {

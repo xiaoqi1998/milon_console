@@ -252,7 +252,7 @@
           "type": "u16"
         },
         {
-          "name": "channel",
+          "name": "promoter",
           "role": "input",
           "type": "Address"
         }
@@ -456,7 +456,7 @@
           "type": "u16"
         },
         {
-          "name": "channel",
+          "name": "promoter",
           "role": "input",
           "type": "Address"
         }
@@ -1612,14 +1612,19 @@
       "value": 5000
     },
     {
-      "name": "CHANNEL_FEE_PPM",
-      "type": "u32",
-      "value": 500000
+      "name": "FOUNDATION_FEE_BPS",
+      "type": "u16",
+      "value": 4000
     },
     {
-      "name": "PLATFORM_FEE_ADDRESS",
-      "type": "Address",
-      "value": "Address { digest : [0 ; 20] }"
+      "name": "STAKING_FEE_BPS",
+      "type": "u16",
+      "value": 4000
+    },
+    {
+      "name": "PROMOTION_FEE_BPS",
+      "type": "u16",
+      "value": 2000
     },
     {
       "name": "MAX_BATCH_CANCEL_ORDERS",
@@ -1908,7 +1913,7 @@
         },
         {
           "indexed": false,
-          "name": "channel",
+          "name": "promoter",
           "type": "Address"
         },
         {
@@ -1940,6 +1945,11 @@
           "indexed": false,
           "name": "fee_atoms",
           "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "fee_sequence",
+          "type": "option<u32>"
         }
       ],
       "name": "EventOrderFilled",

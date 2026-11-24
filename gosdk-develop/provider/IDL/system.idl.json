@@ -574,20 +574,8 @@
     {
       "fields": [
         {
-          "name": "registered",
-          "type": "bool"
-        },
-        {
           "name": "due_timestamp_ms",
-          "type": "u64"
-        },
-        {
-          "name": "method",
-          "type": "bytes"
-        },
-        {
-          "name": "sponsor",
-          "type": "Address"
+          "type": "option<u64>"
         }
       ],
       "kind": "struct",

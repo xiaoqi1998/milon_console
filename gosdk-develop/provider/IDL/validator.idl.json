@@ -165,24 +165,6 @@
     {
       "args": [
         {
-          "name": "funder",
-          "role": "signer",
-          "type": "Signer"
-        },
-        {
-          "name": "amount",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 27609,
-      "handler": "fund_validator_rewards",
-      "kind": "entry",
-      "name": "FundValidatorRewards"
-    },
-    {
-      "args": [
-        {
           "name": "owner",
           "role": "signer",
           "type": "Signer"
@@ -239,22 +221,6 @@
       "name": "SettleValidatorEpoch"
     },
     {
-      "args": [
-        {
-          "name": "epoch",
-          "role": "input",
-          "type": "u64"
-        }
-      ],
-      "discriminator": 46392,
-      "handler": "validator_epoch_activity",
-      "kind": "view",
-      "name": "ValidatorEpochActivity",
-      "returns": {
-        "type": "EpochActivity"
-      }
-    },
-    {
       "args": [],
       "discriminator": 43732,
       "handler": "validator_memberships",
@@ -275,13 +241,19 @@
       }
     },
     {
-      "args": [],
-      "discriminator": 24480,
-      "handler": "validator_reward_budget",
+      "args": [
+        {
+          "name": "epoch",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 4719,
+      "handler": "validator_proposal_activity",
       "kind": "view",
-      "name": "ValidatorRewardBudget",
+      "name": "ValidatorProposalActivity",
       "returns": {
-        "type": "u64"
+        "type": "ProposalActivity"
       }
     },
     {
@@ -429,25 +401,6 @@
     {
       "fields": [
         {
-          "name": "blocks",
-          "type": "u64"
-        },
-        {
-          "name": "signers",
-          "type": "u64"
-        },
-        {
-          "name": "last_block",
-          "type": "u64"
-        }
-      ],
-      "kind": "struct",
-      "name": "EpochActivity",
-      "typeTag": 12255403643170472952
-    },
-    {
-      "fields": [
-        {
           "name": "previous_set_hash",
           "type": "B256"
         },
@@ -465,10 +418,6 @@
         },
         {
           "name": "minimum_self_stake",
-          "type": "u64"
-        },
-        {
-          "name": "reward_per_validator",
           "type": "u64"
         },
         {
@@ -506,6 +455,37 @@
     {
       "fields": [
         {
+          "name": "set_hash",
+          "type": "B256"
+        },
+        {
+          "name": "counts",
+          "type": "vec<u64>"
+        },
+        {
+          "name": "total",
+          "type": "u64"
+        },
+        {
+          "name": "last_block",
+          "type": "u64"
+        },
+        {
+          "name": "frozen",
+          "type": "bool"
+        },
+        {
+          "name": "denied",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "ProposalActivity",
+      "typeTag": 195730631325514050
+    },
+    {
+      "fields": [
+        {
           "name": "commission_rate_bps",
           "type": "u64"
         },
@@ -530,6 +510,11 @@
     },
     {
       "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
       "name": "bytes",
       "typeTag": 10405529814227927951
     },
@@ -540,11 +525,6 @@
     }
   ],
   "resources": [
-    {
-      "name": "_EpochActivity",
-      "type": "EpochActivity",
-      "typeTag": 12255403643170472952
-    },
     {
       "name": "_EpochSelfStake",
       "type": "u64",
@@ -559,6 +539,11 @@
       "name": "_Memberships",
       "type": "vec<Membership>",
       "typeTag": 16079097394413548312
+    },
+    {
+      "name": "_ProposalActivity",
+      "type": "ProposalActivity",
+      "typeTag": 195730631325514050
     },
     {
       "name": "_ValidatorRecord",
@@ -606,31 +591,32 @@
     },
     {
       "code": 1797,
-      "message": "Reward reserve backing mismatch: {0}, {1}",
-      "name": "RewardTreasuryBackingMismatch"
-    },
-    {
-      "code": 1798,
       "message": "Transparent Token",
       "name": "Token",
       "transparent": true
     },
     {
-      "code": 1799,
+      "code": 1798,
       "message": "Transparent Staking",
       "name": "Staking",
       "transparent": true
     },
     {
-      "code": 1800,
+      "code": 1799,
       "message": "Transparent Context",
       "name": "Context",
       "transparent": true
     },
     {
-      "code": 1801,
+      "code": 1800,
       "message": "validator set unavailable: {0}",
       "name": "ValidatorSetUnavailable"
+    },
+    {
+      "code": 1801,
+      "message": "Transparent Funds",
+      "name": "Funds",
+      "transparent": true
     }
   ]
 }

@@ -1,0 +1,1205 @@
+{
+  "metadata": {
+    "app_id": 12,
+    "name": "commission",
+    "description": "Milon commission app IDL"
+  },
+  "instructions": [
+    {
+      "args": [
+        {
+          "name": "owner",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "rules",
+          "role": "input",
+          "type": "CollectionRules"
+        }
+      ],
+      "discriminator": 44293,
+      "handler": "create_collection",
+      "kind": "entry",
+      "name": "CreateCollection"
+    },
+    {
+      "args": [
+        {
+          "name": "owner_signer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "scheme_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 29185,
+      "handler": "stop_collection",
+      "kind": "entry",
+      "name": "StopCollection"
+    },
+    {
+      "args": [
+        {
+          "name": "owner_signer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "scheme_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 1711,
+      "handler": "destroy_collection",
+      "kind": "entry",
+      "name": "DestroyCollection"
+    },
+    {
+      "args": [
+        {
+          "name": "payer",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "collection_address",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "order_key",
+          "role": "input",
+          "type": "B96"
+        },
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 2795,
+      "handler": "pay_collection",
+      "kind": "entry",
+      "name": "PayCollection"
+    },
+    {
+      "args": [
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "gas_address",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "step",
+          "role": "input",
+          "type": "u8"
+        }
+      ],
+      "discriminator": 5194,
+      "handler": "run_collection_task",
+      "kind": "entry",
+      "name": "RunCollectionTask",
+      "sponsor": true
+    },
+    {
+      "args": [
+        {
+          "name": "authority",
+          "role": "signer",
+          "type": "Signer"
+        },
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "refund_key",
+          "role": "input",
+          "type": "B256"
+        },
+        {
+          "name": "target_refunded",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 63257,
+      "handler": "refund_order",
+      "kind": "entry",
+      "name": "RefundOrder"
+    },
+    {
+      "args": [
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 44200,
+      "handler": "settle_order",
+      "kind": "entry",
+      "name": "SettleOrder"
+    },
+    {
+      "args": [
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 4649,
+      "handler": "claim_merchant",
+      "kind": "entry",
+      "name": "ClaimMerchant"
+    },
+    {
+      "args": [
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 30103,
+      "handler": "claim_promoter",
+      "kind": "entry",
+      "name": "ClaimPromoter"
+    },
+    {
+      "args": [
+        {
+          "name": "scheme_id",
+          "role": "input",
+          "type": "u64"
+        }
+      ],
+      "discriminator": 37758,
+      "handler": "collection_scheme",
+      "kind": "view",
+      "name": "CollectionScheme",
+      "returns": {
+        "type": "option<CollectionScheme>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "collection_address",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "order_key",
+          "role": "input",
+          "type": "B96"
+        }
+      ],
+      "discriminator": 28641,
+      "handler": "collection_order_id",
+      "kind": "view",
+      "name": "CollectionOrderId",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 28347,
+      "handler": "collection_order",
+      "kind": "view",
+      "name": "CollectionOrder",
+      "returns": {
+        "type": "option<CollectionOrder>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 60520,
+      "handler": "order",
+      "kind": "view",
+      "name": "Order",
+      "returns": {
+        "type": "option<OrderState>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "source",
+          "role": "input",
+          "type": "OrderSource"
+        },
+        {
+          "name": "order_key",
+          "role": "input",
+          "type": "B96"
+        }
+      ],
+      "discriminator": 5488,
+      "handler": "order_id",
+      "kind": "view",
+      "name": "OrderId",
+      "returns": {
+        "type": "Address"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "Address"
+        },
+        {
+          "name": "refund_key",
+          "role": "input",
+          "type": "B256"
+        }
+      ],
+      "discriminator": 38617,
+      "handler": "refund_receipt",
+      "kind": "view",
+      "name": "RefundReceipt",
+      "returns": {
+        "type": "option<RefundReceipt>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "order_id",
+          "role": "input",
+          "type": "Address"
+        }
+      ],
+      "discriminator": 53290,
+      "handler": "order_overview",
+      "kind": "view",
+      "name": "OrderOverview",
+      "returns": {
+        "type": "option<OrderOverview>"
+      }
+    },
+    {
+      "args": [
+        {
+          "name": "amount",
+          "role": "input",
+          "type": "u64"
+        },
+        {
+          "name": "bps",
+          "role": "input",
+          "type": "u16"
+        }
+      ],
+      "discriminator": 57364,
+      "handler": "quote_commission",
+      "kind": "view",
+      "name": "QuoteCommission",
+      "returns": {
+        "type": "u64"
+      }
+    }
+  ],
+  "types": [
+    {
+      "fields": [
+        {
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "name": "merchant_recipient",
+          "type": "Address"
+        },
+        {
+          "name": "promoter",
+          "type": "option<Address>"
+        },
+        {
+          "name": "commission_bps",
+          "type": "u16"
+        },
+        {
+          "name": "refund_mode",
+          "type": "u8"
+        },
+        {
+          "name": "refund_window_ms",
+          "type": "u64"
+        },
+        {
+          "name": "settlement_delay_ms",
+          "type": "u64"
+        },
+        {
+          "name": "refund_authority",
+          "type": "Address"
+        },
+        {
+          "name": "max_order_validity_secs",
+          "type": "u32"
+        },
+        {
+          "name": "min_amount",
+          "type": "u64"
+        },
+        {
+          "name": "fixed_amount",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "CollectionRules",
+      "typeTag": 15488354332635492500
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "type": "u64"
+        },
+        {
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "name": "collection_address",
+          "type": "Address"
+        },
+        {
+          "name": "gas_address",
+          "type": "Address"
+        },
+        {
+          "name": "stopped",
+          "type": "bool"
+        },
+        {
+          "name": "outstanding_orders",
+          "type": "u64"
+        },
+        {
+          "name": "reserved_gas",
+          "type": "u64"
+        },
+        {
+          "name": "rules",
+          "type": "CollectionRules"
+        }
+      ],
+      "kind": "struct",
+      "name": "CollectionScheme",
+      "typeTag": 3192223671778686206
+    },
+    {
+      "fields": [
+        {
+          "name": "scheme_id",
+          "type": "u64"
+        },
+        {
+          "name": "reserved_gas",
+          "type": "u64"
+        },
+        {
+          "name": "refund_keys",
+          "type": "vec<B256>"
+        }
+      ],
+      "kind": "struct",
+      "name": "CollectionOrder",
+      "typeTag": 6886062861590659611
+    },
+    {
+      "fields": [
+        {
+          "name": "order_id",
+          "type": "Address"
+        },
+        {
+          "name": "gas_address",
+          "type": "Address"
+        },
+        {
+          "name": "due_timestamp_ms",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "CollectionTask",
+      "typeTag": 10242133544504197548
+    },
+    {
+      "fields": [
+        {
+          "name": "order_key",
+          "type": "B96"
+        },
+        {
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "merchant_recipient",
+          "type": "Address"
+        },
+        {
+          "name": "promoter",
+          "type": "option<Address>"
+        },
+        {
+          "name": "commission_bps",
+          "type": "u16"
+        },
+        {
+          "name": "refund_mode",
+          "type": "u8"
+        },
+        {
+          "name": "refund_window_ms",
+          "type": "u64"
+        },
+        {
+          "name": "refund_authority",
+          "type": "Address"
+        },
+        {
+          "name": "pay_before_ms",
+          "type": "u64"
+        },
+        {
+          "name": "terms_hash",
+          "type": "option<B256>"
+        }
+      ],
+      "kind": "struct",
+      "name": "PaymentTerms",
+      "typeTag": 17565249257074929795
+    },
+    {
+      "fields": [
+        {
+          "name": "app",
+          "type": "option<u8>"
+        },
+        {
+          "name": "owner",
+          "type": "Address"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrderSource",
+      "typeTag": 348271013082722207
+    },
+    {
+      "fields": [
+        {
+          "name": "source",
+          "type": "OrderSource"
+        },
+        {
+          "name": "payer",
+          "type": "Address"
+        },
+        {
+          "name": "terms",
+          "type": "PaymentTerms"
+        },
+        {
+          "name": "paid_at_ms",
+          "type": "u64"
+        },
+        {
+          "name": "refund_deadline_ms",
+          "type": "u64"
+        },
+        {
+          "name": "settle_at_ms",
+          "type": "option<u64>"
+        },
+        {
+          "name": "refunded",
+          "type": "u64"
+        },
+        {
+          "name": "remaining",
+          "type": "u64"
+        },
+        {
+          "name": "settled",
+          "type": "bool"
+        },
+        {
+          "name": "merchant_amount",
+          "type": "u64"
+        },
+        {
+          "name": "commission_amount",
+          "type": "u64"
+        },
+        {
+          "name": "merchant_claimed",
+          "type": "bool"
+        },
+        {
+          "name": "promoter_claimed",
+          "type": "bool"
+        },
+        {
+          "name": "busy",
+          "type": "bool"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrderState",
+      "typeTag": 13764258922507694983
+    },
+    {
+      "fields": [
+        {
+          "name": "target",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "RefundReceipt",
+      "typeTag": 1471384252932959876
+    },
+    {
+      "kind": "enum",
+      "name": "OrderStatus",
+      "typeTag": 2798372844217287980,
+      "variants": [
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Holding"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "ReadyToSettle"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "AwaitingClaims"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Refunded"
+        },
+        {
+          "fields": [],
+          "kind": "unit",
+          "name": "Closed"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "name": "order_id",
+          "type": "Address"
+        },
+        {
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "name": "as_of_ms",
+          "type": "u64"
+        },
+        {
+          "name": "status",
+          "type": "OrderStatus"
+        },
+        {
+          "name": "refund_deadline_ms",
+          "type": "u64"
+        },
+        {
+          "name": "settle_at_ms",
+          "type": "option<u64>"
+        },
+        {
+          "name": "paid_amount",
+          "type": "u64"
+        },
+        {
+          "name": "refunded_amount",
+          "type": "u64"
+        },
+        {
+          "name": "remaining_principal",
+          "type": "u64"
+        },
+        {
+          "name": "net_amount",
+          "type": "u64"
+        },
+        {
+          "name": "merchant_amount",
+          "type": "u64"
+        },
+        {
+          "name": "commission_amount",
+          "type": "u64"
+        },
+        {
+          "name": "merchant_claimable",
+          "type": "u64"
+        },
+        {
+          "name": "promoter_claimable",
+          "type": "u64"
+        },
+        {
+          "name": "refundable_amount",
+          "type": "u64"
+        }
+      ],
+      "kind": "struct",
+      "name": "OrderOverview",
+      "typeTag": 7320224591769319329
+    },
+    {
+      "kind": "builtin",
+      "name": "Address",
+      "typeTag": 17438174819379414968
+    },
+    {
+      "kind": "builtin",
+      "name": "B256",
+      "typeTag": 12016729314829497160
+    },
+    {
+      "kind": "builtin",
+      "name": "B96",
+      "typeTag": 10733962083880633390
+    },
+    {
+      "kind": "builtin",
+      "name": "bool",
+      "typeTag": 14785269867199075517
+    },
+    {
+      "kind": "builtin",
+      "name": "u16",
+      "typeTag": 5558799945458185151
+    },
+    {
+      "kind": "builtin",
+      "name": "u32",
+      "typeTag": 5560783464435099345
+    },
+    {
+      "kind": "builtin",
+      "name": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "kind": "builtin",
+      "name": "u8",
+      "typeTag": 631772817358541784
+    }
+  ],
+  "resources": [
+    {
+      "name": "_NextCollectionId",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_CollectionScheme",
+      "type": "CollectionScheme",
+      "typeTag": 3192223671778686206
+    },
+    {
+      "name": "_CollectionAddress",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_CollectionOrder",
+      "type": "CollectionOrder",
+      "typeTag": 6886062861590659611
+    },
+    {
+      "name": "_CollectionTaskShard",
+      "type": "vec<CollectionTask>",
+      "typeTag": 18104485592292335375
+    },
+    {
+      "name": "_CollectionShardHead",
+      "type": "u64",
+      "typeTag": 5563585020063213298
+    },
+    {
+      "name": "_Order",
+      "type": "OrderState",
+      "typeTag": 13764258922507694983
+    },
+    {
+      "name": "_RefundReceipt",
+      "type": "RefundReceipt",
+      "typeTag": 1471384252932959876
+    }
+  ],
+  "constants": [
+    {
+      "name": "MAX_ORDER_VALIDITY_SECS",
+      "type": "u32",
+      "value": 86400
+    },
+    {
+      "name": "MAX_COLLECTION_ORDERS",
+      "type": "u64",
+      "value": 1024
+    },
+    {
+      "name": "MAX_ORDER_REFUNDS",
+      "type": "usize",
+      "value": 32
+    },
+    {
+      "name": "COLLECTION_STEP_BUDGET",
+      "type": "u64",
+      "value": 1000000
+    },
+    {
+      "name": "COLLECTION_ORDER_BUDGET",
+      "type": "u64",
+      "value": "2 * COLLECTION_STEP_BUDGET"
+    },
+    {
+      "name": "COLLECTION_QUEUE_SHARDS",
+      "type": "u8",
+      "value": 32
+    },
+    {
+      "name": "COLLECTION_TASKS_PER_SHARD",
+      "type": "usize",
+      "value": 128
+    },
+    {
+      "name": "MAX_REFUND_WINDOW_MS",
+      "type": "u64",
+      "value": "366 * 24 * 60 * 60 * 1000"
+    }
+  ],
+  "events": [
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "scheme_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "owner",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "collection_address",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "gas_address",
+          "type": "Address"
+        }
+      ],
+      "name": "CollectionCreated",
+      "typeTag": 17165750801407412428
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "scheme_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "order_key",
+          "type": "B96"
+        },
+        {
+          "indexed": false,
+          "name": "order_id",
+          "type": "Address"
+        }
+      ],
+      "name": "CollectionPaid",
+      "typeTag": 18232308749046114522
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "scheme_id",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "returned_gas",
+          "type": "u64"
+        }
+      ],
+      "name": "CollectionDestroyed",
+      "typeTag": 4521787113928327719
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "order_id",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "payer",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "merchant",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "promoter",
+          "type": "option<Address>"
+        },
+        {
+          "indexed": false,
+          "name": "commission_bps",
+          "type": "u16"
+        },
+        {
+          "indexed": false,
+          "name": "refund_deadline_ms",
+          "type": "u64"
+        }
+      ],
+      "name": "OrderPaid",
+      "typeTag": 9085254848095096670
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "order_id",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "refund_key",
+          "type": "B256"
+        },
+        {
+          "indexed": false,
+          "name": "payer",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "refunded",
+          "type": "u64"
+        }
+      ],
+      "name": "OrderRefunded",
+      "typeTag": 3541440975636163443
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "order_id",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "merchant_amount",
+          "type": "u64"
+        },
+        {
+          "indexed": false,
+          "name": "commission_amount",
+          "type": "u64"
+        }
+      ],
+      "name": "OrderSettled",
+      "typeTag": 4310159538867681105
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "order_id",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "recipient",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "MerchantClaimed",
+      "typeTag": 9365702435352109885
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
+          "name": "order_id",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "recipient",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "asset",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "CommissionClaimed",
+      "typeTag": 2987876547204411306
+    }
+  ],
+  "errors": [
+    {
+      "code": 3072,
+      "message": "Transparent Token",
+      "name": "Token",
+      "transparent": true
+    },
+    {
+      "code": 3073,
+      "message": "order not found",
+      "name": "NotFound"
+    },
+    {
+      "code": 3074,
+      "message": "order already paid",
+      "name": "AlreadyPaid"
+    },
+    {
+      "code": 3075,
+      "message": "order operation in progress",
+      "name": "Busy"
+    },
+    {
+      "code": 3076,
+      "message": "refund is not authorized",
+      "name": "UnauthorizedRefund"
+    },
+    {
+      "code": 3077,
+      "message": "refund window has closed",
+      "name": "RefundClosed"
+    },
+    {
+      "code": 3078,
+      "message": "order is not ready to settle",
+      "name": "NotDue"
+    },
+    {
+      "code": 3079,
+      "message": "refund request conflicts with its previous result",
+      "name": "RefundConflict"
+    },
+    {
+      "code": 3080,
+      "message": "refund target must increase and not exceed payment",
+      "name": "InvalidRefundTarget"
+    },
+    {
+      "code": 3081,
+      "message": "order custody invariant violated",
+      "name": "CustodyInvariant"
+    },
+    {
+      "code": 3082,
+      "message": "wrong creating application",
+      "name": "WrongApplication"
+    },
+    {
+      "code": 3083,
+      "message": "payment amount must be positive",
+      "name": "InvalidAmount"
+    },
+    {
+      "code": 3084,
+      "message": "payment asset must not be null",
+      "name": "InvalidAsset"
+    },
+    {
+      "code": 3085,
+      "message": "order source owner must not be null",
+      "name": "InvalidSource"
+    },
+    {
+      "code": 3086,
+      "message": "recipient must be non-null and different from order custody",
+      "name": "InvalidRecipient"
+    },
+    {
+      "code": 3087,
+      "message": "commission must be within 0..=10000 bps and zero without a promoter",
+      "name": "InvalidCommission"
+    },
+    {
+      "code": 3088,
+      "message": "refund mode must be 0, 1 or 2",
+      "name": "InvalidRefundMode"
+    },
+    {
+      "code": 3089,
+      "message": "refund window is invalid or its deadline overflows",
+      "name": "InvalidRefundWindow"
+    },
+    {
+      "code": 3090,
+      "message": "refund authority does not match the order source",
+      "name": "InvalidRefundAuthority"
+    },
+    {
+      "code": 3091,
+      "message": "payment deadline has been reached",
+      "name": "PaymentExpired"
+    },
+    {
+      "code": 3092,
+      "message": "collection scheme not found",
+      "name": "SchemeNotFound"
+    },
+    {
+      "code": 3093,
+      "message": "invalid immutable collection rules",
+      "name": "InvalidScheme"
+    },
+    {
+      "code": 3094,
+      "message": "scheme has stopped accepting payments",
+      "name": "SchemeStopped"
+    },
+    {
+      "code": 3095,
+      "message": "scheme owner authorization required",
+      "name": "SchemeUnauthorized"
+    },
+    {
+      "code": 3096,
+      "message": "scheme still has outstanding orders",
+      "name": "SchemeOutstanding"
+    },
+    {
+      "code": 3097,
+      "message": "scheme id exhausted",
+      "name": "SchemeIdExhausted"
+    },
+    {
+      "code": 3098,
+      "message": "collection gas reserve is insufficient",
+      "name": "InsufficientSettlementGas"
+    },
+    {
+      "code": 3099,
+      "message": "order deadline is too far in the future",
+      "name": "InvalidOrderDeadline"
+    },
+    {
+      "code": 3100,
+      "message": "scheduled collection task rejected",
+      "name": "CollectionTaskRejected"
+    },
+    {
+      "code": 3101,
+      "message": "too many outstanding orders or refund receipts",
+      "name": "CollectionCapacity"
+    }
+  ]
+}

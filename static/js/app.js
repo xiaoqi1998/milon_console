@@ -3651,7 +3651,7 @@ var IDL_PAYMENT_MODES = [
 // IDL 方法实例参数映射表：键为 appName.MethodName，值为该方法的 args 示例对象
 // 数据来源：D:\pprojiect\Auto_test_new\test_cases\milon\ 下 6 个模块的测试用例
 var IDL_EXAMPLE_ARGS = {
-  // ==================== token 模块（app_id=2，46 个方法：33 entry + 13 view）====================
+  // ==================== token 模块（app_id=2，48 个方法：35 entry + 13 view）====================
   'token.Create': {
     token: 'M11on1111111111111111111111',
     owner: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
@@ -3785,6 +3785,8 @@ var IDL_EXAMPLE_ARGS = {
   'token.CanClaimHongbao': {hongbao_id: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', claimant: 'gKzpjpfWVvwgDs26DTCFFA9eRxb'},
   'token.VestingInfo': {vesting_id: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'token.VestingClaimable': {vesting_id: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+  'token.RunHongbaoRefund': {hongbao_id: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+  'token.ScheduleHongbaoRefund': {hongbao_id: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   // ==================== account 模块（app_id=1，18 个方法：13 entry + 5 view）====================
   'account.Create': { owner_pk: '0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e' },
   'account.EnsureAccount': { owner_pk: '0x03a34b2f5d9c0e1a8e4f2b1d6a3c5e7d9f0b2a4c6e8d0f1a3c5e7d9f0b2a4c6e' },
@@ -4173,7 +4175,7 @@ var IDL_EXAMPLE_ARGS = {
   'sftoken.TotalBalanceStatus': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'sftoken.TotalSupply': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'sftoken.TotalSupplyStatus': {sft: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
-  // ==================== staking 模块（app_id=3，20 个方法：15 entry + 5 view）====================
+  // ==================== staking 模块（app_id=3，22 个方法：16 entry + 6 view）====================
   'staking.CreatePool': {
     owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d',
     nonce: 1000,
@@ -4225,6 +4227,12 @@ var IDL_EXAMPLE_ARGS = {
   'staking.Position': {owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', pool_id: '3v2p43BUhFjE9fwouSsgcaySL9ej'},
   'staking.PoolTreasuryBalance': {pool_id: '3v2p43BUhFjE9fwouSsgcaySL9ej'},
   'staking.CommissionBalance': {pool_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', recipient: '48A2Th5n4LoQ5LuwzxF7T27VYDZU'},
+  'staking.AssetRewards': {owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', pool_id: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d'},
+  'staking.ClaimAssetRewards': {
+    owner: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d',
+    pool_id: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d',
+    asset: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+  },
   // ==================== system 模块（app_id=0，15 个方法：11 entry + 4 view）====================
   'system.Noop': {},
   'system.BootstrapEpochClock': { start_timestamp_ms: 0, min_duration_ms: 60000 },
@@ -4289,7 +4297,7 @@ var IDL_EXAMPLE_ARGS = {
     time_in_force: 'GoodTilCancel',
     self_trade_policy: 'CancelTaker',
     max_fills: 2,
-    channel: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
+    promoter: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
   },
   'dex.CancelOrder': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', order_id: 1},
   'dex.CancelByClientOrderId': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej', client_order_id: 1001},
@@ -4342,10 +4350,10 @@ var IDL_EXAMPLE_ARGS = {
     worst_tick: 3,
     max_book_makers: 2,
     max_amm_segments: 2,
-    channel: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
+    promoter: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
   },
   'dex.AmmSwapEnabled': {market_id: '3v2p43BUhFjE9fwouSsgcaySL9ej'},
-  // ==================== validator 模块（app_id=7，20 个方法：12 entry + 8 view）====================
+  // ==================== validator 模块（app_id=7，18 个方法：11 entry + 7 view）====================
   'validator.RecordValidatorActivity': {},
   'validator.BootstrapValidatorRules': {minimum_self_stake: 1000},
   'validator.FreezeValidatorEpoch': {start_slot: 1000},
@@ -4359,7 +4367,6 @@ var IDL_EXAMPLE_ARGS = {
   },
   'validator.ClaimPoolCommission': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e'},
   'validator.SweepPoolResidual': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e'},
-  'validator.FundValidatorRewards': {funder: '0x9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b', amount: 1000},
   'validator.RegisterValidator': {
     owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
     consensus_account: '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
@@ -4371,14 +4378,13 @@ var IDL_EXAMPLE_ARGS = {
     commission_rate_bps: 100,
   },
   'validator.SettleValidatorEpoch': {},
-  'validator.ValidatorEpochActivity': {epoch: 1000},
   'validator.ValidatorMemberships': {},
   'validator.CurrentValidatorPools': {},
-  'validator.ValidatorRewardBudget': {},
   'validator.ValidatorProfile': {validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e'},
   'validator.ValidatorForOwner': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'validator.ValidatorSelfStake': {validator: '0x4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e', target_epoch: 0},
   'validator.RegisteredValidators': {},
+  'validator.ValidatorProposalActivity': {epoch: 1000},
   // ==================== keyless 模块（app_id=8，23 个方法：12 entry + 11 view）====================
   'keyless.BootstrapKeyless': {},
   'keyless.InstallZkCircuit': {
@@ -4544,13 +4550,69 @@ var IDL_EXAMPLE_ARGS = {
   'social.CommunityMembership': {community_id: 3, member: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
   'social.CanClaimCommunityHongbao': {hongbao_id: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', claimant: 'gKzpjpfWVvwgDs26DTCFFA9eRxb'},
   'social.HongbaoCommunity': {hongbao_id: '2T2u6f4znq3ps3XvBPQYUtNH4DKx'},
+  // ==================== commission 模块（app_id=12，17 个方法：9 entry + 8 view）====================
 
+  'commission.ClaimMerchant': {order_id: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'},
+  'commission.ClaimPromoter': {order_id: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'},
+  'commission.CollectionOrder': {order_id: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'},
+  'commission.CollectionOrderId': {collection_address: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19', order_key: '0xabababababababababababababababababababababababab'},
+  'commission.CollectionScheme': {scheme_id: 1},
+  'commission.CreateCollection': {
+    owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    rules: {
+      asset: 'M11on1111111111111111111111',
+      merchant_recipient: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
+      promoter: '48A2Th5n4LoQ5LuwzxF7T27VYDZU',
+      commission_bps: 100,
+      refund_mode: 1,
+      refund_window_ms: 86400000,
+      settlement_delay_ms: 3600000,
+      refund_authority: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
+      max_order_validity_secs: 604800,
+      min_amount: 1000000,
+      fixed_amount: 0,
+    },
+  },
+  'commission.DestroyCollection': {owner_signer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', scheme_id: 1},
+  'commission.Order': {order_id: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'},
+  'commission.OrderId': {source: {app: 1, owner: '3tamDhFSgAdAAFZP7pwoCpNAZzFH'}, order_key: '0xabababababababababababababababababababababababab'},
+  'commission.OrderOverview': {order_id: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'},
+  'commission.PayCollection': {
+    payer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx',
+    collection_address: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
+    order_key: '0xabababababababababababababababababababababababab',
+    amount: 1000000000,
+  },
+  'commission.QuoteCommission': {amount: 1000000000, bps: 100},
+  'commission.RefundOrder': {
+    authority: '3tamDhFSgAdAAFZP7pwoCpNAZzFH',
+    order_id: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19',
+    refund_key: '0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd',
+    target_refunded: 1000000000,
+  },
+  'commission.RefundReceipt': {order_id: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19', refund_key: '0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd'},
+  'commission.RunCollectionTask': {order_id: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19', gas_address: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', step: 0},
+  'commission.SettleOrder': {order_id: '2MKpJ2Zzi8Fetx7t3TFi2jNGvv19'},
+  'commission.StopCollection': {owner_signer: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', scheme_id: 1},
+  // ==================== funds 模块（app_id=11，5 个方法：1 entry + 4 view）====================
+
+  'funds.ApplicationRewardBudget': {epoch: 1000},
+  'funds.ClaimOperatorReward': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', asset: 'M11on1111111111111111111111'},
+  'funds.OperatorReward': {owner: '2T2u6f4znq3ps3XvBPQYUtNH4DKx', asset: 'M11on1111111111111111111111'},
+  'funds.RewardReserve': {asset: 'M11on1111111111111111111111'},
+  'funds.StandardFeeSplit': {
+    app: 1,
+    asset: 'M11on1111111111111111111111',
+    total: 1000000,
+    policy: {foundation_bps: 4000, staking_bps: 4000, promotion_bps: 2000},
+    promoted: true,
+  },
 };
 
 // IDL Entry 方法支付配置映射表：键为 appName.MethodName
 // paymentMode: 测试用例使用的支付模式；payerRole: 付款角色提示；signerHint: 多签名场景提示
 var IDL_EXAMPLE_PAYMENT = {
-  // token 模块（33 entry）
+  // token 模块（35 entry）
   'token.Create': {paymentMode: 'unified_payer_all', payerRole: 'token'},
   'token.AbandonOwner': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'token.TransferOwner': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
@@ -4584,6 +4646,8 @@ var IDL_EXAMPLE_PAYMENT = {
   'token.RunHongbaoCleanup': {paymentMode: 'unified_payer_all'},
   'token.CreateVesting': {paymentMode: 'unified_payer_all', payerRole: 'creator'},
   'token.ClaimVesting': {paymentMode: 'unified_payer_all', payerRole: 'claimant'},
+  'token.RunHongbaoRefund': {paymentMode: 'unified_payer_all'},
+  'token.ScheduleHongbaoRefund': {paymentMode: 'unified_payer_all'},
   // account 模块（13 entry）
   'account.Create': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
   'account.EnsureAccount': { paymentMode: 'unified_payer_all', payerRole: 'owner' },
@@ -4671,7 +4735,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'sftoken.TransferFrom': {paymentMode: 'unified_payer_all', payerRole: 'spender'},
   'sftoken.BackfillTotalBalance': {paymentMode: 'unified_payer_all'},
   'sftoken.BackfillTotalSupply': {paymentMode: 'unified_payer_all'},
-  // staking 模块（15 entry）
+  // staking 模块（16 entry）
   'staking.CreatePool': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'staking.PausePool': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'staking.ResumePool': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
@@ -4687,6 +4751,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'staking.ClaimCommission': {paymentMode: 'unified_payer_all', payerRole: 'recipient'},
   'staking.ClaimPoolCommission': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'staking.RequestPoolRewardConfig': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'staking.ClaimAssetRewards': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   // system 模块（11 entry）
   'system.Noop': {paymentMode: 'unified_payer_all'},
   'system.BootstrapEpochClock': {paymentMode: 'unified_payer_all'},
@@ -4724,7 +4789,7 @@ var IDL_EXAMPLE_PAYMENT = {
   'dex.AddLiquidity': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'dex.RemoveLiquidity': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'dex.SwapExactIn': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
-  // validator 模块（12 entry）
+  // validator 模块（11 entry）
   'validator.RecordValidatorActivity': {paymentMode: 'unified_payer_all'},
   'validator.BootstrapValidatorRules': {paymentMode: 'unified_payer_all'},
   'validator.FreezeValidatorEpoch': {paymentMode: 'unified_payer_all'},
@@ -4734,7 +4799,6 @@ var IDL_EXAMPLE_PAYMENT = {
   'validator.RequestPoolRewardConfig': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'validator.ClaimPoolCommission': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
   'validator.SweepPoolResidual': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
-  'validator.FundValidatorRewards': {paymentMode: 'unified_payer_all', payerRole: 'funder'},
   'validator.RegisterValidator': {
     paymentMode: 'multi_signer',
     payerRole: 'owner',
@@ -4792,7 +4856,20 @@ var IDL_EXAMPLE_PAYMENT = {
   'social.RemoveCommunityMember': {paymentMode: 'unified_payer_all', payerRole: 'admin'},
   'social.CreateHongbao': {paymentMode: 'unified_payer_all', payerRole: 'creator'},
   'social.ClaimHongbao': {paymentMode: 'unified_payer_all', payerRole: 'claimant'},
+  // commission 模块（9 entry）
 
+  'commission.ClaimMerchant': {paymentMode: 'unified_payer_all'},
+  'commission.ClaimPromoter': {paymentMode: 'unified_payer_all'},
+  'commission.CreateCollection': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
+  'commission.DestroyCollection': {paymentMode: 'unified_payer_all', payerRole: 'owner_signer'},
+  'commission.PayCollection': {paymentMode: 'unified_payer_all', payerRole: 'payer'},
+  'commission.RefundOrder': {paymentMode: 'unified_payer_all', payerRole: 'authority'},
+  'commission.RunCollectionTask': {paymentMode: 'unified_payer_all'},
+  'commission.SettleOrder': {paymentMode: 'unified_payer_all'},
+  'commission.StopCollection': {paymentMode: 'unified_payer_all', payerRole: 'owner_signer'},
+  // funds 模块（1 entry）
+
+  'funds.ClaimOperatorReward': {paymentMode: 'unified_payer_all', payerRole: 'owner'},
 };
 
 function idlIsScalarType(typeStr) {
