@@ -164,6 +164,7 @@ func main() {
 		api.GET("/tool/account-book", accountBookHandler.List)
 		api.POST("/tool/account-book", accountBookHandler.Upsert)
 		api.DELETE("/tool/account-book/:name", accountBookHandler.Remove)
+		api.GET("/tool/vc-by-account", handler.NewVcByAccountHandler().List)
 		// 旧接口(scale=full|small)兼容保留一个小版本
 		api.GET("/tool/seed/plan", seedJobHandler.SeedPlanPreview)
 		api.POST("/tool/seed", seedJobHandler.Seed)
@@ -282,6 +283,7 @@ func main() {
 	fmt.Println("    POST /api/tool/bulk-transfer      - 批量生成账户并归集 MIL（异步任务）")
 	fmt.Println("    GET  /api/tool/bulk-transfer/:id  - 查询批量归集任务进度")
 	fmt.Println("    POST /api/tool/vc-flow            - VC 签发披露全流程（领水+DID+组织+凭证，同步）")
+	fmt.Println("    GET  /api/tool/vc-by-account      - 按地址查持有(已披露)证书（总览账户行展开）")
 	fmt.Println("    POST /api/tool/sft-flow           - SFT 全流程（创建SFT+slot+分发+合并+转移，参数控制步骤）")
 	fmt.Println("    POST /api/tool/did/create         - DID 一键创建（别名+服务+头像聚合，幂等补齐）")
 	fmt.Println("    POST /api/tool/did/set-alias      - 设置/更换 DID 别名")

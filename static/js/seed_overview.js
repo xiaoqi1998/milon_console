@@ -242,7 +242,7 @@ function seedFetchDataset() {
 
 // 总览状态:plan 由 seed.js 的计划预览顺手缓存(seedPreviewNow),供多签/代币/SFT/VC 卡补充规格信息
 var seedOverviewState = {
-  accounts: [], datasets: [], configHash: '', seedPhrase: '',
+  accounts: [], datasets: [], configHash: '', seedPhrase: '', vcByAddr: {},
   plan: null, balances: {}, datasetUpdated: 0,
   vcHoldings: null,      // addr → schema 数组 | null(查询失败)
   tokenHoldings: null,   // [{symbol, holderName, holderAddr, balance}]
@@ -309,10 +309,14 @@ function seedOverviewRow(r, noteFor, rowAction) {
     text: seedOverviewState.balances[r.address] != null ? String(seedOverviewState.balances[r.address]) : '—',
   }));
   tr.appendChild(balTd);
-  // 操作列(可选,如 发证书)
+  // 操作列(可选,如 发证书/证书)
   if (rowAction) {
     var opTd = el('td', null);
-    opTd.appendChild(rowAction(r));
+    var acts = rowAction(r);
+    for (var ai = 0; ai < acts.length; ai++) {
+      if (ai > 0) opTd.appendChild(el('span', { text: ' ' }));
+      opTd.appendChild(acts[ai]);
+    }
     tr.appendChild(opTd);
   }
   // 备注(角色附加信息)
@@ -508,11 +512,103 @@ function seedRenderOverview() {
   if (st.sftHoldings) box.appendChild(seedRenderSftHoldingsCard());
 }
 
-// 账户卡行操作:发证书按钮
+// 账户卡行操作:发证书 + 证书展开(持有/发布)
 function seedIssueButtonFor(r) {
-  return el('button', {
-    class: 'btn btn-secondary btn-sm', text: '发证书',
-    onclick: function () { openVcIssuePanel(r, this); },
+  return [
+    el('button', {
+      class: 'btn btn-secondary btn-sm', text: '发证书',
+      onclick: function () { openVcIssuePanel(r, this); },
+    }),
+    el('button', {
+      class: 'btn btn-secondary btn-sm', text: '证书',
+      onclick: function () { seedToggleCertsPanel(r, this); },
+    }),
+  ];
+}
+
+// ---------- 证书展开面板(懒加载 + 缓存) ----------
+
+// /api/tool/vc-by-account 查询(带缓存)
+function seedFetchVcByAccount(addr) {
+  var cache = seedOverviewState.vcByAddr;
+  if (cache[addr]) return Promise.resolve(cache[addr]);
+  return apiFetch('/api/tool/vc-by-account?address=' + encodeURIComponent(addr), {})
+    .then(function (r) { return r.json(); })
+    .then(function (body) {
+      if (!body.success) throw new Error(body.message || '证书查询失败');
+      var held = (body.data && body.data.held) || [];
+      cache[addr] = held;
+      return held;
+    });
+}
+
+// 发布方聚合:遍历人用账户(admin/users/issuers/multisig)的持有列表,筛 issuer==addr
+function seedFetchIssuedBy(addr, onProgress) {
+  var people = (seedOverviewState.accounts || []).filter(function (r) {
+    return r.address && ['admin', 'user', 'issuer', 'multisig'].indexOf(r.role) >= 0;
+  });
+  var cache = seedOverviewState.vcByAddr;
+  var issued = [];
+  var done = 0;
+  var seq = Promise.resolve();
+  people.forEach(function (p) {
+    seq = seq.then(function () {
+      if (onProgress) onProgress('聚合中 ' + done + '/' + people.length);
+      var q = cache[p.address] ? Promise.resolve(cache[p.address]) : seedFetchVcByAccount(p.address);
+      return q.then(function (held) {
+        held.forEach(function (h) { if (h.issuer === addr) issued.push({ holder: p.name, row: h }); });
+        done++;
+      });
+    });
+  });
+  return seq.then(function () { return issued; });
+}
+
+function seedToggleCertsPanel(r, btn) {
+  var tr = btn.closest('tr');
+  var table = tr && tr.parentElement;
+  if (!table) return;
+  // 已展开则收起
+  if (tr._certPanel) {
+    tr._certPanel.remove();
+    tr._certPanel = null;
+    btn.textContent = '证书';
+    return;
+  }
+  btn.textContent = '收起';
+  var panel = el('td', { colspan: '9', class: 'seed-cert-panel' });
+  panel.style.cssText = 'background:var(--bg-2,#f6f7fa);padding:8px 12px;font-size:12px';
+  var ptr = el('tr', null);
+  ptr.appendChild(panel);
+  tr.parentElement.insertBefore(ptr, tr.nextSibling);
+  tr._certPanel = ptr;
+  var render = function (title, items, kind) {
+    var wrap = el('div', null);
+    wrap.appendChild(el('div', { class: 'vc-card-desc', text: title }));
+    if (!items.length) {
+      wrap.appendChild(el('div', { text: '(无)' }));
+    } else {
+      items.forEach(function (it) {
+        var row = it.row || it;
+        var name = it.holder ? seedNameFor(it.row.issuer) + ' → ' + it.holder : (seedNameFor(row.issuer) + (row.status && row.status !== 'Active' ? ' (' + row.status + ')' : '') + (row.isValid ? '' : ' ⚠已失效'));
+        wrap.appendChild(el('div', { class: 'seed-mono', text: (row.schema || '?') + ' · ' + name }));
+      });
+    }
+    panel.appendChild(wrap);
+  };
+  panel.appendChild(el('div', { text: '查询中…' }));
+  seedFetchVcByAccount(r.address).then(function (held) {
+    panel.innerHTML = '';
+    render('持有(已披露) ' + held.length + ' 张:', held);
+    var prog = el('div', { class: 'vc-card-desc', text: '发布方聚合中…' });
+    panel.appendChild(prog);
+    return seedFetchIssuedBy(r.address, function (t) { prog.textContent = t; }).then(function (issued) {
+      prog.remove();
+      render('发布(经他人持有列表聚合) ' + issued.length + ' 张:', issued);
+    });
+  }).catch(function (e) {
+    panel.innerHTML = '';
+    panel.appendChild(el('div', { class: 'vc-card-desc', text: '查询失败: ' + (e && e.message || e) }));
   });
 }
 
