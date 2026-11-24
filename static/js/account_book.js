@@ -65,7 +65,7 @@ function renderAccountBook() {
   var tbl = el('table', { class: 'seed-table' });
   var thead = el('thead', null);
   var hrow = el('tr', null);
-  ['名称', '曲线', '地址', '私钥', '备注', ''].forEach(function (h) { hrow.appendChild(el('th', { text: h })); });
+  ['名称', '曲线', '地址', '私钥', '备注', '操作'].forEach(function (h) { hrow.appendChild(el('th', { text: h })); });
   thead.appendChild(hrow);
   tbl.appendChild(thead);
   var tbody = el('tbody', null);
@@ -107,6 +107,14 @@ function renderAccountBook() {
     tr.appendChild(keyTd);
     tr.appendChild(el('td', { text: r.note || '' }));
     var opTd = el('td', null);
+    // 证书展开(复用 seed_overview.js 的共用面板;仅地址可查时可用)
+    if (r.address) {
+      opTd.appendChild(el('button', {
+        class: 'btn btn-secondary btn-sm', text: '证书',
+        onclick: function () { seedToggleCertsPanel({ address: r.address, name: r.name }, this); },
+      }));
+      opTd.appendChild(el('span', { text: ' ' }));
+    }
     opTd.appendChild(el('button', {
       class: 'btn btn-secondary btn-sm', text: '删除',
       onclick: function () {

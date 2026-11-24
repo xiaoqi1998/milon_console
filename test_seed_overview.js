@@ -192,6 +192,12 @@ function domChecks() {
   const addBlock = bookSrc2.slice(addIdx, addIdx + 700);
   check('添加一条 同时亮出提交按钮', addBlock.includes('accountBookSubmitBtn'));
 
+  // 11.6 证书展开面板可复用:账号本表格同样能展开查证书,且 colspan 按实际列数自适应
+  check('证书面板列数自适应(不再写死 colspan=9)', !jsSrc.includes("colspan: '9'") && jsSrc.includes('seedCertPanelColspan'));
+  check('账号本账户行挂证书展开按钮', bookSrc2.includes("text: '证书'"));
+  check('账号本复用共用证书面板', bookSrc2.includes('seedToggleCertsPanel'));
+  check('账号本表格列数由表头推导', jsSrc.includes('seedCertPanelColspan') && jsSrc.includes("querySelectorAll('thead th')"));
+
   // 12. mock DOM 烟雾:渲染卡片,私钥默认遮蔽
   const made = [];
   function mockNode(tag) {

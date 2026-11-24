@@ -564,6 +564,24 @@ function seedFetchIssuedBy(addr, onProgress) {
   return seq.then(function () { return issued; });
 }
 
+// 展开行的 colspan 按表格实际列数推导(表头 th 数量),避免写死列数与不同表格不匹配。
+// 取不到表头时回落到 9(总览账户卡的列数),保证不出现 null。
+function seedCertPanelColspan(node) {
+  var table = node;
+  // 调用方可能传 tbody/tr 而非 table:向上找到真正的 table 再数表头
+  try {
+    if (table && table.tagName && table.tagName !== 'TABLE') {
+      table = (table.closest && table.closest('table')) || (table.parentElement && table.parentElement.closest && table.parentElement.closest('table')) || table;
+    }
+  } catch (e) { /* 保持原样,下面按 th 数兜底 */ }
+  var n = 0;
+  try {
+    var ths = table && table.querySelectorAll && table.querySelectorAll('thead th');
+    n = ths ? ths.length : 0;
+  } catch (e) { n = 0; }
+  return n > 0 ? n : 9;
+}
+
 function seedToggleCertsPanel(r, btn) {
   var tr = btn.closest('tr');
   var table = tr && tr.parentElement;
@@ -576,7 +594,7 @@ function seedToggleCertsPanel(r, btn) {
     return;
   }
   btn.textContent = '收起';
-  var panel = el('td', { colspan: '9', class: 'seed-cert-panel' });
+  var panel = el('td', { colspan: String(seedCertPanelColspan(table)), class: 'seed-cert-panel' });
   panel.style.cssText = 'background:var(--bg-2,#f6f7fa);padding:8px 12px;font-size:12px';
   var ptr = el('tr', null);
   ptr.appendChild(panel);
@@ -653,7 +671,8 @@ function openVcIssuePanel(r, srcEl) {
   var tr = srcEl && srcEl.closest ? srcEl.closest('tr') : null;
   if (!tr || !tr.parentNode) { if (typeof showToast === 'function') showToast('找不到目标行', 'error'); return; }
   var panel = el('tr', { class: 'seed-issue-panel' });
-  var td = el('td', { colspan: '9', style: 'background:var(--bg-tertiary)' });
+  // 列数同样按所属表格表头推导,账号本(6 列)/总览账户卡(8 列)都能对齐
+  var td = el('td', { colspan: String(seedCertPanelColspan(tr.parentNode)), style: 'background:var(--bg-tertiary)' });
   td.appendChild(el('span', { class: 'vc-card-desc', text: '给 ' + r.name + ' 发证书:' }));
   td.appendChild(el('input', { class: 'seed-issue-issuer', value: 'kycorg', title: '签发方账户名(须为 issuer)' }));
   td.appendChild(el('input', { class: 'seed-issue-prefix', value: 'SeedKyc', title: 'schema 前缀 → 签发 前缀1..N' }));
