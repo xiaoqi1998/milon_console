@@ -600,12 +600,14 @@ echo -n '[{"name":"main","address":"&lt;地址&gt;","privateKey":"&lt;私钥&gt;
             <span class="vc-card-desc">自有的密钥库,与播种账号并列使用;仅给私钥的条目服务端自动补地址。服务端存 data/custom_accounts.json(已 gitignore)</span>
           </div>
           <div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap">
-            <button class="btn btn-secondary btn-sm" id="accountBookAddBtn">添加一条</button>
+            <button class="btn btn-secondary btn-sm" id="accountBookAddBtn">添加一条(表单)</button>
+            <button class="btn btn-secondary btn-sm" id="accountBookFromAccountsBtn">从账户管理导入</button>
             <button class="btn btn-secondary btn-sm" id="accountBookImportBtn">导入(粘贴 JSON)</button>
             <button class="btn btn-secondary btn-sm" id="accountBookSubmitBtn" style="display:none">提交导入</button>
             <button class="btn btn-secondary btn-sm" id="accountBookExportBtn">导出(JSON)</button>
             <button class="btn btn-secondary btn-sm" id="accountBookRefreshBtn">刷新</button>
           </div>
+          <div id="accountBookFormPanel" style="display:none;margin:8px 0"></div>
           <textarea id="accountBookImportArea" class="vc-result" style="display:none;min-height:120px" placeholder='粘贴 JSON:数组 / {accounts:[…]} / {owner,users,newUsers}(sft_1000_testdata.json 可直接粘贴)'></textarea>
           <div id="accountBookCards"></div>
         </div>

@@ -157,19 +157,174 @@ function submitAccountBookImport() {
     .catch(function (e) { showToast('导入失败: ' + (e && e.message || e), 'error'); });
 }
 
+// ---------- 表单录入(不想拼 JSON 就用这个) ----------
+
+var BOOK_KEY_TYPES = ['fndsa512', 'secp256k1', 'ed25519', 'bls12381'];
+
+function hideAccountBookJsonImport() {
+  var area = document.getElementById('accountBookImportArea');
+  var submitBtn = document.getElementById('accountBookSubmitBtn');
+  if (area) area.style.display = 'none';
+  if (submitBtn) submitBtn.style.display = 'none';
+}
+
+function accountBookFormPanel() {
+  var p = document.getElementById('accountBookFormPanel');
+  if (p) p.innerHTML = '';
+  return p;
+}
+
+// keyType 启发:私钥形状 → 缺省曲线(可改)。2562 hex = fndsa512 完整私钥。
+function accountBookGuessKeyType(priv) {
+  var s = String(priv || '').trim();
+  if (/^[0-9a-fA-F]{2562}$/.test(s)) return 'fndsa512';
+  if (/^[1-9A-HJ-NP-Za-km-z]{340,400}$/.test(s)) return 'fndsa512'; // base58 长串
+  return 'secp256k1';
+}
+
+// 单条表单:name + 私钥 + 曲线 + 备注;地址留空由服务端派生。
+function renderAccountBookForm() {
+  var panel = accountBookFormPanel();
+  if (!panel) return;
+  var mk = function (labelText, input) {
+    var row = el('div', { style: 'display:flex;gap:8px;align-items:center;margin:4px 0' });
+    var lab = el('label', { text: labelText, style: 'min-width:70px' });
+    row.appendChild(lab);
+    row.appendChild(input);
+    return row;
+  };
+  var nameIn = el('input', { type: 'text', placeholder: '名称(name 即 ID,同名覆盖)', style: 'flex:1' });
+  var keySel = el('select', null);
+  BOOK_KEY_TYPES.forEach(function (k) {
+    var o = el('option', { text: k + (k === 'fndsa512' ? '(抗量子,缺省)' : '') });
+    o.value = k;
+    if (k === 'fndsa512') o.selected = true;
+    keySel.appendChild(o);
+  });
+  var privIn = el('textarea', { placeholder: '私钥(hex/base58);fndsa512 完整私钥 2562 位 hex 也可直接粘贴;留空则只建地址簿条目', style: 'min-height:60px;width:100%;font-family:monospace' });
+  var addrIn = el('input', { type: 'text', placeholder: '地址(选填;留空由服务端从私钥派生)', style: 'flex:1' });
+  var noteIn = el('input', { type: 'text', placeholder: '备注(选填)', style: 'flex:1' });
+  privIn.addEventListener('input', function () {
+    var g = accountBookGuessKeyType(privIn.value);
+    for (var i = 0; i < keySel.options.length; i++) {
+      if (keySel.options[i].value === g) keySel.selectedIndex = i;
+    }
+  });
+  panel.appendChild(mk('名称', nameIn));
+  panel.appendChild(mk('曲线', keySel));
+  panel.appendChild(mk('私钥', privIn));
+  panel.appendChild(mk('地址', addrIn));
+  panel.appendChild(mk('备注', noteIn));
+  var submit = el('button', { class: 'btn btn-sm', text: '保存到账号本' });
+  submit.addEventListener('click', function () {
+    var entry = {
+      name: String(nameIn.value || '').trim(),
+      keyType: keySel.value,
+      privateKey: String(privIn.value || '').trim(),
+      address: String(addrIn.value || '').trim(),
+      note: String(noteIn.value || '').trim(),
+    };
+    if (!entry.name) { showToast('先填名称', 'warning'); return; }
+    if (!entry.privateKey && !entry.address) { showToast('私钥与地址至少填一', 'warning'); return; }
+    apiFetch('/api/tool/account-book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([entry]),
+    }).then(function (r) { return r.json(); })
+      .then(function (body) {
+        if (!body.success) throw new Error(body.message || '保存失败');
+        accountBookState.rows = body.data || [];
+        renderAccountBook();
+        panel.innerHTML = '';
+        showToast('已保存 ' + entry.name + (entry.privateKey ? '(地址已派生)' : '(仅地址)'), 'success');
+      })
+      .catch(function (e) { showToast('保存失败: ' + (e && e.message || e), 'error'); });
+  });
+  panel.appendChild(submit);
+  panel.style.display = '';
+  nameIn.focus();
+}
+
+// 从账户管理导入:列 localStorage 账户(milon_accounts),勾选 + 曲线下拉后批量导入。
+function renderAccountBookFromAccounts() {
+  var panel = accountBookFormPanel();
+  if (!panel) return;
+  var stored = [];
+  try { stored = JSON.parse(localStorage.getItem('milon_accounts') || '[]') || []; } catch (e) { stored = []; }
+  if (!stored.length) {
+    panel.appendChild(el('div', { class: 'vc-card-desc', text: '账户管理里还没有账户:先在「账户管理」添加或导入,再回来勾选导入' }));
+    panel.style.display = '';
+    return;
+  }
+  var sel = {};
+  var keySelects = {};
+  stored.forEach(function (a) {
+    var row = el('div', { style: 'display:flex;gap:8px;align-items:center;margin:3px 0' });
+    var cb = el('input', { type: 'checkbox' });
+    cb.checked = false;
+    cb.addEventListener('change', function () { sel[a.address] = this.checked; });
+    row.appendChild(cb);
+    row.appendChild(el('span', { class: 'seed-mono', text: a.label || a.address, style: 'min-width:140px' }));
+    row.appendChild(el('span', { class: 'seed-mono seed-addr', text: a.address }));
+    var ksel = el('select', null);
+    var guess = accountBookGuessKeyType(a.privateKey);
+    BOOK_KEY_TYPES.forEach(function (k) {
+      var o = el('option', { text: k });
+      o.value = k;
+      if (k === guess) o.selected = true;
+      ksel.appendChild(o);
+    });
+    keySelects[a.address] = ksel;
+    row.appendChild(ksel);
+    if (guess === 'fndsa512' && !a.publicKey) {
+      row.appendChild(el('span', { class: 'vc-card-desc', text: '⚠ fndsa512 须带公钥,该账户缺 publicKey,导入会失败' }));
+    }
+    panel.appendChild(row);
+  });
+  var submit = el('button', { class: 'btn btn-sm', text: '导入勾选账户' });
+  submit.addEventListener('click', function () {
+    var entries = [];
+    stored.forEach(function (a) {
+      if (!sel[a.address]) return;
+      entries.push({
+        name: a.label || a.address.slice(0, 8),
+        keyType: keySelects[a.address].value,
+        privateKey: a.privateKey || '',
+        publicKey: a.publicKey || '',
+        address: a.address || '',
+        note: '来自账户管理',
+      });
+    });
+    if (!entries.length) { showToast('先勾选要导入的账户', 'warning'); return; }
+    apiFetch('/api/tool/account-book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entries),
+    }).then(function (r) { return r.json(); })
+      .then(function (body) {
+        if (!body.success) throw new Error(body.message || '导入失败');
+        accountBookState.rows = body.data || [];
+        renderAccountBook();
+        panel.innerHTML = '';
+        showToast('已从账户管理导入 ' + entries.length + ' 条', 'success');
+      })
+      .catch(function (e) { showToast('导入失败: ' + (e && e.message || e), 'error'); });
+  });
+  panel.appendChild(submit);
+  panel.style.display = '';
+}
+
 function initAccountBook() {
   if (!document.getElementById('accountBookCards')) return;
   var addBtn = document.getElementById('accountBookAddBtn');
   if (addBtn) addBtn.addEventListener('click', function () {
-    var area = document.getElementById('accountBookImportArea');
-    var submitBtn = document.getElementById('accountBookSubmitBtn');
-    if (!area) return;
-    area.style.display = '';
-    if (submitBtn) submitBtn.style.display = '';
-    if (!String(area.value || '').trim()) {
-      area.value = JSON.stringify([{ name: '', keyType: 'secp256k1', privateKey: '', address: '', note: '' }], null, 2);
-    }
-    area.focus();
+    hideAccountBookJsonImport();
+    renderAccountBookForm();
+  });
+  var fromAccBtn = document.getElementById('accountBookFromAccountsBtn');
+  if (fromAccBtn) fromAccBtn.addEventListener('click', function () {
+    hideAccountBookJsonImport();
+    renderAccountBookFromAccounts();
   });
   var importBtn = document.getElementById('accountBookImportBtn');
   if (importBtn) importBtn.addEventListener('click', function () {
