@@ -2753,7 +2753,7 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 | accounts.count | 3 | 8 | 12 |
 | accounts.curves | secp256k1 | secp256k1, ed25519 | secp256k1, ed25519 |
 | accounts.faucet / did / vcCert | true / false / false | true / true / true | true / true / true |
-| accounts.balanceTiers | hundred | thousand | hundred, thousand, ten_k |
+| accounts.balanceTiers | one | one | hundred, thousand, ten_k |
 | multisig.count（signers/threshold，faucet/did） | 0 | 1（5/3，true/true） | 2（5/3，true/true） |
 | tokens.count / decimals / complianceCount | 1 / [6] / 0 | 3 / [0,6,9] / 1 | 10 / [0..9] / 2 |
 | tokens.freezeDemo | false | true | true |
@@ -2830,7 +2830,7 @@ curl http://localhost:8080/api/tool/seed/dataset
 | `accounts.count` | int | 8 | 1..200 |
 | `accounts.curves` | string[] | `["secp256k1","ed25519"]` | 非空、无重复；**仅 secp256k1/ed25519**（见下方规格偏差 ①） |
 | `accounts.faucet` | bool | true | faucet=true 时 balanceTiers 须至少一档 |
-| `accounts.balanceTiers` | string[] | `["thousand"]` | 取值 `hundred`(100) / `thousand`(1000) / `ten_k`(10000)，无重复 |
+| `accounts.balanceTiers` | string[] | `["one"]` | 取值 `one`(1) / `hundred`(100) / `thousand`(1000) / `ten_k`(10000)，无重复；2026-11-25 水龙头降为单次 1 MIL，one 为唯一零充值可达成档，补差不足时警告跳过不中止 |
 | `accounts.did` | bool | true | 建 DID 需账户有 gas（开 faucet 或选档位） |
 | `accounts.vcCert` | bool | true | 隐含规则：vcCert ⇒ did（Normalize 自动置位） |
 | `multisig.count` | int | 1 | 0..20 |

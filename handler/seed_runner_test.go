@@ -79,11 +79,36 @@ func TestSeedModuleOrderV2(t *testing.T) {
 }
 
 func TestSeedTierTargetMIL(t *testing.T) {
-	if seedTierTargetMIL("hundred") != 100 || seedTierTargetMIL("thousand") != 1000 || seedTierTargetMIL("ten_k") != 10000 {
+	if seedTierTargetMIL("one") != 1 || seedTierTargetMIL("hundred") != 100 || seedTierTargetMIL("thousand") != 1000 || seedTierTargetMIL("ten_k") != 10000 {
 		t.Fatal("档位换算不符")
 	}
 	if seedTierTargetMIL("nope") != 0 {
 		t.Fatal("未知档位应为 0")
+	}
+}
+
+// seedTierSplit 尽力而为分配:admin 可用额度按序补差额,不够的户记 0。
+// 2026-11-25 水龙头降为单次 1 MIL 后,admin 常年凑不齐高档,补差不得再中止播种。
+func TestSeedTierSplit(t *testing.T) {
+	cases := []struct {
+		name  string
+		avail uint64
+		gaps  []uint64
+		want  []uint64
+	}{
+		{"足额全补", 1000, []uint64{300, 200, 100}, []uint64{300, 200, 100}},
+		{"中间户跳过,后面补得起继续", 400, []uint64{300, 200, 100}, []uint64{300, 0, 100}},
+		{"额度耗尽", 0, []uint64{300, 200}, []uint64{0, 0}},
+		{"首户就不够", 100, []uint64{300, 50}, []uint64{0, 50}},
+		{"零差额不耗额度", 100, []uint64{0, 60, 0}, []uint64{0, 60, 0}},
+		{"精确用尽", 500, []uint64{300, 200}, []uint64{300, 200}},
+		{"空列表", 100, nil, []uint64{}},
+	}
+	for _, tc := range cases {
+		got := seedTierSplit(tc.avail, tc.gaps)
+		if !reflect.DeepEqual(got, tc.want) {
+			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
+		}
 	}
 }
 

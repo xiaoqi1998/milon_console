@@ -566,12 +566,13 @@ func TestFlowToolCallMapping(t *testing.T) {
 			`{"ownerPrivateKey":"sk","ownerPublicKey":"pk","ownerAddress":"a1","sft":{"address":"sft1","privateKey":"ssk","publicKey":"spk"},"sftMetadata":{"name":"MySFT","symbol":"MSF","coverUrl":"https://example.com/c.png","metadata":"m","attribute":"attr"},"royaltyBps":500,"slot":{"slotId":3,"metadata":{"name":"slot-n","symbol":"slot-s","coverUrl":"c","metadata":"m","attribute":"a"},"isTransferable":false},"distributions":[{"to":"a2","amount":100,"metadata":{"name":"tok-n"}}],"merge":{"fromTokenId":1,"toTokenId":2},"transfer":{"tokenId":5,"to":"a3","amount":40}}`,
 			"POST", "/api/tool/sft-flow?",
 			`{"ownerPrivateKey":"sk","ownerPublicKey":"pk","ownerAddress":"a1","sft":{"address":"sft1","privateKey":"ssk","publicKey":"spk"},"sftMetadata":{"name":"MySFT","symbol":"MSF","coverUrl":"https://example.com/c.png","metadata":"m","attribute":"attr"},"royaltyBps":500,"slot":{"slotId":3,"metadata":{"name":"slot-n","symbol":"slot-s","coverUrl":"c","metadata":"m","attribute":"a"},"isTransferable":false},"distributions":[{"to":"a2","amount":100,"metadata":{"name":"tok-n"}}],"merge":{"fromTokenId":1,"toTokenId":2},"transfer":{"tokenId":5,"to":"a3","amount":40}}`},
-		// bulk_transfer ← bulkTransferRequest（handler/bulk_transfer_handler.go:39）
-		// count/toAddress 带 binding:"required"；concurrency 可选（缺省 16，上限 128）
+		// bulk_transfer ← bulkTransferRequest（handler/bulk_transfer_handler.go）
+		// count/toAddress 带 binding:"required"；concurrency/percent 可选；
+		// percent 缺省经 DefaultArgs 注入 98（按余额百分比归集）
 		{"bulk_transfer",
 			`{"count":10,"toAddress":"a1","concurrency":32}`,
 			"POST", "/api/tool/bulk-transfer?",
-			`{"count":10,"toAddress":"a1","concurrency":32}`},
+			`{"count":10,"toAddress":"a1","concurrency":32,"percent":98}`},
 		// bulk_transfer_status ← GetBulkTransferStatus（handler/bulk_transfer_handler.go:196）：
 		// GET + c.Param("id")，不读 query；返回任务进度与逐账户结果
 		{"bulk_transfer_status",

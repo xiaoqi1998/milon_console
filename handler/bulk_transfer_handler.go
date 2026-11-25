@@ -41,22 +41,37 @@ type bulkTransferRequest struct {
 	Count       int    `json:"count" binding:"required"`
 	ToAddress   string `json:"toAddress" binding:"required"`
 	Concurrency int    `json:"concurrency"`
+	Percent     int    `json:"percent"` // 归集百分比,缺省 98(预留 2% 作 gas)
 }
 
-// 领水固定发放 10000 MIL（FAUCET_AMOUNT = 10000 * 1_000_000，decimals=6）。
-// 每个账户领水后固定转走 9800 MIL，预留 200 MIL 作为 gas 手续费。
-const (
-	faucetAmount   uint64 = 10000 * 1_000_000 // 领水金额（最小单位）
-	gasReserve     uint64 = 200 * 1_000_000   // 预留 gas（最小单位）
-	transferAmount uint64 = faucetAmount - gasReserve
-)
+// defaultTransferPercent 归集百分比缺省值。2026-11-25 水龙头降为单次 1 MIL,
+// 原写死"领水 10000 转 9800 留 200"三常量在新规则下恒 513,改为按实际余额百分比归集。
+const defaultTransferPercent = 98
+
+// normalizeTransferPercent 缺省 98;合法 1-100,越界报错。
+func normalizeTransferPercent(p int) (uint64, error) {
+	if p == 0 {
+		return defaultTransferPercent, nil
+	}
+	if p < 0 || p > 100 {
+		return 0, fmt.Errorf("percent must be between 1 and 100, got %d", p)
+	}
+	return uint64(p), nil
+}
+
+// bulkTransferAmount 按余额百分比计算转出额(最小单位,整数向下取整)。
+func bulkTransferAmount(bal, percent uint64) uint64 {
+	return bal * percent / 100
+}
 
 // bulkTransferResult 描述单个账户的处理结果。
 type bulkTransferResult struct {
 	Index          int    `json:"index"`
 	Address        string `json:"address"`
 	TransferTxHash string `json:"transferTxHash,omitempty"`
-	Transferred    uint64 `json:"transferred"`
+	Balance        uint64 `json:"balance,omitempty"`  // 领水后实际余额
+	Transferred    uint64 `json:"transferred"`        // 实际转出额(余额×percent%)
+	Reserved       uint64 `json:"reserved,omitempty"` // 预留(余额−转出,作 gas)
 	Success        bool   `json:"success"`
 	Error          string `json:"error,omitempty"`
 }
@@ -67,6 +82,7 @@ type bulkTransferJob struct {
 	Status           string                `json:"status"` // running | completed
 	Count            int                   `json:"count"`
 	ToAddress        string                `json:"toAddress"`
+	Percent          uint64                `json:"percent"`
 	Done             int                   `json:"done"`
 	Success          int                   `json:"success"`
 	Failed           int                   `json:"failed"`
@@ -86,6 +102,7 @@ type bulkTransferJobSnapshot struct {
 	Status           string               `json:"status"` // running | completed
 	Count            int                  `json:"count"`
 	ToAddress        string               `json:"toAddress"`
+	Percent          uint64               `json:"percent"`
 	Done             int                  `json:"done"`
 	Success          int                  `json:"success"`
 	Failed           int                  `json:"failed"`
@@ -103,6 +120,7 @@ func (j *bulkTransferJob) snapshot() bulkTransferJobSnapshot {
 		Status:           j.Status,
 		Count:            j.Count,
 		ToAddress:        j.ToAddress,
+		Percent:          j.Percent,
 		Done:             j.Done,
 		Success:          j.Success,
 		Failed:           j.Failed,
@@ -137,6 +155,13 @@ func (h *BulkTransferHandler) BulkTransfer(c *gin.Context) {
 		return
 	}
 
+	percent, err := normalizeTransferPercent(req.Percent)
+	if err != nil {
+		logParamError(c, "BulkTransfer", err)
+		c.JSON(http.StatusBadRequest, types.ErrorResponse(types.ERR_INVALID_PARAMETER, err.Error(), nil))
+		return
+	}
+
 	concurrency := req.Concurrency
 	if concurrency <= 0 {
 		concurrency = 16
@@ -162,6 +187,7 @@ func (h *BulkTransferHandler) BulkTransfer(c *gin.Context) {
 		Status:    "running",
 		Count:     req.Count,
 		ToAddress: req.ToAddress,
+		Percent:   percent,
 		Results:   results,
 		StartedAt: time.Now().UnixMilli(),
 	}
@@ -170,7 +196,7 @@ func (h *BulkTransferHandler) BulkTransfer(c *gin.Context) {
 	h.jobs[jobID] = job
 	h.jobsMu.Unlock()
 
-	go h.run(job, mc, &toAddr, concurrency)
+	go h.run(job, mc, &toAddr, concurrency, percent)
 
 	c.JSON(http.StatusAccepted, types.SuccessResponse(gin.H{
 		"jobId":  jobID,
@@ -180,7 +206,7 @@ func (h *BulkTransferHandler) BulkTransfer(c *gin.Context) {
 }
 
 // run 在后台并发执行批量转账，实时更新 job 进度。
-func (h *BulkTransferHandler) run(job *bulkTransferJob, mc *milon.Client, toAddr *crypto.Address, concurrency int) {
+func (h *BulkTransferHandler) run(job *bulkTransferJob, mc *milon.Client, toAddr *crypto.Address, concurrency int, percent uint64) {
 	var doneCount int64
 	var successCount int64
 	var totalTransferred uint64
@@ -196,7 +222,7 @@ func (h *BulkTransferHandler) run(job *bulkTransferJob, mc *milon.Client, toAddr
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			res := h.processOne(mc, idx, toAddr)
+			res := h.processOne(mc, idx, toAddr, percent)
 
 			job.mu.Lock()
 			job.Results[idx] = res
@@ -237,8 +263,9 @@ func (h *BulkTransferHandler) GetBulkTransferStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, types.SuccessResponse(job.snapshot(), "ok"))
 }
 
-// processOne 处理单个账户：生成密钥 -> 领水 -> 归集 9800 MIL 到目标地址（预留 200 gas）。
-func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *crypto.Address) bulkTransferResult {
+// processOne 处理单个账户：生成密钥 -> 领水 -> 按实际余额的 percent% 归集到目标地址。
+// 百分比留成作 gas;余额过小(转出额取整为 0)时该户记失败,不影响其他账户。
+func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *crypto.Address, percent uint64) bulkTransferResult {
 	res := bulkTransferResult{Index: idx}
 
 	sk := crypto.AsClassicalSecretKey(crypto.NewClassicalSecretKey())
@@ -267,16 +294,28 @@ func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *cryp
 		return res
 	}
 
-	// 2. 归集 MIL 到目标地址，预留 gasReserve 作为手续费
+	// 2. 归集 MIL 到目标地址:按领水后实际余额的 percent% 转出,剩余留作 gas。
 	//    领水后该账户可能已注册上链，此时公钥模式会被链端拒绝（错误 285 PubkeyModeForbidden），
 	//    因此按链上状态重新解析签名模式（已上链 → 签名者列表模式）。
+	bal, err := mc.BalanceOf(account)
+	if err != nil {
+		res.Error = "balance: " + err.Error()
+		return res
+	}
+	res.Balance = bal
+	amount := bulkTransferAmount(bal, percent)
+	if amount == 0 {
+		res.Error = fmt.Sprintf("balance too small to sweep (bal=%d, percent=%d%%)", bal, percent)
+		return res
+	}
+
 	transferMode, err := normalizeSignatureModeForAccount(mc, *account, mode)
 	if err != nil {
 		res.Error = "resolve signature mode: " + err.Error()
 		return res
 	}
 
-	wire, err := gen.Token.Transfer.Args(account, api.MILToken, toAddr, transferAmount).Encode()
+	wire, err := gen.Token.Transfer.Args(account, api.MILToken, toAddr, amount).Encode()
 	if err != nil {
 		res.Error = "encode transfer: " + err.Error()
 		return res
@@ -302,7 +341,8 @@ func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *cryp
 		return res
 	}
 
-	res.Transferred = transferAmount
+	res.Transferred = amount
+	res.Reserved = bal - amount
 	res.Success = true
 	return res
 }

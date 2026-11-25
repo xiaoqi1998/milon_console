@@ -753,13 +753,14 @@ type sftFlowArgs struct {
 	Transfer        *sftFlowTransferOptionsArgs `json:"transfer,omitempty" jsonschema:"可选：转移（tokenId→to，amount 缺省全额）"`
 }
 
-// bulkTransferArgs 镜像 bulkTransferRequest（handler/bulk_transfer_handler.go:39，
+// bulkTransferArgs 镜像 bulkTransferRequest（handler/bulk_transfer_handler.go，
 // POST /api/tool/bulk-transfer）。count/toAddress 带 binding:"required"
-// （count 限 1..=5000），不标 omitempty；concurrency 可选（缺省 16，上限 128）。
+// （count 限 1..=5000），不标 omitempty；concurrency/percent 可选。
 type bulkTransferArgs struct {
 	Count       int    `json:"count" jsonschema:"必填：批量生成账户数（1 到 5000）"`
-	ToAddress   string `json:"toAddress" jsonschema:"必填：归集目标地址（每账户领水 10000 MIL 后转出 9800，预留 200 gas）"`
+	ToAddress   string `json:"toAddress" jsonschema:"必填：归集目标地址（每账户按余额百分比转出，缺省 98%、留 2% gas）"`
 	Concurrency int    `json:"concurrency,omitempty" jsonschema:"可选：并发数，缺省 16，上限 128"`
+	Percent     int    `json:"percent,omitempty" jsonschema:"可选：归集百分比，缺省 98，可 1-100（100=全转不留 gas）"`
 }
 
 // bulkTransferStatusArgs 镜像 GetBulkTransferStatus 的路径参数
@@ -1288,8 +1289,8 @@ func RegisterTools(srv *mcp.Server, exec *Executor) {
 
 	// 批量转账（异步任务，返回 jobId 轮询）
 	registerTool[bulkTransferArgs](srv, exec, "bulk_transfer",
-		"批量生成账户 → 逐个领水 → 归集 MIL 到目标地址（异步任务：立即返回 jobId，用 bulk_transfer_status 轮询进度；每账户领水 10000 MIL 转出 9800、预留 200 gas）",
-		RESTMapping{Method: "POST", PathTemplate: "/api/tool/bulk-transfer"})
+		"批量生成账户 → 逐个领水 → 按余额百分比归集到目标地址（异步任务：立即返回 jobId，用 bulk_transfer_status 轮询进度；percent 缺省 98——按领水后实际余额转出 98%、留 2% 作 gas；2026-11-25 水龙头降为单次 1 MIL 后不再固定转出额）",
+		RESTMapping{Method: "POST", PathTemplate: "/api/tool/bulk-transfer", DefaultArgs: map[string]any{"percent": 98}})
 
 	// 批量转账进度查询（GET + 路径参数 id）
 	registerTool[errorLookupArgs](srv, exec, "error_lookup",

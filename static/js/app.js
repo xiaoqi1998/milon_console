@@ -3250,13 +3250,14 @@ var API_DOCS = {
     response: { success: true, code: 0, message: 'ok', data: { address: '2L26F...', balance: 9989324 } },
   },
   'bulk-transfer': {
-    desc: '批量生成账户、逐个领水，并把每个账户领到的 MIL 全部归集到指定地址。该接口为长任务，生成 count 个账户后并发处理（领水 → 模拟 → 转账），建议通过较小 count 先行验证。',
+    desc: '批量生成账户、逐个领水，并把每个账户余额的指定百分比归集到指定地址（默认 98%，预留 2% 作 gas；2026-11-25 水龙头降为单次 1 MIL 后改为按实际余额百分比归集）。该接口为长任务，生成 count 个账户后并发处理（领水 → 转账），建议通过较小 count 先行验证。',
     params: [
       { name: 'count', type: 'int', required: true, desc: '要生成的账户数量（1-5000）' },
       { name: 'toAddress', type: 'string', required: true, desc: '归集目标地址（base58）' },
       { name: 'concurrency', type: 'int', required: false, desc: '并发数（默认 16，最大 128）' },
+      { name: 'percent', type: 'int', required: false, desc: '归集百分比（缺省 98，可 1-100；100=全转不留 gas）' },
     ],
-    response: { success: true, code: 0, message: 'ok', data: { count: 1000, toAddress: 'RqcF...', successCount: 1000, failedCount: 0, totalTransferred: 10000000000, elapsedMs: 123456, results: [] } },
+    response: { success: true, code: 0, message: 'ok', data: { count: 2, toAddress: 'RqcF...', percent: 98, successCount: 2, failedCount: 0, totalTransferred: 1960000, elapsedMs: 12345, results: [{ index: 0, address: '2xkQ...', balance: 1000000, transferTxHash: '0x...', transferred: 980000, reserved: 20000, success: true }] } },
   },
   'vc-flow': {
     desc: 'VC 签发披露全流程（同步，约 30s~2min）：双方领水（余额充足自动跳过）→ issuer 创建 Organization 型 DID → 注册 VcIssuer 组织角色并声明凭证 schema → user 创建 Personal 型 DID → issuer 链下签发 N 张键值对凭证（schema 名 prefix+序号，缺省 Test1~Test5）→ user 逐张披露上链（DiscloseVcAttestation）→ view 回读验证。全步骤幂等，已完成的步骤自动跳过，可重复调用。颁发者私钥仅支持 Ed25519（32字节）/ FN-DSA-512（1281字节，须同时传 issuerPublicKey）；userAddress 必填——同一 32 字节私钥按 ed25519/secp256k1/bls12381 解释会派生不同地址，必须显式传账户生成时返回的地址，服务端按其自动匹配曲线。',

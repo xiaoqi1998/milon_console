@@ -18,7 +18,8 @@ import (
 
 // guideDocVersion 手册内容版本（内容变更时递增，每页首行携带）。
 // 2026.10.14：新增「客户端配置账户（地址即引用）」——keys/workflows 页。
-const guideDocVersion = "2026.11.11"
+// 2026.11.25：水龙头单次降为 1 MIL；bulk_transfer 改按余额百分比归集（缺省 98%）。
+const guideDocVersion = "2026.11.25"
 
 // sourceRepoURL 本服务开源仓库地址（2026-10-13：告知 AI「不懂可看源码」）。
 // 与 handler 包 buildRepoURL（/api/version 的 repoURL）同值同源——那边可被
@@ -100,8 +101,8 @@ account_generate 生成账户（四曲线可选）· account_info / account_reso
 account_summary 一站聚合（余额+冻结+faucet 冷却+DID，子项失败不整体失败）
 
 ## 转账
-transfer_mil 一行转账（自动补全部固定参数）· bulk_transfer 批量生成+领水+归集（异步 jobId，
-bulk_transfer_status 轮询）
+transfer_mil 一行转账（自动补全部固定参数）· bulk_transfer 批量生成+领水+按余额百分比归集
+（异步 jobId，bulk_transfer_status 轮询；percent 缺省 98，留 2% gas）
 
 ## 交易查询与收尾
 tx_get / tx_events / tx_parse 查询解析（view=summary 轻量投影，AI 收尾推荐）·
@@ -163,7 +164,7 @@ REST 端点在 handler/、MCP 壳与本手册在 mcpserver/、链 SDK 在 gosdk-
   key 与 service 的 id 由链上分配，从 did_document 取
 
 ## Gas 与确认
-- faucet 领水有冷却（FaucetCooldownActive，冷却剩余见 account_summary）；批量归集每账户预留 200 gas
+- faucet 领水有冷却（FaucetCooldownActive，冷却剩余见 account_summary）；批量归集按余额百分比转出（percent 缺省 98，留 2% gas）
 - 写交易 MCP 侧 wait 缺省 true（同请求等确认，缺省 60s，waitTimeoutSecs 可调；REST 缺省 false 不变）；事后补查用 tx_track
 - 服务端单次调用总超时 300s——超长任务用 bulk_transfer 异步或拆小步骤`,
 
@@ -231,8 +232,8 @@ account_config_list 脱敏核对 → contract_write 等写工具只传地址免�
 - 服务端单次调用总超时 300s；tx_wait / tx_track 等待缺省 60s
 
 ## faucet
-- 每次领 10000 MIL；有冷却（FaucetCooldownActive，剩余时间看 account_summary）
-- 批量归集每账户转出 9800、预留 200 gas
+- 单次领 1 MIL（2026-11-25 起，原 10000）；有冷却（FaucetCooldownActive，剩余时间看 account_summary）
+- 批量归集每账户按余额百分比转出（bulk_transfer percent 缺省 98，留 2% gas）
 
 ## 不可逆 / 不可覆盖
 - did_deactivate 不可逆；停用后全部 identity 写操作被拒（错误 1026）

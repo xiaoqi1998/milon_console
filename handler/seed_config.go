@@ -14,8 +14,9 @@ import (
 // 规格见 docs/superpowers/specs/2026-10-19-seed-builder-v2-design.md §2。
 
 // seedBalanceTiers 余额档位 → MIL 数(展示口径;执行期乘 seedMil 转最小单位)。
+// one=1 MIL:2026-11-25 水龙头降为单次 1 MIL 后唯一零充值可达成档。
 var seedBalanceTiers = map[string]uint64{
-	"hundred": 100, "thousand": 1000, "ten_k": 10000,
+	"one": 1, "hundred": 100, "thousand": 1000, "ten_k": 10000,
 }
 
 // seedValidCurves 合法密钥曲线(链端三选一)。
@@ -93,7 +94,7 @@ func SeedConfigDefaults() SeedConfig {
 		Accounts: SeedAccountsCfg{
 			// 默认抗量子曲线(2026-11-24):fndsa512 确定性派生已支持。
 			Count: 8, Curves: []string{"fndsa512"},
-			Faucet: true, BalanceTiers: []string{"thousand"}, DID: true, VcCert: true,
+			Faucet: true, BalanceTiers: []string{"one"}, DID: true, VcCert: true,
 		},
 		Multisig: SeedMultisigCfg{Count: 1, Signers: 5, Threshold: 3, Faucet: true, DID: true},
 		Tokens: SeedTokensCfg{
@@ -149,11 +150,11 @@ func ValidateSeedConfig(c SeedConfig) []string {
 		cseen[cv] = true
 	}
 	if c.Accounts.Faucet && len(c.Accounts.BalanceTiers) == 0 {
-		addf("accounts.balanceTiers: 须至少选一档(可选 hundred/thousand/ten_k)")
+		addf("accounts.balanceTiers: 须至少选一档(可选 one/hundred/thousand/ten_k)")
 	}
 	for _, tier := range c.Accounts.BalanceTiers {
 		if _, ok := seedBalanceTiers[tier]; !ok {
-			addf("accounts.balanceTiers[%s]: 非法档位(可选 hundred/thousand/ten_k)", tier)
+			addf("accounts.balanceTiers[%s]: 非法档位(可选 one/hundred/thousand/ten_k)", tier)
 		}
 	}
 	if c.Accounts.DID && !c.Accounts.Faucet && len(c.Accounts.BalanceTiers) == 0 {

@@ -70,6 +70,15 @@ func TestValidateSeedConfig_FieldPathErrors(t *testing.T) {
 	}
 }
 
+// one 档(1 MIL):2026-11-25 水龙头降为单次 1 MIL 后唯一零充值可达成档。
+func TestValidateSeedConfig_OneTier(t *testing.T) {
+	c := validCfg()
+	c.Accounts.BalanceTiers = []string{"one", "hundred"}
+	if errs := ValidateSeedConfig(c); len(errs) != 0 {
+		t.Fatalf("one 档应合法, got %v", errs)
+	}
+}
+
 func TestNormalizeSeedConfig_VcCertImpliesDid(t *testing.T) {
 	c := validCfg()
 	c.Accounts.DID = false

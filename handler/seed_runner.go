@@ -20,9 +20,13 @@ import (
 // (516/1291 skip)、领水冷却守卫、余额对账补铸、预期失败断言。
 
 const (
-	seedMinBalance   = uint64(100 * 1_000_000) // 100 MIL:低于才需要领水
-	seedTokenApp     = "token"
-	seedMintRetryMax = 3
+	// 2026-11-25 水龙头降为单次 1 MIL:2 MIL 即视为充足(100 MIL 旧值在新规则下永不达标,
+	// 每次跑都刷一屏"冷却中")。
+	seedMinBalance = uint64(2 * 1_000_000)
+	// seedAdminGasReserve admin 自保 gas:补差只动超出该预留的部分(后续模块仍需 admin 付费)。
+	seedAdminGasReserve = uint64(2 * 1_000_000)
+	seedTokenApp        = "token"
+	seedMintRetryMax    = 3
 )
 
 // 285 PubkeyModeForbidden(多签激活后拒绝单公钥签名)与 5xx/10xx/12xx 同为链端码
@@ -295,14 +299,25 @@ func (r *seedRunner) runAccounts() error {
 		r.state.Mark("accounts", "did", map[string]any{"count": len(people)})
 		r.state.Save()
 	}
-	// [3] 余额档位:目标不足部分由 admin 补差(规格 §2;领水 10000 MIL 已覆盖全部档位,
-	// 档位在 faucet=false 或沿用旧账户时生效)
+	// [3] 余额档位:目标不足部分由 admin 尽力补差。
+	// 2026-11-25 水龙头单次仅 1 MIL,admin 常年凑不齐高档——差额超出 admin 可用额度
+	// (余额−自保预留)时警告跳过该户,不再中止播种;513 兜底同样只警告。
 	if len(cfg.Accounts.BalanceTiers) > 0 && !r.state.IsDone("accounts", "tiers") {
 		admin := r.acct("admin")
-		r.logf("  余额档位补差 %d 个账户…", len(r.plan.Users))
+		r.logf("  余额档位补差 %d 个账户(尽力而为)…", len(r.plan.Users))
+		adminBal, err := r.mc.BalanceOf(admin.ADR)
+		if err != nil {
+			adminBal = 0
+		}
+		var avail uint64
+		if adminBal > seedAdminGasReserve {
+			avail = adminBal - seedAdminGasReserve
+		}
+		targets := make([]uint64, len(r.plan.Users))
+		gaps := make([]uint64, len(r.plan.Users))
 		for i, spec := range r.plan.Users {
-			target := seedTierTargetMIL(cfg.Accounts.BalanceTiers[i%len(cfg.Accounts.BalanceTiers)]) * seedMil
-			if target == 0 {
+			targets[i] = seedTierTargetMIL(cfg.Accounts.BalanceTiers[i%len(cfg.Accounts.BalanceTiers)]) * seedMil
+			if targets[i] == 0 {
 				continue
 			}
 			a := r.acct(spec.Name)
@@ -310,22 +325,38 @@ func (r *seedRunner) runAccounts() error {
 			if err != nil {
 				bal = 0
 			}
-			if bal >= target {
+			if bal < targets[i] {
+				gaps[i] = targets[i] - bal
+			}
+		}
+		topups := seedTierSplit(avail, gaps)
+		skipped := 0
+		for i, spec := range r.plan.Users {
+			if gaps[i] == 0 {
+				continue
+			}
+			a := r.acct(spec.Name)
+			if topups[i] == 0 {
+				skipped++
+				r.logf("    ⚠ %s 差 %d,admin 资金不足(可用 %d),跳过", spec.Name, gaps[i], avail)
 				continue
 			}
 			_, err = seedSendSingle(r.mc, seedTokenApp, "Transfer", provider.Args{
 				"from": admin.Address, "token": api.MILToken.ToBase58(),
-				"to": a.Address, "amount": target - bal,
+				"to": a.Address, "amount": topups[i],
 			}, admin)
 			if err != nil {
 				if seedHasCode(err.Error(), 513) {
-					return fmt.Errorf("余额档补差 %s: admin MIL 不足(目标 %d)", spec.Name, target)
+					// 兜底:余额与预读不符(并发花费等),警告继续不中止
+					skipped++
+					r.logf("    ⚠ %s 补差 513(admin 余额不足),跳过", spec.Name)
+					continue
 				}
 				return fmt.Errorf("余额档补差 %s: %w", spec.Name, err)
 			}
-			r.logf("    %s 补差至 %d MIL ✓ (+%d)", spec.Name, target, target-bal)
+			r.logf("    %s 补差至 %d ✓ (+%d)", spec.Name, targets[i], topups[i])
 		}
-		r.state.Mark("accounts", "tiers", map[string]any{"tiers": cfg.Accounts.BalanceTiers})
+		r.state.Mark("accounts", "tiers", map[string]any{"tiers": cfg.Accounts.BalanceTiers, "skipped": skipped})
 		r.state.Save()
 	}
 	r.logf("accounts 模块完成")
@@ -842,6 +873,21 @@ func (r *seedRunner) runTxs() error {
 
 // seedTierTargetMIL 档位 → MIL 数;未知档位 0(跳过)。
 func seedTierTargetMIL(tier string) uint64 { return seedBalanceTiers[tier] }
+
+// seedTierSplit 尽力而为分配:按序把 adminAvail 分给各户差额,不够的户记 0。
+// 返回切片与 gaps 等长,元素为该户实补额;调用方对 gap>0 但补额 0 的户记警告跳过。
+func seedTierSplit(adminAvail uint64, gaps []uint64) []uint64 {
+	out := make([]uint64, 0, len(gaps))
+	for _, g := range gaps {
+		if g == 0 || adminAvail < g {
+			out = append(out, 0)
+			continue
+		}
+		out = append(out, g)
+		adminAvail -= g
+	}
+	return out
+}
 
 // seedComplianceStageKey 合规阶段键:带代币符号,多合规代币互不串位。
 func seedComplianceStageKey(stage, symbol string) string { return stage + ":" + symbol }
