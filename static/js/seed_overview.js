@@ -595,7 +595,7 @@ function seedToggleCertsPanel(r, btn) {
   }
   btn.textContent = '收起';
   var panel = el('td', { colspan: String(seedCertPanelColspan(table)), class: 'seed-cert-panel' });
-  panel.style.cssText = 'background:var(--bg-2,#f6f7fa);padding:8px 12px;font-size:12px';
+  panel.style.cssText = 'background:var(--bg-tertiary,#1a1a1e);padding:8px 12px;font-size:12px';
   var ptr = el('tr', null);
   ptr.appendChild(panel);
   tr.parentElement.insertBefore(ptr, tr.nextSibling);
