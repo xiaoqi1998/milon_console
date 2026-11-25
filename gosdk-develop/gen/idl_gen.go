@@ -3500,6 +3500,26 @@ provider.IDL{
 				TypeTag: 17989347192277165893,
 			},
 			provider.Event{
+				Name: "GasCharged",
+				Fields: []provider.EventField{
+					provider.EventField{
+						Name: "payer",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "token",
+						Type: "Address",
+						Indexed: true,
+					},
+					provider.EventField{
+						Name: "amount",
+						Type: "u64",
+					},
+				},
+				TypeTag: 15206978723640898879,
+			},
+			provider.Event{
 				Name: "Transfer",
 				Fields: []provider.EventField{
 					provider.EventField{

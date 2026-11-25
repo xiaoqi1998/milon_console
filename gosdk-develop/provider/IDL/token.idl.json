@@ -1963,6 +1963,27 @@
       "fields": [
         {
           "indexed": true,
+          "name": "payer",
+          "type": "Address"
+        },
+        {
+          "indexed": true,
+          "name": "token",
+          "type": "Address"
+        },
+        {
+          "indexed": false,
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "name": "GasCharged",
+      "typeTag": 15206978723640898879
+    },
+    {
+      "fields": [
+        {
+          "indexed": true,
           "name": "token",
           "type": "Address"
         },
