@@ -36,8 +36,28 @@ func TestSeedTokenRejected(t *testing.T) {
 	if !seedTokenAlreadyExists("TokenAlreadyExists (516)") {
 		t.Fatal("516 应判定为已存在")
 	}
+	// 2026-11 新版 SDK simulate 错误只回文本(无 516 数字码),线上实测报文
+	live := `submit_tx returned error status 6: {Message:simulate tx error: token already exists (token: CvgtVC7rg75XxAHDPXrZifay2D2) Code:0xc000751378 Data:0xc00031c630}`
+	if !seedTokenAlreadyExists(live) {
+		t.Fatal("文本 token already exists 应判定为已存在(重跑复用,不中止)")
+	}
+	if seedTokenAlreadyExists("insufficient token amount (token: 3, available: 1, required: 2)") {
+		t.Fatal("余额不足不是已存在")
+	}
 	if seedTokenAlreadyExists("TokenNotFound (515)") {
 		t.Fatal("515 不是已存在")
+	}
+}
+
+func TestSeedSftAlreadyExists(t *testing.T) {
+	if !seedSftAlreadyExists("SftAlreadyExists (516)") {
+		t.Fatal("516 应判定为已存在")
+	}
+	if !seedSftAlreadyExists(`{Message:simulate tx error: sft already exists (sft: 3Xyz...)}`) {
+		t.Fatal("文本 sft already exists 应判定为已存在")
+	}
+	if seedSftAlreadyExists("sft not found (1285)") {
+		t.Fatal("1285 不是已存在")
 	}
 }
 

@@ -61,9 +61,19 @@ func seedVcRejected(msg string) bool {
 	return seedHasCode(msg, 521, 522)
 }
 
-// seedTokenAlreadyExists 516。
+// seedTokenAlreadyExists token 已存在:516 数值码、TokenAlreadyExists 错误名,
+// 或链端文本 "token already exists (token: ...)"——2026-11 新版 SDK 的 simulate
+// 错误只回 Message 文本(Code 字段是 Go 指针),seedCodesIn 提取不到 516,
+// 必须按文案兜底,否则「重跑已有代币」会误判成失败中止。
 func seedTokenAlreadyExists(msg string) bool {
-	return seedHasCode(msg, 516) || strings.Contains(msg, "TokenAlreadyExists")
+	return seedHasCode(msg, 516) || containsFold(msg, "TokenAlreadyExists") ||
+		containsFold(msg, "token already exists")
+}
+
+// seedSftAlreadyExists sft 集合已存在:516 / SftAlreadyExists / 文本兜底(同上)。
+func seedSftAlreadyExists(msg string) bool {
+	return seedHasCode(msg, 516) || containsFold(msg, "SftAlreadyExists") ||
+		containsFold(msg, "sft already exists")
 }
 
 // seedMintDiffs 对账:计划铸造量 vs 链上余额,返回需补铸的地址与差额(顺序稳定)。
@@ -383,7 +393,7 @@ func (r *seedRunner) runTokens() error {
 				if !seedTokenAlreadyExists(err.Error()) {
 					return fmt.Errorf("create %s: %w", spec.Symbol, err)
 				}
-				r.logf("  %s 链上已存在(516),跳过创建", spec.Symbol)
+				r.logf("  %s 链上已存在,复用(跳过创建)", spec.Symbol)
 			} else {
 				r.logf("  %s(%ddp) 创建 ✓", spec.Symbol, spec.Decimals)
 			}

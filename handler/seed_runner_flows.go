@@ -25,9 +25,9 @@ func (r *seedRunner) runSft() error {
 	for _, sftSpec := range r.plan.Sfts {
 		res := r.acct(sftSpec.Key)
 
-		// createSft 用确定性 ed25519 资源账户创建 SFT;
-		// 链端实际已存在(SftAlreadyExists=516)视为复用成功——重建分支的
-		// SftOwnerOf 核实与创建之间存在窗口,或 state 脱节但视图瞬断时兜底。
+		// createSft 用确定性 FN-DSA-512 资源账户创建 SFT;
+		// 链端已存在(516 数值码或 "sft already exists" 文本)视为复用成功——重建
+		// 分支的 SftOwnerOf 核实与创建之间存在窗口,或 state 脱节但视图瞬断时兜底。
 		createSft := func() error {
 			attr := fmt.Sprintf("collection=%s", sftSpec.Key)
 			meta := &sftFlowMetadata{
@@ -37,8 +37,8 @@ func (r *seedRunner) runSft() error {
 			}
 			if _, err := sftFlowCreateSft(r.mc, *res.ADR, res.SK, res.PUB,
 				meta, sftSpec.RoyaltyBps, *admin.ADR, admin.SK, admin.PUB); err != nil {
-				if isTolerableChainError(err.Error(), "SftAlreadyExists", "516") {
-					r.logf("  SFT %s 链端已存在(516),视为复用 → %s", sftSpec.Key, shortAddr(res.Address))
+				if seedSftAlreadyExists(err.Error()) {
+					r.logf("  SFT %s 链端已存在,视为复用 → %s", sftSpec.Key, shortAddr(res.Address))
 					return nil
 				}
 				return fmt.Errorf("create sft %s: %w", sftSpec.Key, err)
