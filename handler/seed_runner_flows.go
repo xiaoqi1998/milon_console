@@ -183,18 +183,37 @@ func (r *seedRunner) seedSftPostOps(sftSpec SeedSftSpec, sc SeedScenario, rec ma
 			}
 			r.state.Mark("sft", stage, map[string]any{"op": "burn", "tokenId": tid})
 		case "transfer":
-			tid := tokenIds[0]
+			// 持有人是分发对象(op.By),不是 admin:admin 只是铸造签名方,
+			// 代币份额初始落在各 dists 的 to 上。用 admin 作 owner 会恒报
+			// insufficient token amount(token: N, available: 0)。
+			holder := r.acct(op.By)
+			tid := seedPickTokenId(tokenIds, op.Index)
 			to := r.acct(op.To)
+			// 幂等:持有者份额已为 0 且接收方已持有该 token(前次转出成功)则跳过,
+			// 续跑不再把「已完成的转移」当成余额不足失败。仅凭持有者 0 不跳过——
+			// 视图瞬断也会读成 0,须有接收方持有作旁证。
+			if bal, berr := seedViewU64(r.mc, sftFlowIdentityApp, "BalanceOf", provider.Args{
+				"sft": sftAddr, "token_id": tid, "owner": holder.Address,
+			}); berr == nil && bal == 0 {
+				if toBal, terr := seedViewU64(r.mc, sftFlowIdentityApp, "BalanceOf", provider.Args{
+					"sft": sftAddr, "token_id": tid, "owner": to.Address,
+				}); terr == nil && toBal > 0 {
+					r.logf("  [%s/%s] transfer token %d 已完成(%s 份额 0、%s 持有),跳过",
+						sftSpec.Key, sc.Key, tid, op.By, op.To)
+					r.state.Mark("sft", stage, map[string]any{"op": "transfer", "tokenId": tid, "to": op.To, "skipped": "already"})
+					break
+				}
+			}
 			if _, err := seedSendSingle(r.mc, sftFlowIdentityApp, "Transfer", provider.Args{
-				"owner": admin.Address, "sft": sftAddr, "token_id": tid,
+				"owner": holder.Address, "sft": sftAddr, "token_id": tid,
 				"to": to.Address, "amount": op.Amount,
-			}, admin); err != nil {
+			}, holder); err != nil {
 				if !seedHasCode(err.Error(), 1282, 1283) {
 					return fmt.Errorf("transfer: %w", err)
 				}
 				r.logf("  [%s/%s] transfer token %d 已完成,跳过", sftSpec.Key, sc.Key, tid)
 			} else {
-				r.logf("  [%s/%s] transfer token %d → %s ×%d ✓", sftSpec.Key, sc.Key, tid, op.To, op.Amount)
+				r.logf("  [%s/%s] transfer token %d %s→%s ×%d ✓", sftSpec.Key, sc.Key, tid, op.By, op.To, op.Amount)
 			}
 			r.state.Mark("sft", stage, map[string]any{"op": "transfer", "tokenId": tid, "to": op.To})
 		case "reject_transfer":

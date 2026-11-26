@@ -75,6 +75,18 @@ func seedMintMatrix(d uint8, distNames []string) map[string]uint64 {
 	return mint
 }
 
+// seedOtherHolders 取与 hold 不同的账号名(顺序稳定),供转移/拒绝实测选目标。
+// 账号数不足时返回空切片:调用方按剩余名额减笔或直接跳过,避免 SelfTransfer 1287。
+func seedOtherHolders(names []string, hold string) []string {
+	out := make([]string, 0, len(names))
+	for _, n := range names {
+		if n != hold {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
 // seedScenarioV2 单场景规格:key 决定行为族,tokensPerSlot 决定分发笔数。
 func seedScenarioV2(sftKey, key string, names []string, tokensPerSlot int, postOps bool) SeedScenario {
 	u := func(i int) string { return names[i%len(names)] }
@@ -99,10 +111,16 @@ func seedScenarioV2(sftKey, key string, names []string, tokensPerSlot int, postO
 		sc.Transferable = true
 		sc.SlotMeta = meta(true, "multi-holder")
 		if postOps && tokensPerSlot >= 3 {
-			sc.PostOps = []SeedPostOp{
-				{Op: "transfer", By: hold, To: u(1), Amount: 1},
-				{Op: "transfer", By: hold, To: u(2), Amount: 1},
+			// 每笔转移各动一枚独立 token(holder 持有多枚单份额 token):
+			// Index 指定 tokenIds 下标,同一枚 token 连续转两次第二笔必然份额为 0。
+			// 目标须避开持有人本人(链端 SelfTransfer 1287)——账号只有 1~2 个时
+			// 按可用人数减笔,1 个账号则不给转移后置。
+			others := seedOtherHolders(names, hold)
+			ops := []SeedPostOp{}
+			for i := 0; i < len(others) && i < 2; i++ {
+				ops = append(ops, SeedPostOp{Op: "transfer", By: hold, To: others[i], Amount: 1, Index: i})
 			}
+			sc.PostOps = ops
 		}
 	case "frozen":
 		sc.Transferable = true
@@ -126,7 +144,10 @@ func seedScenarioV2(sftKey, key string, names []string, tokensPerSlot int, postO
 		sc.Transferable = false
 		sc.SlotMeta = meta(false, "transferable=false")
 		if postOps {
-			sc.PostOps = []SeedPostOp{{Op: "reject_transfer", By: hold, To: u(1)}}
+			// 拦截实测同样不能转给自己(SelfTransfer 1287 会被误判成"拦截成功")
+			if others := seedOtherHolders(names, hold); len(others) > 0 {
+				sc.PostOps = []SeedPostOp{{Op: "reject_transfer", By: hold, To: others[0]}}
+			}
 		}
 	}
 	return sc
@@ -388,6 +409,15 @@ func SeedPlanSummary(p SeedPlan) SeedSummary {
 		for _, sc := range c.SFT.Scenarios {
 			if sc == "merge" && c.SFT.TokensPerSlot < 2 {
 				s.Warnings = append(s.Warnings, "merge 场景需 sft.tokensPerSlot≥2,该 slot 将只分发不合并")
+			}
+		}
+		// 转移类后置需要"持有人以外"的收款人:账号不足时按可用人数减笔或跳过
+		if c.SFT.PostOps && c.Accounts.Count < 3 {
+			for _, sc := range c.SFT.Scenarios {
+				if sc == "transferable" || sc == "reject_transfer" {
+					s.Warnings = append(s.Warnings, "账号数<3:转移类后置按可用人数减笔(1 个账号时跳过),无法演示多持有人")
+					break
+				}
 			}
 		}
 	}

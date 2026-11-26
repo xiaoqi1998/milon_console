@@ -136,6 +136,103 @@ func TestBuildSeedPlanLegacyWrapper(t *testing.T) {
 	}
 }
 
+// TestBuildSeedPlanV2_TransferOpsPerToken 锁定多持有人场景的两笔转移:
+// 持有人 = 分发对象(op.By,非 admin),各笔动不同 token(Index 0/1)。
+// 回归:曾用 admin 作 owner + 恒取 tokenIds[0],链端报
+// insufficient token amount(token: 1, available: 0, required: 1)。
+func TestBuildSeedPlanV2_TransferOpsPerToken(t *testing.T) {
+	p, err := BuildSeedPlanV2(SeedConfigDefaults())
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := 0
+	for _, s := range p.Sfts {
+		for _, sc := range s.Scenarios {
+			if sc.Key != "transferable" {
+				continue
+			}
+			seen++
+			if len(sc.Dists) == 0 {
+				t.Fatalf("%s/%s 无分发", s.Key, sc.Key)
+			}
+			hold := sc.Dists[0].To
+			if len(sc.PostOps) != 2 {
+				t.Fatalf("%s/%s 转移笔数 %d, want 2", s.Key, sc.Key, len(sc.PostOps))
+			}
+			for i, op := range sc.PostOps {
+				if op.Op != "transfer" {
+					t.Fatalf("%s/%s post[%d].Op=%s", s.Key, sc.Key, i, op.Op)
+				}
+				if op.By != hold {
+					t.Fatalf("%s/%s post[%d].By=%s, want 持有人 %s(admin 只是铸造签名方)",
+						s.Key, sc.Key, i, op.By, hold)
+				}
+				if op.Index != i {
+					t.Fatalf("%s/%s post[%d].Index=%d, want %d(每笔转不同 token)",
+						s.Key, sc.Key, i, op.Index, i)
+				}
+				if op.Index >= len(sc.Dists) {
+					t.Fatalf("%s/%s post[%d] 下标越界: %d ≥ %d", s.Key, sc.Key, i, op.Index, len(sc.Dists))
+				}
+			}
+		}
+	}
+	if seen == 0 {
+		t.Fatal("默认配置应产出 transferable 场景")
+	}
+}
+
+// TestBuildSeedPlanV2_TransferTargetsAvoidSelf 账号不足 3 个时转移/拦截后置
+// 不得把目标设成持有人本人(链端 SelfTransfer 1287):按可用人数减笔或跳过。
+func TestBuildSeedPlanV2_TransferTargetsAvoidSelf(t *testing.T) {
+	cases := []struct{ count, wantTransfers int }{{1, 0}, {2, 1}, {3, 2}, {8, 2}}
+	for _, tc := range cases {
+		cfg := SeedConfigDefaults()
+		cfg.Tokens.Count = 1
+		cfg.Accounts.Count = tc.count
+		cfg.Multisig.Count = 0
+		cfg.Tokens.ComplianceCount = 0
+		cfg.Accounts.VcCert = false
+		cfg.SFT.Scenarios = []string{"transferable", "reject_transfer"}
+		p, err := BuildSeedPlanV2(cfg)
+		if err != nil {
+			t.Fatalf("count=%d: %v", tc.count, err)
+		}
+		for _, s := range p.Sfts {
+			for _, sc := range s.Scenarios {
+				if len(sc.Dists) == 0 {
+					t.Fatalf("count=%d %s/%s 无分发", tc.count, s.Key, sc.Key)
+				}
+				hold := sc.Dists[0].To
+				switch sc.Key {
+				case "transferable":
+					if len(sc.PostOps) != tc.wantTransfers {
+						t.Fatalf("count=%d 转移笔数 %d, want %d", tc.count, len(sc.PostOps), tc.wantTransfers)
+					}
+					for i, op := range sc.PostOps {
+						if op.To == hold {
+							t.Fatalf("count=%d post[%d] 目标=持有人 %s(SelfTransfer 1287)", tc.count, i, hold)
+						}
+						if op.Index != i || op.Index >= len(sc.Dists) {
+							t.Fatalf("count=%d post[%d].Index=%d 越界或重号", tc.count, i, op.Index)
+						}
+					}
+				case "reject_transfer":
+					if tc.count == 1 {
+						if len(sc.PostOps) != 0 {
+							t.Fatalf("单账号不应产出拦截实测(目标只能是本人), got %+v", sc.PostOps)
+						}
+						continue
+					}
+					if len(sc.PostOps) != 1 || sc.PostOps[0].To == hold {
+						t.Fatalf("count=%d 拦截目标须为他人, got %+v", tc.count, sc.PostOps)
+					}
+				}
+			}
+		}
+	}
+}
+
 func TestSeedEstimateTxs_Positive(t *testing.T) {
 	p, _ := BuildSeedPlanV2(SeedConfigDefaults())
 	if SeedEstimateTxs(p) <= 0 {

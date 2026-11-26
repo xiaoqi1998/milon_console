@@ -110,7 +110,7 @@ type SeedPostOp struct {
 	By     string `json:"by"`
 	To     string `json:"to,omitempty"`
 	Amount uint64 `json:"amount,omitempty"`
-	Index  int    `json:"index,omitempty"` // burn: tokenIds 下标(负数从尾数)
+	Index  int    `json:"index,omitempty"` // burn/transfer: tokenIds 下标(负数从尾数)
 }
 
 type SeedDist struct {
