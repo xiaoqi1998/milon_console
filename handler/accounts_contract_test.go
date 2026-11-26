@@ -60,6 +60,8 @@ func newAccountsContractRouter(t *testing.T) *gin.Engine {
 	api.POST("/tool/vc-flow", NewVcFlowHandler(nm).VcFlow)
 	// Task 8：accounts-config 脱敏回显路由（路径与 main.go 一致）
 	api.GET("/accounts-config", NewAccountsConfigHandler().List)
+	// 2026-11-26：生成账户路由（缺省抗量子回归测试用）
+	api.POST("/accounts/generate", NewAccountHandler(nm).GenerateAccount)
 	return r
 }
 

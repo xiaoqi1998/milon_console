@@ -31,6 +31,7 @@ type generateAccountResponse struct {
 	PrivateKey string `json:"privateKey"`
 	PublicKey  string `json:"publicKey"`
 	Address    string `json:"address"`
+	KeyType    string `json:"keyType"` // 实际使用的曲线(缺省 fndsa512),便于调用方存档/复用
 }
 
 // GetAccount handles GET /api/accounts/:address
@@ -95,7 +96,9 @@ func (h *AccountHandler) GenerateAccount(c *gin.Context) {
 
 	keyType := req.KeyType
 	if keyType == "" {
-		keyType = "secp256k1"
+		// 缺省抗量子(2026-11-26):生成账户不再默认经典曲线;
+		// secp256k1/ed25519/bls12381 仍支持,但须显式传 keyType(兼容导入/演示)。
+		keyType = "fndsa512"
 	}
 
 	var sk crypto.SecretKeyer
@@ -161,6 +164,7 @@ func (h *AccountHandler) GenerateAccount(c *gin.Context) {
 		PrivateKey: sk.ToHex(),
 		PublicKey:  pk.ToHex(),
 		Address:    addr.ToBase58(),
+		KeyType:    keyType,
 	}
 
 	logBusinessInfo(c, "GenerateAccount", "keyType", keyType, "address", resp.Address)

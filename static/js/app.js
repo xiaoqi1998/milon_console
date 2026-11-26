@@ -24,7 +24,7 @@ const ENDPOINTS = [
   { id: 'acc-resources', method: 'GET', path: '/api/accounts/:address/resources', summary: '获取账户资源', group: '账户',
     pathParams: [{ name: 'address', ph: 'base58地址' }] },
   { id: 'acc-generate', method: 'POST', path: '/api/accounts/generate', summary: '生成账户', group: '账户',
-    bodyTemplate: JSON.stringify({ keyType: 'secp256k1' }, null, 2) },
+    bodyTemplate: JSON.stringify({ keyType: 'fndsa512' }, null, 2) },
   { id: 'acc-summary', method: 'GET', path: '/api/accounts/:address/summary', summary: '地址全景(余额+冻结+冷却+DID聚合)', group: '账户',
     pathParams: [{ name: 'address', ph: 'base58地址' }] },
   { id: 'tx-hash', method: 'GET', path: '/api/transactions/:hash', summary: '按哈希查交易', group: '交易',
@@ -1988,7 +1988,7 @@ function renderAccountModal() {
     apiFetch('/api/accounts/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keyType: 'secp256k1' })
+      body: JSON.stringify({ keyType: 'fndsa512' })
     }).then(function (r) { return r.json(); }).then(function (resp) {
       genBtn.disabled = false;
       genBtn.textContent = '调用生成接口';
@@ -3286,12 +3286,12 @@ var API_DOCS = {
     } },
   },
   'sft-flow': {
-    desc: 'SFT 全流程（同步，每步一笔链上交易）：owner 领水（余额 ≥ 100 MIL 跳过）→ 创建 SFT（缺省服务端生成 Ed25519 资源账户并在响应返回私钥；传 sft.address 且链上已存在则跳过）→ 创建 slot（slot_id 链上递增分配，从 SlotCreatedEvent 提取；传 slot.slotId 复用）→ 分发（对 distributions 逐笔 Mint 直发，每笔独立 token_id）→ 合并（fromTokenId → toTokenId，仅合并 owner 自己持有的份额）→ 转移（tokenId → to，amount 缺省全额）→ 回读验证。步骤开关 = 参数存在性：不传某步参数即跳过该步。注意：分发/合并/转移为链上状态变更操作，重复调用会重复生效；创建 SFT 与 slot 复用支持幂等重跑。',
+    desc: 'SFT 全流程（同步，每步一笔链上交易）：owner 领水（余额 ≥ 100 MIL 跳过）→ 创建 SFT（缺省服务端生成 FN-DSA-512 抗量子资源账户并在响应返回私钥+公钥；传 sft.address 且链上已存在则跳过）→ 创建 slot（slot_id 链上递增分配，从 SlotCreatedEvent 提取；传 slot.slotId 复用）→ 分发（对 distributions 逐笔 Mint 直发，每笔独立 token_id）→ 合并（fromTokenId → toTokenId，仅合并 owner 自己持有的份额）→ 转移（tokenId → to，amount 缺省全额）→ 回读验证。步骤开关 = 参数存在性：不传某步参数即跳过该步。注意：分发/合并/转移为链上状态变更操作，重复调用会重复生效；创建 SFT 与 slot 复用支持幂等重跑。',
     params: [
       { name: 'ownerPrivateKey', type: 'string', required: true, desc: 'owner 私钥（hex/base58）；slot/mint/merge/transfer 均由 owner 签名并支付 gas' },
       { name: 'ownerPublicKey', type: 'string', required: false, desc: 'owner 公钥，FN-DSA-512 私钥时必填' },
       { name: 'ownerAddress', type: 'string', required: true, desc: 'owner 地址（base58），曲线消歧（同 vc-flow 的 userAddress）' },
-      { name: 'sft', type: 'object', required: false, desc: 'SFT 资源账户选项 {address, privateKey, publicKey}；缺省生成新资源账户（Ed25519，私钥随响应返回）。传 address 且链上已存在则跳过创建；不存在则须传 privateKey 签名 create_sft（gas 由 owner 代付）' },
+      { name: 'sft', type: 'object', required: false, desc: 'SFT 资源账户选项 {address, privateKey, publicKey}；缺省生成新资源账户（FN-DSA-512 抗量子，私钥+公钥随响应返回）。传 address 且链上已存在则跳过创建；不存在则须传 privateKey 签名 create_sft（gas 由 owner 代付）' },
       { name: 'sftMetadata', type: 'object', required: false, desc: '创建新 SFT 的元数据 {name(1..=128), symbol(1..=32), coverUrl, metadata, attribute}；name/symbol 链端强制必填，需要创建 SFT 时此处必填' },
       { name: 'royaltyBps', type: 'int', required: false, desc: '二级市场版税万分比（u16），缺省 0，版税接收人初始为 owner' },
       { name: 'slot', type: 'object', required: false, desc: 'slot 选项 {slotId, metadata, isTransferable}；slotId>0 复用已有 slot（与创建参数互斥），否则创建新 slot；isTransferable 缺省 true。缺省整个对象 = 跳过 slot 步骤' },
@@ -3302,7 +3302,7 @@ var API_DOCS = {
     response: { success: true, code: 0, message: 'ok', data: {
       owner: '3pHqr...',
       faucet: { skipped: true, claimed: false, balanceBefore: '9800000000', balanceAfter: '9800000000', detail: 'balance is sufficient, skip faucet' },
-      sft: { address: '5Fsde...', owner: '3pHqr...', privateKey: '0x…(仅新生成时返回)', created: true, skipped: false, txHash: '0x…', detail: 'generated new sft resource account (ed25519)' },
+      sft: { address: '5Fsde...', owner: '3pHqr...', privateKey: '0x…(仅新生成时返回)', created: true, skipped: false, txHash: '0x…', detail: 'generated new sft resource account (fndsa512)' },
       slot: { slotId: 1, created: true, reused: false, txHash: '0x…' },
       distributions: [
         { to: '5DhTh...', amount: 40, tokenId: 1, txHash: '0x…' },

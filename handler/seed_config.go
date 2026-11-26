@@ -19,9 +19,11 @@ var seedBalanceTiers = map[string]uint64{
 	"one": 1, "hundred": 100, "thousand": 1000, "ten_k": 10000,
 }
 
-// seedValidCurves 合法密钥曲线(链端三选一)。
-// 2026-11-24 起播种器支持 fndsa512 确定性派生(sha256 种子直接作 fndsa KeyGen 种子)。
-var seedValidCurves = map[string]bool{"secp256k1": true, "ed25519": true, "fndsa512": true}
+// seedValidCurves 合法密钥曲线:播种器只产出抗量子 fndsa512。
+// 2026-11-26 起经典曲线(secp256k1/ed25519)不再接受——链端 owner/多签 signer
+// 已 PQ 化(69 PqSignatureRequired / 273 InvalidPublicKey),生成出来的经典
+// 账户在链上属于废数据,故在配置校验层直接拒绝,避免播种出一批不可用账号。
+var seedValidCurves = map[string]bool{"fndsa512": true}
 
 // seedScenarioKeys 合法 SFT 场景键。
 var seedScenarioKeys = map[string]bool{
@@ -142,7 +144,7 @@ func ValidateSeedConfig(c SeedConfig) []string {
 	cseen := map[string]bool{}
 	for _, cv := range c.Accounts.Curves {
 		if !seedValidCurves[cv] {
-			addf("accounts.curves[%s]: 非法曲线(可选 secp256k1/ed25519/fndsa512)", cv)
+			addf("accounts.curves[%s]: 非法曲线(播种器只产出抗量子 fndsa512;经典曲线在链上会报 69 PqSignatureRequired/273 InvalidPublicKey)", cv)
 		}
 		if cseen[cv] {
 			addf("accounts.curves[%s]: 重复", cv)

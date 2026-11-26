@@ -233,6 +233,50 @@ func TestBuildSeedPlanV2_TransferTargetsAvoidSelf(t *testing.T) {
 	}
 }
 
+// TestBuildSeedPlanV2_AllAccountsPostQuantum 三个模板的整条计划链(admin/users/
+// issuers/multisig + 运行期派生 token/compliance/sft 资源账户)全部 fndsa512,
+// 不出现任何经典曲线;派生账户须带公钥与地址(fndsa512 公钥不可反推)。
+func TestBuildSeedPlanV2_AllAccountsPostQuantum(t *testing.T) {
+	for _, preset := range []string{"minimal", "standard", "full"} {
+		cfg, err := SeedConfigForPreset(preset)
+		if err != nil {
+			t.Fatalf("%s: %v", preset, err)
+		}
+		p, err := BuildSeedPlanV2(cfg)
+		if err != nil {
+			t.Fatalf("%s: %v", preset, err)
+		}
+		check := func(where, curve string) {
+			if curve != "fndsa512" {
+				t.Fatalf("%s/%s 曲线=%q, want fndsa512", preset, where, curve)
+			}
+		}
+		check("admin", p.Admin.Curve)
+		for _, u := range p.Users {
+			check(u.Name, u.Curve)
+		}
+		for _, i := range p.Issuers {
+			check(i.Name, i.Curve)
+		}
+		for _, ms := range p.Multisig {
+			check(ms.Name, ms.Curve)
+		}
+		accts, err := SeedBuildAccounts(p)
+		if err != nil {
+			t.Fatalf("%s: 派生账户失败: %v", preset, err)
+		}
+		if len(accts) == 0 {
+			t.Fatalf("%s: 无派生账户", preset)
+		}
+		for name, a := range accts {
+			check(name, a.Curve)
+			if a.PublicKey == "" || a.Address == "" {
+				t.Fatalf("%s/%s: fndsa512 须带公钥与地址", preset, name)
+			}
+		}
+	}
+}
+
 func TestSeedEstimateTxs_Positive(t *testing.T) {
 	p, _ := BuildSeedPlanV2(SeedConfigDefaults())
 	if SeedEstimateTxs(p) <= 0 {

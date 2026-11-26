@@ -28,7 +28,7 @@ func vcIssueDo(t *testing.T, h *SeedJobHandler, body string) (*httptest.Response
 }
 
 func validVcIssueBody() string {
-	return `{"config":{"seedPhrase":"milon-devnet-seed-v1","accounts":{"count":3,"curves":["secp256k1"],"faucet":true,"balanceTiers":["hundred"],"did":true,"vcCert":true},"multisig":{"count":0,"signers":5,"threshold":3,"faucet":false,"did":false},"tokens":{"count":1,"decimals":[6],"complianceCount":0,"freezeDemo":false},"sft":{"count":0,"slotsPerSft":1,"tokensPerSlot":3,"scenarios":["transferable"],"postOps":false}},"issuerName":"kycorg","subjectName":"test01","schemaPrefix":"SeedKyc","count":1}`
+	return `{"config":{"seedPhrase":"milon-devnet-seed-v1","accounts":{"count":3,"curves":["fndsa512"],"faucet":true,"balanceTiers":["hundred"],"did":true,"vcCert":true},"multisig":{"count":0,"signers":5,"threshold":3,"faucet":false,"did":false},"tokens":{"count":1,"decimals":[6],"complianceCount":0,"freezeDemo":false},"sft":{"count":0,"slotsPerSft":1,"tokensPerSlot":3,"scenarios":["transferable"],"postOps":false}},"issuerName":"kycorg","subjectName":"test01","schemaPrefix":"SeedKyc","count":1}`
 }
 
 // resolveVcIssueAccounts(纯函数,离线):config+名字 → 派生账户对。
@@ -62,8 +62,15 @@ func TestVcIssueResolve(t *testing.T) {
 	if issuer.PrivateKey != fpair.PrivateKey || issuer.PublicKey == "" {
 		t.Fatal("issuer fndsa512 派生口径漂移")
 	}
-	if subject.PrivateKey != SeedDeriveKey(cfg.SeedPhrase, "user", "test01") {
-		t.Fatal("subject 私钥派生口径漂移")
+	if subject.Curve != "fndsa512" {
+		t.Fatalf("subject 曲线应为 fndsa512, got %s", subject.Curve)
+	}
+	fsub, err := SeedDeriveFndsaKeyPair(cfg.SeedPhrase, "user", "test01")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if subject.PrivateKey != fsub.PrivateKey || subject.PublicKey == "" {
+		t.Fatal("subject fndsa512 派生口径漂移")
 	}
 	// 未知账户
 	if _, _, err := resolveVcIssueAccounts(cfg, "kycorg", "nope"); err == nil {
@@ -85,9 +92,9 @@ func TestVcIssueEndpoint_Validation(t *testing.T) {
 		name, body string
 	}{
 		{"坏 JSON", `{not-json`},
-		{"缺 schemaPrefix", `{"config":{"seedPhrase":"p","accounts":{"count":3,"curves":["secp256k1"],"faucet":true,"balanceTiers":["hundred"]}},"issuerName":"kycorg","subjectName":"test01"}`},
-		{"count 越界", `{"config":{"seedPhrase":"p","accounts":{"count":3,"curves":["secp256k1"],"faucet":true,"balanceTiers":["hundred"]}},"issuerName":"kycorg","subjectName":"test01","schemaPrefix":"SeedKyc","count":99}`},
-		{"未知 subject", `{"config":{"seedPhrase":"p","accounts":{"count":3,"curves":["secp256k1"],"faucet":true,"balanceTiers":["hundred"]}},"issuerName":"kycorg","subjectName":"nope","schemaPrefix":"SeedKyc","count":1}`},
+		{"缺 schemaPrefix", `{"config":{"seedPhrase":"p","accounts":{"count":3,"curves":["fndsa512"],"faucet":true,"balanceTiers":["hundred"]}},"issuerName":"kycorg","subjectName":"test01"}`},
+		{"count 越界", `{"config":{"seedPhrase":"p","accounts":{"count":3,"curves":["fndsa512"],"faucet":true,"balanceTiers":["hundred"]}},"issuerName":"kycorg","subjectName":"test01","schemaPrefix":"SeedKyc","count":99}`},
+		{"未知 subject", `{"config":{"seedPhrase":"p","accounts":{"count":3,"curves":["fndsa512"],"faucet":true,"balanceTiers":["hundred"]}},"issuerName":"kycorg","subjectName":"nope","schemaPrefix":"SeedKyc","count":1}`},
 	}
 	for _, c := range cases {
 		w, raw := vcIssueDo(t, h, c.body)

@@ -97,7 +97,7 @@ contract_read_multi）；写合约 contract_write（safe/wait 均缺省开：先
 转账 transfer_mil（自动等确认，一步到位）；整段流程直接用编排工具（sft_flow / vc_flow / bulk_transfer）。
 
 ## 账户与余额
-account_generate 生成账户（四曲线可选）· account_info / account_resources 单查 ·
+account_generate 生成账户（缺省 fndsa512 抗量子，经典曲线须显式 keyType）· account_info / account_resources 单查 ·
 account_summary 一站聚合（余额+冻结+faucet 冷却+DID，子项失败不整体失败）
 
 ## 转账
@@ -144,8 +144,8 @@ REST 端点在 handler/、MCP 壳与本手册在 mcpserver/、链 SDK 在 gosdk-
 - 代币：MIL，6 位精度 → 1 MIL = 1,000,000 最小单位；所有 amount 参数一律最小单位
 - 地址：base58，20 字节。派生必须用 util_derive_address 或 account_generate 的返回，勿本地计算
 - 交易：postcard 格式；交易哈希 hex 或 base58 均可作为查询参数
-- 密码曲线：secp256k1（缺省）/ ed25519 / bls12381 / fndsa512（抗量子；公钥 897 字节、
-  完整私钥 1281 字节，公钥无法从私钥派生——必须显式传，详见 keys 主题）
+- 密码曲线：fndsa512（缺省，抗量子；公钥 897 字节、完整私钥 1281 字节，公钥无法从私钥派生
+  ——必须显式传，详见 keys 主题）/ secp256k1 / ed25519 / bls12381（后三者须显式 keyType）
 - 同一 32 字节私钥在不同曲线下派生不同地址——address 永远以 account_generate 返回为准
 
 ## paymentMode 六模式（各模式字段组合的唯一权威来源=contract_write.paymentMode 描述）
@@ -281,11 +281,11 @@ account_config_list 脱敏核对 → contract_write 等写工具只传地址免�
 	"keys": `# 密钥与曲线 (doc_version ` + guideDocVersion + `)
 
 ## 四曲线对照
-- secp256k1：32 字节私钥（hex/base58），缺省曲线
+- fndsa512（抗量子）：完整私钥 1281 字节、公钥 897 字节；公钥无法从私钥派生——
+  必须显式传 publicKey（account_generate 的返回里有）；**account_generate 缺省曲线**
+- secp256k1：32 字节私钥（hex/base58），须显式 keyType
 - ed25519：32 字节私钥；VC 凭证签名支持
 - bls12381：32 字节私钥；仅 util 层派生用
-- fndsa512（抗量子）：完整私钥 1281 字节、公钥 897 字节；公钥无法从私钥派生——
-  必须显式传 publicKey（account_generate 的返回里有）
 
 ## 三条铁律
 1. 地址派生只用 util_derive_address（或直接取 account_generate 返回），不要本地计算

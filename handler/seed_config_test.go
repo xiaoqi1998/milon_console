@@ -13,7 +13,7 @@ func TestValidateSeedConfig_AcceptsDefaults(t *testing.T) {
 	}
 }
 
-// 默认曲线(抗量子):2026-11-24 起播种器全量改 fndsa512 确定性派生。
+// 默认曲线(抗量子):播种器只产出 fndsa512;2026-11-26 起经典曲线在校验层直接拒绝。
 func TestSeedConfigDefaults_Fndsa512Curves(t *testing.T) {
 	c := SeedConfigDefaults()
 	if len(c.Accounts.Curves) != 1 || c.Accounts.Curves[0] != "fndsa512" {
@@ -22,11 +22,18 @@ func TestSeedConfigDefaults_Fndsa512Curves(t *testing.T) {
 	if errs := ValidateSeedConfig(c); len(errs) != 0 {
 		t.Fatalf("fndsa512 默认配置应合法, got %v", errs)
 	}
-	// 混合曲线也合法(旧行为保留)。
+	// 经典曲线一律拒绝:链端 owner/signer 已 PQ 化,生成出来即废数据
+	for _, classic := range []string{"secp256k1", "ed25519"} {
+		bad := SeedConfigDefaults()
+		bad.Accounts.Curves = []string{classic}
+		if errs := ValidateSeedConfig(bad); len(errs) == 0 {
+			t.Fatalf("%s 应被拒绝", classic)
+		}
+	}
 	mix := SeedConfigDefaults()
-	mix.Accounts.Curves = []string{"secp256k1", "ed25519", "fndsa512"}
-	if errs := ValidateSeedConfig(mix); len(errs) != 0 {
-		t.Fatalf("混合曲线应合法, got %v", errs)
+	mix.Accounts.Curves = []string{"fndsa512", "secp256k1"}
+	if errs := ValidateSeedConfig(mix); len(errs) == 0 {
+		t.Fatal("混入经典曲线应被拒绝")
 	}
 }
 
@@ -39,6 +46,7 @@ func TestValidateSeedConfig_FieldPathErrors(t *testing.T) {
 		{"账号数越界", func(c *SeedConfig) { c.Accounts.Count = 0 }, "accounts.count"},
 		{"曲线为空", func(c *SeedConfig) { c.Accounts.Curves = nil }, "accounts.curves"},
 		{"非法曲线", func(c *SeedConfig) { c.Accounts.Curves = []string{"rsa"} }, "accounts.curves[rsa]"},
+		{"经典曲线被拒", func(c *SeedConfig) { c.Accounts.Curves = []string{"secp256k1"} }, "accounts.curves[secp256k1]"},
 		{"精度越界", func(c *SeedConfig) { c.Tokens.Decimals = []uint8{10} }, "tokens.decimals[10]"},
 		{"合规数超代币数", func(c *SeedConfig) { c.Tokens.ComplianceCount = 9 }, "tokens.complianceCount"},
 		{"合规但无证书", func(c *SeedConfig) { c.Tokens.ComplianceCount = 1; c.Accounts.VcCert = false }, "tokens.complianceCount"},

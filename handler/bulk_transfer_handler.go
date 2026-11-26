@@ -268,8 +268,13 @@ func (h *BulkTransferHandler) GetBulkTransferStatus(c *gin.Context) {
 func (h *BulkTransferHandler) processOne(mc *milon.Client, idx int, toAddr *crypto.Address, percent uint64) bulkTransferResult {
 	res := bulkTransferResult{Index: idx}
 
-	sk := crypto.AsClassicalSecretKey(crypto.NewClassicalSecretKey())
-	pk := sk.Ed25519Public()
+	// 归集临时账户统一用抗量子 FN-DSA-512:链端 owner 签名已 PQ 化,
+	// 经典 ed25519 临时账户提交后会在执行期报 69 PqSignatureRequired。
+	sk, pk, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		res.Error = "fndsa512 keygen: " + err.Error()
+		return res
+	}
 	account, err := crypto.NewAddressFromPublicKey(pk)
 	if err != nil {
 		res.Error = "derive address: " + err.Error()

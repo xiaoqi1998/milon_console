@@ -657,20 +657,20 @@ curl http://localhost:8080/api/accounts/1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa/resou
 
 - **方法**: `POST`
 - **路径**: `/api/accounts/generate`
-- **说明**: 生成新的密钥对和地址。支持 4 种密钥算法。
+- **说明**: 生成新的密钥对和地址。支持 4 种密钥算法，**缺省 fndsa512 抗量子**（2026-11-26 起）。
 
 **请求参数**
 
 | 字段 | 类型 | 是否必填 | 说明 |
 | --- | --- | --- | --- |
-| `keyType` | string | 否 | 密钥类型：`secp256k1`（默认）、`ed25519`、`bls12381`、`fndsa512` |
+| `keyType` | string | 否 | 密钥类型：`fndsa512`（默认，抗量子）、`secp256k1`、`ed25519`、`bls12381`；经典曲线须显式声明 |
 
 **请求示例**
 
 ```bash
 curl -X POST http://localhost:8080/api/accounts/generate \
   -H "Content-Type: application/json" \
-  -d '{"keyType":"secp256k1"}'
+  -d '{}'
 ```
 
 **响应示例**
@@ -2415,7 +2415,7 @@ curl -X POST http://localhost:8080/api/tool/vc-flow \
 
 - **方法**: `POST`
 - **路径**: `/api/tool/sft-flow`
-- **说明**: 给定 owner 私钥，**同步**自动完成 sftoken 全生命周期：owner 领水（余额 ≥ 100 MIL 跳过；SFT 资源账户与份额接收者无需 gas）→ 创建 SFT（缺省服务端生成 Ed25519 资源账户并在响应中返回私钥；传 `sft.address` 且链上已存在则跳过创建）→ 创建 slot（slot_id 链上递增分配，从 `SlotCreatedEvent` 回执提取；传 `slot.slotId` 则复用已有 slot）→ 分发（对 `distributions` 逐笔 Mint 直发，每笔 `(to, amount)` 铸出独立 token_id，从 `TokenMintedEvent` 回执提取）→ 合并（`merge.fromTokenId → toTokenId`，仅合并 owner 自己持有的份额，合并数量从 `TokenTransferredEvent` 提取）→ 转移（`transfer.tokenId → to`，`amount` 缺省为该 token 全额份额）→ 回读验证（`SftMetadata` / `SlotInfo` / `BalanceOf`）。**步骤开关 = 参数存在性**：不传某步参数即跳过该步，可自由组合（如仅对已有 SFT 做一次转移）。
+- **说明**: 给定 owner 私钥，**同步**自动完成 sftoken 全生命周期：owner 领水（余额 ≥ 100 MIL 跳过；SFT 资源账户与份额接收者无需 gas）→ 创建 SFT（缺省服务端生成 FN-DSA-512 抗量子资源账户并在响应中返回私钥+公钥；传 `sft.address` 且链上已存在则跳过创建）→ 创建 slot（slot_id 链上递增分配，从 `SlotCreatedEvent` 回执提取；传 `slot.slotId` 则复用已有 slot）→ 分发（对 `distributions` 逐笔 Mint 直发，每笔 `(to, amount)` 铸出独立 token_id，从 `TokenMintedEvent` 回执提取）→ 合并（`merge.fromTokenId → toTokenId`，仅合并 owner 自己持有的份额，合并数量从 `TokenTransferredEvent` 提取）→ 转移（`transfer.tokenId → to`，`amount` 缺省为该 token 全额份额）→ 回读验证（`SftMetadata` / `SlotInfo` / `BalanceOf`）。**步骤开关 = 参数存在性**：不传某步参数即跳过该步，可自由组合（如仅对已有 SFT 做一次转移）。
 
 **请求参数**
 
@@ -2424,7 +2424,7 @@ curl -X POST http://localhost:8080/api/tool/vc-flow \
 | `ownerPrivateKey` | string | 是 | owner 私钥（hex/base58）：32 字节为经典 Ed25519；1281 字节为 FN-DSA-512（须同时传 `ownerPublicKey`）。slot/mint/merge/transfer 均由 owner 签名并支付 gas |
 | `ownerPublicKey` | string | 条件必填 | owner 公钥，owner 为 FN-DSA-512 私钥时必填 |
 | `ownerAddress` | string | 是 | owner 地址（base58）。必填：同一 32 字节私钥按 ed25519/secp256k1/bls12381 解释会派生**不同地址**，服务端按显式地址自动匹配曲线并锁定正确公钥 |
-| `sft` | object | 否 | SFT 资源账户选项；缺省由服务端生成新资源账户（Ed25519，私钥随响应返回） |
+| `sft` | object | 否 | SFT 资源账户选项；缺省由服务端生成新资源账户（FN-DSA-512 抗量子，私钥+公钥随响应返回） |
 | `sft.address` | string | 否 | 已有 SFT 地址：链上已存在（`SftOwnerOf` 可读）则跳过创建；不存在则须传 `sft.privateKey` 签名创建 |
 | `sft.privateKey` | string | 条件必填 | SFT 资源账户私钥——仅在 `sft.address` 指向的 SFT 链上不存在时必填；资源账户仅签 `create_sft` 指令，gas 由 owner 代付 |
 | `sft.publicKey` | string | 条件必填 | SFT 资源账户公钥，其为 FN-DSA-512 私钥时必填 |
@@ -2471,7 +2471,7 @@ curl -X POST http://localhost:8080/api/tool/sft-flow   -H "Content-Type: applica
     "created": true,
     "skipped": false,
     "txHash": "0x…",
-    "detail": "generated new sft resource account (ed25519)"
+    "detail": "generated new sft resource account (fndsa512)"
   },
   "slot": { "slotId": 1, "created": true, "reused": false, "txHash": "0x…" },
   "distributions": [
@@ -2751,7 +2751,7 @@ curl -H 'X-Milon-Accounts: <base64>' http://localhost:8080/api/accounts-config
 | 旋钮 | minimal 极简 | standard 标准（=默认配置） | full 全量 |
 | --- | --- | --- | --- |
 | accounts.count | 3 | 8 | 12 |
-| accounts.curves | secp256k1 | secp256k1, ed25519 | secp256k1, ed25519 |
+| accounts.curves | fndsa512 | fndsa512 | fndsa512 |
 | accounts.faucet / did / vcCert | true / false / false | true / true / true | true / true / true |
 | accounts.balanceTiers | one | one | hundred, thousand, ten_k |
 | multisig.count（signers/threshold，faucet/did） | 0 | 1（5/3，true/true） | 2（5/3，true/true） |
@@ -2828,7 +2828,7 @@ curl http://localhost:8080/api/tool/seed/dataset
 | --- | --- | --- | --- |
 | `seedPhrase` | string | `milon-devnet-seed-v1` | 空 → 请求级 `seedPhrase` 兜底 |
 | `accounts.count` | int | 8 | 1..200 |
-| `accounts.curves` | string[] | `["secp256k1","ed25519"]` | 非空、无重复；**仅 secp256k1/ed25519**（见下方规格偏差 ①） |
+| `accounts.curves` | string[] | `["fndsa512"]` | 非空、无重复；**仅 fndsa512（抗量子）**——2026-11-26 起 secp256k1/ed25519 在校验层直接拒绝（链端 owner/signer 已 PQ 化，经典曲线账户不可用） |
 | `accounts.faucet` | bool | true | faucet=true 时 balanceTiers 须至少一档 |
 | `accounts.balanceTiers` | string[] | `["one"]` | 取值 `one`(1) / `hundred`(100) / `thousand`(1000) / `ten_k`(10000)，无重复；2026-11-25 水龙头降为单次 1 MIL，one 为唯一零充值可达成档，补差不足时警告跳过不中止 |
 | `accounts.did` | bool | true | 建 DID 需账户有 gas（开 faucet 或选档位） |
@@ -2918,7 +2918,7 @@ curl -X DELETE http://localhost:8080/api/tool/account-book/u1
 curl 'http://localhost:8080/api/tool/vc-by-account?address=3uo5PfaRw8oMD8sZP6CC9j9E1Nzn'
 ```
 
-> 播种器曲线（2026-11-24 起）：默认/模板/全部角色（admin/users/issuers/multisig/token/sft）统一 **fndsa512 抗量子**确定性派生——`privkey = fndsa.KeyGen(seed=sha256(短语:角色:名))`（KeyGen 从 rng 恰读 32 字节种子且对种子确定性），同短语同配置可复现同一密钥组；`accounts.curves` 仍可传 secp256k1/ed25519 走经典曲线轮转。fndsa512 私钥 1281 字节 hex，断点状态与 dataset 中私钥回显变长属预期。
+> 播种器曲线（2026-11-26 起只产出抗量子）：默认/模板/全部角色（admin/users/issuers/multisig/token/sft）统一 **fndsa512 抗量子**确定性派生——`privkey = fndsa.KeyGen(seed=sha256(短语:角色:名))`（KeyGen 从 rng 恰读 32 字节种子且对种子确定性），同短语同配置可复现同一密钥组。`accounts.curves` 已**不再接受 secp256k1/ed25519**（链端 69 PqSignatureRequired / 273 InvalidPublicKey，经典曲线账户在链上不可用），传了直接 400 字段级报错。fndsa512 私钥 1281 字节 hex，断点状态与 dataset 中私钥回显变长属预期。
 
 #### 77. POST /api/tool/vc-issue
 

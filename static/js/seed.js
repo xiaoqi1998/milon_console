@@ -13,7 +13,7 @@ var seedTemplateCache = null;
 
 // chips 容器 → 字段映射(data-key 为配置原值,.on 为选中态)
 var SEED_CHIPS = {
-  seedCurvesChips: { list: ['fndsa512', 'secp256k1', 'ed25519'], field: 'curves' }, // fndsa512 默认(2026-11-24 起服务端支持确定性派生)
+  seedCurvesChips: { list: ['fndsa512'], field: 'curves' }, // 只产出抗量子 fndsa512(2026-11-26 起经典曲线在校验层被拒)
   seedTiersChips: { list: ['one', 'hundred', 'thousand', 'ten_k'], field: 'balanceTiers' }, // one=1 MIL:2026-11-25 水龙头单次 1 MIL 后唯一零充值档
   seedDecimalsChips: { list: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], field: 'decimals' },
   seedScenariosChips: { list: ['transferable', 'frozen', 'merge', 'burn', 'reject_transfer'], field: 'scenarios' },
@@ -168,7 +168,12 @@ function seedFillForm(cfg) {
   var v = cfg.vesting || {};
   if (seedEl('seedPhrase')) seedEl('seedPhrase').value = cfg.seedPhrase || '';
   if (seedEl('seedAcctCount')) seedEl('seedAcctCount').value = a.count != null ? a.count : 8;
-  seedSetChips('seedCurvesChips', a.curves);
+  // 旧缓存里可能存着 secp256k1/ed25519——播种器已只出抗量子,加载时归一到 fndsa512
+  var curveVals = (a.curves || []).filter(function (c) {
+    return SEED_CHIPS.seedCurvesChips.list.indexOf(c) >= 0;
+  });
+  if (!curveVals.length) curveVals = ['fndsa512'];
+  seedSetChips('seedCurvesChips', curveVals);
   if (seedEl('seedAcctFaucet')) seedEl('seedAcctFaucet').checked = !!a.faucet;
   seedSetChips('seedTiersChips', a.balanceTiers);
   if (seedEl('seedAcctDid')) seedEl('seedAcctDid').checked = !!a.did;

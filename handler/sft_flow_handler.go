@@ -213,6 +213,7 @@ type sftFlowSftResult struct {
 	Address    string `json:"address"`
 	Owner      string `json:"owner"`
 	PrivateKey string `json:"privateKey,omitempty"` // 仅服务端新生成资源账户时返回,便于复用
+	PublicKey  string `json:"publicKey,omitempty"`  // 仅服务端新生成时返回:fndsa512 无法从私钥反推公钥
 	Created    bool   `json:"created"`
 	Skipped    bool   `json:"skipped"` // 链上已存在,跳过创建
 	TxHash     string `json:"txHash,omitempty"`
@@ -403,7 +404,7 @@ func (h *SftFlowHandler) SftFlow(c *gin.Context) {
 // ==================== 链上步骤 ====================
 
 // sftFlowEnsureSft 确保 SFT 存在:
-//   - 未传 sft.address:服务端生成 Ed25519 资源账户(私钥随响应返回)并创建;
+//   - 未传 sft.address:服务端生成 FN-DSA-512 资源账户(私钥+公钥随响应返回)并创建;
 //   - 传 sft.address 且链上已存在(SftOwnerOf 可读):跳过;
 //   - 传 sft.address 但不存在:须传 sft.privateKey 签名 create_sft(gas 由 owner 代付)。
 func sftFlowEnsureSft(mc *milon.Client, req sftFlowRequest, ownerAddr crypto.Address, ownerSK crypto.SecretKeyer, ownerPub *crypto.PublicKey) (crypto.Address, sftFlowSftResult, error) {
@@ -438,26 +439,26 @@ func sftFlowEnsureSft(mc *milon.Client, req sftFlowRequest, ownerAddr crypto.Add
 		return sftAddr, result, nil
 	}
 
-	// 全新生成资源账户(Ed25519,与 SDK sft_demo 一致)
-	sk := crypto.NewClassicalSecretKey()
-	classicalSk := crypto.AsClassicalSecretKey(sk)
-	pk := classicalSk.Ed25519Public()
-	if pk == nil {
-		return crypto.Address{}, result, fmt.Errorf("failed to derive ed25519 public key for sft account")
+	// 全新生成资源账户(FN-DSA-512 抗量子:链端 owner/signer 已 PQ 化,
+	// 经典曲线账户生成即废数据;公钥随响应返回,Go 无法从 fndsa512 私钥反推)
+	sk, pk, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		return crypto.Address{}, result, fmt.Errorf("failed to generate fndsa512 sft key: %w", err)
 	}
 	addr, err := crypto.NewAddressFromPublicKey(pk)
 	if err != nil {
 		return crypto.Address{}, result, fmt.Errorf("failed to derive sft address: %w", err)
 	}
-	txHash, err := sftFlowCreateSft(mc, *addr, classicalSk, pk, req.SftMetadata, req.RoyaltyBps, ownerAddr, ownerSK, ownerPub)
+	txHash, err := sftFlowCreateSft(mc, *addr, sk, pk, req.SftMetadata, req.RoyaltyBps, ownerAddr, ownerSK, ownerPub)
 	if err != nil {
 		return crypto.Address{}, result, err
 	}
 	result.Address = addr.ToBase58()
 	result.PrivateKey = sk.ToHex()
+	result.PublicKey = pk.ToBase58()
 	result.Created = true
 	result.TxHash = txHash
-	result.Detail = "generated new sft resource account (ed25519)"
+	result.Detail = "generated new sft resource account (fndsa512)"
 	return *addr, result, nil
 }
 

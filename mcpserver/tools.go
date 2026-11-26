@@ -42,9 +42,10 @@ type networkSwitchArgs struct {
 
 type accountGenerateArgs struct {
 	// keyType 可缺省（REST 侧 account_handler.go GenerateAccount 空值缺省
-	// secp256k1），标 omitempty 使 MCP schema 不把它列入 required——Task 8
-	// 修复：此前缺 omitempty 导致客户端传 {} 被 schema 拒绝，与 REST 契约不一致。
-	KeyType string `json:"keyType,omitempty" jsonschema:"可选：密钥曲线 secp256k1(缺省)/ed25519/fndsa512（抗量子）"`
+	// fndsa512 抗量子——2026-11-26 起；经典曲线须显式传），标 omitempty 使
+	// MCP schema 不把它列入 required——Task 8 修复：此前缺 omitempty 导致
+	// 客户端传 {} 被 schema 拒绝，与 REST 契约不一致。
+	KeyType string `json:"keyType,omitempty" jsonschema:"可选：密钥曲线 fndsa512(缺省,抗量子)/secp256k1/ed25519/bls12381；经典曲线须显式指定"`
 }
 
 type addressArgs struct {

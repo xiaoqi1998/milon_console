@@ -306,10 +306,12 @@ func seedRangeNames(from, to int) []string {
 	return out
 }
 
+// seedUserSpecs v1 遗留口径(当前计划走 seedUserSpecsV2):曲线同样统一 fndsa512——
+// 播种器不再产出经典曲线账户。
 func seedUserSpecs(names []string, suffixBase int) []SeedAccountSpec {
 	out := make([]SeedAccountSpec, len(names))
 	for i, name := range names {
-		out[i] = SeedAccountSpec{Name: name, Role: "user", Curve: "secp256k1",
+		out[i] = SeedAccountSpec{Name: name, Role: "user", Curve: "fndsa512",
 			SubjectType: "Personal", Alias: "seed-" + name,
 			AliasSuffix: uint32(suffixBase + i), AvatarURL: seedAvatarURL(name)}
 	}

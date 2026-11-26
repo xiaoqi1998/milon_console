@@ -38,8 +38,11 @@ type testAccount struct {
 }
 
 func newTestAccount() (*testAccount, error) {
-	sk := crypto.AsClassicalSecretKey(crypto.NewPureClassicalSecretKey())
-	pk := sk.Ed25519Public()
+	// 抗量子 FN-DSA-512:链端 owner/公钥模式已 PQ 化,经典曲线会被拒
+	_, pk, err := crypto.NewFnDsa512SecretKey()
+	if err != nil {
+		return nil, err
+	}
 	addr, err := crypto.NewAddressFromPublicKey(pk)
 	if err != nil {
 		return nil, err
